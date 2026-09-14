@@ -1,0 +1,36 @@
+{
+  "name": "aygun-tarhan-marder-spacetime-2006",
+  "description": "S. Aygun, M. Aygun & I. Tarhan's \"Energy Momentum Localization in Marder Space Time\" (submitted to arXiv as gr-qc/0607102, July 2006) was removed by arXiv administrators for plagiarizing two papers by S.S. Xulu (University of Zululand): Xulu's own PhD thesis \"The Energy-Momentum Problem in General Relativity\" (hep-th/0308070) and his short paper \"Total Energy of the Bianchi Type I Universes\" (gr-qc/9910015). Cross-author case (Xulu has no overlap with the Aygun/Tarhan author group) -- not self-plagiarism.",
+  "source_url": "https://arxiv.org/abs/gr-qc/0607102",
+  "source_quote": "This paper has been removed by arXiv administrators because it plagiarizes hep-th/0308070, gr-qc/9910015, and others.",
+  "found_by": "arXiv administrators (automated/manual text-overlap review); publicized by Peter Woit, https://www.math.columbia.edu/~woit/wordpress/?p=638",
+  "papers": [
+    {
+      "role": "plagiarizing",
+      "title": "Energy Momentum Localization in Marder Space Time",
+      "authors": ["S. Aygun", "M. Aygun", "I. Tarhan"],
+      "year": 2006,
+      "arxiv_id": "gr-qc/0607102",
+      "file": "plagiarizing_arxiv-gr-qc-0607102v1_aygun-aygun-tarhan.pdf",
+      "note": "v1 (24 Jul 2006), the version fetched here -- v3 (22 Aug 2007) is the one arXiv actually withdrew; v1/v2 remain fetchable, v3 does not (404)."
+    },
+    {
+      "role": "source",
+      "title": "The Energy-Momentum Problem in General Relativity",
+      "authors": ["Sibusiso S. Xulu"],
+      "year": 2003,
+      "arxiv_id": "hep-th/0308070",
+      "file": "source_arxiv-hep-th-0308070_xulu_phd-thesis.pdf",
+      "note": "Xulu's PhD thesis (106 pages) -- a comprehensive review, so any overlap with the 10-page plagiarizing paper is necessarily a small fraction of this document, not near-total overlap."
+    },
+    {
+      "role": "source",
+      "title": "Total Energy of the Bianchi Type I Universes",
+      "authors": ["Sibusiso S. Xulu"],
+      "year": 1999,
+      "arxiv_id": "gr-qc/9910015",
+      "file": "source_arxiv-gr-qc-9910015_xulu_bianchi-type-i.pdf",
+      "note": "Short paper (8 pages), closer in length/scope to the plagiarizing paper than the thesis is -- likely the tighter match of the two sources."
+    }
+  ]
+}

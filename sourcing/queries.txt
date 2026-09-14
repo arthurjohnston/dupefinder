@@ -1,0 +1,36 @@
+computer ethics
+information ethics
+AI ethics
+artificial intelligence ethics
+algorithmic fairness
+algorithmic bias
+responsible AI
+responsible artificial intelligence
+technology ethics
+digital ethics
+data ethics
+privacy ethics
+surveillance ethics
+computing professional ethics
+software engineering ethics
+computer science ethics
+machine learning fairness
+fairness accountability transparency
+automated decision making ethics
+
+# Adjacent-but-distinct topics added to broaden scope beyond narrow
+# "computer ethics" phrasing (pool-size-checked before adding; see
+# coverage_join.py/enrich_open_access.py chat history for rationale).
+AI governance
+algorithmic accountability
+digital rights
+robot ethics
+cybersecurity ethics
+human-computer interaction ethics
+content moderation
+misinformation
+autonomous vehicles ethics
+AI safety
+tech policy
+internet governance
+AI regulation

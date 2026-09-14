@@ -1,0 +1,52 @@
+{
+  "name": "aygun-tarhan-marder-spacetime-2006",
+  "description": "Aygun, Aygun & Tarhan's 'Energy Momentum Localization in Marder Space Time' (arXiv gr-qc/0607102, 2006) was removed by arXiv administrators, who stated directly: 'This paper has been removed by arXiv administrators because it plagiarizes hep-th/0308070, gr-qc/9910015, and others.' Both cited sources are S.S. Xulu's work (University of Zululand) -- his PhD thesis and a short paper -- with no author overlap with Aygun/Aygun/Tarhan, so this is genuine cross-author plagiarism. See manual_examples/aygun-tarhan-marder-spacetime-2006/case.json.",
+  "source_url": "https://arxiv.org/abs/gr-qc/0607102",
+  "papers": [
+    {
+      "title": "Energy Momentum Localization in Marder Space Time",
+      "authors": ["S. Aygun", "M. Aygun", "I. Tarhan"],
+      "year": 2006,
+      "manual": {
+        "pdf_url": "https://arxiv.org/pdf/gr-qc/0607102v1",
+        "doi": null,
+        "oa_status": "green",
+        "reason": "arXiv removed the paper (v3, 2007) for plagiarism -- the withdrawn version itself now 404s, so v1 (pre-withdrawal, still carries the plagiarized text) is fetched by hand rather than relying on retrieve_papers.py's normal DOI-resolution path, which would try to reach the withdrawn/current version. Fetched fresh over the network each run (no local_path -- a third party's copyrighted work this project doesn't hold redistribution rights to, so it isn't committed to the repo)."
+      }
+    },
+    {
+      "title": "The Energy-Momentum Problem in General Relativity",
+      "authors": ["Sibusiso S. Xulu"],
+      "year": 2003,
+      "manual": {
+        "pdf_url": "https://arxiv.org/pdf/hep-th/0308070",
+        "doi": null,
+        "oa_status": "green",
+        "reason": "A PhD thesis posted to arXiv has no Crossref DOI record for retrieve_papers.py to resolve automatically; fetched by hand at test time (no local_path -- a third party's copyrighted work this project doesn't hold redistribution rights to, so it's fetched fresh over the network each run rather than committed to the repo)."
+      }
+    },
+    {
+      "title": "Total Energy of the Bianchi Type I Universes",
+      "authors": ["Sibusiso S. Xulu"],
+      "year": 1999,
+      "manual": {
+        "pdf_url": "https://arxiv.org/pdf/gr-qc/9910015",
+        "doi": null,
+        "oa_status": "green",
+        "reason": "Pre-2000 arXiv preprint, no reliable Crossref DOI record; fetched fresh over the network each run (no local_path -- a third party's copyrighted work, not redistributed in this repo)."
+      }
+    }
+  ],
+  "assertions": [
+    {
+      "type": "min_similarity",
+      "pair": ["Energy Momentum Localization in Marder Space Time", "Total Energy of the Bianchi Type I Universes"],
+      "threshold": 0.75
+    },
+    {
+      "type": "min_similarity",
+      "pair": ["Energy Momentum Localization in Marder Space Time", "The Energy-Momentum Problem in General Relativity"],
+      "threshold": 0.75
+    }
+  ]
+}

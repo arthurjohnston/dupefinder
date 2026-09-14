@@ -1,0 +1,37 @@
+{
+  "name": "yilmaz-aygun-topological-defect-2005",
+  "description": "Yilmaz, Aygun & Aygun's 'Topological defect solutions in the spherically symmetric space-time admitting conformal motion' (arXiv gr-qc/0607104, Gen. Rel. Grav. 37 (2005)) was withdrawn by arXiv administrators for 'excessive overlap with the following papers also written by the authors or their collaborators: hep-th/0505013 and 0705.2930.' hep-th/0505013 shares author Ihsan Yilmaz with the withdrawn paper -- same-author/collaborator reuse, not cross-author theft (unlike aygun-tarhan-marder-spacetime-2006 in this suite), included as a real arXiv-confirmed near-duplicate to exercise the same_author path against actual data. See manual_examples/yilmaz-aygun-topological-defect-2005/case.json.",
+  "source_url": "https://arxiv.org/abs/gr-qc/0607104",
+  "papers": [
+    {
+      "title": "Topological defect solutions in the spherically symmetric space-time admitting conformal motion",
+      "authors": ["I. Yilmaz", "M. Aygun", "S. Aygun"],
+      "year": 2005,
+      "manual": {
+        "pdf_url": "https://arxiv.org/pdf/gr-qc/0607104v1",
+        "doi": null,
+        "oa_status": "green",
+        "reason": "arXiv withdrew this paper (v2, 2007) for excessive text overlap -- the withdrawn version 404s, so v1 (pre-withdrawal) is fetched by hand at test time. Fetched fresh over the network each run (no local_path -- a third party's copyrighted work, not redistributed in this repo)."
+      }
+    },
+    {
+      "title": "Strange Quark Matter Attached to the String Cloud in the Spherical Symmetric Space-Time Admitting Conformal Motion",
+      "authors": ["Ilhami Yavuz", "Ihsan Yilmaz", "Husnu Baysal"],
+      "year": 2005,
+      "manual": {
+        "pdf_url": "https://arxiv.org/pdf/hep-th/0505013",
+        "doi": null,
+        "oa_status": "green",
+        "reason": "No reliable Crossref DOI record for this arXiv preprint; fetched fresh over the network each run (no local_path -- a third party's copyrighted work, not redistributed in this repo)."
+      }
+    }
+  ],
+  "assertions": [
+    {
+      "type": "min_similarity",
+      "pair": ["Topological defect solutions in the spherically symmetric space-time admitting conformal motion",
+               "Strange Quark Matter Attached to the String Cloud in the Spherical Symmetric Space-Time Admitting Conformal Motion"],
+      "threshold": 0.75
+    }
+  ]
+}

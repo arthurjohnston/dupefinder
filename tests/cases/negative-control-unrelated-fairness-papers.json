@@ -1,0 +1,35 @@
+{
+  "name": "negative-control-unrelated-fairness-papers",
+  "description": "Not a plagiarism case -- a negative control. Two legitimate, unrelated papers on different subtopics (individual-fairness classifier theory vs. commercial face-classifier auditing) should NOT be flagged as near-duplicates. Guards against find_duplicates.py being too permissive (false positives), the way carlini-roadmap-2022 guards against it being too strict (false negatives). Empirically the lowest max cross-paper similarity observed across the whole 11-paper main corpus (0.540), picked for maximum separation from the threshold.",
+  "papers": [
+    {
+      "title": "Equality of Opportunity in Supervised Learning",
+      "authors": ["Moritz Hardt", "Eric Price", "Nathan Srebro"],
+      "year": 2016,
+      "manual": {
+        "pdf_url": "https://arxiv.org/pdf/1610.02413",
+        "doi": "10.48550/arXiv.1610.02413",
+        "oa_status": "green",
+        "reason": "Crossref's bibliographic search doesn't confidently match this arXiv preprint (see CLAUDE.md's retrieve_papers.py Known gap)."
+      }
+    },
+    {
+      "title": "Gender Shades: Intersectional Accuracy Disparities in Commercial Gender Classification",
+      "authors": ["Joy Buolamwini", "Timnit Gebru"],
+      "year": 2018,
+      "manual": {
+        "pdf_url": "https://proceedings.mlr.press/v81/buolamwini18a/buolamwini18a.pdf",
+        "doi": null,
+        "oa_status": "gold",
+        "reason": "PMLR paper; Crossref's bibliographic search doesn't confidently match it either."
+      }
+    }
+  ],
+  "assertions": [
+    {
+      "type": "max_similarity",
+      "pair": ["Equality of Opportunity in Supervised Learning", "Gender Shades: Intersectional Accuracy Disparities in Commercial Gender Classification"],
+      "threshold": 0.70
+    }
+  ]
+}

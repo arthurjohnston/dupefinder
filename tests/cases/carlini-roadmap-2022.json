@@ -1,0 +1,31 @@
+{
+  "name": "carlini-roadmap-2022",
+  "description": "Section 2.3.1 of the 99-author survey 'A Roadmap for Big Model' lifted paragraphs near-verbatim from 'Deduplicating Training Data Makes Language Models Better'. Discovered by Nicholas Carlini (a coauthor of the original); the survey was withdrawn 12 days after his write-up, citing that exact section. See thankyou.md.",
+  "source_url": "https://nicholas.carlini.com/writing/2022/a-case-of-plagarism-in-machine-learning.html",
+  "papers": [
+    {
+      "title": "Deduplicating Training Data Makes Language Models Better",
+      "authors": ["Katherine Lee", "Daphne Ippolito", "Andrew Nystrom", "Chiyuan Zhang",
+                  "Douglas Eck", "Chris Callison-Burch", "Nicholas Carlini"],
+      "year": 2021
+    },
+    {
+      "title": "A Roadmap for Big Model",
+      "authors": ["Sha Yuan"],
+      "year": 2022,
+      "manual": {
+        "pdf_url": "https://arxiv.org/pdf/2203.14101v1",
+        "doi": "10.48550/arXiv.2203.14101",
+        "oa_status": "green",
+        "reason": "Crossref can't confidently title-match a 99-author preprint, and the final arXiv version was withdrawn -- v1 (pre-withdrawal) still has the plagiarized Section 2.3.1 and is fetched directly."
+      }
+    }
+  ],
+  "assertions": [
+    {
+      "type": "min_similarity",
+      "pair": ["Deduplicating Training Data Makes Language Models Better", "A Roadmap for Big Model"],
+      "threshold": 0.80
+    }
+  ]
+}

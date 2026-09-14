@@ -1,0 +1,14 @@
+{
+  "name": "ramasamy-ijacsa-data-quality-2021",
+  "status": "BLOCKED -- not a usable example, kept only for tracking (see todo.md)",
+  "description": "Ramasamy, Sisay & Bahiru, \"A Data Science Framework for Data Quality Assessment and Inconsistency Detection\" (IJACSA 2021) was retracted after IJACSA confirmed 'Level 1 plagiarism -- uncredited verbatim copying of a full paper' from Enamul Haque's McMaster MSc thesis / Haque & Chiang's Procedia Computer Science paper (DOI 10.1016/j.procs.2019.09.277). Already identified in todo.md/tests/README.md as a strong candidate (near-100%% overlap expected) but never obtainable end-to-end.",
+  "source_url": "https://thesai.org/Publications/ViewPaper?Volume=12&Issue=4&Code=IJACSA&SerialNo=76",
+  "found_by": "Enamul Haque (PhD student, reported the plagiarism)",
+  "blockers": [
+    "IJACSA's hosted PDF (https://thesai.org/Downloads/Volume12No4/Paper_76-A_Data_Science_Framework_for_Data_Quality_Assessment.pdf) downloads fine over HTTP but as of this fetch (2026-08-20) contains ONLY a one-page retraction notice -- IJACSA appears to have replaced the actual retracted content with a stub, so there is no plagiarized text left to compare even on this 'easy' side.",
+    "The Procedia Computer Science original is genuinely gold OA (Unpaywall confirms CC-BY-NC-ND) but ScienceDirect returns HTTP 403 to every automated fetch attempt -- needs a real browser.",
+    "Haque's McMaster MSc thesis (an alternate, non-ScienceDirect source for similar content) is on MacSphere (McMaster's institutional repository), but MacSphere is now behind an 'Anubis' proof-of-work bot-checker (same class of block as MDPI/PMC in the saxby-taro-2023 test case) -- also needs a real browser."
+  ],
+  "not_included_file": "plagiarizing_ijacsa_ramasamy-sisay-bahiru.pdf -- the IJACSA retraction-notice stub only, NOT the original plagiarized text (kept locally for reference, not comparison material) -- not checked into this repo along with every other PDF; refetch from source_url if needed.",
+  "revisit": "If claude-in-chrome or another real-browser fetch path becomes available, try ScienceDirect (10.1016/j.procs.2019.09.277) or MacSphere (Haque's thesis) directly."
+}

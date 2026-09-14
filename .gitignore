@@ -1,0 +1,51 @@
+*.sqlite3
+*.sqlite3-shm
+*.sqlite3-wal
+# Third-party academic PDFs (evidence copies, manual examples, test fixtures) --
+# this project doesn't hold redistribution rights to any of them, so none are
+# ever committed, even in flagged_cases/manual_examples/test-fixture directories
+# that otherwise are checked in.
+*.pdf
+papers
+papers/
+manual_downloads/
+tests/work/
+__pycache__/
+.venv/
+*.log
+*.out
+dupe_reports/
+dupe_reports_html/
+flagged_dupe_pdfs/
+papers_excluded/
+retraction_notices/
+review_candidates_*.txt
+lsh_bucket_report.txt
+*.joblib
+.run_pipeline.lock
+.claude/
+not_found_papers.csv
+paragraphs.jsonl
+retraction_watch.csv
+retraction_watch_*.json
+wide_net_triage/
+wide_net_triage_round2/
+wide_net_triage_pairs.tsv
+title_bucket_dupes_report*.txt
+title_bucket_survivors*.txt
+# Purged from git history (2026-09-13) -- untracked working dirs kept on disk only.
+anthropology/
+computer-ethics/
+
+# Default-deny for new top-level directories: a brand-new directory (a new
+# corpus working dir, a scratch output dir, etc.) is ignored automatically --
+# `git add -A`/`git add .` silently skips it -- unless explicitly allow-listed
+# below by name. Loose top-level *files* (scripts, docs) are unaffected and
+# stay addable as normal; this only catches directories. Anchored to the repo
+# root (`/*/`), so it doesn't reach into already-allowed directories -- new
+# files/subdirs inside tests/, sourcing/, manual_examples/ etc. are unaffected.
+# Added after the anthropology/computer-ethics dirs above ended up tracked.
+/*/
+!/tests/
+!/sourcing/
+!/manual_examples/

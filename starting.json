@@ -1,0 +1,135 @@
+[
+  {
+    "authors": [
+      "Batya Friedman",
+      "Helen Nissenbaum"
+    ],
+    "title": "Bias in Computer Systems",
+    "year": 1996
+  },
+  {
+    "authors": [
+      "Cynthia Dwork",
+      "Moritz Hardt",
+      "Toniann Pitassi",
+      "Omer Reingold",
+      "Richard Zemel"
+    ],
+    "title": "Fairness through Awareness",
+    "year": 2012
+  },
+  {
+    "authors": [
+      "Ninareh Mehrabi",
+      "Fred Morstatter",
+      "Nripsuta Saxena",
+      "Kristina Lerman",
+      "Aram Galstyan"
+    ],
+    "title": "A Survey on Bias and Fairness in Machine Learning",
+    "year": 2021
+  },
+  {
+    "authors": [
+      "Michael Feldman",
+      "Sorelle Friedler",
+      "John Moeller",
+      "Carlos Scheidegger",
+      "Suresh Venkatasubramanian"
+    ],
+    "title": "Certifying and Removing Disparate Impact",
+    "year": 2015
+  },
+  {
+    "authors": [
+      "Latanya Sweeney"
+    ],
+    "title": "Discrimination in Online Ad Delivery",
+    "year": 2013
+  },
+  {
+    "authors": [
+      "Solon Barocas",
+      "Andrew D. Selbst"
+    ],
+    "title": "Big Data's Disparate Impact",
+    "year": 2016
+  },
+  {
+    "authors": [
+      "Moritz Hardt",
+      "Eric Price",
+      "Nathan Srebro"
+    ],
+    "title": "Equality of Opportunity in Supervised Learning",
+    "year": 2016
+  },
+  {
+    "authors": [
+      "Jon Kleinberg",
+      "Sendhil Mullainathan",
+      "Manish Raghavan"
+    ],
+    "title": "Inherent Trade-Offs in the Fair Determination of Risk Scores",
+    "year": 2016
+  },
+  {
+    "authors": [
+      "Muhammad Bilal Zafar",
+      "Isabel Valera",
+      "Manuel Gomez Rodriguez",
+      "Krishna P. Gummadi"
+    ],
+    "title": "Fairness Constraints: Mechanisms for Fair Classification",
+    "year": 2017
+  },
+  {
+    "authors": [
+      "Joy Buolamwini",
+      "Timnit Gebru"
+    ],
+    "title": "Gender Shades: Intersectional Accuracy Disparities in Commercial Gender Classification",
+    "year": 2018
+  },
+  {
+    "authors": [
+      "Sam Corbett-Davies",
+      "Emma Pierson",
+      "Avi Feller",
+      "Sharad Goel",
+      "Aziz Huq"
+    ],
+    "title": "Algorithmic Decision Making and the Cost of Fairness",
+    "year": 2017
+  },
+  {
+    "authors": [
+      "Lydia T. Liu",
+      "Sarah Dean",
+      "Esther Rolf",
+      "Max Simchowitz",
+      "Moritz Hardt"
+    ],
+    "title": "Delayed Impact of Fair Machine Learning",
+    "year": 2018
+  },
+  {
+    "authors": [
+      "Sam Corbett-Davies",
+      "Johann D. Gaebler",
+      "Hamed Nilforoshan",
+      "Ravi Shroff",
+      "Sharad Goel"
+    ],
+    "title": "The Measure and Mismeasure of Fairness",
+    "year": 2018
+  },
+  {
+    "authors": [
+      "Alexandra Chouldechova",
+      "Aaron Roth"
+    ],
+    "title": "The Frontiers of Fairness in Machine Learning",
+    "year": 2018
+  }
+]

@@ -1,0 +1,13 @@
+{
+  "name": "gino-hbs-2024",
+  "status": "BLOCKED -- not a usable example, kept only for tracking",
+  "description": "Francesca Gino (Harvard Business School) is primarily known for a DATA FABRICATION scandal (Data Colada bloggers found fabricated data underlying several of her papers, leading to multiple retractions and Harvard revoking her tenure in 2025) -- that's a different kind of misconduct than dupefinder targets (fabricated results, not copied text) and doesn't fit this tool's model at all. Separately, in April 2024, Erinn Acland (U. Montreal) and Science identified real TEXT plagiarism: a 2016 book chapter co-authored by Gino AND Dan Ariely, 'Dishonesty Explained: What Leads Moral People to Act Immorally' (in the handbook The Social Psychology of Good and Evil), and 15+ more borrowed passages in Gino's solo trade books 'Rebel Talent' and 'Sidetracked'.",
+  "ariely_detail": "The chapter's opening sentence is reported to be word-for-word identical to a passage in Umphress, Bingham & Mitchell (2010), 'Unethical behavior in the name of the company: The moderating effect of organizational identification and positive reciprocity beliefs on unethical pro-organizational behavior,' Journal of Applied Psychology 95(4), 769-780. Other sections matched six further published papers/chapters and three student theses -- one of which was supervised by Dan Ariely himself. Ariely's spokesperson told Science he didn't write the chapter, only gave direction/feedback; no ghostwriter is otherwise credited.",
+  "why_not_included": "Every identified instance is a commercially published book or book chapter (not a standalone open-access paper) -- 'Rebel Talent' and 'Sidetracked' are copyrighted trade books, and the Gino/Ariely chapter is in a copyrighted Wiley-Blackwell handbook. A self-hosted copy of the chapter was found at francescagino.com/s/Gino-and-Ariely-2015.pdf but returns 404 as of this check (and has no Wayback Machine snapshot either) -- so even the one plausibly-free copy is gone. The Umphress et al. 2010 source is a real standalone journal article (Journal of Applied Psychology, APA, subscription-only) that might be independently obtainable, but without the plagiarizing chapter there's no pair to compare it against.",
+  "sources": [
+    "https://www.science.org/content/article/embattled-harvard-honesty-professor-accused-plagiarism",
+    "https://www.thecrimson.com/article/2024/4/11/harvard-business-gino-plagarism-allegations/",
+    "https://www.plagiarismtoday.com/2024/04/10/francesca-gino-faces-allegations-of-plagiarism/"
+  ],
+  "found_by": "Erinn Acland (University of Montreal) and Science magazine's investigative reporting, April 2024 -- separate from and following the earlier Data Colada data-fabrication findings"
+}

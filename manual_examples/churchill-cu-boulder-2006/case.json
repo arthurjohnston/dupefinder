@@ -1,0 +1,38 @@
+{
+  "name": "churchill-cu-boulder-2006",
+  "status": "BLOCKED for the full pairwise texts -- kept for tracking; the investigative report itself is a legitimately obtainable primary source (see source_url), just not checked into this repo",
+  "description": "University of Colorado at Boulder's Investigative Committee (2006) found Ward Churchill committed research misconduct including multiple instances of plagiarism, leading to his 2007 firing. Two of the committee's specific findings, with full bibliographic detail (see 'instances' below): Allegation E (plagiarism of a 1972 pamphlet, 'The Water Plot,' by the Dam the Dams Campaign, a Canadian environmental group, reused across four of Churchill's own publications 1989-2002) and Allegation G (plagiarism of Fay G. Cohen's 1991 essay on Indian treaty fishing rights, republished nearly verbatim under a pseudonymous institute credit in a 1992 volume).",
+  "source_url": "https://studentsforacademicfreedom.org/wp-content/uploads/2020/05/WardChurchillReport.pdf",
+  "not_included_file": "investigative-committee-report.pdf -- the full 125-page committee report, a legitimate public document (a university investigation, not copyrighted trade material). Report pp. 83-85 quote the actual opening paragraphs of both 'The Water Plot' (1972 pamphlet) and its 1989 reuse side-by-side as primary evidence -- this was the one piece of real comparable text obtained for this case, but this project settled on not committing any PDF at all (public-record or not) rather than judgment-call exceptions per file; fetch it fresh from source_url.",
+  "why_not_fully_included": "None of the actual full source/plagiarizing texts are freely available: 'The Water Plot' is an obscure 1972 pamphlet with no known digitization; the four works that reused it are chapters in commercially published, copyrighted edited academic volumes (Critical Issues in Native North America, Vols. I/II, IWGIA; Struggle for the Land, Common Courage Press / City Lights Books) or a 1993 Z Magazine article with no confirmed online archive found. Fay Cohen's original essay and its plagiarized reuse ('In Usual and Accustomed Places,' The State of Native America, South End Press, 1992) are likewise both copyrighted book chapters. Acquiring any of these would mean pirating copyrighted books, which this project won't do.",
+  "instances": [
+    {
+      "source": {
+        "title": "The Water Plot",
+        "authors": ["Dam the Dams Campaign"],
+        "year": 1972,
+        "type": "pamphlet, unpaginated"
+      },
+      "plagiarizing": [
+        {"title": "The Water Plot: Hydrological Rape in Northern Canada", "credited_to": "Dam the Dams Campaign and the Institute for Natural Progress",
+         "in": "Critical Issues in Native North America, Vol. I, ed. Ward Churchill (Copenhagen: IWGIA, Doc. 68, 1989), pp. 137-51"},
+        {"title": "The Water Plot: Hydrological Rape in Northern Canada", "credited_to": "Ward Churchill (sole author)",
+         "in": "Struggle for the Land: Indigenous Resistance to Genocide, Ecocide, and Expropriation in Contemporary North America (Monroe, ME: Common Courage Press, 1993), pp. 329-65; revised in the 2002 City Lights Books edition, pp. 292-329"},
+        {"title": "The Water Plot", "credited_to": "Ward Churchill (sole author)", "in": "Z Magazine, April 1991, pp. 88-92"}
+      ]
+    },
+    {
+      "source": {
+        "title": "Implementing Indian Treaty Fishing Rights: Conflict and Cooperation",
+        "authors": ["Fay G. Cohen"],
+        "year": 1991,
+        "in": "Critical Issues in Native North America, Vol. II, ed. Ward Churchill (Copenhagen: IWGIA, Doc. 68, 1991), pp. 154-75"
+      },
+      "plagiarizing": [
+        {"title": "In Usual and Accustomed Places", "credited_to": "Institute for Natural Progress",
+         "in": "The State of Native America: Genocide, Colonization, and Resistance, ed. M. Annette Jaimes (Boston: South End Press, 1992), pp. 217-39"}
+      ]
+    }
+  ],
+  "found_by": "University of Colorado at Boulder Investigative Committee, formal complaint process beginning 2005; independently corroborated for the Cohen instance by a 1997 Dalhousie University investigation (Cohen's own institution)"
+}

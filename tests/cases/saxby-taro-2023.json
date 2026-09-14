@@ -1,0 +1,36 @@
+{
+  "name": "saxby-taro-2023",
+  "description": "Solange Saxby's 2020 PhD dissertation on taro as a colorectal-cancer-preventive dietary prebiotic was plagiarized, with passages copied near-verbatim and uncited, by 'Taro Roots: An Underexploited Root Crop' (Ferdaus et al., Nutrients 2023). Saxby discovered it in 2024 and pushed for retraction/correction. See source_url.",
+  "source_url": "https://retractionwatch.com/2024/06/03/a-disturbing-experience-postdoc-fights-to-have-work-that-plagiarized-her-thesis-retracted/",
+  "papers": [
+    {
+      "title": "The Potential of Taro (Colocasia esculenta) as a Dietary Prebiotic Source for the Prevention of Colorectal Cancer",
+      "authors": ["Solange Majewska Saxby"],
+      "year": 2020,
+      "manual": {
+        "pdf_url": "http://hdl.handle.net/10125/73368",
+        "doi": null,
+        "oa_status": "manual",
+        "reason": "A PhD dissertation has no DOI/Crossref record for retrieve_papers.py to resolve; fetched by hand from University of Hawai'i at Manoa's ScholarSpace repository at test time (no local_path -- the PDF is a third party's copyrighted work this project doesn't hold redistribution rights to, so it's fetched fresh over the network each run rather than committed to the repo)."
+      }
+    },
+    {
+      "title": "Taro Roots: An Underexploited Root Crop",
+      "authors": ["Md. Jannatul Ferdaus", "Ezzine Chukwu-Munsen", "Aline Foguel", "Roberta Claro da Silva"],
+      "year": 2023,
+      "manual": {
+        "pdf_url": "https://www.mdpi.com/2072-6643/15/15/3337",
+        "doi": "10.3390/nu15153337",
+        "oa_status": "gold",
+        "reason": "Gold OA and likely Crossref-resolvable on its own, but pinned by hand to this exact URL (the v3 version the plagiarism was verified against) rather than left to DOI resolution, which could drift to a different version over time. Fetched fresh over the network each run (no local_path -- a third party's copyrighted work, not redistributed in this repo)."
+      }
+    }
+  ],
+  "assertions": [
+    {
+      "type": "min_similarity",
+      "pair": ["The Potential of Taro (Colocasia esculenta) as a Dietary Prebiotic Source for the Prevention of Colorectal Cancer", "Taro Roots: An Underexploited Root Crop"],
+      "threshold": 0.75
+    }
+  ]
+}

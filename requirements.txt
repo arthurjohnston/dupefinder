@@ -1,0 +1,10 @@
+requests>=2.32
+sentence-transformers>=3.0
+numpy>=1.26
+pymupdf>=1.24
+scikit-learn>=1.5   # train_boilerplate_family_classifier.py -- already present transitively via
+                     # sentence-transformers, listed explicitly now that it's a direct import too
+
+# extract_papers.py used to shell out to `pdftotext` (poppler-utils); it now
+# uses PyMuPDF (pip-installable, listed above) for layout-aware paragraph
+# extraction instead, so poppler-utils is no longer required.
