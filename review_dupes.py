@@ -59,6 +59,14 @@ shot (mark_same_paper()). Deliberately leaves status/reviewed_at alone -- this
 corrects a paper-identity mistake, not a verdict on the text -- so a future
 --cross-paper-only session won't show these again, but a plain rerun still can.
 
+(a)uthors-are-the-same is the metadata-correction counterpart for the other direction:
+the two papers ARE genuinely separate works, but a reviewer can tell they share an
+author that paper_authors metadata missed (a name variant, a pseudonym, byline
+build_dupe_candidates.py's same_author computation never saw) -- i.e. this is
+self-reuse, not independent copying. (a) corrects same_author to 1 on every
+potential_dupes row between that pair in one shot (mark_same_author()), leaving
+same_paper/chronology/status/reviewed_at untouched, same non-clobbering discipline as (p).
+
 The screen clears between candidates by default (ANSI escape codes, tty only -- never
 when output is piped/redirected) so each new candidate starts on a blank screen
 instead of scrolling past the last one; --no-clear turns this off.
@@ -103,9 +111,10 @@ ACTIONS = {"d": "confirmed", "f": "false_positive", "u": "unsure"}
 # an agent's verdict is not the same trust level as a human's, and collapsing them into
 # the same status would make it impossible to tell, later, which candidates still need a
 # human look and which were already reviewed by a person. See REVIEWING.md's "agent
-# review" section. "p" (papers-are-the-same) has no agent variant -- mark_same_paper()
-# never sets status/reviewed_at for humans either (see its own docstring), so there's
-# nothing to distinguish; an agent applying "p" uses the exact same function, unchanged.
+# review" section. "p" (papers-are-the-same) and "a" (authors-are-the-same) have no
+# agent variant -- mark_same_paper()/mark_same_author() never set status/reviewed_at
+# for humans either (see their own docstrings), so there's nothing to distinguish; an
+# agent applying "p"/"a" uses the exact same functions, unchanged.
 AGENT_STATUS_PREFIX = "agent_decided_"
 AGENT_ACTIONS = {
     "d": "agent_decided_dupe",
@@ -323,14 +332,16 @@ def apply_agent_verdict(conn, row, key):
     string as a parameter, so the bucket-cascade logic doesn't need duplicating for the
     agent path). Returns the set of potential_dupes ids touched, same contract as the
     mark_* functions, or {row['id']} for a plain d/f/u status write."""
-    if key not in ("d", "f", "b", "c", "p", "u"):
-        raise ValueError(f"unrecognized verdict key {key!r} -- must be one of d/f/b/c/p/u")
+    if key not in ("d", "f", "b", "c", "p", "a", "u"):
+        raise ValueError(f"unrecognized verdict key {key!r} -- must be one of d/f/b/c/p/a/u")
     if key == "b":
         return mark_bucket_status(conn, row, AGENT_ACTIONS["b"])
     if key == "c":
         return mark_bucket_status(conn, row, AGENT_ACTIONS["c"])
     if key == "p":
         return mark_same_paper(conn, row)  # no agent variant -- see AGENT_ACTIONS' comment
+    if key == "a":
+        return mark_same_author(conn, row)  # no agent variant either -- same reasoning
     conn.execute(
         "UPDATE potential_dupes SET status = ?, reviewed_at = ? WHERE id = ?",
         (AGENT_ACTIONS[key], time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), row["id"]),
@@ -480,6 +491,42 @@ def mark_same_paper(conn, row):
     return set(ids)
 
 
+def mark_same_author(conn, row):
+    """Handles the case where a reviewer can tell the two papers share an author that
+    paper_authors metadata doesn't capture (a name variant, a pseudonym, a byline
+    build_dupe_candidates.py's own same_author computation never saw) -- i.e. this is
+    self-reuse, not independent copying, even though the automated same_author flag says
+    otherwise. Corrects same_author to 1 for every potential_dupes row between that pair
+    of papers in one shot, the same one-press-covers-the-whole-pair convention
+    mark_same_paper() uses.
+
+    Deliberately leaves same_paper/earlier_paper_id/later_paper_id/later_cites_earlier
+    alone -- unlike mark_same_paper(), this isn't correcting a paper-identity mixup, so
+    those fields stay exactly as meaningful as they already were. Also deliberately does
+    NOT touch status/reviewed_at, for the same reason mark_same_paper() doesn't: this is a
+    metadata correction (same_author was computed wrong because paper_authors doesn't
+    capture the real overlap), not a human verdict on the paragraph text itself -- a
+    reviewer still separately marks the text match d/f/b/c/u. Returns the set of
+    potential_dupes ids corrected (including this row's own)."""
+    paper_id_1, paper_id_2 = row["paper_id_1"], row["paper_id_2"]
+    rows = conn.execute(
+        """
+        SELECT id FROM potential_dupes
+        WHERE (paper_id_1 = ? AND paper_id_2 = ?) OR (paper_id_1 = ? AND paper_id_2 = ?)
+        """,
+        (paper_id_1, paper_id_2, paper_id_2, paper_id_1),
+    ).fetchall()
+    ids = [r[0] for r in rows]
+    conn.executemany(
+        "UPDATE potential_dupes SET same_author = 1 WHERE id = ?",
+        [(i,) for i in ids],
+    )
+    conn.commit()
+    print(f"  marked {len(ids)} candidate(s) between these two papers as same_author "
+          f"(paper_id {paper_id_1} and {paper_id_2} share an author paper_authors metadata missed)")
+    return set(ids)
+
+
 def wrap(text, kind, use_color):
     if not text:
         return text
@@ -543,7 +590,7 @@ def print_candidate(row, use_color, index, total):
     if row["status"] in AGENT_DECIDED_STATUSES:
         banner = (
             f"  \U0001F916 AGENT VERDICT ({row['status']}) -- you are auditing an agent's call, "
-            f"not reviewing this fresh. A d/f/b/c/p/u press here overwrites it with your own "
+            f"not reviewing this fresh. A d/f/b/c/p/a/u press here overwrites it with your own "
             f"(human) verdict."
         )
         print(f"{YELLOW}{BOLD}{banner}{RESET}" if use_color else banner)
@@ -579,13 +626,13 @@ def read_key():
 
 def prompt_action():
     prompt = ("  (d)upe  (f)alse-positive  (b)oilerplate  (c)itation  (p)apers-are-the-same  "
-              "(u)nsure  (s)kip  (q)uit  (?)help > ")
+              "(a)uthors-are-the-same  (u)nsure  (s)kip  (q)uit  (?)help > ")
     sys.stdout.write(prompt)
     sys.stdout.flush()
     while True:
         ch = read_key()
         sys.stdout.write(ch + "\n")
-        if ch in ("d", "f", "b", "c", "p", "u", "s", "q"):
+        if ch in ("d", "f", "b", "c", "p", "a", "u", "s", "q"):
             return ch
         if ch in ("?", "h"):
             print("    d = confirmed duplicate   f = false positive   u = unsure")
@@ -595,6 +642,9 @@ def prompt_action():
             print("    p = these are two records of the same paper, not a real cross-paper")
             print("        match (also corrects same_paper=1 on every other candidate between")
             print("        this same pair of papers -- see mark_same_paper())")
+            print("    a = the two papers share an author metadata missed (self-reuse, not")
+            print("        independent copying) -- corrects same_author=1 on every other")
+            print("        candidate between this same pair (see mark_same_author())")
             print("    s = skip (leave unreviewed, see it again next time)   q = quit session")
         else:
             print("    unrecognized key")
@@ -682,11 +732,11 @@ def parse_args():
                          help="shortcut for --status set to every agent_decided_* value -- browse/audit "
                               "what agents have already reviewed instead of --status's default "
                               "'unreviewed'. Combine with the usual filters (--paper, --min-similarity, "
-                              "etc.) same as any other review session; a d/f/b/c/p/u press overwrites "
+                              "etc.) same as any other review session; a d/f/b/c/p/a/u press overwrites "
                               "the agent's verdict with your own, same as it would for any other status.")
     parser.add_argument("--agent-verdict", nargs=2, metavar=("ID", "KEY"),
                          help="non-interactive: apply one verdict to potential_dupes id ID as KEY "
-                              "(d/f/b/c/p/u, same letters as the interactive prompt) using the "
+                              "(d/f/b/c/p/a/u, same letters as the interactive prompt) using the "
                               "agent_decided_* status vocabulary (AGENT_ACTIONS), then exit -- no "
                               "review loop, no tty needed. For an agent working through an assigned "
                               "batch of candidate ids: fetch each id's text via --library-db queries "
@@ -721,8 +771,8 @@ def main():
             print(f"--agent-verdict: no potential_dupes row with id={candidate_id}")
             conn.close()
             sys.exit(1)
-        if key not in ("d", "f", "b", "c", "p", "u"):
-            print(f"--agent-verdict: {key!r} is not a valid verdict key (must be one of d/f/b/c/p/u)")
+        if key not in ("d", "f", "b", "c", "p", "a", "u"):
+            print(f"--agent-verdict: {key!r} is not a valid verdict key (must be one of d/f/b/c/p/a/u)")
             conn.close()
             sys.exit(1)
         print_candidate(row, sys.stdout.isatty() and not args.no_color, 0, 1)
@@ -788,6 +838,12 @@ def main():
 
         if action == "p":
             marked = mark_same_paper(conn, row)  # commits internally, cascades to the paper pair
+            resolved |= marked
+            reviewed += len(marked)
+            continue
+
+        if action == "a":
+            marked = mark_same_author(conn, row)  # commits internally, cascades to the paper pair
             resolved |= marked
             reviewed += len(marked)
             continue

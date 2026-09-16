@@ -202,6 +202,31 @@ class TestAgentVerdicts(unittest.TestCase):
         with self.assertRaises(ValueError):
             rd.apply_agent_verdict(self.conn, row, "x")
 
+    def test_agent_verdict_a_sets_same_author_without_touching_status_or_same_paper(self):
+        self._seed_pair(1, 10, 20, paper1=5, paper2=6)
+        row = rd.load_candidate_by_id(self.conn, 1)
+        rd.apply_agent_verdict(self.conn, row, "a")
+        same_author, same_paper, status = self.conn.execute(
+            "SELECT same_author, same_paper, status FROM potential_dupes WHERE id = 1"
+        ).fetchone()
+        self.assertEqual(same_author, 1)
+        self.assertEqual(same_paper, 0)  # left alone -- 'a' isn't a paper-identity correction
+        self.assertEqual(status, "unreviewed")  # untouched, matching the human 'a' path
+
+    def test_agent_verdict_a_cascades_to_every_row_between_the_same_pair(self):
+        # Same shape as mark_same_paper()'s own cascade: every potential_dupes row between
+        # the same two paper ids gets corrected, not just the one the reviewer looked at.
+        self._seed_pair(1, 10, 20, paper1=5, paper2=6)
+        self._seed_pair(2, 30, 40, paper1=5, paper2=6)
+        self._seed_pair(3, 50, 60, paper1=5, paper2=7)  # different pair -- must NOT be touched
+        row = rd.load_candidate_by_id(self.conn, 1)
+        marked = rd.apply_agent_verdict(self.conn, row, "a")
+        self.assertEqual(marked, {1, 2})
+        same_author = dict(self.conn.execute("SELECT id, same_author FROM potential_dupes"))
+        self.assertEqual(same_author[1], 1)
+        self.assertEqual(same_author[2], 1)
+        self.assertIsNone(same_author[3])
+
 
 if __name__ == "__main__":
     unittest.main()

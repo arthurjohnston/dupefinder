@@ -59,7 +59,9 @@ Two tools, different purposes:
    sides against every name on the other (including initials-only forms, e.g. "Smith A." vs "Smith.a" vs
    "A. S."), not just an exact string match — a name that looks different at a glance can still be the
    same person. Only once you've read both bylines directly does a "no shared name" conclusion actually
-   mean no shared author.
+   mean no shared author. If the bylines do show a shared name `same_author` missed, press `a` (see the
+   decision table below) rather than just noting it in a write-up — it corrects the database for every
+   `potential_dupes` row between that pair, not just the one you're looking at.
 7. **`later_cites_earlier`** — if 1, the later paper's reference list already names the earlier one, which
    changes "did they copy this" to "did they copy this *without* attributing the specific passage" —
    still worth flagging if it's a large uncited block, less clear-cut for a paraphrased sentence near a
@@ -89,6 +91,28 @@ Two tools, different purposes:
     from *each* paper_id's own extracted text (not just the matched passage) and confirm the subject
     matter is plausibly consistent with that paper_id's own title — a title/content mismatch here means
     the "duplicate" is a database bug, not a finding, regardless of how compelling the matched text looks.
+11. **Before using a matched passage as evidence, check whether it's actually both papers quoting the
+    same third party — not each other.** A literature-review or theoretical-framework section routinely
+    quotes named scholars directly and at length ("Denzin (2008) summarizes the framework as follows:
+    ...", "Goffman states, '...'"), and two papers covering the same theory will independently quote the
+    *same* canonical passage from that same third source — real, expected, unremarkable overlap that
+    proves nothing about one paper copying the other. Read the paragraph(s) immediately *before* the
+    matched text, in both papers, for a named-author "states/argues/describes/defines/summarizes ... as
+    follows:"-style lead-in, or literal quotation marks wrapping the matched span. If either paper frames
+    it that way, that specific passage is weak evidence and shouldn't be used to support a `d`/`confirmed`
+    verdict or a write-up, even if the shingle/lcs_ratio numbers on it look strong — go find the *next*
+    matching passage that's each paper's own synthesis/commentary prose instead. Confirmed for real
+    (2026-09-14, anthropology `flagged_cases/01`): a hand-picked "headline" example (the single longest
+    exact match in the whole pair, 82 words) turned out to be both documents quoting Denzin (2008)
+    verbatim, each with its own "(2008)... summarizes/summarises the interactionist framework as follows:"
+    lead-in — and five more examples in the same write-up had the identical problem, all in that
+    document's theory-heavy chapter. The overall finding still held (a shorter, less flashy synthesis
+    sentence a few paragraphs later replaced each one, and the case's whole-document match-count/word-count
+    totals were never affected since those come from the raw scan, not from which examples get quoted) —
+    but every individually-quoted example had to be re-vetted one at a time before the write-up was
+    trustworthy again. This check applies most to literature-review/theory prose; a matched passage
+    reporting a paper's *own* empirical results (a Results section, a data table) is inherently not a
+    third-party quotation and doesn't need this check.
 
 ## Decision table — verdict → keypress → what gets written where
 
@@ -102,6 +126,7 @@ All of this is in `library.sqlite3`'s `potential_dupes` table unless noted. Ever
 | Genuine reused boilerplate (disclaimer, template, license text, masthead, etc.) — see below for the "should this become a pattern" question first | `b` | `boilerplate` | **Cascades**: also marks every other `potential_dupes` row whose both paragraphs share this pair's LSH bucket cluster — see `mark_bucket_status()`. One press can resolve thousands of rows if the bucket is large. Overwrites any prior status on those rows. |
 | Two papers independently citing the same source, rendered as near-identical formatted citation text | `c` | `citation` | Same cascade as `b`, via the same `mark_bucket_status()` |
 | `paper_id_1`/`paper_id_2` are actually the *same underlying paper*, cataloged twice | `p` | *(unchanged)* | Sets `same_paper=1` and nulls `same_author`/`earlier_paper_id`/`later_paper_id`/`later_cites_earlier` on **every** `potential_dupes` row between those two paper ids (`mark_same_paper()`). Deliberately doesn't touch `status`/`reviewed_at` — it's a paper-identity correction, not a text verdict. |
+| Two separate papers genuinely share an author `same_author`/`paper_authors` metadata missed (point 6 above) | `a` | *(unchanged)* | Sets `same_author=1` on **every** `potential_dupes` row between those two paper ids (`mark_same_author()`). Leaves `same_paper`/chronology/`status`/`reviewed_at` alone — it's an authorship-metadata correction, not a text verdict. |
 | Not sure, want to decide later with fresh eyes | `u` | `unsure` | None |
 | Don't want to decide right now, come back to it | `s` | *(left `unreviewed`)* | Row reappears next session |
 
@@ -203,6 +228,7 @@ working through an assigned slice of the backlog.
 | `citation` (`c`) | `agent_decided_citation` |
 | `unsure` (`u`) | `agent_decided_unsure` |
 | *(`p`, papers-are-the-same)* | same as human — `mark_same_paper()` never sets `status` for either, nothing to distinguish |
+| *(`a`, authors-are-the-same)* | same as human — `mark_same_author()` never sets `status` for either, nothing to distinguish |
 
 This is deliberate, not cosmetic: an agent's verdict is a different trust level than a
 human's, and writing directly into `confirmed`/`boilerplate`/etc. would make it impossible
