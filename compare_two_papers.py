@@ -355,6 +355,16 @@ def main():
     parser.add_argument("--mismatch-penalty", type=int, default=1,
                          help="score subtracted per mismatched word during --x-drop extension "
                               "(a match always scores +1); only meaningful when --x-drop is set")
+    parser.add_argument("--sort-by-position", choices=["a", "b"], default=None,
+                         help="show shingle matches (Method 1 only) in reading order of the named "
+                              "side's own document (start-of-match word position) instead of the "
+                              "default longest-run-first -- useful when one side is known to be the "
+                              "later/plagiarizing document and you want to read the evidence the way "
+                              "it appears in that document, top to bottom. Applied AFTER --top-n-"
+                              "shingles selects which runs to show, same order write_dupe_reports_html.py's "
+                              "render_shingle_exhibits() already uses for its HTML exhibits (see its "
+                              "own docstring) -- this just exposes the same behavior here. Does not "
+                              "affect Method 2 (sentence-level) output, which has no equivalent flag.")
     parser.add_argument("--skip-sentences", action="store_true", help="run only the shingle scan")
     parser.add_argument("--skip-shingles", action="store_true", help="run only the sentence-level scan")
     parser.add_argument("--out", type=Path, default=None, help="also write the full combined report to this file")
@@ -411,11 +421,19 @@ def main():
         print(f"{len(shingle_runs)} maximal run(s) found (length >= {args.shingle_size} words), "
               f"showing top {len(shown_shingles)}")
 
+        sort_note = "match length descending"
+        if args.sort_by_position:
+            # start_a is shown_shingles[i][5], start_b is [i][7] -- see find_shingle_matches()'s
+            # return tuple order, unpacked below.
+            pos_index = 5 if args.sort_by_position == "a" else 7
+            shown_shingles = sorted(shown_shingles, key=lambda r: r[pos_index])
+            sort_note = f"reading order of Document {args.sort_by_position.upper()} (start-of-match position)"
+
         lines.append("")
         lines.append("=" * 100)
         lines.append(f"METHOD 1: exact {args.shingle_size}-word shingle matches{xdrop_note}")
         lines.append(f"{len(shown_shingles)} run(s) shown (of {len(shingle_runs)} total found), sorted by "
-                     f"match length descending")
+                     f"{sort_note}")
         lines.append("=" * 100)
         for length, para_a, para_b, text_a, text_b, _start_a, _end_a, _start_b, _end_b, substitutions in shown_shingles:
             lines.append("")

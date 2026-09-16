@@ -56,6 +56,11 @@ DEFAULT_SHINGLE_SIZE = 10  # see compare_two_papers.py's find_shingle_matches() 
 # but it also finds nothing this table doesn't already contain if every real match was already
 # above the LSH+cosine candidate-generation threshold; run alongside, not instead of.
 DEFAULT_MAX_SHINGLE_EXHIBITS = 50
+DEFAULT_MIN_SHINGLE_MATCHES = 10  # below this, a pair is skipped entirely (no file written) --
+# see --min-shingle-matches. Cheap noise filter: a pair whose only evidence is embedding
+# candidates plus a couple of short/no exact shingle runs isn't worth its own page by default;
+# --min-shingle-matches 0 (or any --ids/--paper-ids single-pair run you care about regardless,
+# e.g. a case like Taro/Saxby that was confirmed on lcs_ratio rather than shingles) overrides.
 
 
 def _find_token_span(tokens, needle_words):
@@ -232,6 +237,20 @@ h1 {
 }
 .summary-bar strong { color: var(--ink); font-variant-numeric: tabular-nums; font-weight: 600; }
 
+.actions {
+  margin-bottom: 2.75rem;
+}
+.actions .actions-label {
+  font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--ink-muted); margin: 0 0 0.6rem;
+}
+.actions pre {
+  background: var(--surface-2); border: 1px solid var(--border); border-radius: 3px;
+  padding: 0.7rem 0.9rem; margin: 0 0 0.6rem; overflow-x: auto;
+  font-family: var(--font-mono); font-size: 0.8rem; line-height: 1.5;
+}
+.actions pre .comment { color: var(--ink-muted); }
+
 .exhibit { margin-bottom: 2.75rem; }
 .exhibit-head {
   display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap;
@@ -384,7 +403,8 @@ def paper_authors(conn, paper_id):
 
 def render_case(conn, paper_id_1, paper_id_2, dupe_rows, source_note=None, short_title=None,
                  shingle_size=DEFAULT_SHINGLE_SIZE, max_shingle_exhibits=DEFAULT_MAX_SHINGLE_EXHIBITS,
-                 classification=None, mismatch_penalty=1, x_drop=None):
+                 classification=None, mismatch_penalty=1, x_drop=None,
+                 include_shingle_count_in_title=True, library_db_path=None):
     """dupe_rows: list of potential_dupes rows (sqlite3.Row) for this pair,
     already sorted the way they should display -- may be EMPTY: a pair found by
     find_title_bucket_dupes.py rather than the embedding-similarity pipeline can have zero
@@ -393,7 +413,11 @@ def render_case(conn, paper_id_1, paper_id_2, dupe_rows, source_note=None, short
     than crashing on an empty sims/lcs_vals list or claiming "0 candidate passages" as if the pair
     were weak. `short_title` is a 2-4 word product-style name for the <title> tag (a full "Paper A
     vs. Paper B" string is the right H1 but a bad browser-tab/gallery name) -- falls back to the
-    earlier paper's own title, truncated, when not given. `dupe_rows` itself is used only to
+    earlier paper's own title, truncated, when not given. Either way, the shingle-match count gets
+    appended both to the <title> tag (e.g. "Foo Bar (34 shingle matches)") and to the output
+    filename/slug (e.g. "foo-vs-bar-34-shingle-matches.html") when `shingle_size` is set, so a
+    directory or gallery of many pages can be triaged by scale without opening each one -- see
+    `include_shingle_count_in_title` to turn both off. `dupe_rows` itself is used only to
     find/group this pair and to summarize scale (passage count, similarity range, median LCS) in
     the header -- see the module docstring for why those rows aren't rendered as exhibits.
     `shingle_size` (None disables) runs an exact word-shingle scan across the two papers' complete
@@ -403,6 +427,16 @@ def render_case(conn, paper_id_1, paper_id_2, dupe_rows, source_note=None, short
     finding this is (e.g. computer-ethics/flagged_cases/README.md's paper-mill-vs-different-in-kind
     split), not something derivable from potential_dupes/the shingle scan, so it's passed in rather
     than computed here. None (default) renders no badge, unchanged from before this parameter existed.
+    Returns (slug, body, shingle_total) -- `shingle_total` (0 when `shingle_size` is None) lets a
+    caller decide whether the pair clears --min-shingle-matches before writing anything to disk.
+    `library_db_path` (a path string, not the open `conn`) renders a "mark this pair" block with the
+    actual `review_dupes.py --agent-verdict` commands a reviewer looking at this page can copy-paste
+    to record their verdict on the underlying database -- `p` (same paper, cataloged twice) and `a`
+    (same author, self-reuse metadata missed -- see REVIEWING.md point 6 and mark_same_author()) both
+    need a real `potential_dupes.id` to operate on (that's all `--agent-verdict` takes; the id is only
+    a handle since both cascade to every row between the pair), so the block is only rendered when
+    `dupe_rows` is non-empty AND `library_db_path` is given -- None (default) renders no block,
+    matching this page's behavior before this parameter existed.
     Returns (slug, html_str)."""
     p1 = conn.execute("SELECT title, year, doi FROM papers WHERE id=?", (paper_id_1,)).fetchone()
     p2 = conn.execute("SELECT title, year, doi FROM papers WHERE id=?", (paper_id_2,)).fetchone()
@@ -460,6 +494,8 @@ def render_case(conn, paper_id_1, paper_id_2, dupe_rows, source_note=None, short
 
     source_html = f'<p class="source-note">{source_note}</p>' if source_note else ""
     tab_title = short_title or (title1 if earlier_id != paper_id_2 else title2)[:40]
+    if shingle_size and include_shingle_count_in_title:
+        tab_title = f"{tab_title} ({shingle_total} shingle match{'es' if shingle_total != 1 else ''})"
 
     shingle_summary = (
         f'<span>exact shingle runs ({shingle_size}+ words) <strong>{shingle_total}</strong></span>'
@@ -494,6 +530,23 @@ def render_case(conn, paper_id_1, paper_id_2, dupe_rows, source_note=None, short
         f"{found_by} --no-shingles was set, so no exhibits are rendered below."
     )
     classification_html = f'<p class="classification">{html.escape(classification)}</p>' if classification else ""
+
+    actions_html = ""
+    if dupe_rows and library_db_path:
+        # Any row between the pair works -- both 'p' and 'a' cascade to every potential_dupes
+        # row between paper_id_1/paper_id_2 (mark_same_paper()/mark_same_author()), so this id
+        # is just a handle, not a claim that this specific row is the one being judged.
+        rep_id = dupe_rows[0]["id"]
+        db_arg = html.escape(str(library_db_path))
+        actions_html = f"""
+    <div class="actions">
+      <p class="actions-label">Mark this pair (review_dupes.py)</p>
+      <pre>python3 review_dupes.py --library-db {db_arg} --agent-verdict {rep_id} p
+<span class="comment"># same underlying paper, cataloged twice -- corrects same_paper=1 pair-wide</span></pre>
+      <pre>python3 review_dupes.py --library-db {db_arg} --agent-verdict {rep_id} a
+<span class="comment"># same author, self-reuse -- corrects same_author=1 pair-wide (see REVIEWING.md point 6)</span></pre>
+    </div>"""
+
     body = f"""<title>{html.escape(tab_title)}</title>
 <style>{STYLE}</style>
 <div class="page">
@@ -512,6 +565,7 @@ def render_case(conn, paper_id_1, paper_id_2, dupe_rows, source_note=None, short
       {candidate_summary}
       {shingle_summary}
     </div>
+    {actions_html}
   </div>
   {shingle_divider}
   {"".join(shingle_exhibits)}
@@ -519,7 +573,9 @@ def render_case(conn, paper_id_1, paper_id_2, dupe_rows, source_note=None, short
     (grouping/stats only) {f"and a {shingle_size}+-word exact word-shingle scan (exhibits)" if shingle_size else ""}.</footer>
 </div>"""
     slug = f"{slugify(title1)}-vs-{slugify(title2)}"
-    return slug, body
+    if shingle_size and include_shingle_count_in_title:
+        slug = f"{slug}-{shingle_total}-shingle-match{'es' if shingle_total != 1 else ''}"
+    return slug, body, shingle_total
 
 
 def parse_args():
@@ -566,6 +622,37 @@ def parse_args():
     parser.add_argument("--mismatch-penalty", type=int, default=1,
                          help="score subtracted per mismatched word during --x-drop extension; only "
                               "meaningful when --x-drop is set")
+    parser.add_argument("--min-shingle-matches", type=int, default=DEFAULT_MIN_SHINGLE_MATCHES,
+                         help=f"skip writing a pair's page entirely (no file) if its exact "
+                              f"word-shingle scan found fewer than this many runs (default "
+                              f"{DEFAULT_MIN_SHINGLE_MATCHES}) -- a noise filter, since embedding "
+                              f"candidates alone can surface pairs with no real verbatim overlap; "
+                              f"pass 0 to write every pair regardless (e.g. a case confirmed on "
+                              f"lcs_ratio rather than exact shingles, like Taro/Saxby). Has no "
+                              f"effect with --no-shingles, since there's no count to check then.")
+    parser.add_argument("--no-shingle-count-in-title", action="store_true",
+                         help="don't append the shingle-match count to the <title> tag or to the "
+                              "output filename/slug (e.g. 'foo-vs-bar-34-shingle-matches.html') -- "
+                              "on by default so a directory/gallery of many published pages can be "
+                              "triaged by scale without opening each one; has no effect with "
+                              "--no-shingles, since there's no count to append then")
+    parser.add_argument("--skip-identical-titles", action="store_true",
+                         help="skip a pair entirely (no file, no shingle scan run at all) when the "
+                              "two papers' titles are exactly identical after stripping whitespace "
+                              "-- these are almost always the 'same paper cataloged twice' case "
+                              "(see review_dupes.py's `p`/mark_same_paper()) rather than a genuine "
+                              "different-identity republication with its own evidence worth a page. "
+                              "Off by default.")
+    parser.add_argument("--min-year-gap", type=int, default=0,
+                         help="skip a pair (no file, no shingle scan run at all) unless the two "
+                              "papers' publication years differ by at least this many years "
+                              "(default 0 -- no effect, since a gap is always >= 0). Deliberately "
+                              "NOT a 'skip same-year pairs' filter defaulting on: same-year pairs "
+                              "include genuine confirmed findings in this corpus (e.g. a same-author "
+                              "thesis-and-paper pair published the same year), so skipping them by "
+                              "default would silently hide real evidence. A pair where either paper's "
+                              "year is unknown (NULL) is never skipped by this filter -- there's "
+                              "nothing to compare, so it errs toward writing the page.")
     return parser.parse_args()
 
 
@@ -595,8 +682,26 @@ def main():
     print(f"{len(rows)} row(s) across {len(groups)} paper pair(s)")
     single = len(groups) == 1
     shingle_size = None if args.no_shingles else args.shingle_size
+    skipped = 0
+    skipped_identical_titles = 0
+    skipped_year_gap = 0
     for (pid1, pid2), group_rows in groups.items():
-        slug, body = render_case(
+        if args.skip_identical_titles:
+            title1, title2 = (conn.execute("SELECT title FROM papers WHERE id=?", (pid,)).fetchone()[0]
+                               for pid in (pid1, pid2))
+            if title1.strip() == title2.strip():
+                skipped_identical_titles += 1
+                print(f"  skipped {pid1}/{pid2} (identical titles: {title1!r})")
+                continue
+        if args.min_year_gap:
+            year1, year2 = (conn.execute("SELECT year FROM papers WHERE id=?", (pid,)).fetchone()[0]
+                             for pid in (pid1, pid2))
+            if year1 is not None and year2 is not None and abs(year1 - year2) < args.min_year_gap:
+                skipped_year_gap += 1
+                print(f"  skipped {pid1}/{pid2} (years {year1}/{year2}, below --min-year-gap "
+                      f"{args.min_year_gap})")
+                continue
+        slug, body, shingle_total = render_case(
             conn, pid1, pid2, group_rows,
             source_note=args.source_note if single else None,
             short_title=args.title if single else None,
@@ -605,11 +710,29 @@ def main():
             classification=args.classification if single else None,
             mismatch_penalty=args.mismatch_penalty,
             x_drop=args.x_drop,
+            include_shingle_count_in_title=not args.no_shingle_count_in_title,
+            library_db_path=args.library_db,
         )
+        if shingle_size and shingle_total < args.min_shingle_matches:
+            skipped += 1
+            print(f"  skipped {pid1}/{pid2} ({shingle_total} shingle match"
+                  f"{'es' if shingle_total != 1 else ''}, below --min-shingle-matches "
+                  f"{args.min_shingle_matches})")
+            continue
         filename = f"{args.case_number}-{slug}.html" if (single and args.case_number) else f"{slug}.html"
         out_path = args.out_dir / filename
         out_path.write_text(body, encoding="utf-8")
         print(f"  wrote {out_path} ({len(group_rows)} passage(s))")
+
+    if skipped:
+        print(f"{skipped} pair(s) skipped entirely (below --min-shingle-matches "
+              f"{args.min_shingle_matches}) -- pass --min-shingle-matches 0 to write them anyway")
+    if skipped_identical_titles:
+        print(f"{skipped_identical_titles} pair(s) skipped entirely (identical titles) -- "
+              f"drop --skip-identical-titles to write them anyway")
+    if skipped_year_gap:
+        print(f"{skipped_year_gap} pair(s) skipped entirely (below --min-year-gap "
+              f"{args.min_year_gap}) -- lower --min-year-gap to write them anyway")
 
     conn.close()
 
