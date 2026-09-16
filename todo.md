@@ -1910,7 +1910,7 @@ touched-bucket subquery before the membership fetch) was deliberately **not** at
 identified, but core candidate-matching SQL is exactly the wrong place to rush a change under
 time/fatigue pressure, and the workaround below is safe and already validated instead.
 
-**The workaround actually used, tonight, successfully: `anthropology/batched_first_scan.py`.** Since the
+**The workaround actually used, tonight, successfully: `batched_first_scan.py`.** Since the
 real problem is "too many paragraphs are simultaneously 'new' in one call," not a bug in the algorithm's
 new/old pairing logic itself (which is correct and already handles cross-batch old/new pairs fine), the
 fix doesn't need to touch `lsh_index.py` at all: mark every pending paragraph `lsh_scanned` up front
@@ -1947,8 +1947,10 @@ just going to discard) would remove the need for this external batching workarou
 right thing to do eventually -- properly designed and tested, not rushed. Until then, any corpus-scale
 LSH candidate scan where most of the corpus is simultaneously "new" (a first-ever run, or a very large
 one-time embedding batch, rather than the small-trickle-of-new-paragraphs scenario the algorithm was
-originally tuned for) needs `anthropology/batched_first_scan.py`'s approach (or a copy of it pointed at
-the right `library.sqlite3`), not a direct `build_dupe_candidates.py` invocation.
+originally tuned for) needs `batched_first_scan.py` (`--library-db <corpus>/library.sqlite3`), not a
+direct `build_dupe_candidates.py` invocation. (Originally written and run as a hardcoded
+`anthropology/batched_first_scan.py`; generalized to flags and moved to the repo root 2026-09-16,
+unchanged in logic.)
 
 ## Same-year candidates are silently dropped from write_dupe_reports.py -- needs a real look
 
