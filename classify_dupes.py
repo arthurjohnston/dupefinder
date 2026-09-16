@@ -380,6 +380,45 @@ TEXT_PATTERNS = [
      r"im zusammenhang mit,? f.r oder in ki.systemen",
      "German AI-training/generative-model opt-out clause, found on a German-language paper -- likely to "
      "recur on other German papers from the same publisher/repository software"),
+    # Added 2026-09-15 -- found by a review subagent while working the computer-ethics same-author-reuse
+    # backlog (see todo.md); every one of these recurred across multiple distinct papers in that batch
+    # with ai_check NULL/'yes' beforehand, i.e. genuinely uncaught by the existing list, not a re-check.
+    (r"for release on delivery expected at|please contact me at \(202\) 512-|"
+     r"concludes my prepared statement|we are sending copies of this report to|"
+     r"objective,? scope,? and methodology our objective was to determine whether|"
+     r"certify that the state will maintain the level of spending",
+     "GAO (Government Accountability Office) congressional-testimony/report boilerplate"),
+    (r"the honorable .{0,60}chairman.{0,80}the honorable .{0,60}ranking member",
+     "GAO congressional-letter addressee/salutation boilerplate"),
+    (r"categories and subject descriptors",
+     "ACM pre-2012 paper-formatting 'Categories and Subject Descriptors' classification header -- a "
+     "generic formatting convention of that era, not author-specific content"),
+    (r"performing organi[sz]ation report no|performing organi[sz]ation name and address",
+     "Standard Form 298-style federal technical-report cover-sheet boilerplate"),
+    (r"the author affirms.{0,150}properly cited in accordance with apa",
+     "academic-integrity/citation-declaration boilerplate (requires both halves together, since 'the "
+     "author affirms' alone is common enough phrasing in genuine original prose to misfire on its own)"),
+    (r"the authors confirm to have complied with all relevant ethical regulations",
+     "Springer 'Statement of ethical compliance' boilerplate"),
+    (r"retraction notice.{0,60}retracted due to violating good publication practice",
+     "retraction-notice boilerplate ('violating Good Publication Practice' wording -- distinct from the "
+     "existing BMC/Springer 'no longer has confidence' retraction pattern above, a different template)"),
+    (r"leibniz international proceedings in informatics|schloss dagstuhl.{0,40}leibniz.zentrum",
+     "LIPIcs/Dagstuhl proceedings copyright/venue-footer boilerplate"),
+    (r"open access funding (provided|enabled)(?: and organi[sz]ed)? by",
+     "'Open Access funding provided/enabled (and organized) by <institution>' funder-acknowledgment "
+     "boilerplate (standard Springer/Nature institutional-open-access-agreement phrasing -- verified "
+     "against real corpus text: 'Open Access funding enabled and organized by Projekt DEAL' is the "
+     "actual recurring wording, not just 'enabled by' alone)"),
+    # Not added: an AI & Society "welcomes contributions..." editorial-boilerplate pattern and a
+    # European Social Survey fixed-Likert-scale-wording pattern, both from the same subagent report as
+    # everything else in this batch -- neither could be confirmed against real corpus text (every
+    # search for either turned up only unrelated prose coincidentally sharing a few words), unlike
+    # every other pattern here, so they were left out rather than shipped as unverified guesses. If
+    # either recurs and gets caught by hand again, get the exact wording from the actual paragraph
+    # text before adding it.
+    (r"iaeme\.com/home/journal|editor@iaeme\.com",
+     "IAEME journal masthead/running-header boilerplate (URL or editor email repeated on every page)"),
 ]
 _COMPILED_TEXT_PATTERNS = [(re.compile(p, re.IGNORECASE), label) for p, label in TEXT_PATTERNS]
 
