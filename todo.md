@@ -2652,3 +2652,37 @@ G. Johnson) and independently verified against Crossref's own `/journals/<issn>`
 writing). This is a precision-over-recall approach deliberately different from `--whole-prefix`'s
 recall-over-precision one -- worth extending with more journals from the same scholars' CVs if this
 batch's on-topic hit rate holds up once extracted.
+
+## Idea: bulk-precompute shingle-match counts as a review triage signal (2026-09-15, not implemented)
+
+Raised while dispatching a review pass over a large (~7,156-pair) `ai_check='yes'` backlog: would
+restricting review to pairs with a minimum exact word-shingle match count (`compare_two_papers.py`'s
+`find_shingle_matches()`, run across each pair's *complete* documents, not just the one paragraph that
+originally surfaced the candidate) be a useful optimization?
+
+**Partial yes, with an important limit.** A pair with zero shingle overlap despite a high embedding-
+similarity paragraph match is a cheap, mechanical way to catch a real failure mode this project's own
+docs already name -- cosine similarity "fooled by two paragraphs that are merely on the same narrow
+topic" -- so pre-filtering those out (or just deprioritizing them) would save real review time, and it's
+effectively automating the exact verification step REVIEWING.md's "Writing up a confirmed case" section
+already says to run before calling anything confirmed, just moved earlier and applied in bulk instead of
+only on already-promising finalists. It'd also work as a ranking signal: every real finding so far has
+had a substantial run (9 to 254 shingle-match runs, hundreds to thousands of matched words), so sorting
+a backlog by shingle-match count/total words and reviewing the top of that list first should front-load
+the highest-yield candidates.
+
+**What it does NOT solve**: separating genuine misconduct from boilerplate/citation. Boilerplate *is*
+verbatim reused text (a repeated disclaimer, a standard methodology paragraph, a shared citation string)
+so it produces plenty of exact shingle matches too -- a `>=N shingles` threshold would let nearly all of
+it through just as easily as a real case. The last hand-reviewed batch was ~97% boilerplate/citation
+(624 of 640 pairs) despite already being pre-filtered through `classify_dupes.py`'s `ai_check='yes'`
+pattern-matching; a shingle-count filter on top wouldn't have shrunk that bulk. `classify_dupes.py`'s
+`TEXT_PATTERNS` coverage (or the reviewer's own judgment) is still the actual lever for that half of the
+problem.
+
+**Not yet built**: a script that runs the shingle scan across every `potential_dupes` pair in a review
+batch upfront, stores the count/total-words alongside the row (or in a side table), and lets a review
+pass sort/filter on it before touching REVIEWING.md's judgment questions at all. Would need to size the
+real cost of running `find_shingle_matches()` (loads and scans both complete documents) across
+thousands of pairs at once before deciding whether it's cheap enough to run unconditionally versus only
+on a pre-narrowed set.
