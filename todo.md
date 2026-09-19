@@ -2688,3 +2688,55 @@ pass sort/filter on it before touching REVIEWING.md's judgment questions at all.
 real cost of running `find_shingle_matches()` (loads and scans both complete documents) across
 thousands of pairs at once before deciding whether it's cheap enough to run unconditionally versus only
 on a pre-narrowed set.
+
+## Author homepage/CV retrieval pilot (2026-09-18)
+
+`bulk_retrieve_author_homepages.py`, run on the top 100 authors (by paper count) of *Ethics and
+Information Technology*, *Philosophy & Technology*, *AI and Ethics* and *AI & Society* (Science and
+Engineering Ethics deliberately left out -- its top authors are research-ethics, not computer ethics). No
+flagged-case authors were in that top 100.
+
+Funnel: 100 -> 78 with an ORCID -> 37 with a homepage on ORCID/Wikidata (Wikidata added 4) -> 28 with a
+missing work matched on their site -> 9 with a verified download. 91 verified PDFs total; 64 of them
+OpenAlex had no OA location for (i.e. unreachable by every other retrieval path here). Every one
+hand-checked for its title at the top of page 1 -- all correct. The title-on-first-2-pages check rejected
+225 wrong files (a neighbouring list entry's PDF, slides under the same title).
+
+Concentrated: Takayuki Kanda 51 (lab page with direct links; HRI robotics, off-topic -- held back in
+`computer-ethics/homepage_downloads/held_offtopic/`, not imported), Coeckelbergh 18, Marin 6, Capurro 5,
+Lütge 3, Steen 3, Veluwenkamp 2, Gordon 2, Kempt 1. The other 40 were imported into computer-ethics.
+
+Why the yield is low: 63/100 have no findable homepage (many senior specialists have no ORCID at all);
+many "homepages" are Pure/university profile pages without PDF links, or JavaScript-rendered (the crawler
+sees nothing -- van den Hoven, Pagallo, Shin); most matched links point to publishers (403 / HTML, 1,324
+"not a PDF"). Floridi: 745 missing works, 0 got. Roughly one new paper per author tried -- a modest
+supplement, carried by the few authors who self-archive on their own sites.
+
+Bug hit and fixed during import: the manifest wrote `authors` as a JSON list, but `state.sqlite3` stores
+it as a JSON *string* (`import_manual_downloads.py` crashed binding a list).
+
+
+**Review of the pilot's candidates (2026-09-19):** all 121 open candidates (cross-paper, cross-author,
+`ai_check IS NULL`) involving the 40 imported papers were reviewed. No real duplication. 86 were
+publisher/repository boilerplate (Emerald, Taylor & Francis, Open University ORO, MDPI, AOSIS, Wiley,
+CRediT) -- applied row-by-row, NOT via the `b` bucket cascade, since an agent cascade overwrites prior
+human verdicts in the same bucket; 7 false positives (same topic, different wording); 27 were "Digital
+Slot Machines" vs. its own published Correction, which reprints the whole article (`p`, 54 rows between
+that pair corrected); 1 pair was Lavinia Marin on both sides, missed by `same_author` because one record
+has "Marin, Lavinia" and the other "Lavinia Marin" (`a`). That name-order miss is a real, general
+`same_author` gap worth fixing at the source. The 7 boilerplate families were added to
+`classify_dupes.py`'s `TEXT_PATTERNS` (none were covered before, not even MDPI's license footer);
+re-running `classify_dupes.py` marked 232 more corpus-wide rows `ai_check='no'`.
+`embed_paragraphs.py --reclassify-existing-boilerplate` has NOT been run for them yet.
+
+**`same_author` name-order fix (2026-09-19):** `build_dupe_candidates.py` now computes `same_author`
+from normalized author names (`load_paper_author_keys()`, reusing `resolve_author_openalex_ids.py`'s
+`normalize_author_name()`) instead of `author_id`, and `backfill_same_author()` flips existing rows
+0 -> 1 on every run (never 1 -> 0, never touches status). Also fixed `normalize_author_name()` dropping
+letters NFKD doesn't decompose ("Søren" -> "sren"). Exact match only after normalization -- no initials
+or fuzzy matching, since a wrong `same_author=1` hides a real cross-author case. Applied: 584 rows on
+computer-ethics (276 paper pairs; 15-pair random sample all genuinely the same person; none were
+`confirmed`/`agent_decided_dupe`), 97 on anthropology; `classify_dupes.py` then marked 441 / 78 of them
+`ai_check='yes'` (self-reuse). Known remaining gap: `build_dupe_candidates.py`'s upsert still overwrites
+`same_author` on a re-scanned pair, so a manual `(a)` correction for a variant this normalization can't
+catch (initials, transliterations) could be reverted by a `--full-rescan`.

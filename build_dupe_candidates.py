@@ -69,6 +69,7 @@ import find_duplicate_papers
 import find_duplicates as fd
 import lsh_index
 import text_overlap
+from resolve_author_openalex_ids import normalize_author_name
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)-7s %(message)s", datefmt="%H:%M:%S")
 logger = logging.getLogger("build_dupe_candidates")
@@ -164,6 +165,39 @@ def load_paper_authors(conn):
     for paper_id, author_id in conn.execute("SELECT paper_id, author_id FROM paper_authors"):
         authors_by_paper.setdefault(paper_id, set()).add(author_id)
     return authors_by_paper
+
+
+def load_paper_author_keys(conn):
+    """paper_id -> set of normalized author names (normalize_author_name(): "Last, First" flipped to
+    "First Last", accents/punctuation/case stripped). What same_author is computed from, rather than
+    author_id: the `authors` table is keyed by the raw name string, and upstream sources disagree on
+    order, so one person routinely has two author_ids -- "Marin, Lavinia" (Zenodo/DataCite) vs.
+    "Lavinia Marin" (Crossref). Comparing ids missed 583 genuine same-author rows on the
+    computer-ethics corpus (2026-09-19, see todo.md), each then surfacing as a fake cross-author
+    candidate. Deliberately exact after normalization -- no initials/fuzzy matching: a wrong
+    same_author=1 hides a real cross-author case from review, which is the expensive direction."""
+    keys_by_paper = {}
+    for paper_id, name in conn.execute(
+            "SELECT pa.paper_id, a.name FROM paper_authors pa JOIN authors a ON a.id = pa.author_id"):
+        key = normalize_author_name(name)
+        if key:
+            keys_by_paper.setdefault(paper_id, set()).add(key)
+    return keys_by_paper
+
+
+def backfill_same_author(conn, author_keys_by_paper):
+    """Flip same_author 0 -> 1 on existing rows whose papers share a normalized author name -- rows
+    persisted before load_paper_author_keys() existed, which incremental scanning never revisits.
+    Only ever 0 -> 1 (the same correction review_dupes.py's (a) key makes), never touching
+    status/reviewed_at. Cheap enough to run every time: one pass over same_author=0 rows."""
+    rows = conn.execute(
+        "SELECT id, paper_id_1, paper_id_2 FROM potential_dupes WHERE same_paper = 0 AND same_author = 0"
+    ).fetchall()
+    ids = [row_id for row_id, a, b in rows
+           if author_keys_by_paper.get(a, set()) & author_keys_by_paper.get(b, set())]
+    conn.executemany("UPDATE potential_dupes SET same_author = 1 WHERE id = ?", [(i,) for i in ids])
+    conn.commit()
+    return len(ids)
 
 
 def load_citations(conn):
@@ -279,7 +313,7 @@ def read_pairs_in_batches(conn, table, batch_size):
 def process_lsh_candidates_streaming(conn, threshold, min_length, max_bucket_size, full_rescan, max_candidate_pairs,
                                       ngram_size, titles_by_paper, authors_by_paper, citations_by_paper, years,
                                       duplicate_paper_pairs, logger_=None, group_batch_size=50_000,
-                                      pair_batch_size=200_000):
+                                      pair_batch_size=200_000, author_keys_by_paper=None):
     """End-to-end streaming replacement for pairs_from_lsh() + a single
     build_candidates() call, added 2026-08-26 after a real OOM: at this
     corpus's post-21-bit-rehash bucket density, a --full-rescan's candidate
@@ -349,7 +383,8 @@ def process_lsh_candidates_streaming(conn, threshold, min_length, max_bucket_siz
 
         if pairs:
             build_candidates(conn, pairs, titles_by_paper, authors_by_paper, citations_by_paper, years,
-                              ngram_size, logger_=logger_, duplicate_paper_pairs=duplicate_paper_pairs)
+                              ngram_size, logger_=logger_, duplicate_paper_pairs=duplicate_paper_pairs,
+                              author_keys_by_paper=author_keys_by_paper)
             total_persisted += len(pairs)
         if logger_:
             logger_.info("batch %d done: %d candidate(s) persisted this batch, %d total so far",
@@ -401,7 +436,10 @@ def delete_orphaned_candidates(conn):
 
 
 def build_candidates(conn, pairs, titles_by_paper, authors_by_paper, citations_by_paper, years, ngram_size,
-                      logger_=None, duplicate_paper_pairs=None):
+                      logger_=None, duplicate_paper_pairs=None, author_keys_by_paper=None):
+    """author_keys_by_paper: load_paper_author_keys()'s normalized-name sets, what same_author is
+    computed from. None falls back to comparing authors_by_paper's author_ids (the old behavior,
+    kept for callers/tests that don't load names)."""
     now = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     author_links = []
     duplicate_paper_pairs = duplicate_paper_pairs or set()
@@ -431,8 +469,9 @@ def build_candidates(conn, pairs, titles_by_paper, authors_by_paper, citations_b
         # author of the older paper is also the author of the newer paper..."); for a
         # same-paper pair it would be vacuously true (a paper always shares its own authors
         # with itself), so it's left NULL there rather than reporting a meaningless 1.
+        author_sets = author_keys_by_paper if author_keys_by_paper is not None else authors_by_paper
         same_author = None if same_paper else bool(
-            authors_by_paper.get(paper_id_a, set()) & authors_by_paper.get(paper_id_b, set())
+            author_sets.get(paper_id_a, set()) & author_sets.get(paper_id_b, set())
         )
 
         earlier_id, later_id = (None, None) if same_paper else chronology(paper_id_a, paper_id_b, years)
@@ -532,6 +571,10 @@ def main():
     logger.info("looking up papers/authors/citations for enrichment...")
     titles_by_paper = dict(conn.execute("SELECT id, title FROM papers"))
     authors_by_paper = load_paper_authors(conn)
+    author_keys_by_paper = load_paper_author_keys(conn)
+    flipped = backfill_same_author(conn, author_keys_by_paper)
+    if flipped:
+        logger.info("corrected same_author 0 -> 1 on %d existing candidate(s) (author name-order variants)", flipped)
     citations_by_paper = load_citations(conn)
     years = load_paper_years(conn)
     duplicate_paper_pairs = load_duplicate_paper_pairs(conn)
@@ -555,7 +598,8 @@ def main():
         pairs = fd.find_pairs(rows, mat, args.threshold, cross_paper_only=False, min_length=args.min_length)
         logger.info("persisting %d candidate pair(s) into potential_dupes...", len(pairs))
         build_candidates(conn, pairs, titles_by_paper, authors_by_paper, citations_by_paper, years, args.ngram_size,
-                          logger_=logger, duplicate_paper_pairs=duplicate_paper_pairs)
+                          logger_=logger, duplicate_paper_pairs=duplicate_paper_pairs,
+                          author_keys_by_paper=author_keys_by_paper)
         n_pairs_this_run = len(pairs)
     else:
         count = conn.execute("SELECT COUNT(*) FROM paragraphs WHERE embedding IS NOT NULL").fetchone()[0]
@@ -574,6 +618,7 @@ def main():
             conn, args.threshold, args.min_length, args.max_bucket_size, args.full_rescan, args.max_candidate_pairs,
             args.ngram_size, titles_by_paper, authors_by_paper, citations_by_paper, years, duplicate_paper_pairs,
             logger_=logger, group_batch_size=args.group_batch_size, pair_batch_size=args.pair_batch_size,
+            author_keys_by_paper=author_keys_by_paper,
         )
         logger.info("done: %d candidate pair(s) persisted into potential_dupes", total_persisted)
         n_pairs_this_run = total_persisted

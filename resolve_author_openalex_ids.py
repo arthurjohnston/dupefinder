@@ -86,6 +86,11 @@ def init_table(conn):
 
 _COMMA_SPLIT_RE = re.compile(r"\s*,\s*")
 _PUNCT_RE = re.compile(r"[^\w\s]")
+# Letters NFKD leaves undecomposed, which the ASCII encode below would otherwise just drop
+# ("Søren" -> "sren", never matching "Soren").
+_NON_DECOMPOSING = str.maketrans({"ø": "o", "Ø": "O", "æ": "ae", "Æ": "AE", "œ": "oe", "Œ": "OE", "ß": "ss",
+                                   "ł": "l", "Ł": "L", "đ": "d", "Đ": "D", "ð": "d", "Ð": "D", "þ": "th",
+                                   "Þ": "Th", "ı": "i"})
 _WHITESPACE_RE = re.compile(r"\s+")
 
 
@@ -101,7 +106,7 @@ def normalize_author_name(name):
     parts = _COMMA_SPLIT_RE.split(name.strip(), maxsplit=1)
     if len(parts) == 2:
         name = f"{parts[1]} {parts[0]}"
-    unescaped = unicodedata.normalize("NFKD", name).encode("ascii", "ignore").decode("ascii")
+    unescaped = unicodedata.normalize("NFKD", name.translate(_NON_DECOMPOSING)).encode("ascii", "ignore").decode("ascii")
     stripped = _PUNCT_RE.sub(" ", unescaped.lower())
     return _WHITESPACE_RE.sub(" ", stripped).strip()
 

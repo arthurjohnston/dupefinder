@@ -288,7 +288,9 @@ from 0.90 after the project's own best-documented ground-truth case, Saxby/Taro,
 0.877 and was missed entirely; see build_dupe_candidates.py's `DEFAULT_THRESHOLD` comment) into
 `library.sqlite3`'s `potential_dupes` table, enriched with filterable flags:
 - `same_author` — the two papers share an author (NULL, not 0, for same-paper pairs, where it would be
-  vacuously true and therefore meaningless).
+  vacuously true and therefore meaningless). Compared on normalized author *names* (`load_paper_author_keys()`:
+  "Last, First" flipped, accents/case/punctuation stripped), not `author_id` -- one person routinely has
+  two `authors` rows under different name orders; `backfill_same_author()` corrects older rows every run.
 - `earlier_paper_id`/`later_paper_id` — resolved by `year`; both NULL when years are equal/missing rather
   than guessed. NULL for same-paper pairs too.
 - `later_cites_earlier` — heuristic (significant-word overlap, `CITATION_WORD_OVERLAP = 0.7`, similar in
@@ -498,6 +500,18 @@ field as a second fallback if Unpaywall has nothing on file for that DOI at all 
 DataCite-registered DOIs than Crossref-registered ones). Confirmed this fallback is load-bearing, not
 optional, on a live test batch: 0/15 downloaded without it, 5/15 with it (KAUST, Alberta, Cambridge,
 EPFL, UT Austin repositories all rescued from a landing-page-only Unpaywall response).
+
+### `bulk_retrieve_author_homepages.py` — author-posted PDFs from homepages/CVs
+
+For papers no index has an OA copy of: picks the top authors of dedicated computer-ethics journals
+(OpenAlex `group_by` over `DEFAULT_ISSNS`, skipping anyone named in `flagged_cases/`), finds each one's
+homepage by identifier only (ORCID `researcher-urls`, then Wikidata "official website" by OpenAlex ID/
+ORCID -- never a name search), crawls it plus up to `--max-pages` publication/CV-looking pages (robots.txt
+honored; a PDF CV's link annotations read via PyMuPDF), matches links to the author's missing works by the
+title in the text around the link, and keeps a download only if the title is on the PDF's first two pages.
+Output is staged in `--out-dir` with a `list_manual_downloads.py`-format `_manifest.json` (import with
+`import_manual_downloads.py`) plus a per-author `_report.json`. Pilot results (100 authors, 2026-09-18) are
+in todo.md's "Author homepage/CV retrieval pilot".
 
 ## Two databases, deliberately separate
 
