@@ -23,6 +23,7 @@ touches either database.
     python3 mill_prefix_audit.py harvest --email you@example.com --prefix 10.34218 --prefix 10.63282
     python3 mill_prefix_audit.py report --min-cluster 2
     python3 mill_prefix_audit.py enrich --email you@example.com --min-papers 3   # OpenAlex author lookup
+    python3 mill_prefix_audit.py verify --library-db computer-ethics/library.sqlite3  # text-check the clusters
 """
 
 import argparse
@@ -273,9 +274,69 @@ def enrich(conn, args):
     conn.commit()
 
 
+def verify(conn, args):
+    """Text-check every different-author title cluster against the corpus's extracted text.
+
+    A shared title is only a lead -- two papers can carry the same generic title and share
+    nothing. This resolves each cluster's DOIs to papers already extracted into library.sqlite3
+    and runs compare_two_papers.py's exact word-shingle matcher across the two complete
+    documents, so what comes out is ranked by actual verbatim overlap rather than by title.
+    Pairs are reported, not judged: REVIEWING.md's checks (byline read from the PDF, content
+    matching its own title, citation check) still have to happen before anything is a case."""
+    import compare_two_papers as ctp
+    lib = sqlite3.connect(args.library_db, timeout=120)
+    ids = {}
+    for pid, doi in lib.execute("SELECT id, doi FROM papers WHERE doi IS NOT NULL"):
+        ids[doi.lower()] = pid
+
+    seen_pairs, results = set(), []
+    for column in ("norm_title", "token_key"):
+        for key, works in title_clusters(conn, 2, column).items():
+            if classify_cluster(works) != "different-author":
+                continue
+            resolved = [(w, ids[w["doi"]]) for w in works if w["doi"] in ids]
+            for i, (work_a, pid_a) in enumerate(resolved):
+                for work_b, pid_b in resolved[i + 1:]:
+                    pair = tuple(sorted((pid_a, pid_b)))
+                    if pair in seen_pairs:
+                        continue
+                    seen_pairs.add(pair)
+                    words_a = ctp.load_paper_words(lib, pid_a)
+                    words_b = ctp.load_paper_words(lib, pid_b)
+                    if len(words_a) < args.min_doc_words or len(words_b) < args.min_doc_words:
+                        continue
+                    runs = ctp.find_shingle_matches(words_a, words_b, shingle_size=args.shingle_size,
+                                                     x_drop=args.x_drop)
+                    if not runs:
+                        continue
+                    covered = set()
+                    for r in runs:
+                        covered.update(range(r[5], r[6]))
+                    total = len(covered)
+                    if total < args.min_words:
+                        continue
+                    results.append({"paper_a": pid_a, "paper_b": pid_b, "runs": len(runs),
+                                     "matched_words": total, "longest": runs[0][0],
+                                     "pct_of_shorter": 100 * total / min(len(words_a), len(words_b)),
+                                     "work_a": work_a, "work_b": work_b})
+            LOGGER.debug("cluster done: %s", key[:60])
+    results.sort(key=lambda r: -r["matched_words"])
+    LOGGER.info("%d pair(s) compared, %d with >= %d matched words", len(seen_pairs), len(results), args.min_words)
+    for r in results[:args.show]:
+        a, b = r["work_a"], r["work_b"]
+        print(f"\n{r['matched_words']:6} matched words | {r['runs']:3} runs | longest {r['longest']:4} | "
+              f"{r['pct_of_shorter']:.0f}% of shorter | ids {r['paper_a']}/{r['paper_b']}")
+        print(f"   {a['title'][:88]}")
+        for w in (a, b):
+            print(f"     {w['published'] or '?':10} {w['doi']:44} {', '.join(w['authors'])[:44]:44} {w['container'][:34]}")
+    if args.out:
+        Path(args.out).write_text(json.dumps(results, indent=2), encoding="utf-8")
+        LOGGER.info("wrote %s", args.out)
+
+
 def parse_args():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("command", choices=("harvest", "report", "enrich"))
+    p.add_argument("command", choices=("harvest", "report", "enrich", "verify"))
     p.add_argument("--db", type=Path, default=Path("computer-ethics/mill_metadata.sqlite3"))
     p.add_argument("--prefix", dest="prefixes", action="append", default=None,
                     help="DOI prefix to harvest (repeatable); harvest only")
@@ -283,6 +344,13 @@ def parse_args():
     p.add_argument("--min-cluster", type=int, default=2, help="report: minimum works sharing a title key")
     p.add_argument("--show", type=int, default=25, help="report: how many clusters/authors to print")
     p.add_argument("--min-papers", type=int, default=3, help="enrich: look up authors with >= this many works")
+    p.add_argument("--library-db", type=Path, default=Path("computer-ethics/library.sqlite3"),
+                    help="verify: corpus database holding the extracted paragraph text")
+    p.add_argument("--min-words", type=int, default=150, help="verify: minimum matched words to report a pair")
+    p.add_argument("--min-doc-words", type=int, default=300, help="verify: skip papers with less text than this")
+    p.add_argument("--shingle-size", type=int, default=10, help="verify: exact-match window, in words")
+    p.add_argument("--x-drop", type=int, default=3, help="verify: tolerance for isolated substituted words")
+    p.add_argument("--out", default=None, help="verify: also write full results as JSON here")
     p.add_argument("--min-interval", type=float, default=0.5)
     p.add_argument("--max-retries", type=int, default=3)
     p.add_argument("--timeout", type=float, default=60.0)
@@ -299,7 +367,7 @@ def main():
     args.db.parent.mkdir(parents=True, exist_ok=True)
     conn = sqlite3.connect(args.db, timeout=120)
     init_db(conn)
-    {"harvest": harvest, "report": report, "enrich": enrich}[args.command](conn, args)
+    {"harvest": harvest, "report": report, "enrich": enrich, "verify": verify}[args.command](conn, args)
     conn.close()
 
 
