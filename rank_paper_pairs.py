@@ -57,6 +57,19 @@ def rank_by_row_count(conn, where, limit):
     ).fetchall()
 
 
+def all_pairs_among(conn, paper_where, limit):
+    """Every pair among the papers matching a predicate -- for asking "is this whole GROUP of
+    papers built from one document?" rather than triaging an existing candidate backlog.
+
+    How case 38 (one college's 143 papers in one publisher's journals) was found: that pattern
+    never surfaces from potential_dupes ranking alone, because it isn't one suspicious pair, it's
+    a population. Quadratic by construction, so --max-group caps the set; 143 papers (10,153
+    pairs) took about 20 seconds.
+    """
+    ids = [r[0] for r in conn.execute(f"SELECT id FROM papers WHERE {paper_where} LIMIT ?", (limit,))]
+    return [(a, b, 0) for i, a in enumerate(ids) for b in ids[i + 1:]], len(ids)
+
+
 def paper_meta(conn, paper_id):
     row = conn.execute("SELECT title, year, doi FROM papers WHERE id = ?", (paper_id,)).fetchone()
     if not row:
@@ -131,6 +144,11 @@ def parse_args():
     p.add_argument("--shingle-size", type=int, default=10)
     p.add_argument("--x-drop", type=int, default=3)
     p.add_argument("--where", default=BACKLOG_WHERE, help="SQL predicate selecting the backlog to triage")
+    p.add_argument("--paper-where", default=None,
+                    help="instead of the potential_dupes backlog, compare EVERY pair among the papers "
+                         "matching this predicate on the papers table, e.g. \"doi LIKE '10.64751%%'\" -- "
+                         "quadratic, so keep the group small (see --max-group)")
+    p.add_argument("--max-group", type=int, default=200, help="--paper-where: cap on papers in the group")
     p.add_argument("--out", type=Path, default=None, help="write the ranked report here (default: stdout)")
     p.add_argument("--json-out", type=Path, default=None, help="also write full results as JSON")
     return p.parse_args()
@@ -139,9 +157,13 @@ def parse_args():
 def main():
     args = parse_args()
     conn = sqlite3.connect(args.library_db, timeout=120)
-    pairs = rank_by_row_count(conn, args.where, args.top_pairs)
-    print(f"{len(pairs)} pair(s) to text-check (most candidate rows first; "
-          f"top pair has {pairs[0][2] if pairs else 0})", file=sys.stderr)
+    if args.paper_where:
+        pairs, n_papers = all_pairs_among(conn, args.paper_where, args.max_group)
+        print(f"{n_papers} paper(s) match -- {len(pairs)} pair(s) to text-check", file=sys.stderr)
+    else:
+        pairs = rank_by_row_count(conn, args.where, args.top_pairs)
+        print(f"{len(pairs)} pair(s) to text-check (most candidate rows first; "
+              f"top pair has {pairs[0][2] if pairs else 0})", file=sys.stderr)
 
     results, started = [], time.time()
     for i, (paper_a, paper_b, rows) in enumerate(pairs, 1):
