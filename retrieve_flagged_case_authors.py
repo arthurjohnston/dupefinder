@@ -31,8 +31,8 @@ each row came from). Not tracked in git -- the specific authors/cases being chec
 data, not code; keep that file wherever your case notes already live.
 
 Usage:
-    python3 retrieve_flagged_case_authors.py --email you@example.com --targets-file authors.json --dry-run
-    python3 retrieve_flagged_case_authors.py --email you@example.com --targets-file authors.json
+    python3 retrieve_flagged_case_authors.py --email you@your-institution.edu --targets-file authors.json --dry-run
+    python3 retrieve_flagged_case_authors.py --email you@your-institution.edu --targets-file authors.json
 """
 import argparse
 import json

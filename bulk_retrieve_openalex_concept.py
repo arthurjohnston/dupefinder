@@ -46,7 +46,7 @@ OpenAlex-dependent script here does when the budget/rate-limit is hit
 crash).
 
 Usage:
-    python3 bulk_retrieve_openalex_concept.py --email you@example.com \\
+    python3 bulk_retrieve_openalex_concept.py --email you@your-institution.edu \\
         --concept-id C19165224 --db anthropology/state.sqlite3 --outdir anthropology/papers \\
         --max-results 50000 --dry-run
 """

@@ -13,11 +13,9 @@ The purpose of this project is to find plagiarisms as they are unethical and mak
 
 4. Manually chase down papers retrieve_papers.py couldn't get automatically (no OA copy found,
    DOI unknown to Unpaywall, blocked download, etc.) via Google Scholar / publisher sites by hand.
-   export_missing_papers.py dumps every non-downloaded state.sqlite3 row (title/authors/year/doi/
-   status/error + a ready-made Google Scholar search link per row) to not_found_papers.csv --
-   `status` column tells you which are worth chasing (no_oa/doi_unknown_to_unpaywall are given up
-   on for good barring --recheck; error/oa_url_not_pdf get auto-retried on the next
-   retrieve_papers.py run on their own). Generated once the current OA-candidate batch finishes.
+   Now handled by list_manual_downloads.py / import_manual_downloads.py (README's "Runbook: getting a
+   manually-downloaded paper into the pipeline"); the earlier export_missing_papers.py CSV dump was
+   removed 2026-09-27 as superseded.
 
 5. [2026-08-21] Pull directly from RetractionWatch's retraction database instead of relying on the
    general keyword-driven corpus to intersect with a known plagiarism case by chance -- see the

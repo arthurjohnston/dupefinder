@@ -17,15 +17,16 @@ logic and mocked-network paths in `retrieve_papers.py`, `text_overlap.py`, and `
 sudo apt install -y python3-venv python3-pip   # one-time; needs a real terminal, not this harness (no interactive sudo)
 python3 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt   # requests, sentence-transformers, numpy (pulls in torch)
+pip install -r requirements.txt   # requests, sentence-transformers (pulls in torch), numpy, pymupdf, scikit-learn
 ```
 
 Every subsequent command in this doc (`python3 retrieve_papers.py ...`, `python3 run_pipeline.py ...`,
 etc.) assumes `.venv` is activated in that shell — run `source .venv/bin/activate` first if it's a fresh
 shell, or invoke `.venv/bin/python3 <script>.py` directly instead if you'd rather not activate.
 
-`extract_papers.py` also shells out to `pdftotext` (poppler-utils), which must be installed via the
-system package manager (already present on this machine at `/usr/bin/pdftotext`) — it is not pip-installable.
+`extract_papers.py` reads PDFs with PyMuPDF (pip-installed above) — no system packages are needed to run
+the pipeline itself. `pdftotext` (poppler-utils, `apt install poppler-utils`) is only needed for the
+by-hand byline verification `REVIEWING.md` asks for.
 
 **If `pip install` (system-wide, no venv) fails with `externally-managed-environment`:** this is Ubuntu
 24.04's PEP 668 guard — apt considers itself the owner of the system Python once `python3-pip` is
@@ -81,7 +82,7 @@ starting.json  --[retrieve_papers.py]-->  papers/*.pdf + state.sqlite3
 ```
 
 ```bash
-python3 retrieve_papers.py --email you@example.com          # starting.json -> papers/, state.sqlite3
+python3 retrieve_papers.py --email you@your-institution.edu          # starting.json -> papers/, state.sqlite3
 python3 extract_papers.py                                    # -> library.sqlite3 metadata + paragraphs.jsonl
 python3 embed_paragraphs.py                                  # -> library.sqlite3 paragraphs table (text+vector) + lsh_buckets
 python3 find_duplicates.py [--cross-paper-only] [--threshold 0.85]     # ad-hoc console report, brute force
@@ -95,7 +96,7 @@ exploratory look (always exhaustive brute force), the second to persist a statef
 reads from and writes back to (candidates sourced from the LSH index by default; see
 `build_dupe_candidates.py`'s docstring and `lsh_index.py`).
 
-All six scripts are independently re-runnable and resumable/idempotent — each keeps enough state (in
+All of these scripts are independently re-runnable and resumable/idempotent — each keeps enough state (in
 `state.sqlite3` or `library.sqlite3`) to skip work already done, so re-running the pipeline after adding
 new entries to `starting.json` only processes what's new.
 
@@ -165,12 +166,14 @@ whatever the normal flow would have done anyway.
 ### `extract_papers.py` — metadata + paragraph extraction
 
 Reads every `status='downloaded'` row out of `state.sqlite3` (not `starting.json` directly). For each PDF:
-runs `pdftotext <path> -`, takes title/authors/year/doi from `state.sqlite3` (Crossref-verified — more
+extracts text with PyMuPDF's block-level layout analysis (`pdf_to_text()` — replaced `pdftotext`, which
+either merged whole pages into one "paragraph" or, with `-layout`, garbled two-column text), takes title/authors/year/doi from `state.sqlite3` (Crossref-verified — more
 reliable than re-parsing noisy PDF header text), locates the References/Bibliography section by heading
 match (searched from the end of the document, to avoid a false hit on an in-body mention) and splits it
 into raw citation strings, and splits the remaining body into paragraphs (dehyphenates wrapped words,
-merges spurious blank-line fragments from `pdftotext`'s page/column reflow, filters out headers/short
-fragments).
+merges fragments split across page/column breaks, filters out headers/short fragments).
+`--recompute` re-extracts every downloaded paper from scratch and rewrites `paragraphs.jsonl` — use it
+after changing the extraction logic; `embed_paragraphs.py` then re-embeds whatever text changed.
 
 Writes:
 - **`library.sqlite3`**: normalized tables `papers`, `authors`, `paper_authors` (join table with
@@ -192,8 +195,8 @@ dropped, near-duplicates like paraphrased captions are left for `find_duplicates
 - Footnote-style references (common in law reviews, e.g. *Big Data's Disparate Impact*) have no
   end-of-document References heading at all, so citations end up as 0 and the footnote text is absorbed
   into body paragraphs instead.
-- Two-column/justified PDFs can lose inter-word spaces (`humanbiasesfrom`) — an inherent `pdftotext`
-  limitation on that layout that isn't patched.
+- Some two-column/justified PDFs lose inter-word spaces (`humanbiasesfrom`) in the PDF's own text layer —
+  not patched.
 
 ### `embed_paragraphs.py` — embed + persist paragraph text
 
@@ -453,13 +456,13 @@ case for the intended usage.
 ### `run_pipeline.py` — chain the deterministic stages
 
 Runs `extract_papers.py` → `embed_paragraphs.py` → `build_dupe_candidates.py` → `classify_dupes.py` →
-`write_dupe_reports.py` in sequence (each stage via its own `main()` with `sys.argv` patched, same
-`run_with_argv()` pattern `tests/run_tests.py` uses), stopping at the first stage that raises. Doesn't
-include retrieval itself (`retrieve_papers.py`/`bulk_retrieve_arxiv.py`/`bulk_retrieve_crossref.py` have
-different argument shapes and are run deliberately, not chained) — this is specifically the "a new batch
+`write_dupe_reports.py` → `copy_dupe_pdfs.py` in sequence (each stage via its own `main()` with `sys.argv` patched, same
+`run_with_argv()` pattern `tests/run_tests.py` uses), stopping at the first stage that raises. Retrieval is off
+by default (`--retrieve-input FILE --retrieve-email ADDR` runs `retrieve_papers.py` first; the
+`bulk_retrieve_*.py` scripts have different argument shapes and are run deliberately, not chained) — this is specifically the "a new batch
 of papers just got retrieved, now turn that into updated reports" half, runnable as one command instead
-of five. `--skip-extract`/`--skip-embed`/`--skip-build-dupe`/`--skip-classify`/`--skip-reports` stop (or
-skip) individual stages.
+of five. `--skip-extract`/`--skip-embed`/`--skip-build-dupe`/`--skip-classify`/`--skip-reports`/`--skip-copy-pdfs`
+skip individual stages.
 
 ### `bulk_retrieve_crossref.py` — bulk retrieval across all Crossref publishers
 
@@ -547,10 +550,10 @@ case format and current cases. Run before trusting a change to the pipeline's ac
 behavior:
 
 ```bash
-python3 tests/run_tests.py --email you@example.com
+python3 tests/run_tests.py --email you@your-institution.edu
 ```
 
 ## Logs
 
 `retrieve_papers.py` logs to both console and `retrieve_papers.log` (appended across runs, not rotated).
-The other three scripts log to console only.
+The other pipeline scripts log to console only.

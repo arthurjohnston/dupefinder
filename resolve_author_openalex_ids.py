@@ -47,7 +47,7 @@ of their papers are in the corpus, might resolve them where this run
 couldn't).
 
 Usage:
-    python3 resolve_author_openalex_ids.py --email you@example.com [--min-papers 2] [--recompute]
+    python3 resolve_author_openalex_ids.py --email you@your-institution.edu [--min-papers 2] [--recompute]
 """
 
 import argparse

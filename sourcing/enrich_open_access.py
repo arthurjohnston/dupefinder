@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
 Enrich candidates.jsonl with OpenAlex's own legal-open-access signal
-(open_access.is_oa / oa_status / oa_url) -- distinct from scimag/Sci-Hub
-coverage, which says nothing about whether a copy is *legally* free.
+(open_access.is_oa / oa_status / oa_url), so only works with a legally free
+copy go on to build_oa_starting_list.py.
 
 Cheap by construction: batches candidates by their already-known
 openalex_id (filter=ids.openalex:ID1|ID2|...), asking for only

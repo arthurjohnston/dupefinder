@@ -20,9 +20,9 @@ bulk_retrieve_crossref.py --doi-prefix --whole-prefix is the complement when the
 text is needed (it reuses state.sqlite3 and the normal pipeline); this script never
 touches either database.
 
-    python3 mill_prefix_audit.py harvest --email you@example.com --prefix 10.34218 --prefix 10.63282
+    python3 mill_prefix_audit.py harvest --email you@your-institution.edu --prefix 10.34218 --prefix 10.63282
     python3 mill_prefix_audit.py report --min-cluster 2
-    python3 mill_prefix_audit.py enrich --email you@example.com --min-papers 3   # OpenAlex author lookup
+    python3 mill_prefix_audit.py enrich --email you@your-institution.edu --min-papers 3   # OpenAlex author lookup
     python3 mill_prefix_audit.py verify --library-db computer-ethics/library.sqlite3  # text-check the clusters
 """
 

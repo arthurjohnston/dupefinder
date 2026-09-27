@@ -22,9 +22,9 @@ documented plagiarism pair -- find_duplicates.py must find it) or a **negative c
 ## Running
 
 ```bash
-python3 tests/run_tests.py --email you@example.com                    # all cases
-python3 tests/run_tests.py --email you@example.com --case carlini-roadmap-2022
-python3 tests/run_tests.py --email you@example.com --keep-work        # inspect the DBs after
+python3 tests/run_tests.py --email you@your-institution.edu                    # all cases
+python3 tests/run_tests.py --email you@your-institution.edu --case carlini-roadmap-2022
+python3 tests/run_tests.py --email you@your-institution.edu --keep-work        # inspect the DBs after
 ```
 
 Each case gets its own isolated working directory (`tests/work/<case-name>/`, gitignored,

@@ -22,7 +22,7 @@ https://nicholas.carlini.com/writing/2022/a-case-of-plagarism-in-machine-learnin
 This project's `find_duplicates.py` was back-tested against this exact pair and independently
 recovered the same overlap (Section 2.3.1's "Duplication" passage against the original's
 abstract/methods text, cosine similarity 0.80-0.90) using nothing but the paragraph
-embeddings. Run `python3 tests/run_tests.py --email you@example.com` to reproduce it.
+embeddings. Run `python3 tests/run_tests.py --email you@your-institution.edu` to reproduce it.
 
 ## arXiv administrators
 

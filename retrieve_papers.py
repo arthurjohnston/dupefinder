@@ -995,6 +995,12 @@ def parse_args():
     args = parser.parse_args()
     if not args.email:
         parser.error("--email is required (Crossref/Unpaywall require a contact email for their polite/API pools)")
+    # Unpaywall answers every request from a placeholder address with HTTP 422, which would
+    # otherwise surface only as a per-paper "error" status and an empty papers/ directory.
+    email_domain = args.email.rpartition("@")[2].lower()
+    if "@" not in args.email or email_domain.split(".")[0] in ("example", "your-institution"):
+        parser.error(f"--email {args.email!r} looks like a placeholder -- use your own address "
+                     "(Unpaywall rejects example.com-style addresses with HTTP 422)")
     return args
 
 
