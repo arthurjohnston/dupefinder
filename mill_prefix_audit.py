@@ -305,8 +305,19 @@ def verify(conn, args):
                     words_b = ctp.load_paper_words(lib, pid_b)
                     if len(words_a) < args.min_doc_words or len(words_b) < args.min_doc_words:
                         continue
-                    runs = ctp.find_shingle_matches(words_a, words_b, shingle_size=args.shingle_size,
-                                                     x_drop=args.x_drop)
+                    try:
+                        runs = ctp.find_shingle_matches(words_a, words_b,
+                                                         shingle_size=args.shingle_size,
+                                                         x_drop=args.x_drop, gap_open=args.gap_open,
+                                                         gap_extend=args.gap_extend,
+                                                         max_gap=args.max_gap)
+                    except ctp.DegenerateGappedPair as exc:
+                        # Too repetitive for gapped extension to finish -- measure it lockstep
+                        # rather than stall the audit or silently drop the pair.
+                        print(f"    {pid_a}/{pid_b}: {exc} -- falling back to lockstep")
+                        runs = ctp.find_shingle_matches(words_a, words_b,
+                                                         shingle_size=args.shingle_size,
+                                                         x_drop=args.x_drop)
                     if not runs:
                         continue
                     covered = set()
@@ -350,6 +361,20 @@ def parse_args():
     p.add_argument("--min-doc-words", type=int, default=300, help="verify: skip papers with less text than this")
     p.add_argument("--shingle-size", type=int, default=10, help="verify: exact-match window, in words")
     p.add_argument("--x-drop", type=int, default=3, help="verify: tolerance for isolated substituted words")
+    # Literals, not compare_two_papers.DEFAULT_*: that module is imported lazily inside verify()
+    # (it pulls numpy), and naming it here would drag the import up to argument-parsing time.
+    p.add_argument("--gap-open", type=int, nargs="?", const=2, default=None,
+                    help="verify: use the GAPPED extension instead of --x-drop's lockstep walk, so "
+                         "a run survives inserted/deleted words and not only substituted ones (see "
+                         "compare_two_papers.py's _extend_gapped()). Bare flag = 2. Reports fewer, "
+                         "longer runs and slightly higher coverage on the same text; 8 suits it "
+                         "better than --x-drop's default of 3.")
+    p.add_argument("--gap-extend", type=int, default=1,
+                    help="verify: score per further word of an already-open gap (default 1); only "
+                         "meaningful with --gap-open")
+    p.add_argument("--max-gap", type=int, default=10,
+                    help="verify: longest single insertion/deletion --gap-open bridges, in words "
+                         "(default 10); a longer one stays two runs")
     p.add_argument("--out", default=None, help="verify: also write full results as JSON here")
     p.add_argument("--min-interval", type=float, default=0.5)
     p.add_argument("--max-retries", type=int, default=3)

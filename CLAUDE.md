@@ -383,6 +383,118 @@ counts by status/flag (including how many candidates still lack an `lcs_ratio`/`
 i.e. predate a `build_dupe_candidates.py` run since that check was added) without entering the
 review loop.
 
+### `compare_two_papers.py` — the exact word-shingle matcher and its three extension modes
+
+`find_shingle_matches()` is the verbatim-overlap engine everything textual in this project runs on
+(`write_dupe_reports_html.py`, `batch_compare_papers.py`, `rank_paper_pairs.py`,
+`write_case_reports_md.py`, `mill_prefix_audit.py`, `find_title_bucket_dupes.py`). It indexes every
+`--shingle-size`-word shingle of document A, looks each of B's up, and grows every hit into a maximal
+run. How far a run is allowed to grow past its exact core is the part with three settings:
+
+| mode | flags | bridges |
+|---|---|---|
+| exact only (default) | — | nothing; one differing word ends the run |
+| lockstep X-drop | `--x-drop N` | position-for-position **substitutions** |
+| gapped | `--x-drop N --gap-open M` | substitutions **and insertions/deletions** |
+
+**Lockstep X-drop** (`_extend_xdrop()`) walks both documents in step, scoring +1 per match and
+`--mismatch-penalty` per mismatch, and stops once the score falls more than `--x-drop` below its own
+running maximum — then trims back to where that maximum was. It bridges a swapped or
+differently-spelled word. It cannot bridge an inserted or deleted one: that desyncs every comparison
+after it, the mismatches pile up, and the extension stops. Raising `--x-drop` does not help, because
+the trim-back lands on the same word however far the walk looked — confirmed on a real pair
+(85490 ↔ 85538), where x-drop 3 and x-drop 30 give byte-identical output.
+
+**Gapped** (`_extend_gapped()`, `--gap-open`) is banded affine-gap dynamic programming with the same
+X-drop termination — BLAST's gapped extension. It tracks three scores per cell (this pair aligned,
+words consumed from A against a gap in B, the reverse), charging `--gap-open` to open a gap and
+`--gap-extend` per further word of it, so one long gap costs much less than several short ones. That
+is what real reuse looks like: a copied passage with a citation marker dropped, a clause spliced in,
+a sentence trimmed. `--max-gap` (default 50) is the band half-width and the honest limit — an indel
+longer than that stays two runs. The default was 10 at first, which was an untested guess and too
+tight: measured across this project's confirmed pairs, 10 -> 50 consolidates the same evidence without
+adding any (run counts fall — vigilante 29 -> 24, CE-32 14 -> 9, CE-01 137 -> 110 — while coverage
+stays within a point or two), 50 -> 200 changes nothing on any of them, and six unrelated control
+pairs stay at 0 runs even at 200, so a wider band manufactures nothing. Cost is the band, so 2-4x per
+pair, all still under a second. If a page shows the same passage broken into several runs, raise it
+further before concluding the extension is failing.
+A gap also has to be *earned*: the affine cost must be repaid by matches beyond it or the extension
+trims back, which is what stops it stitching unrelated passages together.
+
+On 85490 ↔ 85538, `--x-drop 8 --gap-open 2` turned 56 runs into 29, the longest from 219 to 392
+words, and coverage from 36%/34% to 39%/37% — the same text, correctly recognized as fewer, longer
+passages. `--gap-open`/`--gap-extend`/`--max-gap` are on every script that runs the matcher:
+`compare_two_papers.py`, `write_dupe_reports_html.py` (both views), `batch_compare_papers.py`,
+`rank_paper_pairs.py` and `mill_prefix_audit.py`. `--gap-open` needs `--x-drop` (that supplies the
+threshold); the two scripts whose `--x-drop` defaults to None refuse without it, and the three that
+default it to 3 always have one.
+
+**Cost, and the guard on it.** Gapped extension pays a banded DP plus an alignment *per seed*, where
+the lockstep walk is nearly free per seed — so its cost tracks the exact-seed count, not document
+length. Real flagged cases in either corpus sit between 1,000 and 14,000 seed hits and finish in well
+under a second. Two long repetitive documents (a thesis against a proceedings volume, a masthead
+reprinted on every page) reach **10–25 million** seed hits and over 2 million reported runs: lockstep
+finishes those in under a minute, gapped does not finish at all. Found the hard way — a 400-pair
+backlog sweep sat at 100% CPU for 20 minutes on one pair having done 400 in under three minutes
+lockstep. So `find_shingle_matches()` counts seed hits before doing any gapped work and raises
+`DegenerateGappedPair` past `MAX_GAPPED_SEED_HITS` (250,000 — three orders of magnitude clear of any
+real case), in milliseconds. `rank_paper_pairs.py` and `mill_prefix_audit.py` catch it and re-measure
+that pair lockstep, marking it `[LOCKSTEP]` in the report so its figures aren't read as comparable;
+the single-pair tools print the message and the remedy (drop `--gap-open`, or raise `--shingle-size`,
+which cuts the seed count fast on a repetitive pair) and write nothing.
+
+Two interactions to know when sweeping with it. `--min-shingle-matches` and `rank_paper_pairs.py`'s
+own ranking both count *runs*, and gapped scanning reports FEWER, longer runs for the same text, so a
+threshold tuned against lockstep counts filters harder than it used to — judge on coverage, not run
+count. And a backsweep of the 143-paper GIFT set (see FLAGGED_CASES_INDEX.txt's CE-38) found gapped
+scanning promotes pairs lockstep ranked as ordinary noise: two more pairs cleared "50% of both
+documents" (45%/40% -> 61%/57% and 31%/34% -> 53%/55%), none dropped out, and the AI-Doctor/
+Real-Estate pair went from 63%/61% to 88%/92%. Those pairs are the template-with-nouns-swapped shape,
+where substitutions are dense AND indels are frequent -- exactly what lockstep extension keeps
+breaking on.
+
+**What every caller has to know:** with an indel bridged the two sides of a run are *different
+lengths*. `find_shingle_matches()` returns `ShingleRun` named tuples whose first ten fields are
+positionally what the plain tuples were (so `r[0]`/`r[3]`/`r[5:9]` indexing is unaffected) plus an
+eleventh, `indels`, and `length` is the A side only. Anything pairing the two sides
+position-by-position must check for equal length and fall back to a `difflib` alignment — both
+renderers in `write_dupe_reports_html.py` do, so the reports show which words were inserted rather
+than silently mispairing everything past the first gap. Substitution and indel counts come from that
+same `difflib` alignment (`_alignment_counts()`), not from a DP traceback, so the numbers always
+match the alignment the reports draw.
+
+### Wrong-PDF records: a retrieval failure that tops every ranking
+
+A paper record can contain **a different paper entirely**: the publisher's DOI resolves to the wrong
+file, retrieval stores it under the requested title, and `extract_papers.py` faithfully extracts
+someone else's document into that record. The pair then measures as 100%/100% with a multi-thousand-word
+run and outranks every real finding — while being one paper against itself. Five such pairs sat at the
+top of a 400-pair gapped sweep on 2026-09-26, including "A Comparison of Popular Home Security Systems"
+against "Drug Prediction System Using Data Mining Techniques" at 100%/100%, and "The Change In The
+Concentration Of Phospholipids" against "Socio-Pedagogical Bases Of Ideological Preventive Work".
+
+**Detection is pairwise, not per-paper.** The tempting test — does a paper's own title appear in its own
+extracted text — is useless in bulk: **27% of a 1,500-paper sample fails it** for entirely benign
+reasons (catalogue-added `Review of:`/`Retraction Note:` prefixes, `pdftotext` losing inter-word spaces
+in two-column layouts, a title rendered as an image, metadata titles that differ from the printed one).
+What is decisive is the pair signature: *this record is missing its own title AND carries the other
+paper's*. That is only knowable once a candidate pair exists, so the check lives in triage —
+`rank_paper_pairs.wrong_pdf_side()`, which marks the pair `[WRONG-PDF]` in its report with the side at
+fault, plus a NOTE at the top. Validated at 5/5 on the real cases and 0/43 false positives on pairs
+screened clean. `tests/unit/test_rank_paper_pairs.py` pins both halves down — an earlier version of the
+condition compared the wrong pair of facts and would have missed every real case.
+
+**The repair** follows `filter_low_relevance_papers.py`'s convention: move the PDF to
+`papers_excluded/wrongpdf/`, set `state.sqlite3` status to `excluded_wrongpdf` with the reason in
+`error` (so `extract_papers.py`, which only reads `status='downloaded'`, never picks it up again), and
+delete the bogus content from `library.sqlite3` — paragraphs, `lsh_buckets`/`lsh_scanned` rows,
+`potential_dupes` + `potential_dupe_authors`, `paper_authors`, `citations`, and the `papers` row.
+Leaving the extracted text in place keeps regenerating the same false pair on every sweep. The five
+found on 2026-09-26 were repaired this way (141,252 -> 141,247 downloaded).
+
+Not automated as a bulk pass, and deliberately: the only reliable signal is pairwise, so there is no
+corpus-wide sweep to run that wouldn't either miss most of them or delete real papers.
+
 ### `text_overlap.py` — accurate-but-unscalable textual overlap checks
 
 Cosine similarity on embeddings is semantic, not textual, and can be fooled by two paragraphs that
@@ -452,6 +564,58 @@ word-diffed side-by-side rendering of every matched passage, reusing `write_dupe
 duplicating either. `--ids`/`--status`/`--title`/`--source-note` let a single specific case get a
 proper short page name and an external citation (e.g. a RetractionWatch link) — see the Saxby/Taro
 case for the intended usage.
+
+**`--whole-document`**: renders both papers end to end as ONE continuous word-level diff instead of a
+list of per-run exhibits — shared verbatim text highlighted, everything that differs marked inline
+where it falls. For a pair that is substantially the same document (the paper-mill republication
+shape: same body, swapped title noun, new byline), the exhibit view is the wrong shape — "Shingle
+match 1 of 82" invites assessing 82 separate findings when the finding is that there is *one*
+document here, and the diff shows that at a glance: an almost entirely highlighted page with a few
+red/green spots at the masthead, the title and the author names. Built from the same
+`find_shingle_matches()` runs (so it needs `--shingle-size`), and it replaces the exhibits rather than
+adding to them — drop the flag to get the per-run page back. Both views write the *same* filename, so
+to keep both for one pair (worth it where the reordering caveat below fires) send one to a different
+`--out-dir` or append a suffix to `--case-number`; CE-38's three reorder-affected pairs use
+`--case-number <NN>-<a>-<b>-per-run` for exactly this. `--max-gap-words` (default 120, 0
+disables) collapses a long one-sided stretch into a click-to-expand block so one paper's genuinely
+original section can't bury the diff around it; nothing is omitted. Pages run roughly a fifth the
+size of the exhibit version, since no passage is rendered twice with context.
+
+**Labels follow the extension mode**, in three tiers, because the mode changes what a "run" is and a
+page that will be sent to a publisher must not claim more than the scan established: no `--x-drop` is
+"exact" (N consecutive *identical* words); `--x-drop` alone is "near-exact" (substituted words allowed
+within a run, no indels); `--gap-open` is "near-verbatim" (substituted *and* inserted/deleted words).
+The heading, the summary bar, the legend and the footer all say which, and the footer names the exact
+flag values so the page is reproducible. This corrected a pre-existing looseness too — the old blanket
+"Exact word-shingle matches" heading was already wrong under `--x-drop`.
+
+A gapped page also reports **substituted and inserted/deleted words separately** (the first version
+halved their sum, which reports an indel as half a substitution), and states what the coverage
+percentage actually counts: every word inside a matched run, *including* the edited ones. So it prints
+the share that is not identical — 1% on the Food Delivery pair (genuinely one document word for word),
+26% on CE-32 and 21% on Smart Inventory/BusBee (the same passages, reworded at word level). Without
+that line "shared 100%" reads as "word-for-word identical", which under gapped extension it is not.
+
+**Ordering affects this view only, not detection.** `find_shingle_matches()` looks each shingle of B
+up in a hash index of A, so relocated material is found wherever it moved to — on a real corpus pair,
+reversing or shuffling one document's paragraphs leaves scan coverage at 100% (128 runs unchanged vs
+253 runs reversed, both 100%), while the ordered spine drops from 100% to 8%. Every consumer that
+reports a coverage figure — `rank_paper_pairs.py`, `mill_prefix_audit.py`, `write_case_reports_md.py`,
+and this module's own header stats — sums over ALL runs; `_wdd_spine()` is called in exactly one
+place, for layout. This matters for a case in this corpus: one paper's conclusion (word 6702)
+reappears in the other's abstract (word 210), which the per-run exhibit view shows and the ordered
+view cannot place. `tests/unit/test_compare_two_papers.py`'s `TestOrderIndependence` and
+`test_rank_paper_pairs.py`'s `TestSpineIsTheOnlyOrderedStep` pin the asymmetry.
+
+The one thing this view cannot do is show reordered material: the walk is monotone, so a run that
+sits at a different *position* in each paper can't be placed, and `_wdd_spine()` picks the
+heaviest forward-moving chain. The page's headline overlap figure is always the **scan's** coverage
+(the number `FLAGGED_CASES_INDEX.txt`, the case WRITEUPs and `rank_paper_pairs.py` all report), and
+where the ordered diff places materially less than that — 100+ matched words, `WDD_UNPLACED_NOTE_WORDS`
+— a caveat says so, gives both figures, and points at the exhibit view. Note that a run falling
+outside the spine is *not* the same as lost coverage: `find_shingle_matches()` reports one run per
+occurrence pair, so 72 of 80 runs sit outside the spine on this project's own 99%/99% pair while
+coverage stays at 99%. That is why the caveat keys on covered words, not on dropped runs.
 
 ### `run_pipeline.py` — chain the deterministic stages
 
@@ -533,9 +697,12 @@ extracted content — not merged into one schema.
 `tests/run_unit_tests.py` — true unit tests (stdlib `unittest`, no pytest dependency) for pure logic
 and mocked-network paths: `retrieve_papers.py` (slugify/normalize_doi/make_key, `RateLimiter`,
 `http_get`'s retry/backoff, `concurrent_fetch`'s thread pool, `PaperStore`/`ThreadLocalPaperStore`,
-`process_paper`'s branching), `text_overlap.py` (`lcs_ratio`/`ngram_jaccard`), and `lsh_index.py`
+`process_paper`'s branching), `text_overlap.py` (`lcs_ratio`/`ngram_jaccard`), `lsh_index.py`
 (`bucket_keys`/`_pairs_for_group`, plus an integration pass through `sync_index()`/
-`scan_candidate_pairs()` against a real temp-file SQLite DB). No network, finishes in well under a
+`scan_candidate_pairs()` against a real temp-file SQLite DB), `compare_two_papers.py`
+(`find_shingle_matches()`'s exact/X-drop/gapped extension paths, `_extend_gapped()`'s boundaries and
+`_alignment_counts()`), and `rank_paper_pairs.py` (`wrong_pdf_side()`, both that it fires on the pair
+signature and that it stays silent on the benign title-mismatch shapes). No network, finishes in well under a
 second — run on every change to the modules it covers:
 
 ```bash

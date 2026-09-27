@@ -135,8 +135,13 @@ def render(case_name, writeup_rel, paper_a, paper_b, runs, words_a, words_b, arg
                 f"quoted from both papers. Text is truncated at {EXCERPT_CHARS} characters per side.", ""]
         for n, r in enumerate(runs[:args.max_exhibits], 1):
             length, para_a, para_b, text_a, text_b = r[0], r[1], r[2], r[3], r[4]
-            subs = r[9]
-            kind = "exact" if not subs else f"near-exact, {subs} substituted word(s)"
+            subs, indels = r[9], r[10]
+            if not subs and not indels:
+                kind = "exact"
+            else:
+                kind = f"near-exact, {subs} substituted word(s)"
+                if indels:
+                    kind += (f", {indels} inserted/deleted -- {r[6] - r[5]}w A vs {r[8] - r[7]}w B")
             out += [f"### Run {n} — {length:,} words ({kind})", "",
                     f"*Paper A, paragraph {para_a}:*", "",
                     "> " + text_a[:EXCERPT_CHARS].replace("\n", " ") + ("…" if len(text_a) > EXCERPT_CHARS else ""),
