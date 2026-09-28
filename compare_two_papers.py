@@ -52,8 +52,10 @@ onto the end of the writeup file itself, so the full evidence always travels wit
 claims about it.
 """
 import argparse
+import difflib
 import re
 from pathlib import Path
+from typing import NamedTuple
 
 import numpy as np
 
@@ -169,7 +171,169 @@ def _extend_xdrop(lower_a, lower_b, pos_a, pos_b, direction, mismatch_penalty, x
     return best_a, best_b
 
 
-def find_shingle_matches(words_a, words_b, shingle_size=6, mismatch_penalty=1, x_drop=None):
+class ShingleRun(NamedTuple):
+    """One maximal matched run. The first ten fields are positional-compatible with the plain
+    tuple this used to be (callers index r[0], r[3], r[5:9] all over the project); `indels` is
+    new and always 0 unless gapped extension is on. A 10-name tuple unpack is the one thing that
+    breaks, so write_dupe_reports_html.py's exhibit loop takes the eleventh name too."""
+    length: int          # words of A spanned; with indels the B side may be a different count
+    para_a: int
+    para_b: int
+    text_a: str
+    text_b: str
+    start_a: int
+    end_a: int
+    start_b: int
+    end_b: int
+    substitutions: int
+    indels: int = 0
+
+
+class DegenerateGappedPair(ValueError):
+    """Raised when gapped extension is asked for on a pair whose exact-seed count is so large that
+    it would take hours. See MAX_GAPPED_SEED_HITS."""
+
+
+MAX_GAPPED_SEED_HITS = 250_000  # refuse gapped extension past this many (position_a, position_b)
+# exact-shingle hits. Gapped extension costs a banded DP plus an alignment per seed, so its cost
+# scales with the seed count, where the lockstep walk is nearly free per seed. This matters for
+# real corpus pairs, not hypothetically: two long repetitive documents (a thesis against a
+# proceedings volume, a masthead reprinted on every page) reach 10-25 MILLION seed hits and over
+# 2 million reported runs, which lockstep finishes in under a minute and gapped does not finish at
+# all -- found by a 400-pair backlog sweep that ran 20 minutes at 100% CPU on one pair having done
+# 400 in under three minutes with lockstep. Every genuine flagged case in either corpus sits
+# between 1,000 and 14,000 seed hits, so this cap is three orders of magnitude clear of real
+# evidence while refusing the shape that hangs. find_title_bucket_dupes.py already documents the
+# same degenerate-pair shape for its own reasons.
+
+
+DEFAULT_GAP_OPEN = 2       # --gap-open's value when the flag is passed with no number
+DEFAULT_GAP_EXTEND = 1
+DEFAULT_MAX_GAP = 50       # band half-width: the longest single insertion/deletion bridgeable.
+# Was 10, which was an untested guess and too tight. Measured across this project's own confirmed
+# pairs, going 10 -> 50 CONSOLIDATES the same evidence rather than adding any: run counts fall
+# (vigilante 29 -> 24, CE-32 14 -> 9, CE-01 137 -> 110, CE-34 13 -> 10) while coverage stays within
+# a point or two, i.e. the matched text was already being found, just reported in more pieces than
+# it exists in. 50 -> 200 changes nothing at all on any of them, so 50 is past the point of
+# diminishing returns for this corpus. Six unrelated control pairs stay at 0 runs / 0% even at 200,
+# so a wider band manufactures nothing. Cost is the band, so 2-4x per pair -- 0.13s vs 0.05s on a
+# 7k-word pair, 0.73s vs 0.17s on a 23k-word one -- and MAX_GAPPED_SEED_HITS still refuses the
+# degenerate pairs either way.
+
+
+def _extend_gapped(lower_a, lower_b, pos_a, pos_b, direction, mismatch_penalty, x_drop,
+                    gap_open, gap_extend, max_gap):
+    """Like _extend_xdrop(), but the alignment may INSERT or DELETE words, not only substitute
+    them. Same contract: extend from (pos_a, pos_b) in `direction`, return the boundary at the
+    best-scoring point, never worse than what was passed in.
+
+    _extend_xdrop() walks the two documents in lockstep, so it can only ever bridge a
+    position-for-position substitution: one genuinely inserted or deleted word desyncs every
+    comparison after it, the mismatches pile up, and the extension stops (its own docstring says
+    so). That is the common shape in real reuse -- a copied passage with a sentence trimmed, a
+    citation marker dropped, a clause spliced in -- and lockstep extension gives up at the first
+    one. Hence this: a gapped extension, which can pay to skip words on one side and carry on.
+
+    Mechanism: banded affine-gap dynamic programming with X-drop pruning -- BLAST's gapped
+    extension. Three running scores per cell: M (this pair of words aligned to each other),
+    Ia (words consumed from A against a gap in B, i.e. a deletion) and Ib (the reverse, an
+    insertion). A match scores +1, a mismatch -mismatch_penalty, opening a gap -gap_open and each
+    further word of the same gap -gap_extend, so one long gap costs far less than many short ones
+    -- which is what copying actually looks like. Rows stop once the whole row's best score falls
+    more than x_drop below the best seen, the same termination rule _extend_xdrop() uses.
+
+    `max_gap` bounds the band to |i - j| <= max_gap, which is both what keeps this O(length x
+    max_gap) instead of O(length^2) and the honest limit on the mechanism: it can bridge an indel
+    up to max_gap words long and not a longer one. A whole deleted paragraph is not a gap, it is
+    two separate runs, and reporting it as one run would overstate what is contiguous.
+
+    Only the boundary is returned, not the alignment path -- no traceback matrix. Callers that
+    need to know WHICH words differ derive that from the resulting slices with difflib (see
+    find_shingle_matches()'s substitutions/indels counting), which is also the alignment the
+    reports render, so the numbers and the picture can't disagree."""
+    neg = float("-inf")
+    if direction == 1:
+        avail_a, avail_b = len(lower_a) - pos_a, len(lower_b) - pos_b
+        word_a = lambda i: lower_a[pos_a + i - 1]
+        word_b = lambda j: lower_b[pos_b + j - 1]
+    else:
+        avail_a, avail_b = pos_a, pos_b
+        word_a = lambda i: lower_a[pos_a - i]
+        word_b = lambda j: lower_b[pos_b - j]
+    if avail_a <= 0 or avail_b <= 0:
+        return pos_a, pos_b
+
+    best = 0.0
+    best_i = best_j = 0
+    m_prev = {0: 0.0}
+    ia_prev = {}
+    ib_prev = {j: -(gap_open + (j - 1) * gap_extend) for j in range(1, min(avail_b, max_gap) + 1)}
+
+    for i in range(1, avail_a + 1):
+        j_lo, j_hi = max(0, i - max_gap), min(avail_b, i + max_gap)
+        m_cur, ia_cur, ib_cur = {}, {}, {}
+        ai = word_a(i)
+        for j in range(j_lo, j_hi + 1):
+            if j >= 1:
+                prev = max(m_prev.get(j - 1, neg), ia_prev.get(j - 1, neg), ib_prev.get(j - 1, neg))
+                if prev > neg:
+                    score = prev + (1.0 if ai == word_b(j) else -mismatch_penalty)
+                    m_cur[j] = score
+                    if score > best:
+                        best, best_i, best_j = score, i, j
+            open_a = max(m_prev.get(j, neg) - gap_open, ia_prev.get(j, neg) - gap_extend)
+            if open_a > neg:
+                ia_cur[j] = open_a
+            if j >= 1:
+                open_b = max(m_cur.get(j - 1, neg) - gap_open, ib_cur.get(j - 1, neg) - gap_extend)
+                if open_b > neg:
+                    ib_cur[j] = open_b
+        row_best = max([v for v in m_cur.values()] + [v for v in ia_cur.values()]
+                       + [v for v in ib_cur.values()] + [neg])
+        if row_best == neg or best - row_best > x_drop:
+            break
+        m_prev, ia_prev, ib_prev = m_cur, ia_cur, ib_cur
+
+    if direction == 1:
+        return pos_a + best_i, pos_b + best_j
+    return pos_a - best_i, pos_b - best_j
+
+
+def _alignment_counts(lower_a, lower_b, start_a, end_a, start_b, end_b):
+    """(substitutions, indels, diagonal_blocks) for an aligned pair of slices, via difflib.
+
+    Used instead of a DP traceback (see _extend_gapped()) and also for the equal-length case, so
+    one definition covers both: a `replace` opcode contributes min(len_a, len_b) substitutions
+    plus the leftover length as indels, and `delete`/`insert` contribute their whole length as
+    indels. `diagonal_blocks` are difflib's own matching blocks as (offset_a, offset_b, length)
+    relative to start_a/start_b -- each one is a stretch where the two slices run in lockstep,
+    which is what find_shingle_matches() needs to mark seeds already absorbed into this run."""
+    sa, sb = lower_a[start_a:end_a], lower_b[start_b:end_b]
+    # Fast path: equal-length slices that line up well need no diff at all. Most runs bridge no gap
+    # even in gapped mode (a gap has to be earned), and difflib on two multi-thousand-word slices is
+    # the single most expensive thing in that mode -- it is why the cap above exists. A low
+    # positional mismatch rate means the diagonal IS the alignment, so count on it directly. Above
+    # the rate, an indel is plausible and difflib decides.
+    if len(sa) == len(sb):
+        diag_subs = sum(1 for x, y in zip(sa, sb) if x != y)
+        if diag_subs <= 0.25 * len(sa):
+            return diag_subs, 0, [(0, 0, len(sa))]
+    matcher = difflib.SequenceMatcher(None, sa, sb, autojunk=False)
+    subs = indels = 0
+    for tag, i1, i2, j1, j2 in matcher.get_opcodes():
+        if tag == "replace":
+            la, lb = i2 - i1, j2 - j1
+            subs += min(la, lb)
+            indels += abs(la - lb)
+        elif tag == "delete":
+            indels += i2 - i1
+        elif tag == "insert":
+            indels += j2 - j1
+    blocks = [(b.a, b.b, b.size) for b in matcher.get_matching_blocks() if b.size]
+    return subs, indels, blocks
+
+def find_shingle_matches(words_a, words_b, shingle_size=6, mismatch_penalty=1, x_drop=None,
+                          gap_open=None, gap_extend=DEFAULT_GAP_EXTEND, max_gap=DEFAULT_MAX_GAP):
     """Word n-gram ("shingle") fingerprinting across two full documents -- a completely
     different, purely lexical detection mechanism from the embedding-based sentence
     comparison above, deliberately run alongside it rather than instead of it:
@@ -197,7 +361,10 @@ def find_shingle_matches(words_a, words_b, shingle_size=6, mismatch_penalty=1, x
       genuinely inserted or deleted word (as opposed to one glued onto an adjacent token with
       no space, e.g. a citation marker like "ecosystem(22)" vs "ecosystem" -- still one token
       each, still a plain substitution) desyncs every word after it, which usually looks like a
-      run of consecutive mismatches and stops the extension rather than bridging it. Confirmed
+      run of consecutive mismatches and stops the extension rather than bridging it. Pass
+      `gap_open` to lift exactly this restriction -- it swaps the lockstep walk for a gapped
+      alignment that can skip words on one side (see _extend_gapped()); `x_drop` alone cannot,
+      at any value. Confirmed
       against a real case (29 in computer-ethics/flagged_cases/) that motivated this feature:
       a US/UK spelling difference ("favorable" vs "favourable") was splitting one real 314-word
       verbatim passage into two separate ~150-word reported runs at shingle_size=10; x_drop=3
@@ -216,8 +383,11 @@ def find_shingle_matches(words_a, words_b, shingle_size=6, mismatch_penalty=1, x
     mismatches -- so the reported run can be genuinely longer (and non-identical between the
     two sides) than the purely-exact core that seeded it.
 
-    Returns a list of (length_in_words, para_a, para_b, text_a, text_b, start_a, end_a, start_b,
-    end_b, substitutions) tuples, one per maximal run found, sorted by length descending.
+    Returns a list of ShingleRun named tuples -- (length, para_a, para_b, text_a, text_b,
+    start_a, end_a, start_b, end_b, substitutions, indels), one per maximal run found, sorted by
+    length descending. The first ten fields are positionally what this returned when it returned
+    plain tuples, so r[0]/r[3]/r[5:9] indexing all over the project still works; `indels` is the
+    eleventh and is always 0 unless `gap_open` is set.
     para_a/para_b are the paragraph index the run STARTS in (a long run can span multiple
     paragraphs in either document, e.g. across pdftotext's own paragraph-splitting quirks --
     text_a/text_b show the actual matched words as originally cased, which is what a human
@@ -229,7 +399,18 @@ def find_shingle_matches(words_a, words_b, shingle_size=6, mismatch_penalty=1, x
     highlight exactly where the match sits within it (write_dupe_reports_html.py's
     render_shingle_exhibits()); words_a[end_a - 1][1] gives the paragraph the run ENDS in, the
     same way words_a[start_a][1] gives para_a. substitutions is always 0 when x_drop is None
-    (the pure-exact behavior this function had before x_drop existed, unchanged)."""
+    (the pure-exact behavior this function had before x_drop existed, unchanged).
+
+    `gap_open` (None = off, unchanged lockstep behavior) switches extension to _extend_gapped(),
+    which bridges inserted/deleted words as well as substituted ones, with `gap_extend` charged
+    per further word of the same gap and `max_gap` capping how long an indel can be bridged. It
+    needs `x_drop` too -- that stays the termination threshold -- and 8 suits it better than the 3
+    that suits the lockstep walk, since a gap costs points up front before the matches past it pay
+    it back. ONE CONSEQUENCE REACHES EVERY CALLER: with an indel bridged, `length` (= end_a -
+    start_a) is the A side only, end_b - start_b is a different number, and text_a/text_b are
+    different lengths. Anything that pairs the two sides position-by-position has to check
+    len(text_a.split()) == len(text_b.split()) first and align with difflib otherwise -- both
+    renderers in write_dupe_reports_html.py do exactly that."""
     tokens_a = [w for w, _ in words_a]
     tokens_b = [w for w, _ in words_b]
     lower_a = [w.lower() for w in tokens_a]
@@ -239,6 +420,16 @@ def find_shingle_matches(words_a, words_b, shingle_size=6, mismatch_penalty=1, x
     for i in range(len(lower_a) - shingle_size + 1):
         shingle = tuple(lower_a[i:i + shingle_size])
         index_a.setdefault(shingle, []).append(i)
+
+    if gap_open is not None:
+        seed_hits = sum(len(index_a.get(tuple(lower_b[j:j + shingle_size]), ()))
+                        for j in range(len(lower_b) - shingle_size + 1))
+        if seed_hits > MAX_GAPPED_SEED_HITS:
+            raise DegenerateGappedPair(
+                f"{seed_hits:,} exact-shingle seed hits exceeds MAX_GAPPED_SEED_HITS "
+                f"({MAX_GAPPED_SEED_HITS:,}); gapped extension would not finish in reasonable time "
+                f"on this pair. Re-run it without gap_open (lockstep), or raise --shingle-size, "
+                f"which cuts the seed count fast on a repetitive pair.")
 
     covered_starts = set()  # (pos_a, pos_b) pairs already absorbed into a reported run
     runs = []
@@ -264,8 +455,28 @@ def find_shingle_matches(words_a, words_b, shingle_size=6, mismatch_penalty=1, x
             for k in range(exact_length - shingle_size + 1):
                 covered_starts.add((start_a + k, start_b + k))
 
-            substitutions = 0
-            if x_drop is not None:
+            substitutions = indels = 0
+            if gap_open is not None:
+                # Gapped extension (see _extend_gapped()): supersedes the lockstep x_drop walk
+                # rather than running after it, since it does everything x_drop does and more --
+                # a substitution is just a gapless column to this DP. x_drop still supplies the
+                # termination threshold, so it must be set; the caller-facing flags enforce that.
+                end_a, end_b = _extend_gapped(lower_a, lower_b, end_a, end_b, 1, mismatch_penalty,
+                                               x_drop, gap_open, gap_extend, max_gap)
+                start_a, start_b = _extend_gapped(lower_a, lower_b, start_a, start_b, -1,
+                                                   mismatch_penalty, x_drop, gap_open, gap_extend,
+                                                   max_gap)
+                substitutions, indels, blocks = _alignment_counts(lower_a, lower_b, start_a, end_a,
+                                                                   start_b, end_b)
+                # Mark seeds absorbed into this run so they aren't rediscovered and re-reported
+                # (same reason as the x_drop branch below), but along difflib's matching blocks
+                # rather than one diagonal: once the run contains an indel the two sides no longer
+                # share a single offset, and marking (start_a+k, start_b+k) would mark pairs that
+                # were never aligned while leaving the real ones unmarked.
+                for off_a, off_b, size in blocks:
+                    for k in range(size - shingle_size + 1):
+                        covered_starts.add((start_a + off_a + k, start_b + off_b + k))
+            elif x_drop is not None:
                 end_a, end_b = _extend_xdrop(lower_a, lower_b, end_a, end_b, 1, mismatch_penalty, x_drop)
                 start_a, start_b = _extend_xdrop(lower_a, lower_b, start_a, start_b, -1, mismatch_penalty, x_drop)
                 substitutions = sum(1 for k in range(end_a - start_a) if lower_a[start_a + k] != lower_b[start_b + k])
@@ -281,7 +492,8 @@ def find_shingle_matches(words_a, words_b, shingle_size=6, mismatch_penalty=1, x
             para_b = words_b[start_b][1]
             text_a = " ".join(tokens_a[start_a:end_a])
             text_b = " ".join(tokens_b[start_b:end_b])
-            runs.append((length, para_a, para_b, text_a, text_b, start_a, end_a, start_b, end_b, substitutions))
+            runs.append(ShingleRun(length, para_a, para_b, text_a, text_b, start_a, end_a,
+                                    start_b, end_b, substitutions, indels))
     runs.sort(key=lambda r: r[0], reverse=True)
     return runs
 
@@ -355,6 +567,25 @@ def main():
     parser.add_argument("--mismatch-penalty", type=int, default=1,
                          help="score subtracted per mismatched word during --x-drop extension "
                               "(a match always scores +1); only meaningful when --x-drop is set")
+    parser.add_argument("--gap-open", type=int, nargs="?", const=DEFAULT_GAP_OPEN, default=None,
+                         help=f"upgrade the extension from --x-drop's lockstep walk to a GAPPED one "
+                              f"that can bridge inserted/deleted words, not just substituted ones "
+                              f"(see _extend_gapped()). --x-drop is what it stops on, so pass that "
+                              f"too; 8 is a reasonable starting point, higher than the 3 that suits "
+                              f"the lockstep walk, since a gap costs several points before the "
+                              f"matches after it pay it back. This is the score charged for opening "
+                              f"a gap (bare flag = {DEFAULT_GAP_OPEN}); omitted entirely, extension "
+                              f"stays lockstep, unchanged.")
+    parser.add_argument("--gap-extend", type=int, default=DEFAULT_GAP_EXTEND,
+                         help=f"score charged per further word of an already-open gap (default "
+                              f"{DEFAULT_GAP_EXTEND}) -- lower than --gap-open so one long gap costs "
+                              f"much less than several short ones, which is what real copying looks "
+                              f"like. Only meaningful with --gap-open.")
+    parser.add_argument("--max-gap", type=int, default=DEFAULT_MAX_GAP,
+                         help=f"longest single insertion/deletion --gap-open can bridge, in words "
+                              f"(default {DEFAULT_MAX_GAP}). Also the DP band, so cost is linear in "
+                              f"it. A bigger deletion is reported as two runs instead of one, which "
+                              f"is the honest answer: it isn't one contiguous passage.")
     parser.add_argument("--sort-by-position", choices=["a", "b"], default=None,
                          help="show shingle matches (Method 1 only) in reading order of the named "
                               "side's own document (start-of-match word position) instead of the "
@@ -413,10 +644,24 @@ def main():
         words_a = load_paper_words(conn, args.paper_a)
         words_b = load_paper_words(conn, args.paper_b)
         xdrop_note = f", x-drop {args.x_drop} (mismatch penalty {args.mismatch_penalty})" if args.x_drop is not None else ""
+        if args.gap_open is not None:
+            xdrop_note += (f", GAPPED extension (gap open {args.gap_open}, extend {args.gap_extend}, "
+                           f"max gap {args.max_gap})")
         print(f"{len(words_a)} word(s) in Paper A, {len(words_b)} word(s) in Paper B -- scanning for "
               f"{args.shingle_size}-word exact matches{xdrop_note}...")
-        shingle_runs = find_shingle_matches(words_a, words_b, shingle_size=args.shingle_size,
-                                             mismatch_penalty=args.mismatch_penalty, x_drop=args.x_drop)
+        if args.gap_open is not None and args.x_drop is None:
+            parser_error = ("--gap-open needs --x-drop as well: x-drop is the score-drop threshold the "
+                            "gapped extension stops on (see _extend_gapped()). Try --x-drop 8.")
+            raise SystemExit(parser_error)
+        try:
+            shingle_runs = find_shingle_matches(words_a, words_b, shingle_size=args.shingle_size,
+                                                 mismatch_penalty=args.mismatch_penalty,
+                                                 x_drop=args.x_drop, gap_open=args.gap_open,
+                                                 gap_extend=args.gap_extend, max_gap=args.max_gap)
+        except DegenerateGappedPair as exc:
+            # One explicit pair, so this is the user's decision to make, not ours: say what the
+            # limit is and what to do about it instead of silently measuring something else.
+            raise SystemExit(f"--gap-open refused for this pair: {exc}")
         shown_shingles = shingle_runs[:args.top_n_shingles]
         print(f"{len(shingle_runs)} maximal run(s) found (length >= {args.shingle_size} words), "
               f"showing top {len(shown_shingles)}")
@@ -435,10 +680,20 @@ def main():
         lines.append(f"{len(shown_shingles)} run(s) shown (of {len(shingle_runs)} total found), sorted by "
                      f"{sort_note}")
         lines.append("=" * 100)
-        for length, para_a, para_b, text_a, text_b, _start_a, _end_a, _start_b, _end_b, substitutions in shown_shingles:
+        for run in shown_shingles:
+            length, para_a, para_b, text_a, text_b = (run.length, run.para_a, run.para_b,
+                                                       run.text_a, run.text_b)
             lines.append("")
-            if substitutions:
-                lines.append(f"near-exact match, {length} word(s), {substitutions} substitution(s)")
+            if run.substitutions or run.indels:
+                edits = f"{run.substitutions} substitution(s)"
+                if run.indels:
+                    # Spell out the two sides' word counts whenever they differ -- with an indel
+                    # bridged, "219 word(s)" is the A side only and the B text below is a
+                    # different length, which silently reads as a rendering bug otherwise.
+                    edits += (f", {run.indels} inserted/deleted word(s) -- "
+                              f"{run.end_a - run.start_a} words of A against "
+                              f"{run.end_b - run.start_b} of B")
+                lines.append(f"near-exact match, {length} word(s), {edits}")
             else:
                 lines.append(f"exact match, {length} word(s)")
             lines.append(f"  A ¶{para_a}: {text_a}")

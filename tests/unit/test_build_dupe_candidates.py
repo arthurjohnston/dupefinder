@@ -249,5 +249,50 @@ class TestProcessLshCandidatesStreaming(unittest.TestCase):
         self.assertEqual(n, 0)
 
 
+class TestSameAuthorNameVariants(unittest.TestCase):
+    """2026-09-19: same_author compared author_ids, but `authors` is keyed by the raw name string,
+    so "Marin, Lavinia" and "Lavinia Marin" were two different authors and a person's own two papers
+    surfaced as a cross-author candidate (583 such rows on the computer-ethics corpus)."""
+
+    def setUp(self):
+        self.conn, _ = make_db()
+        for pid in (1, 2, 3):
+            self.conn.execute("INSERT INTO papers (id, title, file_path) VALUES (?, 'T', ?)", (pid, f"{pid}.pdf"))
+        for aid, name in ((10, "Marin, Lavinia"), (11, "Lavinia Marin"), (12, "Holm, Søren"), (13, "Soren Holm"),
+                          (14, "L. Marin")):
+            self.conn.execute("INSERT INTO authors (id, name) VALUES (?, ?)", (aid, name))
+        for paper_id, author_id in ((1, 10), (1, 12), (2, 11), (3, 14)):
+            self.conn.execute("INSERT INTO paper_authors VALUES (?, ?, 0)", (paper_id, author_id))
+        self.conn.commit()
+
+    def tearDown(self):
+        self.conn.close()
+
+    def _candidate(self, cid, p1, p2, same_author):
+        self.conn.execute(
+            """INSERT INTO potential_dupes (id, paragraph_id_1, paragraph_id_2, paper_id_1, paper_id_2,
+                                             similarity, same_paper, same_author, created_at)
+               VALUES (?, ?, ?, ?, ?, 0.9, 0, ?, '2026-01-01T00:00:00Z')""",
+            (cid, cid * 10, cid * 10 + 1, p1, p2, same_author),
+        )
+
+    def test_name_order_and_accents_normalized(self):
+        keys = bdc.load_paper_author_keys(self.conn)
+        self.assertEqual(keys[1] & keys[2], {"lavinia marin"})
+        self.assertIn("soren holm", keys[1])
+
+    def test_initials_deliberately_not_matched(self):
+        keys = bdc.load_paper_author_keys(self.conn)
+        self.assertFalse(keys[1] & keys[3])
+
+    def test_backfill_flips_only_name_variant_rows(self):
+        self._candidate(1, 1, 2, 0)
+        self._candidate(2, 1, 3, 0)
+        n = bdc.backfill_same_author(self.conn, bdc.load_paper_author_keys(self.conn))
+        self.assertEqual(n, 1)
+        rows = dict(self.conn.execute("SELECT id, same_author FROM potential_dupes"))
+        self.assertEqual(rows, {1: 1, 2: 0})
+
+
 if __name__ == "__main__":
     unittest.main()

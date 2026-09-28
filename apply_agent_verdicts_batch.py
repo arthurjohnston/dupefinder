@@ -51,7 +51,9 @@ def main():
             continue
         try:
             marked = rd.apply_agent_verdict(conn, row, key)
-            label = rd.AGENT_ACTIONS.get(key, "same_paper correction (no status set)")
+            fallback = ("same_author correction (no status set)" if key == "a"
+                         else "same_paper correction (no status set)")
+            label = rd.AGENT_ACTIONS.get(key, fallback)
             print(f"OK id={candidate_id} -> {key!r} ({label}): {len(marked)} row(s) updated")
             applied += 1
         except Exception as e:

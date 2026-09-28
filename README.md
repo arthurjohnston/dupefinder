@@ -26,6 +26,53 @@ script-by-script reference (every flag, every table column, every known gap) for
 working on the code; `todo.md` has the design notes and incident post-mortems behind the choices
 below.
 
+## Quickstart
+
+Needs Linux or macOS, Python 3.10+ (tested on 3.10 and 3.12), and about 3GB of disk for the Python
+dependencies (PyTorch is most of it). No GPU is needed.
+
+```bash
+git clone https://github.com/arthurjohnston/dupefinder.git && cd dupefinder
+python3 -m venv .venv && source .venv/bin/activate      # Ubuntu: `sudo apt install python3-venv` first
+pip install -r requirements.txt
+python3 tests/run_unit_tests.py                           # ~600 offline tests, a few seconds
+```
+
+Then run the pipeline on the shipped `starting.json`, a list of 14 well-known AI-fairness papers. You can
+replace it with your own `[{"title": ..., "authors": [...], "year": ...}, ...]` list.
+
+```bash
+python3 retrieve_papers.py --email you@your-institution.edu   # use your REAL address (see below)
+python3 run_pipeline.py            # extract -> embed -> find candidates -> classify -> reports
+python3 review_dupes.py --summary  # counts of what was found
+python3 review_dupes.py            # step through candidates one keypress at a time
+```
+
+- **`--email` must be your own address.** Crossref and Unpaywall require a contact address, and
+  Unpaywall rejects `example.com`-style placeholders with HTTP 422. `retrieve_papers.py` refuses
+  obvious placeholders up front.
+- **Expect only some papers to download.** Only legally open-access copies are fetched. For the first
+  three shipped papers, one downloads and two come back `no_oa`. `list_manual_downloads.py` covers the
+  rest (see the runbook below).
+- **The first embedding run downloads the ~90MB `all-MiniLM-L6-v2` model** from Hugging Face. Later runs
+  are fully offline.
+- Everything is written to the current directory: `papers/`, `state.sqlite3` (retrieval bookkeeping),
+  `library.sqlite3` (text, embeddings, candidates), `dupe_reports/` and `flagged_dupe_pdfs/`. Scripts
+  take `--library-db`/`--state-db` (and similar) flags, so you can keep a separate working directory per
+  corpus.
+- Every stage is resumable. Re-running after adding papers to `starting.json` only processes what's new.
+
+**Optional API keys** (set as env vars, never passed as CLI flags): `OPENALEX_API_KEY` is free and
+strongly recommended for any `bulk_retrieve_*` run, since anonymous OpenAlex traffic gets rate-limited
+within a few thousand requests. `CORE_API_KEY` and `ZENODO_API_KEY` are only needed for those two
+retrieval sources.
+
+**To go beyond a hand-written list,** use the `bulk_retrieve_*.py` scripts (listed under "Where
+everything is" below), or `sourcing/` to build a field-wide open-access starting list from OpenAlex.
+
+**Back-tests against real plagiarism cases** (needs network, takes a few minutes):
+`python3 tests/run_tests.py --email you@your-institution.edu`. See `tests/README.md`.
+
 ## What this is
 
 A set of standalone Python scripts chained by file/database handoffs, not a packaged app — there's no
@@ -65,7 +112,7 @@ starting.json (titles/authors/years to find)
 
 Six stages, six scripts (`retrieve_papers.py`, `extract_papers.py`, `embed_paragraphs.py`,
 `build_dupe_candidates.py`, `classify_dupes.py`, `review_dupes.py`), each independently re-runnable.
-`run_pipeline.py` chains the middle four together as one command for "a new batch of papers just got
+`run_pipeline.py` chains the middle four (plus report writing) together as one command for "a new batch of papers just got
 retrieved, now turn that into updated reports."
 
 ### Retrieval
@@ -269,7 +316,7 @@ The pipeline is validated against real, documented plagiarism — not just synth
 the actual goal is finding this in the wild, so it has to be proven against cases where the answer is
 already known.
 
-- **`tests/cases/` + `tests/fixtures/`** — the subset wired into the automated back-test suite
+- **`tests/cases/`** — the subset wired into the automated back-test suite
   (`python3 tests/run_tests.py`, see `tests/README.md`): every case here is asserted to score above a
   measured similarity threshold, so a regression in the matching logic fails a real test, not just a
   vibe check. Currently 4 positive cases (Carlini/"Roadmap for Big Model", Saxby/"Taro Roots", and two
@@ -286,17 +333,12 @@ already known.
 Every case (working or blocked) is attributed to whoever actually found and documented the plagiarism —
 the working ones are also credited in `thankyou.md`.
 
-## Setup
+## Setup notes
 
-```bash
-sudo apt install -y python3-venv python3-pip   # one-time, needs a real terminal (interactive sudo)
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-```
-
-See CLAUDE.md's "Setup" section for what to do if `pip install` fails with
-`externally-managed-environment`, and for the `pdftotext` system dependency `extract_papers.py` needs.
+The Quickstart above covers setup. If `pip install` outside a venv fails with
+`externally-managed-environment` (Ubuntu 24.04's PEP 668 guard), use the venv as shown. CLAUDE.md's
+"Setup" section explains the error. The pipeline itself needs no system packages. `pdftotext`
+(`apt install poppler-utils`) is only used for the by-hand verification steps in `REVIEWING.md`.
 
 ## Runbook: getting a manually-downloaded paper into the pipeline
 
@@ -542,15 +584,55 @@ work. Confirmed for real, the first time this ran against a completely cold mode
 
 ### Then: restart
 
-All six pipeline scripts are idempotent/resumable (state lives in `state.sqlite3`/`library.sqlite3`),
+All the pipeline scripts are idempotent/resumable (state lives in `state.sqlite3`/`library.sqlite3`),
 so once the above is clean, just re-run the script that was interrupted with its normal arguments — no
 special "resume" flag or manual cleanup needed. It'll skip whatever it already finished and pick up
 where it left off.
+
+## Where everything is
+
+The repo root is flat: every script is standalone and `--help` documents its flags. CLAUDE.md has the
+detailed reference for each one.
+
+**Core pipeline**, in order: `retrieve_papers.py` → `extract_papers.py` → `embed_paragraphs.py` →
+`build_dupe_candidates.py` → `classify_dupes.py` → `review_dupes.py`. `run_pipeline.py` chains the
+middle stages. Shared modules: `db.py` (SQLite connections), `lsh_index.py` (candidate index),
+`text_overlap.py` (verbatim-overlap metrics).
+
+**More retrieval sources** (each writes into the same `state.sqlite3`): `bulk_retrieve_arxiv.py`,
+`bulk_retrieve_crossref.py`, `bulk_retrieve_openalex_concept.py`, `bulk_retrieve_theses.py` (DataCite),
+`bulk_retrieve_core.py`, `bulk_retrieve_zenodo.py`, `bulk_retrieve_socarxiv.py`,
+`bulk_retrieve_citations.py` (follows the corpus's own reference lists),
+`bulk_retrieve_author_works.py` (run `resolve_author_openalex_ids.py` first),
+`bulk_retrieve_author_homepages.py`, `bulk_retrieve_retraction_watch.py` and `rescue_via_europepmc.py`.
+For hand-fetching, `list_manual_downloads.py` / `import_manual_downloads.py`. To prune off-topic papers,
+`filter_low_relevance_papers.py`. To build a starting list for a whole field, `sourcing/`.
+
+**Looking closer at candidates**: `compare_two_papers.py` (exhaustive two-document comparison),
+`batch_compare_papers.py`, `rank_paper_pairs.py` (triage a backlog by paper pair),
+`find_title_bucket_dupes.py`, `find_duplicates.py` (brute-force paragraph search),
+`find_duplicate_papers.py` (the same paper cataloged twice), `find_review_candidates.py`,
+`find_plagiarism_sources.py`, `mill_prefix_audit.py` (a publisher's whole catalogue),
+`inspect_lsh_buckets.py`, and `retrieve_flagged_case_authors.py` / `retrieve_flagged_case_context.py`
+(pull in the surrounding literature for one flagged case).
+
+**Reports**: `write_dupe_reports.py` (text), `write_dupe_reports_html.py` (HTML evidence pages),
+`write_case_reports_md.py` (markdown), `write_ready_for_review.py` and `copy_dupe_pdfs.py`.
+
+**Reviewing at scale with AI agents**: `REVIEWING.md` (the verification rules), `LEAD_AGENT_PLAYBOOK.md`
+(running a multi-agent review pass) and `apply_agent_verdicts_batch.py`.
+
+**Maintenance and repair**: `train_boilerplate_family_classifier.py` (the optional ML filter described
+above), `batched_first_scan.py` (a corpus's first LSH scan in memory-bounded batches),
+`fill_missing_overlap.py`, `fix_non_english_paragraphs.py` and `redownload_missing_pdfs.py`.
+
+**Docs**: this README (overview and runbooks), `CLAUDE.md` (per-script reference), `todo.md` (dated
+design notes and post-mortems), `tests/README.md` (the back-test case format), `manual_examples/README.md`
+(documented cases that can't be automated) and `thankyou.md` (credits).
 
 ## License
 
 [Unlicense](LICENSE) — public domain. Do whatever you want with this code, no attribution required.
 
-This does **not** cover the third-party academic papers/PDFs this project retrieves or that a handful of
-`flagged_cases/` write-ups include as evidence — those remain under whatever license/copyright their own
+This does **not** cover the third-party academic papers/PDFs this project retrieves — those remain under whatever license/copyright their own
 publishers or authors hold; check before redistributing any of them yourself.

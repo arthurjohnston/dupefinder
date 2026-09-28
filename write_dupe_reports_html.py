@@ -40,13 +40,15 @@ still renders it (browsers tolerate a missing wrapper), just without the
 """
 
 import argparse
+import difflib
 import html
 import sqlite3
 from pathlib import Path
 
 import db
 import text_overlap as to
-from compare_two_papers import find_shingle_matches, load_paper_words
+from compare_two_papers import (DEFAULT_GAP_EXTEND, DEFAULT_GAP_OPEN, DEFAULT_MAX_GAP,
+                                 DegenerateGappedPair, find_shingle_matches, load_paper_words)
 from review_dupes import WORD_RE
 from write_dupe_reports import slugify
 
@@ -199,6 +201,37 @@ h1 {
 }
 .source-note a { color: var(--accent-strong); }
 
+/* --whole-document: one continuous diff of both papers, not N per-run exhibits. */
+.wdd {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 3px;
+  padding: 1.5rem 1.7rem; font-size: 0.94rem; line-height: 1.75;
+  overflow-wrap: break-word;
+}
+.wdd p { margin: 0 0 0.95rem; }
+.wdd p:last-child { margin-bottom: 0; }
+.wdd .same { background: var(--match-bg); color: var(--match-ink); }
+.wdd .shared-weak { background: var(--surface-2); color: var(--ink-muted); }
+.wdd del { background: var(--diff-a-bg); color: var(--diff-a); text-decoration: line-through; }
+.wdd ins { background: var(--diff-b-bg); color: var(--diff-b); text-decoration: none; }
+.wdd details { margin: 0 0 0.95rem; }
+.wdd summary {
+  cursor: pointer; font-family: var(--font-mono); font-size: 0.78rem;
+  color: var(--ink-muted); padding: 0.2rem 0;
+}
+.wdd-legend {
+  display: flex; flex-wrap: wrap; gap: 0.5rem 1.4rem; margin: 0 0 1.1rem;
+  font-family: var(--font-mono); font-size: 0.74rem; color: var(--ink-muted);
+}
+.wdd-legend b { font-weight: 400; padding: 0 0.35em; }
+.wdd-legend .same-key { background: var(--match-bg); color: var(--match-ink); }
+.wdd-legend .weak-key { background: var(--surface-2); color: var(--ink-muted); }
+.wdd-legend .del-key { background: var(--diff-a-bg); color: var(--diff-a); text-decoration: line-through; }
+.wdd-legend .ins-key { background: var(--diff-b-bg); color: var(--diff-b); }
+.wdd-caveat {
+  font-size: 0.85rem; color: var(--ink-muted); margin: 1.1rem 0 0;
+  border-left: 2px solid var(--border); padding-left: 0.9rem;
+}
+
 .comparison {
   display: grid; grid-template-columns: 1fr auto 1fr; gap: 1.1rem; align-items: stretch;
   margin-bottom: 2.75rem;
@@ -318,7 +351,8 @@ def expand_context(conn, paper_id, start_para, end_para, context=CONTEXT_PARAGRA
 
 
 def render_shingle_exhibits(conn, paper_id_1, paper_id_2, earlier_id, shingle_size, max_exhibits,
-                             mismatch_penalty=1, x_drop=None):
+                             mismatch_penalty=1, x_drop=None, gap_open=None,
+                             gap_extend=DEFAULT_GAP_EXTEND, max_gap=DEFAULT_MAX_GAP):
     """This page's sole exhibit source (see the module docstring for why the potential_dupes-
     sourced candidates aren't rendered as their own exhibits any more): runs
     compare_two_papers.py's exact word-shingle matcher directly across the two papers' full text,
@@ -339,7 +373,8 @@ def render_shingle_exhibits(conn, paper_id_1, paper_id_2, earlier_id, shingle_si
     words_1 = load_paper_words(conn, paper_id_1)
     words_2 = load_paper_words(conn, paper_id_2)
     runs = find_shingle_matches(words_1, words_2, shingle_size=shingle_size,
-                                 mismatch_penalty=mismatch_penalty, x_drop=x_drop)
+                                 mismatch_penalty=mismatch_penalty, x_drop=x_drop,
+                                 gap_open=gap_open, gap_extend=gap_extend, max_gap=max_gap)
     shown = runs[:max_exhibits]
 
     # Selection above keeps the longest N runs (find_shingle_matches()'s own length-descending
@@ -353,7 +388,11 @@ def render_shingle_exhibits(conn, paper_id_1, paper_id_2, earlier_id, shingle_si
     shown = sorted(shown, key=lambda r: r[7] if later_is_paper_2 else r[5])
 
     exhibits = []
-    for i, (length, para_1, para_2, text_1, text_2, start_1, end_1, start_2, end_2, subs) in enumerate(shown, 1):
+    for i, run in enumerate(shown, 1):
+        (length, para_1, para_2, text_1, text_2, start_1, end_1, start_2, end_2, subs) = (
+            run.length, run.para_a, run.para_b, run.text_a, run.text_b,
+            run.start_a, run.end_a, run.start_b, run.end_b, run.substitutions)
+        indels = run.indels
         end_para_1 = words_1[end_1 - 1][1]
         end_para_2 = words_2[end_2 - 1][1]
         range1, full1 = expand_context(conn, paper_id_1, para_1, end_para_1)
@@ -366,9 +405,25 @@ def render_shingle_exhibits(conn, paper_id_1, paper_id_2, earlier_id, shingle_si
             (pid_a, ra, fa, match_a), (pid_b, rb, fb, match_b) = (pid_b, rb, fb, match_b), (pid_a, ra, fa, match_a)
         # Position-aligned regardless of the earlier/later swap above (swapping the pair doesn't
         # change which positions differ from each other) -- computed once, shared by both sides.
-        diff_indices = {i for i, (wa, wb) in enumerate(zip(match_a, match_b)) if wa.lower() != wb.lower()}
-        rendered_a = render_context_with_match(fa, match_a, diff_indices)
-        rendered_b = render_context_with_match(fb, match_b, diff_indices)
+        # That only holds while the two sides have the SAME number of words, i.e. while extension
+        # is lockstep. A gapped run (--gap-open) has an insertion or deletion in it, so position i
+        # on one side is not position i on the other past the first gap, and one shared index set
+        # would mark the wrong words from there on. In that case each side gets its own set,
+        # derived from the alignment difflib reports -- the same alignment the whole-document view
+        # renders, so the two views agree on which words differ.
+        if len(match_a) == len(match_b):
+            diff_a = diff_b = {k for k, (wa, wb) in enumerate(zip(match_a, match_b))
+                               if wa.lower() != wb.lower()}
+        else:
+            diff_a, diff_b = set(), set()
+            lo_a, lo_b = [w.lower() for w in match_a], [w.lower() for w in match_b]
+            for tag, i1, i2, j1, j2 in difflib.SequenceMatcher(None, lo_a, lo_b,
+                                                                autojunk=False).get_opcodes():
+                if tag != "equal":
+                    diff_a.update(range(i1, i2))
+                    diff_b.update(range(j1, j2))
+        rendered_a = render_context_with_match(fa, match_a, diff_a)
+        rendered_b = render_context_with_match(fb, match_b, diff_b)
         lcs = to.longest_common_word_run(fa, fb)
         ngj = to.ngram_jaccard(fa, fb)
         earlier_label = "EARLIER" if earlier_id else "PARAGRAPH A"
@@ -377,8 +432,8 @@ def render_shingle_exhibits(conn, paper_id_1, paper_id_2, earlier_id, shingle_si
 <section class="exhibit">
   <div class="exhibit-head">
     <h3>Shingle match {i} of {len(shown)}</h3>
-    <div class="metrics"><span>{"near-exact run" if subs else "exact run"} <b>{length} words</b></span>
-      {f'<span>substitutions <b>{subs}</b></span>' if subs else ""}
+    <div class="metrics"><span>{"near-exact run" if subs or indels else "exact run"} <b>{length} words</b></span>
+      {f'<span>substitutions <b>{subs}</b></span>' if subs else ""}{f'<span>inserted/deleted <b>{indels}</b> ({end_1 - start_1}w A vs {end_2 - start_2}w B)</span>' if indels else ""}
       <span>LCS <b>{lcs:.2f}</b></span><span>5-gram Jaccard <b>{ngj:.2f}</b></span></div>
   </div>
   <div class="passage-pair">
@@ -390,6 +445,279 @@ def render_shingle_exhibits(conn, paper_id_1, paper_id_2, earlier_id, shingle_si
 </section>""")
     return exhibits, len(runs)
 
+
+
+DEFAULT_MAX_GAP_WORDS = 120  # --max-gap-words: a one-sided stretch longer than this is rendered
+# inside a collapsed <details> rather than inline. Nothing is dropped -- this only stops one
+# paper's genuinely original 3,000-word section from burying the diff it sits inside. The
+# threshold is per gap side, and 0 disables collapsing entirely.
+
+_WDD_SENTENCE_END = (".", "!", "?", '"', "\u201d", ")", "]", ":", ";")
+
+_WDD_TAGS = {
+    "same": ('<span class="same">', "</span>"),
+    "shared-weak": ('<span class="shared-weak">', "</span>"),
+    "del": ("<del>", "</del>"),
+    "ins": ("<ins>", "</ins>"),
+}
+
+
+def _wdd_emit(items):
+    """Render [(tag_key, word, para_break), ...] as paragraphed HTML.
+
+    Consecutive items sharing a tag are wrapped in one tag rather than one per word (same
+    cosmetic reason as render_context_with_match()'s run grouping). `para_break` is the source
+    paragraph index a word came from, or None to mean "never break here": paragraph structure is
+    taken from ONE side only (document A wherever A has words at all), because the two documents'
+    paragraph boundaries don't correspond outside the aligned runs and honoring both produces
+    paragraph breaks in the middle of a sentence.
+
+    A paragraph change is honored only when the preceding word actually ended a sentence. The same
+    PyMuPDF block/page-boundary artifact write_dupe_reports.py's expand_paragraph() exists to undo
+    also splits one continuous sentence across two paragraph records here, and taking those splits
+    literally puts a paragraph break mid-clause -- seen for real on this project's own
+    hospital/women's-safety pair, which breaks right after the swapped title noun. Falling through
+    keeps the sentence whole; the cost is that a genuine paragraph break after an abbreviation or a
+    heading with no terminal punctuation is missed, which is the cheaper error."""
+    out = []
+    open_tag = None
+    cur_para = None
+    started = False
+    last_word = ""
+    for tag, word, para in items:
+        if (para is not None and started and para != cur_para
+                and last_word.rstrip().endswith(_WDD_SENTENCE_END)):
+            if open_tag:
+                out.append(_WDD_TAGS[open_tag][1])
+                open_tag = None
+            out.append("</p>\n<p>")
+        if para is not None:
+            cur_para = para
+        started = True
+        last_word = word
+        if tag != open_tag:
+            if open_tag:
+                out.append(_WDD_TAGS[open_tag][1])
+            out.append(_WDD_TAGS[tag][0])
+            open_tag = tag
+        out.append(html.escape(word) + " ")
+    if open_tag:
+        out.append(_WDD_TAGS[open_tag][1])
+    return f"<p>{''.join(out)}</p>" if started else ""
+
+
+def _wdd_spine(runs):
+    """Pick the heaviest chain of shingle runs that is non-overlapping and strictly forward-moving
+    in BOTH documents -- the alignment a single continuous diff has to follow.
+
+    find_shingle_matches() reports every maximal run it finds, independently: two runs may overlap
+    on one side, or cross (run X earlier than Y in document A but later in B, i.e. the material was
+    reordered). A linear walk can use neither. This is the standard weighted-longest-increasing-
+    subsequence pick, maximizing total aligned words, so the spine keeps the most text it can.
+
+    Returns (spine, dropped_runs). A dropped run is NOT the same thing as lost coverage, and the
+    difference matters: find_shingle_matches() reports one run per (position_a, position_b)
+    occurrence pair, so a phrase appearing three times in each document yields up to nine runs over
+    the same words, and a spine keeping one of them loses nothing at all. On this project's own
+    99%/99% pair, 72 of 80 runs fall outside the spine while spine coverage stays at 99%. Only a
+    drop in the covered-WORD count means the view is actually understating the overlap, which is
+    what render_whole_document_diff() measures and reports.
+
+    O(n^2) in the number of runs, with a greedy fallback past _WDD_SPINE_EXACT_MAX (a boilerplate-
+    heavy pair can report thousands of runs; the exact pick is not worth minutes of CPU there, and
+    the greedy chain is the same answer whenever the runs don't actually cross)."""
+    items = sorted(runs, key=lambda r: (r[5], r[7]))
+    n = len(items)
+    if n == 0:
+        return [], []
+    if n > _WDD_SPINE_EXACT_MAX:
+        spine, ca, cb = [], 0, 0
+        for r in items:
+            if r[5] >= ca and r[7] >= cb:
+                spine.append(r)
+                ca, cb = r[6], r[8]
+        chosen = set(id(r) for r in spine)
+        return spine, [r for r in items if id(r) not in chosen]
+    best = [0] * n
+    prev = [-1] * n
+    for i, ri in enumerate(items):
+        best[i] = ri[6] - ri[5]
+        for j in range(i):
+            if items[j][6] <= ri[5] and items[j][8] <= ri[7] and best[j] + (ri[6] - ri[5]) > best[i]:
+                best[i] = best[j] + (ri[6] - ri[5])
+                prev[i] = j
+    k = max(range(n), key=lambda i: best[i])
+    chain = []
+    while k != -1:
+        chain.append(items[k])
+        k = prev[k]
+    chain.reverse()
+    chosen = set(id(r) for r in chain)
+    return chain, [r for r in items if id(r) not in chosen]
+
+
+_WDD_SPINE_EXACT_MAX = 2500
+
+WDD_UNPLACED_NOTE_WORDS = 100  # below this many matched-but-unplaceable words, the reordering
+# caveat is noise: a handful of words land outside the spine on almost every pair, and a warning
+# that fires every time teaches a reader to skip it.
+
+
+def _wdd_gap_items(words_a, words_b, equal_tag="shared-weak"):
+    """Items for the unaligned stretch between two spine runs.
+
+    `equal_tag` is what a stretch the two sides agree on renders as. It defaults to `shared-weak`
+    (shared, but too short a run to be evidence on its own), which is right for a gap. A gapped
+    matched run (--gap-open) is also rendered through here, because an insertion or deletion inside
+    it means the two sides no longer line up position-for-position -- but there the agreeing
+    stretches ARE the evidence, so the caller passes `same`.
+
+    Not simply "everything here is different": a gap routinely contains text both papers share
+    that merely never reached `shingle_size` consecutive identical words (one substituted word in
+    an eight-word sentence). Running difflib across the gap separates the two, so genuinely shared
+    short wording renders as `shared-weak` rather than being colored as a difference -- the page
+    would otherwise overstate how much of a near-identical pair actually differs. A gap with text
+    on only one side skips the diff and is a plain deletion/insertion."""
+    if not words_a:
+        return [("ins", w, None) for w, _ in words_b]
+    if not words_b:
+        return [("del", w, p) for w, p in words_a]
+    la = [w.lower() for w, _ in words_a]
+    lb = [w.lower() for w, _ in words_b]
+    items = []
+    for tag, i1, i2, j1, j2 in difflib.SequenceMatcher(None, la, lb, autojunk=False).get_opcodes():
+        if tag == "equal":
+            items += [(equal_tag, w, p) for w, p in words_a[i1:i2]]
+        else:
+            items += [("del", w, p) for w, p in words_a[i1:i2]]
+            items += [("ins", w, None) for w, _ in words_b[j1:j2]]
+    return items
+
+
+def render_whole_document_diff(conn, paper_id_1, paper_id_2, earlier_id, shingle_size,
+                                mismatch_penalty=1, x_drop=None,
+                                max_gap_words=DEFAULT_MAX_GAP_WORDS, gap_open=None,
+                                gap_extend=DEFAULT_GAP_EXTEND, max_gap=DEFAULT_MAX_GAP):
+    """Render both complete documents as ONE continuous word-level diff, in reading order, instead
+    of N separate per-run exhibits. Returns (html, stats, total_runs).
+
+    For the case these pages keep running into -- two documents that are substantially the same
+    document, with a swapped title noun and a new byline -- the per-exhibit view is the wrong
+    shape: "Shingle match 1 of 82" invites the reader to assess 82 separate passages, when the
+    finding is that there is one document here, published twice. This view shows that in a single
+    glance: an almost entirely highlighted page with a few red/green spots at the title, the
+    authors and the masthead.
+
+    Mechanism: take the same find_shingle_matches() runs the exhibit view uses, pick the
+    forward-moving non-overlapping chain of them (_wdd_spine()), then walk both documents once --
+    aligned runs as shared text (with X-drop's substituted words as an inline <del>/<ins> pair),
+    the stretches between them diffed against each other (_wdd_gap_items()).
+
+    Deliberately NOT a plain difflib diff of the two word streams, which is the obvious
+    implementation and the wrong one: difflib would happily align two unrelated occurrences of
+    "the system" thousands of words apart and report a matching ratio built mostly from function
+    words. The shingle runs are the evidentiary claim (N consecutive identical words, which
+    doesn't happen by chance); difflib is used only WITHIN a gap the runs already bracket, where
+    both stretches are short and their correspondence is no longer in question.
+
+    Known limitation, reported on the page rather than hidden: the walk is monotone, so material
+    that appears in a different ORDER in the two documents cannot all be placed. Those runs come
+    back from _wdd_spine() as dropped, their words render as unique-to-each-side, and the stats
+    carry both the spine coverage (what this view shows) and the total run coverage (what the
+    scan actually found) so the two can be compared."""
+    words_a, words_b = load_paper_words(conn, paper_id_1), load_paper_words(conn, paper_id_2)
+    pid_a, pid_b = paper_id_1, paper_id_2
+    if earlier_id == paper_id_2:
+        words_a, words_b = words_b, words_a
+        pid_a, pid_b = paper_id_2, paper_id_1
+    runs = find_shingle_matches(words_a, words_b, shingle_size=shingle_size,
+                                 mismatch_penalty=mismatch_penalty, x_drop=x_drop,
+                                 gap_open=gap_open, gap_extend=gap_extend, max_gap=max_gap)
+    spine, dropped = _wdd_spine(runs)
+
+    covered_a, covered_b = set(), set()
+    for r in runs:
+        covered_a.update(range(r[5], r[6]))
+        covered_b.update(range(r[7], r[8]))
+
+    # One flat item stream for the whole document, rendered by a single _wdd_emit() call, so
+    # paragraphs run continuously across the boundary between an aligned run and the gap next to
+    # it. Emitting each block separately (the first version) wrapped every block in its own <p>,
+    # which put a paragraph break at every single difference -- including mid-sentence, right
+    # after a two-word title swap. `parts` therefore only ever gains an entry when a collapsed
+    # <details> block has to interrupt the flow, since that cannot sit inside a <p>.
+    parts = []
+    pending = []
+    subs = 0
+    indels = 0
+    spine_a, spine_b = set(), set()
+    cursor_a = cursor_b = 0
+
+    def add_gap(gap_a, gap_b):
+        items = _wdd_gap_items(gap_a, gap_b)
+        one_sided = not gap_a or not gap_b
+        if one_sided and max_gap_words and len(items) > max_gap_words:
+            label = "only in B" if not gap_a else "only in A"
+            if pending:
+                parts.append(_wdd_emit(pending))
+                pending.clear()
+            parts.append(f'<details><summary>{len(items):,} words {html.escape(label)} '
+                         f'&mdash; click to expand</summary>{_wdd_emit(items)}</details>')
+        else:
+            pending.extend(items)
+
+    for r in spine:
+        start_a, end_a, start_b, end_b = r[5], r[6], r[7], r[8]
+        gap_a, gap_b = words_a[cursor_a:start_a], words_b[cursor_b:start_b]
+        if gap_a or gap_b:
+            add_gap(gap_a, gap_b)
+        run_a, run_b = words_a[start_a:end_a], words_b[start_b:end_b]
+        if len(run_a) == len(run_b):
+            for (wa, pa), (wb, _) in zip(run_a, run_b):
+                if wa.lower() == wb.lower():
+                    pending.append(("same", wa, pa))
+                else:
+                    subs += 1
+                    pending.append(("del", wa, pa))
+                    pending.append(("ins", wb, None))
+        else:
+            # A gapped run (--gap-open): an indel inside it means zip() would pair word i of one
+            # side with word i of the other past the gap and silently drop the tail of the longer
+            # side. Align it the way a gap is aligned instead, but with the agreeing stretches
+            # marked `same` -- inside a matched run they are the evidence, not incidental overlap.
+            # Counts come from the run's own reported figures rather than from the rendered items:
+            # a del/ins pair in the stream can be either a substitution or one half of an indel, and
+            # halving the total (what this did first) silently reports an indel as half a
+            # substitution. find_shingle_matches() already distinguishes them.
+            pending.extend(_wdd_gap_items(run_a, run_b, equal_tag="same"))
+            subs += r.substitutions
+            indels += r.indels
+        spine_a.update(range(start_a, end_a))
+        spine_b.update(range(start_b, end_b))
+        cursor_a, cursor_b = end_a, end_b
+    tail_a, tail_b = words_a[cursor_a:], words_b[cursor_b:]
+    if tail_a or tail_b:
+        add_gap(tail_a, tail_b)
+    if pending:
+        parts.append(_wdd_emit(pending))
+
+    # Words the scan matched that this ordered view could not place. Compared as word sets, not
+    # as run counts -- see _wdd_spine()'s docstring for why the two are nowhere near the same
+    # number, and why only this one is worth telling the reader about.
+    unplaced_a, unplaced_b = len(covered_a - spine_a), len(covered_b - spine_b)
+    stats = {
+        "paper_a": pid_a, "paper_b": pid_b,
+        "words_a": len(words_a), "words_b": len(words_b),
+        "runs": len(runs), "spine_runs": len(spine), "dropped_runs": len(dropped),
+        "substitutions": subs, "indels": indels, "gapped": gap_open is not None,
+        "covered_a": len(covered_a), "covered_b": len(covered_b),
+        "unplaced_a": unplaced_a, "unplaced_b": unplaced_b,
+        "pct_a": 100 * len(covered_a) / len(words_a) if words_a else 0,
+        "pct_b": 100 * len(covered_b) / len(words_b) if words_b else 0,
+        "spine_pct_a": 100 * len(spine_a) / len(words_a) if words_a else 0,
+        "spine_pct_b": 100 * len(spine_b) / len(words_b) if words_b else 0,
+    }
+    return f'<div class="wdd">{"".join(parts)}</div>', stats, len(runs)
 
 def paper_authors(conn, paper_id):
     rows = conn.execute(
@@ -404,7 +732,9 @@ def paper_authors(conn, paper_id):
 def render_case(conn, paper_id_1, paper_id_2, dupe_rows, source_note=None, short_title=None,
                  shingle_size=DEFAULT_SHINGLE_SIZE, max_shingle_exhibits=DEFAULT_MAX_SHINGLE_EXHIBITS,
                  classification=None, mismatch_penalty=1, x_drop=None,
-                 include_shingle_count_in_title=True, library_db_path=None):
+                 include_shingle_count_in_title=True, library_db_path=None,
+                 whole_document=False, max_gap_words=DEFAULT_MAX_GAP_WORDS, gap_open=None,
+                 gap_extend=DEFAULT_GAP_EXTEND, max_gap=DEFAULT_MAX_GAP, neutral=False):
     """dupe_rows: list of potential_dupes rows (sqlite3.Row) for this pair,
     already sorted the way they should display -- may be EMPTY: a pair found by
     find_title_bucket_dupes.py rather than the embedding-similarity pipeline can have zero
@@ -427,6 +757,11 @@ def render_case(conn, paper_id_1, paper_id_2, dupe_rows, source_note=None, short
     finding this is (e.g. computer-ethics/flagged_cases/README.md's paper-mill-vs-different-in-kind
     split), not something derivable from potential_dupes/the shingle scan, so it's passed in rather
     than computed here. None (default) renders no badge, unchanged from before this parameter existed.
+    `whole_document` renders the two papers as one continuous word-level diff instead of the
+    per-run exhibit list -- see render_whole_document_diff()'s docstring for when that's the right
+    shape (two documents that are substantially one document) and what it can't show. It replaces
+    the exhibits rather than adding to them, and needs `shingle_size` (it is built from the same
+    runs); `max_gap_words` is passed through to it.
     Returns (slug, body, shingle_total) -- `shingle_total` (0 when `shingle_size` is None) lets a
     caller decide whether the pair clears --min-shingle-matches before writing anything to disk.
     `library_db_path` (a path string, not the open `conn`) renders a "mark this pair" block with the
@@ -477,18 +812,81 @@ def render_case(conn, paper_id_1, paper_id_2, dupe_rows, source_note=None, short
     no_candidates = not dupe_rows
 
     shingle_exhibits, shingle_total = [], 0
-    if shingle_size:
+    wdd_stats = None
+    if shingle_size and whole_document:
+        wdd_html, wdd_stats, shingle_total = render_whole_document_diff(
+            conn, paper_id_1, paper_id_2, earlier_id, shingle_size,
+            mismatch_penalty=mismatch_penalty, x_drop=x_drop, max_gap_words=max_gap_words,
+            gap_open=gap_open, gap_extend=gap_extend, max_gap=max_gap,
+        )
+        shingle_exhibits = [wdd_html]
+    elif shingle_size:
         shingle_exhibits, shingle_total = render_shingle_exhibits(
             conn, paper_id_1, paper_id_2, earlier_id, shingle_size, max_shingle_exhibits,
             mismatch_penalty=mismatch_penalty, x_drop=x_drop,
+            gap_open=gap_open, gap_extend=gap_extend, max_gap=max_gap,
         )
+    # Under --gap-open a reported run is no longer a purely exact match: it can contain substituted
+    # words AND inserted/deleted ones. Every heading, legend and footer that says "exact" has to stop
+    # saying it, or the page overstates its own evidence to whoever it gets sent to.
+    # Three tiers, because the extension mode really does change what a "run" is and the page should
+    # not claim more than the scan established. Note --x-drop ALONE already permits substituted
+    # words, so the old blanket "exact word-shingle matches" heading was loose before --gap-open
+    # existed; this corrects that too rather than only labelling the new mode.
+    gapped = gap_open is not None
+    if gapped:
+        run_kind = "near-verbatim"
+        match_rule = (f"{shingle_size}+ consecutive words, allowing substituted and "
+                      f"inserted/deleted words within a run")
+    elif x_drop is not None:
+        run_kind = "near-exact"
+        match_rule = f"{shingle_size}+ consecutive words, allowing substituted words within a run"
+    else:
+        run_kind = "exact"
+        match_rule = f"{shingle_size}+ consecutive identical words"
     shingle_divider = ""
-    if shingle_size:
+    if wdd_stats:
+        s = wdd_stats
+        a_label, b_label = ("EARLIER", "LATER") if earlier_id else ("PAPER A", "PAPER B")
+        reorder_note = ""
+        # Only worth saying when the ordered view actually shows less than the scan found. A run
+        # falling outside the spine usually costs nothing (see _wdd_spine()), so reporting dropped
+        # runs here would cry reordering on pairs that are cleanly aligned end to end.
+        if max(s["unplaced_a"], s["unplaced_b"]) >= WDD_UNPLACED_NOTE_WORDS:
+            reorder_note = (
+                f'<p class="wdd-caveat">This view reads both papers in order, so matched text that '
+                f'sits at a different POSITION in each one cannot be placed: '
+                f'{s["unplaced_a"]:,} words of {a_label.lower()} and {s["unplaced_b"]:,} of '
+                f'{b_label.lower()} are matched by the scan but render below as unique to one side. '
+                f'The overlap figure is therefore the scan\'s &mdash; <b>{s["pct_a"]:.0f}%</b> of '
+                f'{a_label.lower()} and <b>{s["pct_b"]:.0f}%</b> of {b_label.lower()} &mdash; not the '
+                f'{s["spine_pct_a"]:.0f}%/{s["spine_pct_b"]:.0f}% this diff shows in place. '
+                f'The per-run exhibit view (drop --whole-document) shows every run regardless of '
+                f'order.</p>'
+            )
+        shingle_divider = f"""
+<div class="exhibit-head" style="margin-top:0.5rem;">
+  <h3>Both documents, end to end, as one diff</h3>
+  <div class="metrics">
+    <span>shared <b>{s["pct_a"]:.0f}%</b> of {a_label.lower()} / <b>{s["pct_b"]:.0f}%</b> of {b_label.lower()}</span>
+    <span>{s["words_a"]:,} vs {s["words_b"]:,} words</span>
+    <span><b>{s["runs"]}</b> {run_kind} run{"s" if s["runs"] != 1 else ""}</span>
+    {f'<span>substituted words <b>{s["substitutions"]}</b></span>' if s["substitutions"] else ""}
+    {f'<span>inserted/deleted <b>{s["indels"]}</b></span>' if s.get("indels") else ""}
+  </div>
+</div>
+<div class="wdd-legend">
+  <span><b class="same-key">shared</b> ({match_rule})</span>
+  <span><b class="weak-key">shared, below that length</b></span>
+  <span><b class="del-key">only in {a_label.lower()}</b></span>
+  <span><b class="ins-key">only in {b_label.lower()}</b></span>
+</div>{f'<p class="wdd-caveat">Red and green mark two different things, both real: text present in only one paper, and single words substituted or inserted/deleted <em>inside</em> an otherwise-shared run. The run counts above separate them. Note also what the percentage counts: every word falling inside a matched run, <em>including</em> those edited words. Of the {s["covered_a"]:,} words it counts as shared on the {a_label.lower()} side, {s["substitutions"] + s["indels"]:,} ({100 * (s["substitutions"] + s["indels"]) / max(s["covered_a"], 1):.0f}%) are substituted or inserted/deleted rather than identical &mdash; so read the figure as "this much of the document is the same passage", not "this much is word-for-word".</p>' if gapped else ""}{reorder_note}"""
+    elif shingle_size:
         shown_note = (f" (top {len(shingle_exhibits)} by length shown)"
                       if shingle_total > len(shingle_exhibits) else "")
         shingle_divider = f"""
 <div class="exhibit-head" style="margin-top:0.5rem;">
-  <h3>Exact word-shingle matches ({shingle_size}+ consecutive words)</h3>
+  <h3>{run_kind.capitalize()} word-shingle matches ({match_rule})</h3>
   <div class="metrics"><span><b>{shingle_total}</b> run{"s" if shingle_total != 1 else ""} found{shown_note}</span></div>
 </div>"""
 
@@ -498,7 +896,7 @@ def render_case(conn, paper_id_1, paper_id_2, dupe_rows, source_note=None, short
         tab_title = f"{tab_title} ({shingle_total} shingle match{'es' if shingle_total != 1 else ''})"
 
     shingle_summary = (
-        f'<span>exact shingle runs ({shingle_size}+ words) <strong>{shingle_total}</strong></span>'
+        f'<span>{run_kind} shingle runs ({shingle_size}+ words) <strong>{shingle_total}</strong></span>'
         if shingle_size else ""
     )
     if no_candidates:
@@ -521,18 +919,36 @@ def render_case(conn, paper_id_1, paper_id_2, dupe_rows, source_note=None, short
             f"(embedding cosine similarity {min(sims):.2f}&ndash;{max(sims):.2f}) identified this "
             f"pair for review."
         )
-    dek = (
-        f"{found_by} The exhibits below are exact word-shingle matches instead &mdash; a "
-        f"multi-word verbatim run is the more convincing "
-        f"“this was copied” signal, with the matched span "
-        f'<mark class="match" style="padding:0 .3em">highlighted</mark>.'
-        if shingle_size else
-        f"{found_by} --no-shingles was set, so no exhibits are rendered below."
-    )
-    classification_html = f'<p class="classification">{html.escape(classification)}</p>' if classification else ""
+    if wdd_stats:
+        dek = (
+            f"{found_by} Below, both papers are rendered end to end as a single word-level diff: "
+            f"text the two share verbatim is "
+            f'<mark class="match" style="padding:0 .3em">highlighted</mark>, and everything that '
+            f"differs is marked where it falls. This is the view for a pair that is substantially "
+            f"one document rather than a handful of reused passages &mdash; what it shows is how "
+            f"little differs, and where."
+        )
+    elif shingle_size:
+        dek = (
+            f"{found_by} The exhibits below are {run_kind} word-shingle matches instead &mdash; a "
+            f"multi-word verbatim run is the more convincing "
+            + ("evidence of shared text than embedding similarity" if neutral
+               else "“this was copied” signal")
+            + f", with the matched span "
+            f'<mark class="match" style="padding:0 .3em">highlighted</mark>.'
+        )
+    else:
+        dek = f"{found_by} --no-shingles was set, so no exhibits are rendered below."
+
+    # --neutral pages are for showing the tool's output to people outside a review, so they carry
+    # no verdict: no classification badge, no directional arrow, no review_dupes.py commands.
+    classification_html = (f'<p class="classification">{html.escape(classification)}</p>'
+                           if classification and not neutral else "")
+    eyebrow = "Text-overlap comparison" if neutral else "Duplicate-text finding"
+    arrow = "&harr;" if neutral else "&rarr;"
 
     actions_html = ""
-    if dupe_rows and library_db_path:
+    if dupe_rows and library_db_path and not neutral:
         # Any row between the pair works -- both 'p' and 'a' cascade to every potential_dupes
         # row between paper_id_1/paper_id_2 (mark_same_paper()/mark_same_author()), so this id
         # is just a handle, not a claim that this specific row is the one being judged.
@@ -552,13 +968,13 @@ def render_case(conn, paper_id_1, paper_id_2, dupe_rows, source_note=None, short
 <div class="page">
   <div class="lede">
     {classification_html}
-    <p class="eyebrow">Duplicate-text finding</p>
-    <h1>{html.escape(title1 if earlier_id != paper_id_2 else title2)} &rarr; {html.escape(title2 if earlier_id != paper_id_2 else title1)}</h1>
+    <p class="eyebrow">{eyebrow}</p>
+    <h1>{html.escape(title1 if earlier_id != paper_id_2 else title2)} {arrow} {html.escape(title2 if earlier_id != paper_id_2 else title1)}</h1>
     <p class="dek">{dek}</p>
     {source_html}
     <div class="comparison">
       {left}
-      <div class="connector">&rarr;</div>
+      <div class="connector">{arrow}</div>
       {right}
     </div>
     <div class="summary-bar">
@@ -570,7 +986,7 @@ def render_case(conn, paper_id_1, paper_id_2, dupe_rows, source_note=None, short
   {shingle_divider}
   {"".join(shingle_exhibits)}
   <footer>Generated by write_dupe_reports_html.py from library.sqlite3&rsquo;s potential_dupes table
-    (grouping/stats only) {f"and a {shingle_size}+-word exact word-shingle scan (exhibits)" if shingle_size else ""}.</footer>
+    (grouping/stats only){f" and a {shingle_size}+-word word-shingle scan" if shingle_size else ""}{f", extended with X-drop {x_drop}" if shingle_size and x_drop is not None else ""}{f" and gapped alignment (gap open {gap_open}, extend {gap_extend}, max gap {max_gap}) &mdash; so a run may contain substituted and inserted/deleted words" if gapped else (" &mdash; so a run may contain substituted words, but no insertions or deletions" if shingle_size and x_drop is not None else (" &mdash; exact matches only" if shingle_size else ""))}.</footer>
 </div>"""
     slug = f"{slugify(title1)}-vs-{slugify(title2)}"
     if shingle_size and include_shingle_count_in_title:
@@ -614,6 +1030,25 @@ def parse_args():
                               f"the longest ones (default {DEFAULT_MAX_SHINGLE_EXHIBITS}) -- but "
                               f"then DISPLAYED in the later/flagged paper's own reading order, not "
                               f"longest-first; see render_shingle_exhibits()'s docstring")
+    parser.add_argument("--neutral", action="store_true",
+                        help="page for showing output outside a review: a 'Text-overlap comparison' "
+                             "heading, a two-way arrow between the papers instead of a directional "
+                             "one, no 'this was copied' wording, and no --classification badge or "
+                             "review_dupes.py commands")
+    parser.add_argument("--whole-document", action="store_true",
+                         help="render both papers end to end as ONE continuous word-level diff "
+                              "instead of a list of per-run exhibits -- for a pair that is "
+                              "substantially the same document (a retitled republication), where "
+                              "'Shingle match 1 of 82' invites reading 82 separate findings when "
+                              "the finding is that there is one document here. Built from the same "
+                              "shingle runs, so it needs --shingle-size; see "
+                              "render_whole_document_diff() for what a monotone diff cannot show "
+                              "when material is reordered (the page reports it).")
+    parser.add_argument("--max-gap-words", type=int, default=DEFAULT_MAX_GAP_WORDS,
+                         help=f"--whole-document only: collapse a one-sided stretch longer than "
+                              f"this into a click-to-expand block (default {DEFAULT_MAX_GAP_WORDS}, "
+                              f"0 disables). Nothing is omitted -- this keeps one paper's genuinely "
+                              f"original long section from burying the diff around it.")
     parser.add_argument("--x-drop", type=int, default=None,
                          help="enable seed-and-extend tolerance for isolated word substitutions past "
                               "each exact shingle match's boundary -- see compare_two_papers.py's "
@@ -622,6 +1057,19 @@ def parse_args():
     parser.add_argument("--mismatch-penalty", type=int, default=1,
                          help="score subtracted per mismatched word during --x-drop extension; only "
                               "meaningful when --x-drop is set")
+    parser.add_argument("--gap-open", type=int, nargs="?", const=DEFAULT_GAP_OPEN, default=None,
+                         help=f"upgrade extension from --x-drop's lockstep walk to a GAPPED one that "
+                              f"bridges inserted/deleted words as well as substituted ones -- see "
+                              f"compare_two_papers.py's _extend_gapped(). Needs --x-drop (that is "
+                              f"the threshold it stops on); 8 suits a gapped run better than the 3 "
+                              f"that suits lockstep. Bare flag = {DEFAULT_GAP_OPEN}. Runs get longer "
+                              f"and fewer, and both views render the indels honestly.")
+    parser.add_argument("--gap-extend", type=int, default=DEFAULT_GAP_EXTEND,
+                         help=f"score per further word of an already-open gap (default "
+                              f"{DEFAULT_GAP_EXTEND}); only meaningful with --gap-open")
+    parser.add_argument("--max-gap", type=int, default=DEFAULT_MAX_GAP,
+                         help=f"longest single insertion/deletion --gap-open bridges, in words "
+                              f"(default {DEFAULT_MAX_GAP}); a longer one stays two runs")
     parser.add_argument("--min-shingle-matches", type=int, default=DEFAULT_MIN_SHINGLE_MATCHES,
                          help=f"skip writing a pair's page entirely (no file) if its exact "
                               f"word-shingle scan found fewer than this many runs (default "
@@ -658,6 +1106,10 @@ def parse_args():
 
 def main():
     args = parse_args()
+    if args.gap_open is not None and args.x_drop is None:
+        raise SystemExit("--gap-open needs --x-drop as well: x-drop is the score-drop threshold the "
+                          "gapped extension stops on (see compare_two_papers.py's _extend_gapped()). "
+                          "Try --x-drop 8.")
     conn = db.connect(args.library_db)
     conn.row_factory = sqlite3.Row
     args.out_dir.mkdir(parents=True, exist_ok=True)
@@ -684,6 +1136,7 @@ def main():
     shingle_size = None if args.no_shingles else args.shingle_size
     skipped = 0
     skipped_identical_titles = 0
+    skipped_degenerate = 0
     skipped_year_gap = 0
     for (pid1, pid2), group_rows in groups.items():
         if args.skip_identical_titles:
@@ -701,18 +1154,31 @@ def main():
                 print(f"  skipped {pid1}/{pid2} (years {year1}/{year2}, below --min-year-gap "
                       f"{args.min_year_gap})")
                 continue
-        slug, body, shingle_total = render_case(
-            conn, pid1, pid2, group_rows,
-            source_note=args.source_note if single else None,
-            short_title=args.title if single else None,
-            shingle_size=shingle_size,
-            max_shingle_exhibits=args.max_shingle_exhibits,
-            classification=args.classification if single else None,
-            mismatch_penalty=args.mismatch_penalty,
-            x_drop=args.x_drop,
-            include_shingle_count_in_title=not args.no_shingle_count_in_title,
-            library_db_path=args.library_db,
-        )
+        try:
+            slug, body, shingle_total = render_case(
+                conn, pid1, pid2, group_rows,
+                source_note=args.source_note if single else None,
+                short_title=args.title if single else None,
+                shingle_size=shingle_size,
+                max_shingle_exhibits=args.max_shingle_exhibits,
+                classification=args.classification if single else None,
+                mismatch_penalty=args.mismatch_penalty,
+                x_drop=args.x_drop,
+                include_shingle_count_in_title=not args.no_shingle_count_in_title,
+                neutral=args.neutral,
+                library_db_path=args.library_db,
+                whole_document=args.whole_document,
+                max_gap_words=args.max_gap_words,
+                gap_open=args.gap_open,
+                gap_extend=args.gap_extend,
+                max_gap=args.max_gap,
+            )
+        except DegenerateGappedPair as exc:
+            # Skip the pair rather than abort a multi-pair run; a single --ids/--paper-ids run
+            # prints the same line and writes nothing, which is the honest outcome.
+            skipped_degenerate += 1
+            print(f"  skipped {pid1}/{pid2}: --gap-open refused -- {exc}")
+            continue
         if shingle_size and shingle_total < args.min_shingle_matches:
             skipped += 1
             print(f"  skipped {pid1}/{pid2} ({shingle_total} shingle match"
@@ -727,6 +1193,9 @@ def main():
     if skipped:
         print(f"{skipped} pair(s) skipped entirely (below --min-shingle-matches "
               f"{args.min_shingle_matches}) -- pass --min-shingle-matches 0 to write them anyway")
+    if skipped_degenerate:
+        print(f"{skipped_degenerate} pair(s) skipped: too repetitive for --gap-open to finish "
+              f"(compare_two_papers.MAX_GAPPED_SEED_HITS) -- drop --gap-open for those")
     if skipped_identical_titles:
         print(f"{skipped_identical_titles} pair(s) skipped entirely (identical titles) -- "
               f"drop --skip-identical-titles to write them anyway")

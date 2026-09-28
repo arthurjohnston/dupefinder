@@ -777,7 +777,9 @@ def main():
             sys.exit(1)
         print_candidate(row, sys.stdout.isatty() and not args.no_color, 0, 1)
         marked = apply_agent_verdict(conn, row, key)
-        label = AGENT_ACTIONS.get(key, "same_paper correction (no status set)")
+        fallback = ("same_author correction (no status set)" if key == "a"
+                     else "same_paper correction (no status set)")
+        label = AGENT_ACTIONS.get(key, fallback)
         print(f"\n  applied {key!r} -> {label}: {len(marked)} potential_dupes row(s) updated")
         conn.close()
         return

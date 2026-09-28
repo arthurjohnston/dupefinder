@@ -89,8 +89,8 @@ anyone at or above `PAPER_MILL_FRACTION_THRESHOLD` -- `--no-paper-mill-filter` r
 the old unfiltered behavior.
 
 Usage:
-    python3 bulk_retrieve_author_works.py --email you@example.com --dry-run
-    python3 bulk_retrieve_author_works.py --email you@example.com
+    python3 bulk_retrieve_author_works.py --email you@your-institution.edu --dry-run
+    python3 bulk_retrieve_author_works.py --email you@your-institution.edu
 """
 
 import argparse

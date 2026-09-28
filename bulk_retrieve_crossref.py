@@ -318,7 +318,7 @@ def parse_args():
                               "incompatible with --keyword (a keyword-restricted crawl and a whole-catalog "
                               "crawl are different operations, not additive). Added because even trying every "
                               "one of DEFAULT_KEYWORDS against a --doi-prefix leaves real gaps -- a live check "
-                              "against 10.34218 (IAEME) found only 56% coverage (2,844 of 5,088 works actually "
+                              "against 10.34218 (IAEME) found only 56%% coverage (2,844 of 5,088 works actually "
                               "registered under that prefix) after a full keyword sweep, because a publisher "
                               "with dozens of unrelated sub-journals (engineering, business, cloud computing, "
                               "...) has plenty of content no AI-ethics keyword will ever match -- including, "

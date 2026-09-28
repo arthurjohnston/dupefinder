@@ -19,8 +19,7 @@ fairness accountability transparency
 automated decision making ethics
 
 # Adjacent-but-distinct topics added to broaden scope beyond narrow
-# "computer ethics" phrasing (pool-size-checked before adding; see
-# coverage_join.py/enrich_open_access.py chat history for rationale).
+# "computer ethics" phrasing (each checked for result-pool size before adding).
 AI governance
 algorithmic accountability
 digital rights

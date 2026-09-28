@@ -21,10 +21,10 @@ For each case, this script:
      reports PASS/FAIL.
 
 Usage:
-    python3 tests/run_tests.py --email you@example.com
-    python3 tests/run_tests.py --email you@example.com --case carlini-roadmap-2022
-    python3 tests/run_tests.py --email you@example.com --keep-work   # inspect DBs after
-    python3 tests/run_tests.py --email you@example.com --refetch     # force a clean re-download
+    python3 tests/run_tests.py --email you@your-institution.edu
+    python3 tests/run_tests.py --email you@your-institution.edu --case carlini-roadmap-2022
+    python3 tests/run_tests.py --email you@your-institution.edu --keep-work   # inspect DBs after
+    python3 tests/run_tests.py --email you@your-institution.edu --refetch     # force a clean re-download
 
 Downloaded PDFs + state.sqlite3 (tests/work/<case>/papers/, state.sqlite3) are
 a cache, not run output: they're left in place after every run (regardless of

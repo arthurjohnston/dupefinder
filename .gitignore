@@ -49,6 +49,7 @@ computer-ethics/
 !/tests/
 !/sourcing/
 !/manual_examples/
+!/example_output/
 
 # Scratch working files: ad-hoc compare_two_papers.py/--out report dumps and a
 # copy-paste command scratchpad. Regenerated on demand from the databases, never
@@ -56,3 +57,10 @@ computer-ethics/
 output.txt
 match_text.txt
 /notes
+
+# Case-tracking notes that name real people in plagiarism allegations -- kept on
+# disk for the reviewer, never committed.
+FLAGGED_CASES_INDEX.txt
+RETRACTION_WATCH_EMAIL.txt
+WITHDRAWN_CASES.txt
+REPORT_CLEANUP_*.txt

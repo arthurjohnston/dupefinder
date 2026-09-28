@@ -28,9 +28,9 @@ warning rather than inventing a new path/schema convention here.
 
 Usage:
     python3 redownload_missing_pdfs.py --library-db computer-ethics/library.sqlite3 \\
-        --repo-root . --email you@example.com --paper-ids 1040,3094,41476
+        --repo-root . --email you@your-institution.edu --paper-ids 1040,3094,41476
     python3 redownload_missing_pdfs.py --library-db computer-ethics/library.sqlite3 \\
-        --repo-root . --email you@example.com --scan-dir computer-ethics/dupe_comparisons
+        --repo-root . --email you@your-institution.edu --scan-dir computer-ethics/dupe_comparisons
 """
 
 import argparse

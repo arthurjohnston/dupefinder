@@ -47,7 +47,11 @@ from pathlib import Path
 import db
 import text_overlap as to
 from compare_two_papers import (
+    DEFAULT_GAP_EXTEND,
+    DEFAULT_GAP_OPEN,
+    DEFAULT_MAX_GAP,
     DEFAULT_MODEL,
+    DegenerateGappedPair,
     embed_sentences,
     find_matches,
     find_shingle_matches,
@@ -104,7 +108,8 @@ def paper_meta(conn, paper_id):
 def render_pair_report(conn, pid1, pid2, dupe_rows, model, shingle_size, max_shingle_exhibits,
                         x_drop, mismatch_penalty, skip_sentences, min_sentence_similarity,
                         min_lcs_ratio, top_n_sentences, word_cache, sentence_cache,
-                        min_shingle_matches):
+                        min_shingle_matches, gap_open=None, gap_extend=DEFAULT_GAP_EXTEND,
+                        max_gap=DEFAULT_MAX_GAP):
     """Returns (slug, report_text, shingle_total), or (None, None, shingle_total) if the pair
     doesn't clear `min_shingle_matches` -- checked immediately after the (cheap) shingle scan
     and BEFORE the (expensive, one sentence-transformers encode() call per paper) sentence-
@@ -117,7 +122,8 @@ def render_pair_report(conn, pid1, pid2, dupe_rows, model, shingle_size, max_shi
     words_1 = get_words(conn, pid1, word_cache)
     words_2 = get_words(conn, pid2, word_cache)
     shingle_runs = find_shingle_matches(words_1, words_2, shingle_size=shingle_size,
-                                        mismatch_penalty=mismatch_penalty, x_drop=x_drop)
+                                        mismatch_penalty=mismatch_penalty, x_drop=x_drop,
+                                        gap_open=gap_open, gap_extend=gap_extend, max_gap=max_gap)
     shingle_total = len(shingle_runs)
     if shingle_total < min_shingle_matches:
         return None, None, shingle_total
@@ -171,10 +177,19 @@ def render_pair_report(conn, pid1, pid2, dupe_rows, model, shingle_size, max_shi
         f"length descending",
         "=" * 100,
     ]
-    for length, para_a, para_b, text_a, text_b, _start_a, _end_a, _start_b, _end_b, subs in shown_shingles:
+    for run in shown_shingles:
+        length, para_a, para_b, text_a, text_b = (run.length, run.para_a, run.para_b,
+                                                   run.text_a, run.text_b)
+        subs, indels = run.substitutions, run.indels
         lines.append("")
-        lines.append(f"near-exact match, {length} word(s), {subs} substitution(s)" if subs
-                     else f"exact match, {length} word(s)")
+        if subs or indels:
+            edits = f"{subs} substitution(s)"
+            if indels:
+                edits += (f", {indels} inserted/deleted word(s) -- {run.end_a - run.start_a} words "
+                          f"of A against {run.end_b - run.start_b} of B")
+            lines.append(f"near-exact match, {length} word(s), {edits}")
+        else:
+            lines.append(f"exact match, {length} word(s)")
         lines.append(f"  A (paper {pid1}) ¶{para_a}: {text_a}")
         lines.append(f"  B (paper {pid2}) ¶{para_b}: {text_b}")
         lines.append("-" * 100)
@@ -233,6 +248,20 @@ def parse_args():
                          help="enable seed-and-extend tolerance for isolated word substitutions -- "
                               "see compare_two_papers.py's find_shingle_matches() docstring. Default "
                               "(None) preserves exact-only matching.")
+    parser.add_argument("--gap-open", type=int, nargs="?", const=DEFAULT_GAP_OPEN, default=None,
+                         help=f"use the GAPPED extension instead of --x-drop's lockstep walk, so a "
+                              f"run survives inserted/deleted words and not only substituted ones "
+                              f"(compare_two_papers.py's _extend_gapped()). Bare flag = "
+                              f"{DEFAULT_GAP_OPEN}; needs --x-drop, and 8 suits it better than 3. "
+                              f"Note this interacts with --min-shingle-matches: gapped scanning "
+                              f"reports FEWER, longer runs for the same text, so a threshold tuned "
+                              f"against lockstep counts will filter more aggressively.")
+    parser.add_argument("--gap-extend", type=int, default=DEFAULT_GAP_EXTEND,
+                         help=f"score per further word of an already-open gap (default "
+                              f"{DEFAULT_GAP_EXTEND}); only meaningful with --gap-open")
+    parser.add_argument("--max-gap", type=int, default=DEFAULT_MAX_GAP,
+                         help=f"longest single insertion/deletion --gap-open bridges, in words "
+                              f"(default {DEFAULT_MAX_GAP}); a longer one stays two runs")
     parser.add_argument("--mismatch-penalty", type=int, default=1,
                          help="score subtracted per mismatched word during --x-drop extension; only "
                               "meaningful when --x-drop is set")
@@ -269,6 +298,9 @@ def parse_args():
 
 def main():
     args = parse_args()
+    if args.gap_open is not None and args.x_drop is None:
+        raise SystemExit("--gap-open needs --x-drop as well: x-drop is the score-drop threshold "
+                          "the gapped extension stops on. Try --x-drop 8.")
     conn = db.connect(args.library_db)
     conn.row_factory = sqlite3.Row
     args.out_dir.mkdir(parents=True, exist_ok=True)
@@ -315,15 +347,20 @@ def main():
                 print(f"  skipped {pid1}/{pid2} (years {y1}/{y2}, below --min-year-gap {args.min_year_gap})")
                 continue
 
-        slug, report, shingle_total = render_pair_report(
-            conn, pid1, pid2, group_rows, model,
-            shingle_size=args.shingle_size, max_shingle_exhibits=args.max_shingle_exhibits,
-            x_drop=args.x_drop, mismatch_penalty=args.mismatch_penalty,
-            skip_sentences=args.skip_sentences, min_sentence_similarity=args.min_similarity,
-            min_lcs_ratio=args.min_lcs_ratio, top_n_sentences=args.top_n,
-            word_cache=word_cache, sentence_cache=sentence_cache,
-            min_shingle_matches=args.min_shingle_matches,
-        )
+        try:
+            slug, report, shingle_total = render_pair_report(
+                conn, pid1, pid2, group_rows, model,
+                shingle_size=args.shingle_size, max_shingle_exhibits=args.max_shingle_exhibits,
+                x_drop=args.x_drop, mismatch_penalty=args.mismatch_penalty,
+                skip_sentences=args.skip_sentences, min_sentence_similarity=args.min_similarity,
+                min_lcs_ratio=args.min_lcs_ratio, top_n_sentences=args.top_n,
+                word_cache=word_cache, sentence_cache=sentence_cache,
+                min_shingle_matches=args.min_shingle_matches,
+                gap_open=args.gap_open, gap_extend=args.gap_extend, max_gap=args.max_gap,
+            )
+        except DegenerateGappedPair as exc:
+            print(f"  skipped {pid1}/{pid2}: --gap-open refused -- {exc}")
+            continue
         if slug is None:
             skipped_shingles += 1
             print(f"  skipped {pid1}/{pid2} ({shingle_total} shingle matches, below "
