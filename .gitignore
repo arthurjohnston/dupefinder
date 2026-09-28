@@ -49,6 +49,7 @@ computer-ethics/
 !/tests/
 !/sourcing/
 !/manual_examples/
+!/example_output/
 
 # Scratch working files: ad-hoc compare_two_papers.py/--out report dumps and a
 # copy-paste command scratchpad. Regenerated on demand from the databases, never

@@ -581,6 +581,11 @@ disables) collapses a long one-sided stretch into a click-to-expand block so one
 original section can't bury the diff around it; nothing is omitted. Pages run roughly a fifth the
 size of the exhibit version, since no passage is rendered twice with context.
 
+**`--neutral`**: for pages shown outside a review (this repo's `example_output/`). Heading
+"Text-overlap comparison" instead of "Duplicate-text finding", a two-way arrow between the papers
+instead of an earlier→later one, no "this was copied" phrasing, and no `--classification` badge or
+`review_dupes.py` command block. Measurements and the diff itself are unchanged.
+
 **Labels follow the extension mode**, in three tiers, because the mode changes what a "run" is and a
 page that will be sent to a publisher must not claim more than the scan established: no `--x-drop` is
 "exact" (N consecutive *identical* words); `--x-drop` alone is "near-exact" (substituted words allowed

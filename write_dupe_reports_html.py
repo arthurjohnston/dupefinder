@@ -734,7 +734,7 @@ def render_case(conn, paper_id_1, paper_id_2, dupe_rows, source_note=None, short
                  classification=None, mismatch_penalty=1, x_drop=None,
                  include_shingle_count_in_title=True, library_db_path=None,
                  whole_document=False, max_gap_words=DEFAULT_MAX_GAP_WORDS, gap_open=None,
-                 gap_extend=DEFAULT_GAP_EXTEND, max_gap=DEFAULT_MAX_GAP):
+                 gap_extend=DEFAULT_GAP_EXTEND, max_gap=DEFAULT_MAX_GAP, neutral=False):
     """dupe_rows: list of potential_dupes rows (sqlite3.Row) for this pair,
     already sorted the way they should display -- may be EMPTY: a pair found by
     find_title_bucket_dupes.py rather than the embedding-similarity pipeline can have zero
@@ -932,16 +932,23 @@ def render_case(conn, paper_id_1, paper_id_2, dupe_rows, source_note=None, short
         dek = (
             f"{found_by} The exhibits below are {run_kind} word-shingle matches instead &mdash; a "
             f"multi-word verbatim run is the more convincing "
-            f"“this was copied” signal, with the matched span "
+            + ("evidence of shared text than embedding similarity" if neutral
+               else "“this was copied” signal")
+            + f", with the matched span "
             f'<mark class="match" style="padding:0 .3em">highlighted</mark>.'
         )
     else:
         dek = f"{found_by} --no-shingles was set, so no exhibits are rendered below."
 
-    classification_html = f'<p class="classification">{html.escape(classification)}</p>' if classification else ""
+    # --neutral pages are for showing the tool's output to people outside a review, so they carry
+    # no verdict: no classification badge, no directional arrow, no review_dupes.py commands.
+    classification_html = (f'<p class="classification">{html.escape(classification)}</p>'
+                           if classification and not neutral else "")
+    eyebrow = "Text-overlap comparison" if neutral else "Duplicate-text finding"
+    arrow = "&harr;" if neutral else "&rarr;"
 
     actions_html = ""
-    if dupe_rows and library_db_path:
+    if dupe_rows and library_db_path and not neutral:
         # Any row between the pair works -- both 'p' and 'a' cascade to every potential_dupes
         # row between paper_id_1/paper_id_2 (mark_same_paper()/mark_same_author()), so this id
         # is just a handle, not a claim that this specific row is the one being judged.
@@ -961,13 +968,13 @@ def render_case(conn, paper_id_1, paper_id_2, dupe_rows, source_note=None, short
 <div class="page">
   <div class="lede">
     {classification_html}
-    <p class="eyebrow">Duplicate-text finding</p>
-    <h1>{html.escape(title1 if earlier_id != paper_id_2 else title2)} &rarr; {html.escape(title2 if earlier_id != paper_id_2 else title1)}</h1>
+    <p class="eyebrow">{eyebrow}</p>
+    <h1>{html.escape(title1 if earlier_id != paper_id_2 else title2)} {arrow} {html.escape(title2 if earlier_id != paper_id_2 else title1)}</h1>
     <p class="dek">{dek}</p>
     {source_html}
     <div class="comparison">
       {left}
-      <div class="connector">&rarr;</div>
+      <div class="connector">{arrow}</div>
       {right}
     </div>
     <div class="summary-bar">
@@ -1023,6 +1030,11 @@ def parse_args():
                               f"the longest ones (default {DEFAULT_MAX_SHINGLE_EXHIBITS}) -- but "
                               f"then DISPLAYED in the later/flagged paper's own reading order, not "
                               f"longest-first; see render_shingle_exhibits()'s docstring")
+    parser.add_argument("--neutral", action="store_true",
+                        help="page for showing output outside a review: a 'Text-overlap comparison' "
+                             "heading, a two-way arrow between the papers instead of a directional "
+                             "one, no 'this was copied' wording, and no --classification badge or "
+                             "review_dupes.py commands")
     parser.add_argument("--whole-document", action="store_true",
                          help="render both papers end to end as ONE continuous word-level diff "
                               "instead of a list of per-run exhibits -- for a pair that is "
@@ -1153,6 +1165,7 @@ def main():
                 mismatch_penalty=args.mismatch_penalty,
                 x_drop=args.x_drop,
                 include_shingle_count_in_title=not args.no_shingle_count_in_title,
+                neutral=args.neutral,
                 library_db_path=args.library_db,
                 whole_document=args.whole_document,
                 max_gap_words=args.max_gap_words,
