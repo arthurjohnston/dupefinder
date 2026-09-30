@@ -30,7 +30,6 @@ diff and every figure are exactly as originally rendered.
   cannot place, the pair also has a *per-passage view* listing each matched passage separately.
 - Pages in `partial_overlap/` use either view: some are a single diff, others list the matched passages.
 
-72 pages covering 61 document pairs.
 
 ## How the figures below were measured
 
