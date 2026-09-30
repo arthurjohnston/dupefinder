@@ -626,6 +626,9 @@ For hand-fetching, `list_manual_downloads.py` / `import_manual_downloads.py`. To
 above), `batched_first_scan.py` (a corpus's first LSH scan in memory-bounded batches),
 `fill_missing_overlap.py`, `fix_non_english_paragraphs.py` and `redownload_missing_pdfs.py`.
 
+**Example output**: `example_output/` has the comparison pages for pairs found so far, published
+as a site by `.github/workflows/pages.yml` (see `example_output/README.md`).
+
 **Docs**: this README (overview and runbooks), `CLAUDE.md` (per-script reference), `todo.md` (dated
 design notes and post-mortems), `tests/README.md` (the back-test case format), `manual_examples/README.md`
 (documented cases that can't be automated) and `thankyou.md` (credits).
