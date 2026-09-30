@@ -90,6 +90,19 @@ record (Crossref, or DataCite for repository and preprint deposits). "Full copy"
 
 ### Both documents: Zestera Publications (16 pairs)
 
+Journals (10), with the number of articles on this site from each:
+
+- *American Journal of AI Cyber Computing Management*: 5
+- *American Journal of Management and IOT Medical Computing*: 4
+- *International Journal of AI EBioMedicine Innovations*: 4
+- *International Journal of Data Science and IoT Management System*: 4
+- *International Journal of AI Electrical Civil and Mechanical engineering*: 3
+- *International Journal of AI Electronics and Nexus Energy*: 3
+- *International Journal of LAW, Arts and Humanities*: 2
+- *International Journal of Pharmacy with Medical Sciences*: 2
+- *American Journal of AI Digital Transformation and Regenerative Pharmacist*: 1
+- *International Journal of Economic Social Science and Management LAW*: 1
+
 | case | page | overlap | shared text (A / B) | length in words (A / B) |
 |---|---|---|---|---|
 | CE-36 | [CE-36-a-novel-ensemble-deep-learning-approach-for-accurate-credit--vs-hybrid-ensemble-and-deep-learning-approach-for-improved-cred.html](full_copies/CE-36-a-novel-ensemble-deep-learning-approach-for-accurate-credit--vs-hybrid-ensemble-and-deep-learning-approach-for-improved-cred.html) | full copy | 96% / 93% | 4,839 / 4,982 |
@@ -116,6 +129,14 @@ record (Crossref, or DataCite for repository and preprint deposits). "Full copy"
 
 ### Both documents: ScienceTech Xplore (14 pairs)
 
+Journals (5), with the number of articles on this site from each (one article comes from a pair listed under "Different publishers"):
+
+- *International Journal of Artificial Intelligence, Data Science, and Machine Learning*: 8
+- *International Journal of AI, BigData, Computational and Management Studies*: 6
+- *International Journal of Emerging Trends in Computer Science and Information Technology*: 6
+- *International Journal of Emerging Research in Engineering and Technology*: 5
+- *American International Journal of Computer Science and Technology*: 4
+
 | case | page | overlap | shared text (A / B) | length in words (A / B) |
 |---|---|---|---|---|
 | CE-01 | [CE-01-emerging-non-volatile-memory-technologies-and-their-impact-o-vs-emerging-non-volatile-memory-technologies-and-their-impacton.html](full_copies/CE-01-emerging-non-volatile-memory-technologies-and-their-impact-o-vs-emerging-non-volatile-memory-technologies-and-their-impacton.html) | full copy | 98% / 98% | 6,082 / 6,077 |
@@ -141,6 +162,17 @@ record (Crossref, or DataCite for repository and preprint deposits). "Full copy"
 | CE-X5 | [CE-X5-an-extension-of-the-mixed-integer-part-of-a-nonlinear-form-vs-the-integer-part-of-a-nonlinear-form-with-integer-variables-74-shingle-matches.html](partial_overlap/CE-X5-an-extension-of-the-mixed-integer-part-of-a-nonlinear-form-vs-the-integer-part-of-a-nonlinear-form-with-integer-variables-74-shingle-matches.html) | partial | 47% / 40% | 2,195 / 2,643 |
 
 ### Both documents: IAEME Publication (4 pairs)
+
+Journals (8), with the number of articles on this site from each (one article comes from a pair listed under "Different publishers"):
+
+- *International Journal of Cloud Computing*: 2
+- *International Journal of Artificial Intelligence & Machine Learning*: 1
+- *International Journal of Artificial Intelligence Research and Development*: 1
+- *International Journal of Artificial Intelligence and Deep Learning*: 1
+- *International Journal of Commerce and Business Studies*: 1
+- *International Journal of Marketing and Human Resource Management*: 1
+- *International Journal of Research in Computer Applications and Information Technology*: 1
+- *International Journal of Scientific Research in Computer Science and Information Technology*: 1
 
 | case | page | overlap | shared text (A / B) | length in words (A / B) |
 |---|---|---|---|---|
