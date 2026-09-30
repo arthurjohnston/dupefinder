@@ -29,7 +29,7 @@ diff and every figure are exactly as originally rendered.
   passage separately. The per-passage view is the one that can show text that moved to a different
   position in the other document.
 
-73 pages covering 68 document pairs.
+72 pages covering 67 document pairs.
 
 ## How the figures below were measured
 
@@ -98,7 +98,6 @@ references) and one pair in `CE-N16`.
 | case | page | shared text (A / B) | length in words (A / B) |
 |---|---|---|---|
 | AN-01 | [AN-01-fatherhood-fathering-resettlement-and-integration-a-study-of-vs-…](partial_overlap/AN-01-fatherhood-fathering-resettlement-and-integration-a-study-of-vs-being-a-father-in-my-new-society-a-phenomenological-study-of.html) | 7% / 10% | 73,347 / 49,760 |
-| AN-02 | [AN-02-cultural-morphological-and-molecular-variability-of-fusarium-vs-…](partial_overlap/AN-02-cultural-morphological-and-molecular-variability-of-fusarium-vs-cultural-morphological-and-molecular-variability-of-fusarium-15-shingle-matches.html) | 12% / 8% | 3,958 / 5,015 |
 | CE-02 | [CE-02-proactive-vulnerability-management-in-cloud-clusters-through-vs-…](partial_overlap/CE-02-proactive-vulnerability-management-in-cloud-clusters-through-vs-threat-intelligence-enhanced-by-ai-for-self-sustained-vulner.html) | 74% / 73% | 2,534 / 2,549 |
 | CE-04 | [CE-04-teachers-perspectives-on-artificial-intelligence-in-educatio-vs-…](partial_overlap/CE-04-teachers-perspectives-on-artificial-intelligence-in-educatio-vs-balancing-innovation-and-ethics-educators-perspectives-on-th-48-shingle-matches.html) | 19% / 24% | 4,768 / 3,883 |
 | CE-06 | [CE-06-religious-diversity-in-the-digital-economy-interfaith-legal--vs-…](partial_overlap/CE-06-religious-diversity-in-the-digital-economy-interfaith-legal--vs-religious-diversity-and-the-digital-economy-legal-academic-p.html) | 52% / 61% | 12,208 / 11,067 |
