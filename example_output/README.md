@@ -51,12 +51,11 @@ Each pair was also checked for the usual non-copying explanations before being i
 - **Citation.** Where one document cites the other, that is noted below. A citation does not by itself
   mean the reused text is attributed, so those pairs remain.
 
-Where a publisher has already acted publicly: 11 of the 12 papers in the `CE-N16` group were retracted
-by their publisher in 2020–21, and the later document in `CE-N05` was retracted by Cureus on 2017-12-13
-(retraction notice 10.7759/cureus.r9).
+Where a publisher has already acted publicly: the later document in `CE-N05` was retracted by Cureus on
+2017-12-13 (retraction notice 10.7759/cureus.r9).
 
 Documents that cite their counterpart: `CE-N14` (the later document lists the earlier one in its
-references) and one pair in `CE-N16`.
+references).
 
 ## Grouped by publisher
 
@@ -110,20 +109,11 @@ record (Crossref, or DataCite for repository and preprint deposits). "Full copy"
 | CE-19 | [CE-19-ai-driven-insights-for-risk-management-in-banking-leveraging-vs-ai-driven-insights-for-risk-management-in-banking-leveraging.html](full_copies/CE-19-ai-driven-insights-for-risk-management-in-banking-leveraging-vs-ai-driven-insights-for-risk-management-in-banking-leveraging.html) | full copy | 97% / 98% | 4,894 / 4,861 |
 | CE-32 | [CE-32-the-role-of-explainable-ai-in-enhancing-data-driven-decision-vs-the-role-of-explainable-ai-in-enhancing-data-driven-decision.html](full_copies/CE-32-the-role-of-explainable-ai-in-enhancing-data-driven-decision-vs-the-role-of-explainable-ai-in-enhancing-data-driven-decision.html) | full copy | 98% / 98% | 5,956 / 6,005 |
 
-### Both documents: Springer (10 pairs)
+### Both documents: Springer (1 pair)
 
 | case | page | overlap | shared text (A / B) | length in words (A / B) |
 |---|---|---|---|---|
-| CE-N16 | [solutions-of-the-equilibrium-equations-with-finite-mass-subj-vs-boundary-value-behaviors-for-solutions-of-the-equilibrium-eq.html](full_copies/CE-N16-nonlinear-form-and-schrodinger-inequalities/solutions-of-the-equilibrium-equations-with-finite-mass-subj-vs-boundary-value-behaviors-for-solutions-of-the-equilibrium-eq.html) | full copy | 80% / 77% | 2,508 / 2,598 |
-| CE-N16 | [a-sharp-trudinger-type-inequality-for-harmonic-functions-and-vs-new-riesz-representations-of-linear-maps-associated-with-cer-49-shingle-matches.html](partial_overlap/CE-N16-nonlinear-form-and-schrodinger-inequalities/a-sharp-trudinger-type-inequality-for-harmonic-functions-and-vs-new-riesz-representations-of-linear-maps-associated-with-cer-49-shingle-matches.html) | partial | 49% / 50% | 2,969 / 2,981 |
-| CE-X5 | [an-extension-of-the-mixed-integer-part-of-a-nonlinear-form-vs-the-integer-part-of-a-nonlinear-form-with-integer-variables-74-shingle-matches.html](partial_overlap/CE-N16-nonlinear-form-and-schrodinger-inequalities/an-extension-of-the-mixed-integer-part-of-a-nonlinear-form-vs-the-integer-part-of-a-nonlinear-form-with-integer-variables-74-shingle-matches.html) | partial | 47% / 40% | 2,195 / 2,643 |
-| CE-N16 | [levin-s-type-boundary-behaviors-for-functions-harmonic-and-a-vs-retracted-article-matsaev-type-inequalities-on-smooth-cones-47-shingle-matches.html](partial_overlap/CE-N16-nonlinear-form-and-schrodinger-inequalities/levin-s-type-boundary-behaviors-for-functions-harmonic-and-a-vs-retracted-article-matsaev-type-inequalities-on-smooth-cones-47-shingle-matches.html) | partial | 80% / 71% | 2,116 / 2,394 |
-| CE-N16 | [poisson-type-inequalities-for-growth-properties-of-positive--vs-new-applications-of-schr-dingerean-green-potential-to-bounda-67-shingle-matches.html](partial_overlap/CE-N16-nonlinear-form-and-schrodinger-inequalities/poisson-type-inequalities-for-growth-properties-of-positive--vs-new-applications-of-schr-dingerean-green-potential-to-bounda-67-shingle-matches.html) | partial | 53% / 53% | 3,018 / 3,116 |
-| CE-N16 | [proofs-to-one-inequality-conjecture-for-the-non-integer-part-vs-an-extension-of-the-mixed-integer-part-of-a-nonlinear-form-62-shingle-matches.html](partial_overlap/CE-N16-nonlinear-form-and-schrodinger-inequalities/proofs-to-one-inequality-conjecture-for-the-non-integer-part-vs-an-extension-of-the-mixed-integer-part-of-a-nonlinear-form-62-shingle-matches.html) | partial | 69% / 67% | 2,516 / 2,643 |
-| CE-N16 | [proofs-to-one-inequality-conjecture-for-the-non-integer-part-vs-the-integer-part-of-a-nonlinear-form-with-integer-variables-29-shingle-matches.html](partial_overlap/CE-N16-nonlinear-form-and-schrodinger-inequalities/proofs-to-one-inequality-conjecture-for-the-non-integer-part-vs-the-integer-part-of-a-nonlinear-form-with-integer-variables-29-shingle-matches.html) | partial | 23% / 20% | 2,195 / 2,516 |
-| CE-N16 | [sharp-geometrical-properties-of-a-rarefied-sets-via-fixed-po-vs-fixed-point-theorems-for-solutions-of-the-stationary-schr-di-37-shingle-matches.html](partial_overlap/CE-N16-nonlinear-form-and-schrodinger-inequalities/sharp-geometrical-properties-of-a-rarefied-sets-via-fixed-po-vs-fixed-point-theorems-for-solutions-of-the-stationary-schr-di-37-shingle-matches.html) | partial | 35% / 32% | 3,055 / 3,414 |
-| CE-N16 | [solutions-of-the-dirichlet-schr-dinger-problems-with-continu-vs-an-application-of-the-inequality-for-modified-poisson-kernel-20-shingle-matches.html](partial_overlap/CE-N16-nonlinear-form-and-schrodinger-inequalities/solutions-of-the-dirichlet-schr-dinger-problems-with-continu-vs-an-application-of-the-inequality-for-modified-poisson-kernel-20-shingle-matches.html) | partial | 21% / 25% | 2,331 / 2,007 |
-| CE-N16 | [stability-and-direction-for-a-class-of-schr-dingerean-differ-vs-retracted-article-new-applications-of-schr-dinger-type-inequ-14-shingle-matches.html](partial_overlap/CE-N16-nonlinear-form-and-schrodinger-inequalities/stability-and-direction-for-a-class-of-schr-dingerean-differ-vs-retracted-article-new-applications-of-schr-dinger-type-inequ-14-shingle-matches.html) | partial | 18% / 13% | 2,235 / 3,181 |
+| CE-X5 | [CE-X5-an-extension-of-the-mixed-integer-part-of-a-nonlinear-form-vs-the-integer-part-of-a-nonlinear-form-with-integer-variables-74-shingle-matches.html](partial_overlap/CE-X5-an-extension-of-the-mixed-integer-part-of-a-nonlinear-form-vs-the-integer-part-of-a-nonlinear-form-with-integer-variables-74-shingle-matches.html) | partial | 47% / 40% | 2,195 / 2,643 |
 
 ### Both documents: IAEME Publication (4 pairs)
 
