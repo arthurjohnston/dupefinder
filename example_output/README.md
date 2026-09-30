@@ -29,7 +29,7 @@ diff and every figure are exactly as originally rendered.
   passage separately. The per-passage view is the one that can show text that moved to a different
   position in the other document.
 
-68 pages covering 63 document pairs.
+67 pages covering 62 document pairs.
 
 ## How the figures below were measured
 
@@ -121,7 +121,6 @@ references) and one pair in `CE-N16`.
 | CE-38 | [38-140627-140693-design-and-implementation-of-an-ai-based-vulnerabilit…](partial_overlap/CE-38-gift-zestera-student-projects/38-140627-140693-design-and-implementation-of-an-ai-based-vulnerability-manag-vs-ai-powered-regulatory-compliance-checker-for-contracts.html) | 80% / 80% | 4,664 / 4,643 |
 | CE-N02 | [CE-N02-electric-vehicle-ownership-in-kerala-insights-on-brand-choic-vs…](partial_overlap/CE-N02-electric-vehicle-ownership-in-kerala-insights-on-brand-choic-vs-electric-vehicles-in-india-bridging-the-gap-between-expectat-22-shingle-matches.html) | 14% / 14% | 4,613 / 4,539 |
 | CE-N05 | [CE-N05-radiological-and-functional-outcome-of-medial-epicondyle-fra-vs…](partial_overlap/CE-N05-radiological-and-functional-outcome-of-medial-epicondyle-fra-vs-clinical-results-of-surgically-treated-medial-humeral-epicon-65-shingle-matches.html) | 51% / 52% | 2,895 / 2,843 |
-| CE-N10 | [CE-N10-the-role-of-ai-in-social-media-misinformation-strategies-and-vs…](partial_overlap/CE-N10-the-role-of-ai-in-social-media-misinformation-strategies-and-vs-advancing-cross-domain-fake-news-detection-enhanced-models-t-10-shingle-matches.html) | 4% / 0% | 5,417 / 48,917 |
 | CE-N14 | [CE-N14-vigilante-groups-and-policing-in-a-democratizing-nigeria-nav-vs…](partial_overlap/CE-N14-vigilante-groups-and-policing-in-a-democratizing-nigeria-nav-vs-vigilantism-and-policing-in-akwa-ibom-state-of-nigeria-1987--55-shingle-matches.html) | 36% / 34% | 6,743 / 7,069 |
 | CE-N16 | [a-sharp-trudinger-type-inequality-for-harmonic-functions-and-vs-new-ri…](partial_overlap/CE-N16-nonlinear-form-and-schrodinger-inequalities/a-sharp-trudinger-type-inequality-for-harmonic-functions-and-vs-new-riesz-representations-of-linear-maps-associated-with-cer-49-shingle-matches.html) | 49% / 50% | 2,969 / 2,981 |
 | CE-X5 | [an-extension-of-the-mixed-integer-part-of-a-nonlinear-form-vs-the-inte…](partial_overlap/CE-N16-nonlinear-form-and-schrodinger-inequalities/an-extension-of-the-mixed-integer-part-of-a-nonlinear-form-vs-the-integer-part-of-a-nonlinear-form-with-integer-variables-74-shingle-matches.html) | 47% / 40% | 2,195 / 2,643 |
