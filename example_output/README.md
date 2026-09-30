@@ -25,11 +25,12 @@ diff and every figure are exactly as originally rendered.
 - `partial_overlap/`: pairs where less than that is shared, but still at least one long verbatim passage.
 - A subdirectory inside either one groups several pairs from one related set of documents. A group
   whose pairs fall on both sides of the 80% line appears in both.
-- Some pairs have two pages: the whole-document diff and a *per-passage view* that lists each matched
-  passage separately. The per-passage view is the one that can show text that moved to a different
-  position in the other document.
+- Every pair in `full_copies/` is shown as one continuous word-level diff of the two documents end to
+  end. Where some shared text sits at a different position in each document, which an in-order diff
+  cannot place, the pair also has a *per-passage view* listing each matched passage separately.
+- Pages in `partial_overlap/` use either view: some are a single diff, others list the matched passages.
 
-67 pages covering 62 document pairs.
+73 pages covering 62 document pairs.
 
 ## How the figures below were measured
 
@@ -63,12 +64,15 @@ references) and one pair in `CE-N16`.
 | case | page | shared text (A / B) | length in words (A / B) |
 |---|---|---|---|
 | AN-03 | [AN-03-a-study-of-factors-affecting-low-birth-weight-in-a-tertiary--vs-…](full_copies/AN-03-a-study-of-factors-affecting-low-birth-weight-in-a-tertiary--vs-a-study-of-factors-affecting-low-birth-weight-in-a-tertiary-.html) | 92% / 93% | 2,581 / 2,504 |
+| AN-03 | [AN-03-per-run-a-study-of-factors-affecting-low-birth-weight-in-a-terti…](full_copies/AN-03-per-run-a-study-of-factors-affecting-low-birth-weight-in-a-tertiary--vs-a-study-of-factors-affecting-low-birth-weight-in-a-tertiary-.html) *(per-passage view)* | 92% / 93% | 2,581 / 2,504 |
 | AN-04 | [AN-04-cross-cultural-competence-in-teaching-english-vs-cross-cultural-…](full_copies/AN-04-cross-cultural-competence-in-teaching-english-vs-cross-cultural-competence-in-teaching-english.html) | 93% / 96% | 1,205 / 1,163 |
 | CE-01 | [CE-01-emerging-non-volatile-memory-technologies-and-their-impact-o-vs-…](full_copies/CE-01-emerging-non-volatile-memory-technologies-and-their-impact-o-vs-emerging-non-volatile-memory-technologies-and-their-impacton.html) | 98% / 98% | 6,082 / 6,077 |
 | CE-03 | [CE-03-ai-based-cloud-governance-for-multi-cloud-compliance-managem-vs-…](full_copies/CE-03-ai-based-cloud-governance-for-multi-cloud-compliance-managem-vs-ai-driven-governance-for-multi-cloud-compliance-an-automated.html) | 88% / 86% | 4,146 / 4,235 |
 | CE-05 | [CE-05-designing-interpretable-ml-system-to-enhance-trust-in-health-vs-…](full_copies/CE-05-designing-interpretable-ml-system-to-enhance-trust-in-health-vs-interpretable-machine-learning-in-healthcare-a-systematic-re.html) | 70% / 88% | 22,792 / 17,998 |
+| CE-05 | [CE-05-per-run-designing-interpretable-ml-system-to-enhance-trust-in-he…](full_copies/CE-05-per-run-designing-interpretable-ml-system-to-enhance-trust-in-health-vs-interpretable-machine-learning-in-healthcare-a-systematic-re.html) *(per-passage view)* | 70% / 88% | 22,792 / 17,998 |
 | CE-07 | [CE-07-advanced-deep-learning-architectures-for-scalable-and-explai-vs-…](full_copies/CE-07-advanced-deep-learning-architectures-for-scalable-and-explai-vs-advanced-deep-learning-architectures-for-scalable-and-explai.html) | 97% / 98% | 3,200 / 3,164 |
 | CE-09 | [CE-09-automated-program-synthesis-and-optimization-using-foundatio-vs-…](full_copies/CE-09-automated-program-synthesis-and-optimization-using-foundatio-vs-automated-program-synthesis-and-optimization-using-foundatio.html) | 99% / 99% | 5,093 / 5,076 |
+| CE-09 | [CE-09-per-run-automated-program-synthesis-and-optimization-using-found…](full_copies/CE-09-per-run-automated-program-synthesis-and-optimization-using-foundatio-vs-automated-program-synthesis-and-optimization-using-foundatio.html) *(per-passage view)* | 99% / 99% | 5,093 / 5,076 |
 | CE-10 | [CE-10-multi-objective-federated-optimization-for-decentralized-ai--vs-…](full_copies/CE-10-multi-objective-federated-optimization-for-decentralized-ai--vs-multi-objective-federated-optimization-for-decentralized-ai-.html) | 97% / 98% | 5,626 / 5,615 |
 | CE-11 | [CE-11-event-driven-data-engineering-in-microservices-architectures-vs-…](full_copies/CE-11-event-driven-data-engineering-in-microservices-architectures-vs-event-driven-data-engineering-in-microservices-architectures.html) | 97% / 97% | 4,449 / 4,439 |
 | CE-12 | [CE-12-innovative-architectural-designs-for-next-generation-highper-vs-…](full_copies/CE-12-innovative-architectural-designs-for-next-generation-highper-vs-innovative-architectural-designs-for-next-generation-highper.html) | 95% / 97% | 5,249 / 5,110 |
@@ -80,7 +84,9 @@ references) and one pair in `CE-N16`.
 | CE-18 | [CE-18-iot-and-big-data-ecosystems-a-comprehensive-review-of-techno-vs-…](full_copies/CE-18-iot-and-big-data-ecosystems-a-comprehensive-review-of-techno-vs-iot-and-big-data-ecosystems-a-comprehensive-review-of-techno.html) | 98% / 98% | 6,710 / 6,701 |
 | CE-19 | [CE-19-ai-driven-insights-for-risk-management-in-banking-leveraging-vs-…](full_copies/CE-19-ai-driven-insights-for-risk-management-in-banking-leveraging-vs-ai-driven-insights-for-risk-management-in-banking-leveraging.html) | 97% / 98% | 4,894 / 4,861 |
 | CE-21 | [CE-21-feature-selection-and-deep-learning-model-for-air-quality-pr-vs-…](full_copies/CE-21-feature-selection-and-deep-learning-model-for-air-quality-pr-vs-feature-selection-and-deep-learning-model-for-air-quality-pr.html) | 95% / 96% | 2,657 / 2,622 |
+| CE-21 | [CE-21-per-run-feature-selection-and-deep-learning-model-for-air-qualit…](full_copies/CE-21-per-run-feature-selection-and-deep-learning-model-for-air-quality-pr-vs-feature-selection-and-deep-learning-model-for-air-quality-pr.html) *(per-passage view)* | 95% / 96% | 2,657 / 2,622 |
 | CE-30 | [CE-30-ai-in-healthcare-transforming-patient-care-through-predictiv-vs-…](full_copies/CE-30-ai-in-healthcare-transforming-patient-care-through-predictiv-vs-ai-in-healthcare-revolutionizing-patient-care-with-predictiv.html) | 83% / 67% | 1,447 / 1,808 |
+| CE-30 | [CE-30-per-run-ai-in-healthcare-transforming-patient-care-through-predi…](full_copies/CE-30-per-run-ai-in-healthcare-transforming-patient-care-through-predictiv-vs-ai-in-healthcare-revolutionizing-patient-care-with-predictiv.html) *(per-passage view)* | 83% / 67% | 1,447 / 1,808 |
 | CE-32 | [CE-32-the-role-of-explainable-ai-in-enhancing-data-driven-decision-vs-…](full_copies/CE-32-the-role-of-explainable-ai-in-enhancing-data-driven-decision-vs-the-role-of-explainable-ai-in-enhancing-data-driven-decision.html) | 98% / 98% | 5,956 / 6,005 |
 | CE-36 | [CE-36-a-novel-ensemble-deep-learning-approach-for-accurate-credit--vs-…](full_copies/CE-36-a-novel-ensemble-deep-learning-approach-for-accurate-credit--vs-hybrid-ensemble-and-deep-learning-approach-for-improved-cred.html) | 96% / 93% | 4,839 / 4,982 |
 | CE-37 | [37-140649-140665-o-insight-system-a-multi-agent-ai-platform-for-automa…](full_copies/CE-37-insight-system/37-140649-140665-o-insight-system-a-multi-agent-ai-platform-for-automated-iee-vs-oretes-insight-system-a-multi-agent-ai-platform-for-automate.html) | 96% / 91% | 5,765 / 6,027 |
@@ -90,10 +96,11 @@ references) and one pair in `CE-N16`.
 | CE-38 | [38-140564-140604-study-planner-app-vs-ai-study-habit-analyzer.html](full_copies/CE-38-gift-zestera-student-projects/38-140564-140604-study-planner-app-vs-ai-study-habit-analyzer.html) | 91% / 92% | 4,316 / 4,251 |
 | CE-38 | [38-140581-140679-agrisahayak-ai-based-smart-agriculture-management-das…](full_copies/CE-38-gift-zestera-student-projects/38-140581-140679-agrisahayak-ai-based-smart-agriculture-management-dashboard--vs-agrisahayak-ai-based-digital-agriculture-assistant.html) | 93% / 92% | 3,873 / 3,888 |
 | CE-38 | [38-140601-140657-debeats-full-stack-food-delivery-application-vs-busbe…](full_copies/CE-38-gift-zestera-student-projects/38-140601-140657-debeats-full-stack-food-delivery-application-vs-busbee-real-time-school-bus-monitoring-system.html) | 84% / 80% | 4,562 / 4,821 |
-| CE-N09 | [CE-N09-sustainable-and-responsible-artificial-intelligence-implemen-vs…](full_copies/CE-N09-sustainable-and-responsible-artificial-intelligence-implemen-vs-ethical-and-regenerative-ai-adoption-across-health-systems-37-shingle-matches.html) | 97% / 84% | 6,516 / 7,512 |
-| CE-N13 | [CE-N13-cybersecurity-awareness-on-cybercrime-among-the-youth-in-gau-vs…](full_copies/CE-N13-cybersecurity-awareness-on-cybercrime-among-the-youth-in-gau-vs-cybersecurity-awareness-on-cybercrime-among-the-youth-in-ind-68-shingle-matches.html) | 79% / 87% | 4,450 / 4,026 |
-| CE-N16 | [solutions-of-the-equilibrium-equations-with-finite-mass-subj-vs-bounda…](full_copies/CE-N16-nonlinear-form-and-schrodinger-inequalities/solutions-of-the-equilibrium-equations-with-finite-mass-subj-vs-boundary-value-behaviors-for-solutions-of-the-equilibrium-eq-44-shingle-matches.html) | 80% / 77% | 2,508 / 2,598 |
-| CE-X1 | [CE-X1-autonomous-systems-challenges-and-opportunities-vs-autonomous-sy…](full_copies/CE-X1-autonomous-systems-challenges-and-opportunities-vs-autonomous-systems-challenges-and-opportunities-23-shingle-matches.html) | 82% / 91% | 1,384 / 1,245 |
+| CE-N09 | [CE-N09-sustainable-and-responsible-artificial-intelligence-implemen-vs…](full_copies/CE-N09-sustainable-and-responsible-artificial-intelligence-implemen-vs-ethical-and-regenerative-ai-adoption-across-health-systems.html) | 97% / 84% | 6,516 / 7,512 |
+| CE-N13 | [CE-N13-cybersecurity-awareness-on-cybercrime-among-the-youth-in-gau-vs…](full_copies/CE-N13-cybersecurity-awareness-on-cybercrime-among-the-youth-in-gau-vs-cybersecurity-awareness-on-cybercrime-among-the-youth-in-ind.html) | 79% / 87% | 4,450 / 4,026 |
+| CE-N13 | [CE-N13-per-run-cybersecurity-awareness-on-cybercrime-among-the-youth-i…](full_copies/CE-N13-per-run-cybersecurity-awareness-on-cybercrime-among-the-youth-in-gau-vs-cybersecurity-awareness-on-cybercrime-among-the-youth-in-ind.html) *(per-passage view)* | 79% / 87% | 4,450 / 4,026 |
+| CE-N16 | [solutions-of-the-equilibrium-equations-with-finite-mass-subj-vs-bounda…](full_copies/CE-N16-nonlinear-form-and-schrodinger-inequalities/solutions-of-the-equilibrium-equations-with-finite-mass-subj-vs-boundary-value-behaviors-for-solutions-of-the-equilibrium-eq.html) | 80% / 77% | 2,508 / 2,598 |
+| CE-X1 | [CE-X1-autonomous-systems-challenges-and-opportunities-vs-autonomous-sy…](full_copies/CE-X1-autonomous-systems-challenges-and-opportunities-vs-autonomous-systems-challenges-and-opportunities.html) | 82% / 91% | 1,384 / 1,245 |
 
 ## Partial overlap
 
