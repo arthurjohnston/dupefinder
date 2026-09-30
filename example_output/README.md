@@ -29,7 +29,7 @@ diff and every figure are exactly as originally rendered.
   passage separately. The per-passage view is the one that can show text that moved to a different
   position in the other document.
 
-72 pages covering 67 document pairs.
+68 pages covering 63 document pairs.
 
 ## How the figures below were measured
 
@@ -43,6 +43,9 @@ Each pair was also checked for the usual non-copying explanations before being i
 - **Same authors on both sides.** Checked against both the extracted metadata and the publisher's own
   Crossref record, with names normalized for order, accents and honorifics, plus a looser surname-and-initial
   match. Pairs that share any author are not included here.
+- **Shared text that doesn't show copying between the two.** Pairs where most of the shared text turned
+  out to be a publisher's own template, journal boilerplate, or text both documents took from a common
+  outside source (such as a widely copied tutorial) were removed.
 - **The same document cataloged twice.** No pair shares a DOI.
 - **A retrieval error** where one record actually contains the other document's PDF: none found.
 - **Citation.** Where one document cites the other, that is noted below. A citation does not by itself
@@ -65,7 +68,6 @@ references) and one pair in `CE-N16`.
 | CE-03 | [CE-03-ai-based-cloud-governance-for-multi-cloud-compliance-managem-vs-…](full_copies/CE-03-ai-based-cloud-governance-for-multi-cloud-compliance-managem-vs-ai-driven-governance-for-multi-cloud-compliance-an-automated.html) | 88% / 86% | 4,146 / 4,235 |
 | CE-05 | [CE-05-designing-interpretable-ml-system-to-enhance-trust-in-health-vs-…](full_copies/CE-05-designing-interpretable-ml-system-to-enhance-trust-in-health-vs-interpretable-machine-learning-in-healthcare-a-systematic-re.html) | 70% / 88% | 22,792 / 17,998 |
 | CE-07 | [CE-07-advanced-deep-learning-architectures-for-scalable-and-explai-vs-…](full_copies/CE-07-advanced-deep-learning-architectures-for-scalable-and-explai-vs-advanced-deep-learning-architectures-for-scalable-and-explai.html) | 97% / 98% | 3,200 / 3,164 |
-| CE-08 | [CE-08-architecting-responsible-development-and-deployment-of-gener-vs-…](full_copies/CE-08-architecting-responsible-development-and-deployment-of-gener-vs-architecting-responsible-development-and-deployment-of-gener.html) | 87% / 81% | 10,185 / 10,892 |
 | CE-09 | [CE-09-automated-program-synthesis-and-optimization-using-foundatio-vs-…](full_copies/CE-09-automated-program-synthesis-and-optimization-using-foundatio-vs-automated-program-synthesis-and-optimization-using-foundatio.html) | 99% / 99% | 5,093 / 5,076 |
 | CE-10 | [CE-10-multi-objective-federated-optimization-for-decentralized-ai--vs-…](full_copies/CE-10-multi-objective-federated-optimization-for-decentralized-ai--vs-multi-objective-federated-optimization-for-decentralized-ai-.html) | 97% / 98% | 5,626 / 5,615 |
 | CE-11 | [CE-11-event-driven-data-engineering-in-microservices-architectures-vs-…](full_copies/CE-11-event-driven-data-engineering-in-microservices-architectures-vs-event-driven-data-engineering-in-microservices-architectures.html) | 97% / 97% | 4,449 / 4,439 |
@@ -118,12 +120,9 @@ references) and one pair in `CE-N16`.
 | CE-38 | [38-140618-140657-smart-inventory-and-product-management-system-vs-busb…](partial_overlap/CE-38-gift-zestera-student-projects/38-140618-140657-smart-inventory-and-product-management-system-vs-busbee-real-time-school-bus-monitoring-system.html) | 31% / 34% | 5,320 / 4,821 |
 | CE-38 | [38-140627-140693-design-and-implementation-of-an-ai-based-vulnerabilit…](partial_overlap/CE-38-gift-zestera-student-projects/38-140627-140693-design-and-implementation-of-an-ai-based-vulnerability-manag-vs-ai-powered-regulatory-compliance-checker-for-contracts.html) | 80% / 80% | 4,664 / 4,643 |
 | CE-N02 | [CE-N02-electric-vehicle-ownership-in-kerala-insights-on-brand-choic-vs…](partial_overlap/CE-N02-electric-vehicle-ownership-in-kerala-insights-on-brand-choic-vs-electric-vehicles-in-india-bridging-the-gap-between-expectat-22-shingle-matches.html) | 14% / 14% | 4,613 / 4,539 |
-| CE-N04 | [CE-N04-facial-recognition-understanding-and-differences-between-pca-vs…](partial_overlap/CE-N04-facial-recognition-understanding-and-differences-between-pca-vs-face-recognition-using-principal-component-analysis-and-line-10-shingle-matches.html) | 13% / 14% | 2,372 / 2,127 |
 | CE-N05 | [CE-N05-radiological-and-functional-outcome-of-medial-epicondyle-fra-vs…](partial_overlap/CE-N05-radiological-and-functional-outcome-of-medial-epicondyle-fra-vs-clinical-results-of-surgically-treated-medial-humeral-epicon-65-shingle-matches.html) | 51% / 52% | 2,895 / 2,843 |
-| CE-N08 | [CE-N08-adaptive-legal-frameworks-and-economic-dynamics-in-emerging--vs…](partial_overlap/CE-N08-adaptive-legal-frameworks-and-economic-dynamics-in-emerging--vs-navigating-the-nexus-legal-and-economic-implications-of-emer-4-shingle-matches.html) | 3% / 4% | 8,068 / 6,596 |
 | CE-N10 | [CE-N10-the-role-of-ai-in-social-media-misinformation-strategies-and-vs…](partial_overlap/CE-N10-the-role-of-ai-in-social-media-misinformation-strategies-and-vs-advancing-cross-domain-fake-news-detection-enhanced-models-t-10-shingle-matches.html) | 4% / 0% | 5,417 / 48,917 |
 | CE-N14 | [CE-N14-vigilante-groups-and-policing-in-a-democratizing-nigeria-nav-vs…](partial_overlap/CE-N14-vigilante-groups-and-policing-in-a-democratizing-nigeria-nav-vs-vigilantism-and-policing-in-akwa-ibom-state-of-nigeria-1987--55-shingle-matches.html) | 36% / 34% | 6,743 / 7,069 |
-| CE-N15 | [CE-N15-analysis-of-the-ethics-of-archaeological-excavations-and-rep-vs…](partial_overlap/CE-N15-analysis-of-the-ethics-of-archaeological-excavations-and-rep-vs-analysis-of-the-ethics-of-archaeological-excavations-and-rep-6-shingle-matches.html) | 76% / 64% | 225 / 287 |
 | CE-N16 | [a-sharp-trudinger-type-inequality-for-harmonic-functions-and-vs-new-ri…](partial_overlap/CE-N16-nonlinear-form-and-schrodinger-inequalities/a-sharp-trudinger-type-inequality-for-harmonic-functions-and-vs-new-riesz-representations-of-linear-maps-associated-with-cer-49-shingle-matches.html) | 49% / 50% | 2,969 / 2,981 |
 | CE-X5 | [an-extension-of-the-mixed-integer-part-of-a-nonlinear-form-vs-the-inte…](partial_overlap/CE-N16-nonlinear-form-and-schrodinger-inequalities/an-extension-of-the-mixed-integer-part-of-a-nonlinear-form-vs-the-integer-part-of-a-nonlinear-form-with-integer-variables-74-shingle-matches.html) | 47% / 40% | 2,195 / 2,643 |
 | CE-N16 | [levin-s-type-boundary-behaviors-for-functions-harmonic-and-a-vs-retrac…](partial_overlap/CE-N16-nonlinear-form-and-schrodinger-inequalities/levin-s-type-boundary-behaviors-for-functions-harmonic-and-a-vs-retracted-article-matsaev-type-inequalities-on-smooth-cones-47-shingle-matches.html) | 80% / 71% | 2,116 / 2,394 |
