@@ -33,7 +33,8 @@ STYLE = """
 }
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.6 var(--font-body); }
-main { max-width: 1100px; margin: 0 auto; padding: 2.5rem 16px 5rem; }
+main { max-width: 1500px; margin: 0 auto; padding: 2.5rem 16px 5rem; }
+main > p, main > ul { max-width: 78ch; }
 h1, h2 { font-family: var(--font-display); line-height: 1.2; }
 h1 { font-size: 2.2rem; margin: 0 0 1rem; }
 h2 { font-size: 1.4rem; margin: 2.5rem 0 0.75rem; border-bottom: 1px solid var(--border); padding-bottom: .3rem; }
@@ -43,8 +44,9 @@ code { font-family: var(--font-mono); font-size: .88em; }
 table { border-collapse: collapse; width: 100%; font-size: .9rem; }
 th, td { text-align: left; padding: .45rem .7rem; border-bottom: 1px solid var(--border); vertical-align: top; }
 th { color: var(--ink-muted); font-weight: 600; white-space: nowrap; }
-td:nth-child(3), td:nth-child(4) { white-space: nowrap; font-variant-numeric: tabular-nums; }
-td:nth-child(2) a { word-break: break-all; }
+td:nth-child(3), td:nth-last-child(-n+2) { white-space: nowrap; font-variant-numeric: tabular-nums; }
+td:nth-child(2) { min-width: 34rem; }
+td:nth-child(2) a { overflow-wrap: anywhere; }
 """
 
 
