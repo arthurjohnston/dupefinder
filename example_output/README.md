@@ -30,7 +30,7 @@ diff and every figure are exactly as originally rendered.
   cannot place, the pair also has a *per-passage view* listing each matched passage separately.
 - Pages in `partial_overlap/` use either view: some are a single diff, others list the matched passages.
 
-73 pages covering 62 document pairs.
+72 pages covering 61 document pairs.
 
 ## How the figures below were measured
 
@@ -146,7 +146,7 @@ record (Crossref, or DataCite for repository and preprint deposits). "Full copy"
 | CE-30 | [CE-30-ai-in-healthcare-transforming-patient-care-through-predictiv-vs-ai-in-healthcare-revolutionizing-patient-care-with-predictiv.html](full_copies/CE-30-ai-in-healthcare-transforming-patient-care-through-predictiv-vs-ai-in-healthcare-revolutionizing-patient-care-with-predictiv.html) | full copy | Open Knowledge | 83% / 67% | 1,447 / 1,808 |
 | CE-30 | [CE-30-per-run-ai-in-healthcare-transforming-patient-care-through-predictiv-vs-ai-in-healthcare-revolutionizing-patient-care-with-predictiv.html](full_copies/CE-30-per-run-ai-in-healthcare-transforming-patient-care-through-predictiv-vs-ai-in-healthcare-revolutionizing-patient-care-with-predictiv.html) *(per-passage view)* | full copy | Open Knowledge | 83% / 67% | 1,447 / 1,808 |
 
-### Different publishers (15 pairs)
+### Different publishers (14 pairs)
 
 | case | page | overlap | publishers (A / B) | shared text (A / B) | length in words (A / B) |
 |---|---|---|---|---|---|
@@ -166,4 +166,3 @@ record (Crossref, or DataCite for repository and preprint deposits). "Full copy"
 | CE-N14 | [CE-N14-vigilante-groups-and-policing-in-a-democratizing-nigeria-nav-vs-vigilantism-and-policing-in-akwa-ibom-state-of-nigeria-1987--55-shingle-matches.html](partial_overlap/CE-N14-vigilante-groups-and-policing-in-a-democratizing-nigeria-nav-vs-vigilantism-and-policing-in-akwa-ibom-state-of-nigeria-1987--55-shingle-matches.html) | partial | Universidade Federal do Rio Grande do Sul / Bluemark Publishers | 36% / 34% | 6,743 / 7,069 |
 | CE-X2 | [CE-X2-effective-strategies-for-mitigating-bias-in-hiring-algorithm-vs-a-machine-learning-approach-to-recognize-bias-and-discrimina-22-shingle-matches.html](partial_overlap/CE-X2-effective-strategies-for-mitigating-bias-in-hiring-algorithm-vs-a-machine-learning-approach-to-recognize-bias-and-discrimina-22-shingle-matches.html) | partial | Springer / United Research Forum | 21% / 19% | 5,243 / 5,706 |
 | CE-X3 | [CE-X3-internet-of-things-iot-based-smart-environment-integrating-v-vs-internet-of-things-iot-based-smart-environment-integrating-v-28-shingle-matches.html](partial_overlap/CE-X3-internet-of-things-iot-based-smart-environment-integrating-v-vs-internet-of-things-iot-based-smart-environment-integrating-v-28-shingle-matches.html) | partial | Foundation of Computer Science / South Asia Management Association | 15% / 24% | 3,734 / 2,428 |
-| CE-X4 | [CE-X4-the-role-of-blockchain-technology-in-enhancing-financial-sec-vs-enhancing-data-security-in-financial-institutions-with-block-18-shingle-matches.html](partial_overlap/CE-X4-the-role-of-blockchain-technology-in-enhancing-financial-sec-vs-enhancing-data-security-in-financial-institutions-with-block-18-shingle-matches.html) | partial | ABC Journals / Open Knowledge | 4% / 4% | 5,367 / 5,354 |
