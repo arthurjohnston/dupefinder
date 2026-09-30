@@ -57,6 +57,31 @@ Where a publisher has already acted publicly: the later document in `CE-N05` was
 Documents that cite their counterpart: `CE-N14` (the later document lists the earlier one in its
 references).
 
+## Pairs where the shared material is data
+
+In most pairs the shared material is prose. In these three it also includes measured or surveyed
+data: counts, percentages and test statistics that two separate studies would not normally be expected
+to report identically.
+
+- **AN-03, low birth weight** ([page](full_copies/AN-03-a-study-of-factors-affecting-low-birth-weight-in-a-tertiary--vs-a-study-of-factors-affecting-low-birth-weight-in-a-tertiary-.html)). Two 2024 articles in the International Journal
+  of Pharmaceutical and Clinical Research (vol. 16, issues 3 and 5) with the same title, different author
+  lists with no author in common, and bylines at different medical colleges in Bihar (DMCH,
+  Laheriasarai and JLNMC, Bhagalpur). Both report a study of 300 cases and 600 controls, and give the
+  same counts and percentages to one decimal place, for example in the maternal-age table and the
+  education and occupation breakdowns, alongside the same methods text.
+- **CE-04, teachers' views on AI in education** ([page](partial_overlap/CE-04-teachers-perspectives-on-artificial-intelligence-in-educatio-vs-balancing-innovation-and-ethics-educators-perspectives-on-th-48-shingle-matches.html)). A March 2024 article in
+  *Advances in Mobile Learning Educational Research* and a September 2024 article in *The American
+  Journal of Social Science and Education Innovations*, with different titles and different authors.
+  Both report a survey of 74 teachers with the same item-by-item frequency tables, means and standard
+  deviations, the same independent-samples t-test and the same one-way ANOVA table (for example a
+  between-groups sum of squares of 1356.645).
+- **CE-N02, electric-vehicle ownership** ([page](partial_overlap/CE-N02-electric-vehicle-ownership-in-kerala-insights-on-brand-choic-vs-electric-vehicles-in-india-bridging-the-gap-between-expectat-22-shingle-matches.html)). A 2023 article on EV ownership
+  in Kerala and a 2025 article on EVs in India, in two different IAEME journals with different
+  authors. They share the same demographic table for 100 respondents (income bands, area of
+  residence), the same summary figures (58% female, 64% aged 18 to 25) and the same methodology
+  paragraph, which in both articles describes the sample as EV users in Kerala's Thiruvananthapuram
+  district.
+
 ## Grouped by publisher
 
 Pairs are grouped by where the two documents were published, taken from each DOI's registration
