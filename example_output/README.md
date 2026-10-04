@@ -58,8 +58,7 @@ Where a publisher has already acted publicly: the later document in `CE-N05` was
 2017-12-13 (retraction notice 10.7759/cureus.r9).
 
 Documents that cite their counterpart: `CE-N14` (the later document lists the earlier one in its
-references) and `LEAD-19a` (lists the original as its first reference; the reworded text itself is not
-quoted or marked).
+references).
 
 ## Reworded and "spun" text
 
@@ -67,7 +66,8 @@ Some pairs share text that has been reworded rather than repeated. The most reco
 **article spinning**: software replaces words with dictionary synonyms one at a time and leaves the
 sentence structure alone, so the result is grammatical but often odd in context. A sentence such as
 "the benefit of PCA is to reduce the dimension of the data" comes out as "the profit of PCA is reduce
-dimensionality of the data", and "provable data possession" becomes "obvious information possession".
+dimensionality of the data". Titles get the same treatment: "Anticipated Security Model for Session
+Transfer" becomes "Probable Defense Representation for Session Transfer".
 Lighter rewording, by a person or a paraphrasing tool, does the same thing less mechanically:
 "furnish an alternative to the conventional" becomes "provide a replacement for the traditional".
 
@@ -89,16 +89,6 @@ Pages on this site that show reworded or spun text:
   machine-spun phrasing in the body.
 - `LEAD-15e` ([page](partial_overlap/LEAD-15e-explainable-ai-for-cloud-based-machine-learning-interpretabl-vs-transparency-and-interpretability-in-cloudbased-machine-lear.html)): section headings and sentences
   reworded one for one, as a paraphrasing tool would; the 10-word measurement shows only 7% / 9%.
-- `LEAD-19a` and `LEAD-19b` ([page](partial_overlap/LEAD-19-seccloud-spins/LEAD-19a-a-framework-for-integrity-auditing-amp-secure-data-de-duplic-vs-secure-auditing-and-deduplicating-data-in-cloud-published-ab.html), [page](partial_overlap/LEAD-19-seccloud-spins/LEAD-19b-an-enhanced-multi-layered-cryptosystem-based-secure-and-auth-vs-secure-auditing-and-deduplicating-data-in-cloud-published-ab.html)):
-  two later papers compared with the published abstract of the paper they both draw on (Li, Li, Xie and
-  Cai, *Secure Auditing and Deduplicating Data in Cloud*, IEEE Transactions on Computers). The full text
-  of that paper is not openly available, so the first document on each page is its abstract only, and
-  the percentages for that side are shares of the 173-word abstract, not of the whole paper. One later
-  paper (19b) repeats almost all of the abstract with small edits ("during the last decade" becomes
-  "during the recent days"). The other (19a) rewords it ("we study the problem of" becomes "we review
-  the issues of"). Outside the abstract, the two later papers carry the same related-work sentence
-  spun two different ways: the established term "provable data possession (PDP)" appears as "obvious
-  information possession (PDP)" in one and "demonstrable knowledge possession (PDP)" in the other.
 - `LEAD-20` ([page](partial_overlap/LEAD-20-attendance-management-system-using-facial-recognition-vs-attendance-management-system-based-on-facial-recognition.html)): a paper reworded sentence by sentence,
   keeping the original's misspelled heading "MEHODOLOGY".
 
@@ -287,7 +277,7 @@ Journals (3), with the number of articles on this site from each (one article co
 | LEAD-15d | [LEAD-15d-the-role-of-ai-in-cybersecurity-addressing-threats-in-the-di-vs-ai-for-sustainable-development-addressing-environmental-and-.html](partial_overlap/LEAD-15d-the-role-of-ai-in-cybersecurity-addressing-threats-in-the-di-vs-ai-for-sustainable-development-addressing-environmental-and-.html) | partial | Open Knowledge | 9% / 10% | 3,072 / 2,755 |
 | LEAD-15g | [LEAD-15g-adaptive-and-context-aware-authentication-framework-using-ed-vs-a-novel-authentication-systems-in-vehicular-communication-ch.html](partial_overlap/LEAD-15g-adaptive-and-context-aware-authentication-framework-using-ed-vs-a-novel-authentication-systems-in-vehicular-communication-ch.html) | partial | Smart Technologies Academic Press | 21% / 21% | 2,970 / 2,992 |
 
-### Different publishers (28 pairs)
+### Different publishers (27 pairs)
 
 | case | page | overlap | publishers (A / B) | shared text (A / B) | length in words (A / B) |
 |---|---|---|---|---|---|
@@ -319,8 +309,7 @@ Journals (3), with the number of articles on this site from each (one article co
 | LEAD-15e | [LEAD-15e-explainable-ai-for-cloud-based-machine-learning-interpretabl-vs-transparency-and-interpretability-in-cloudbased-machine-lear.html](partial_overlap/LEAD-15e-explainable-ai-for-cloud-based-machine-learning-interpretabl-vs-transparency-and-interpretability-in-cloudbased-machine-lear.html) | partial | Science Research Society / Ess & Ess Research Publications | 7% / 9% | 3,953 / 3,192 |
 | LEAD-15f | [LEAD-15f-the-role-of-artificial-intelligence-in-advancing-public-serv-vs-the-impact-of-artificial-governance-on-indian-public-adminis.html](partial_overlap/LEAD-15f-the-role-of-artificial-intelligence-in-advancing-public-serv-vs-the-impact-of-artificial-governance-on-indian-public-adminis.html) | partial | Goacademica Research and Publishing / Zenodo | 7% / 21% | 6,457 / 2,047 |
 | LEAD-20 | [LEAD-20-attendance-management-system-using-facial-recognition-vs-attendance-management-system-based-on-facial-recognition.html](partial_overlap/LEAD-20-attendance-management-system-using-facial-recognition-vs-attendance-management-system-based-on-facial-recognition.html) | partial | Zain Publications / International Journal for Research in Applied Science and Engineering Technology | 4% / 3% | 2,827 / 2,739 |
-| LEAD-19a | [LEAD-19a-a-framework-for-integrity-auditing-amp-secure-data-de-duplic-vs-secure-auditing-and-deduplicating-data-in-cloud-published-ab.html](partial_overlap/LEAD-19-seccloud-spins/LEAD-19a-a-framework-for-integrity-auditing-amp-secure-data-de-duplic-vs-secure-auditing-and-deduplicating-data-in-cloud-published-ab.html) | partial | IEEE / Ess & Ess Research Publications | 8% / 1% | 173 / 2,595 |
-| LEAD-19b | [LEAD-19b-an-enhanced-multi-layered-cryptosystem-based-secure-and-auth-vs-secure-auditing-and-deduplicating-data-in-cloud-published-ab.html](partial_overlap/LEAD-19-seccloud-spins/LEAD-19b-an-enhanced-multi-layered-cryptosystem-based-secure-and-auth-vs-secure-auditing-and-deduplicating-data-in-cloud-published-ab.html) | partial | IEEE / AI Publications | 92% / 12% | 173 / 1,613 |
+| LEAD-19 | [LEAD-19-an-enhanced-multi-layered-cryptosystem-based-secure-and-auth-vs-secure-auditing-and-deduplicating-data-in-cloud-published-ab.html](partial_overlap/LEAD-19-an-enhanced-multi-layered-cryptosystem-based-secure-and-auth-vs-secure-auditing-and-deduplicating-data-in-cloud-published-ab.html) | partial | IEEE / AI Publications | 92% / 12% | 173 / 1,613 |
 
 `LEAD-07`: the second document is a master's thesis from Luleå University of Technology with no DOI; its
 publisher is taken from the thesis itself.
@@ -332,7 +321,7 @@ and authors on the page are taken from the PDF: "Multi Agent Rfid Process In Pro
 the standard 10-word measurement above finds little (4% / 3%). Its page is rendered with 5-word matches
 and a wider substitution allowance (the footer names the settings) so the reworded passages are visible.
 
-`LEAD-19a`, `LEAD-19b`: the first document is the published abstract of an IEEE Transactions on Computers
-paper whose full text is not openly available, so the "A" figures are shares of that 173-word abstract.
-Both pages are rendered with 5-word matches and a wider substitution allowance; see "Reworded and
-"spun" text" above.
+`LEAD-19`: the first document is the published abstract of an IEEE Transactions on Computers paper
+(Li, Li, Xie and Cai, *Secure Auditing and Deduplicating Data in Cloud*) whose full text is not openly
+available, so the "A" figure is the share of that 173-word abstract, not of the whole paper. The second
+document repeats nearly all of it.
