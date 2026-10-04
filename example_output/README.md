@@ -120,13 +120,20 @@ to report identically.
   the *International Journal of Orthopaedics Sciences* (vol. 2, issue 4, pp. 143-145 and 375-377), with
   different authors at different colleges in Karnataka. Besides the introduction, they share the results:
   the same breakdown of fracture types and outcomes ("5 cases were of type II out of which 3 had good and
-  2 fair results. There were 12 cases of type III fractures ...") and the same complications.
+  2 fair results. There were 12 cases of type III fractures ...") and the same complications. This is not
+  a themed or special issue: the same issue covers hip arthroplasty, septic arthritis, vitamin D and other
+  unrelated topics. Each article describes its own series of 20 patients at its own hospital (one at VIMS
+  hospital, 2011-2013; the other "spread over 2 years" at the authors' college hospital).
 - **LEAD-12, ten pairs of 2026 articles** (for example the [bone-fracture pair](partial_overlap/LEAD-12-telangana-zestera/LEAD-12-140306-140451-deit-based-feature-extraction-with-ensemble-machine-learning-vs-a-dual-model-interpretable-pipeline-for-multi-class-bone-fra.html); all ten are listed under Zestera Publications below). Ten pairs of
   2026 articles in Zestera Publications journals, each pair with different author lists. In several pairs the
   shared text includes the results: the same model-comparison tables to two or four decimal places, for
   example the bone-fracture pair (RC 71.87%, PAC 73.5%, NCC 18.5%, FIGS 96.41%) and the IoT-healthcare pair
-  (Ridge 82.6214, LDEC 99.0850), and in the EEG pair the same class counts for the dataset (11,340 records,
-  3,192 mood disorder cases).
+  (Ridge 82.6214, LDEC 99.0850). These are not themed or special issues: the papers in each issue cover
+  unrelated subjects (EEG diagnosis, plant classification, rescue robots, gait analysis), and no article
+  describes its issue as special. Several pairs use the same public dataset, which alone would explain
+  matching dataset descriptions but not identical model results. Identical results could still come from
+  a common outside origin, such as a shared code notebook or a project template supplied to students at
+  more than one college; these pages do not show which.
 
 ## Grouped by publisher
 
