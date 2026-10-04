@@ -797,12 +797,15 @@ def render_case(conn, paper_id_1, paper_id_2, dupe_rows, source_note=None, short
             f'{doi_html}</div>'
         )
 
+    # --neutral pages keep the year ordering for layout but never label a side as source or flagged:
+    # printed years are not always reliable (CE-36, LEAD-08), and the page asserts no direction.
+    earlier_role, later_role = ("PAPER A", "PAPER B") if neutral else ("EARLIER / SOURCE", "LATER / FLAGGED")
     if earlier_id == paper_id_1:
-        left = card(paper_id_1, title1, year1, doi1, authors1, "EARLIER / SOURCE")
-        right = card(paper_id_2, title2, year2, doi2, authors2, "LATER / FLAGGED")
+        left = card(paper_id_1, title1, year1, doi1, authors1, earlier_role)
+        right = card(paper_id_2, title2, year2, doi2, authors2, later_role)
     elif earlier_id == paper_id_2:
-        left = card(paper_id_2, title2, year2, doi2, authors2, "EARLIER / SOURCE")
-        right = card(paper_id_1, title1, year1, doi1, authors1, "LATER / FLAGGED")
+        left = card(paper_id_2, title2, year2, doi2, authors2, earlier_role)
+        right = card(paper_id_1, title1, year1, doi1, authors1, later_role)
     else:
         left = card(paper_id_1, title1, year1, doi1, authors1, "PAPER A")
         right = card(paper_id_2, title2, year2, doi2, authors2, "PAPER B")
