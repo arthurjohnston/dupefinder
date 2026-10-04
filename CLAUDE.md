@@ -583,8 +583,11 @@ size of the exhibit version, since no passage is rendered twice with context.
 
 **`--neutral`**: for pages shown outside a review (this repo's `example_output/`). Heading
 "Text-overlap comparison" instead of "Duplicate-text finding", a two-way arrow between the papers
-instead of an earlier→later one, no "this was copied" phrasing, and no `--classification` badge or
-`review_dupes.py` command block. Measurements and the diff itself are unchanged.
+instead of an earlier→later one, paper cards labelled "Paper A"/"Paper B" rather than "Earlier /
+source" and "Later / flagged", no "this was copied" phrasing, and no `--classification` badge or
+`review_dupes.py` command block. Measurements and the diff itself are unchanged. (Before 2026-10-04 the
+card labels leaked through `--neutral` on every pair with different years; printed years are not
+reliable enough to label a side anyway -- CE-36's "2023" paper cites 2025 work.)
 
 **Labels follow the extension mode**, in three tiers, because the mode changes what a "run" is and a
 page that will be sent to a publisher must not claim more than the scan established: no `--x-drop` is
