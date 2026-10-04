@@ -245,7 +245,7 @@ Journals (3), with the number of articles on this site from each (one article co
 | LEAD-15d | [LEAD-15d-the-role-of-ai-in-cybersecurity-addressing-threats-in-the-di-vs-ai-for-sustainable-development-addressing-environmental-and-.html](partial_overlap/LEAD-15d-the-role-of-ai-in-cybersecurity-addressing-threats-in-the-di-vs-ai-for-sustainable-development-addressing-environmental-and-.html) | partial | Open Knowledge | 9% / 10% | 3,072 / 2,755 |
 | LEAD-15g | [LEAD-15g-adaptive-and-context-aware-authentication-framework-using-ed-vs-a-novel-authentication-systems-in-vehicular-communication-ch.html](partial_overlap/LEAD-15g-adaptive-and-context-aware-authentication-framework-using-ed-vs-a-novel-authentication-systems-in-vehicular-communication-ch.html) | partial | Smart Technologies Academic Press | 21% / 21% | 2,970 / 2,992 |
 
-### Different publishers (25 pairs)
+### Different publishers (26 pairs)
 
 | case | page | overlap | publishers (A / B) | shared text (A / B) | length in words (A / B) |
 |---|---|---|---|---|---|
@@ -276,9 +276,14 @@ Journals (3), with the number of articles on this site from each (one article co
 | LEAD-15b | [LEAD-15b-enabling-identity-based-integrity-auditing-and-data-sharing--vs-improving-security-in-cloud-storage-auditing-by-identity-hid.html](partial_overlap/LEAD-15b-enabling-identity-based-integrity-auditing-and-data-sharing--vs-improving-security-in-cloud-storage-auditing-by-identity-hid.html) | partial | IEEE / Zestera Publications | 8% / 28% | 11,514 / 2,936 |
 | LEAD-15e | [LEAD-15e-explainable-ai-for-cloud-based-machine-learning-interpretabl-vs-transparency-and-interpretability-in-cloudbased-machine-lear.html](partial_overlap/LEAD-15e-explainable-ai-for-cloud-based-machine-learning-interpretabl-vs-transparency-and-interpretability-in-cloudbased-machine-lear.html) | partial | Science Research Society / Ess & Ess Research Publications | 7% / 9% | 3,953 / 3,192 |
 | LEAD-15f | [LEAD-15f-the-role-of-artificial-intelligence-in-advancing-public-serv-vs-the-impact-of-artificial-governance-on-indian-public-adminis.html](partial_overlap/LEAD-15f-the-role-of-artificial-intelligence-in-advancing-public-serv-vs-the-impact-of-artificial-governance-on-indian-public-adminis.html) | partial | Goacademica Research and Publishing / Zenodo | 7% / 21% | 6,457 / 2,047 |
+| LEAD-20 | [LEAD-20-attendance-management-system-using-facial-recognition-vs-attendance-management-system-based-on-facial-recognition.html](partial_overlap/LEAD-20-attendance-management-system-using-facial-recognition-vs-attendance-management-system-based-on-facial-recognition.html) | partial | Zain Publications / International Journal for Research in Applied Science and Engineering Technology | 4% / 3% | 2,827 / 2,739 |
 
 `LEAD-07`: the second document is a master's thesis from Luleå University of Technology with no DOI; its
 publisher is taken from the thesis itself.
 `LEAD-09`: Crossref lists the second document's DOI (10.51847/4hrmacreqz) as deleted, so its title, year
 and authors on the page are taken from the PDF: "Multi Agent Rfid Process In Project Chain Management",
 *Specialty Journal of Psychology and Management* (Science Arena Publications), 2015.
+
+`LEAD-20`: the second document rewords the first sentence by sentence rather than repeating it, so
+the standard 10-word measurement above finds little (4% / 3%). Its page is rendered with 5-word matches
+and a wider substitution allowance (the footer names the settings) so the reworded passages are visible.
