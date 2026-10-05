@@ -22,8 +22,8 @@ Two stages, cheap before expensive:
 Output is a triage list, not a verdict: REVIEWING.md's checks (byline read from the PDF,
 each paper's content matching its own title, third-party-quotation check, citation check)
 still have to happen before anything becomes a case. Pairs whose overlap is entirely one
-journal's masthead will rank high here -- that's what --min-longest-run and reading the
-top of the list are for.
+journal's masthead will rank high here -- that's what --min-longest-run, reading the top of
+the list and (for Zestera Publications' layout) --strip-page-furniture are for.
 
     python3 rank_paper_pairs.py --library-db computer-ethics/library.sqlite3 \\
         --top-pairs 150 --out computer-ethics/pair_triage.txt
@@ -128,8 +128,8 @@ def paper_meta(conn, paper_id):
 
 
 def text_check(conn, pair, args):
-    words_a = ctp.load_paper_words(conn, pair[0])
-    words_b = ctp.load_paper_words(conn, pair[1])
+    words_a = ctp.load_paper_words(conn, pair[0], strip_furniture=args.strip_page_furniture)
+    words_b = ctp.load_paper_words(conn, pair[1], strip_furniture=args.strip_page_furniture)
     if len(words_a) < args.min_doc_words or len(words_b) < args.min_doc_words:
         return None
     degraded = False
@@ -233,6 +233,10 @@ def parse_args():
     p.add_argument("--max-gap", type=int, default=ctp.DEFAULT_MAX_GAP,
                     help=f"longest single insertion/deletion --gap-open bridges, in words (default "
                          f"{ctp.DEFAULT_MAX_GAP}); a longer one stays two runs")
+    p.add_argument("--strip-page-furniture", action="store_true",
+                    help="remove each page's running masthead, footer and dates line (Zestera "
+                         "Publications' layout -- see compare_two_papers.py's strip_page_furniture()) "
+                         "before matching")
     p.add_argument("--where", default=BACKLOG_WHERE, help="SQL predicate selecting the backlog to triage")
     p.add_argument("--paper-where", default=None,
                     help="instead of the potential_dupes backlog, compare EVERY pair among the papers "

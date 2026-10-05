@@ -259,5 +259,52 @@ class TestAlignmentCounts(unittest.TestCase):
         self.assertEqual(blocks, [(0, 0, 1), (1, 2, 2)])
 
 
+class TestStripPageFurniture(unittest.TestCase):
+    """Real masthead/footer strings from Zestera papers, merged into body text the way PyMuPDF
+    extraction leaves them -- and the reference-list lookalikes that must survive."""
+
+    def strip(self, text):
+        return " ".join(ctp.strip_page_furniture(text).split())
+
+    def test_masthead_with_footer_and_dates(self):
+        self.assertEqual(self.strip(
+            "the model AMERICAN JOURNAL OF MANAGEMENT AND IOT MEDICAL COMPUTING Peer Reviewed, "
+            "Referred & Indexed Journal E-ISSN: 3069-0110 Vol.5, No.2(2026) www.ajmimc.com 234 "
+            "Received: 28-02-2026 | Accepted: 01-04-2026 | Published: 09-04-2026 | was trained"),
+            "the model was trained")
+
+    def test_misspelled_masthead_with_volume_stamp(self):
+        self.assertEqual(self.strip(
+            "results Peer Reviewed, Rferred & Indexed Journal E-ISSN:3069-0102 VOL.6, NO. 2(2026) "
+            "433 show"), "results show")
+
+    def test_publisher_site_masthead(self):
+        self.assertEqual(self.strip(
+            "a International Journal of AI Electronics and Nexus Energy Peer Reviewed, Referred & "
+            "Indexed Journal ISSN: 3070-0515 www.zesterapublications.com Original Research Paper b"),
+            "a b")
+
+    def test_standalone_page_footers(self):
+        self.assertEqual(self.strip("a Vol.5, No.2(2026) www.ajmimc.com 258 b"), "a b")
+        self.assertEqual(self.strip("a www.ijpams.com IJPAMS| 145 b"), "a b")
+        self.assertEqual(self.strip("a forecast 2026, Vol 2 Issue 2 | 36 b"), "a forecast b")
+        self.assertEqual(self.strip("a IJDIM, 2026, 5 (2(1)), 585-591 | 585 b"), "a b")
+
+    def test_reference_list_entries_survive(self):
+        for text in ['"Africa, Vol. 1, No. 78 (2008), pp. 136 152."',
+                     "ACM Transactions on Intelligent Systems and Technology, Vol. 9, No. 4, Article 39",
+                     "Engineering (IJSRCSEIT), ISSN : 2456-3307 , Volume 5 Issue 2, pp. 360-364",
+                     "published in the International Journal of Data Science and IOT Management System"]:
+            self.assertEqual(self.strip(text), " ".join(text.split()))
+
+    def test_load_paper_words_strips_only_when_asked(self):
+        import sqlite3
+        conn = sqlite3.connect(":memory:")
+        conn.execute("CREATE TABLE paragraphs (paper_id INTEGER, para_index INTEGER, text TEXT)")
+        conn.execute("INSERT INTO paragraphs VALUES (1, 0, 'a www.ajmimc.com 4 b')")
+        self.assertEqual([w for w, _ in ctp.load_paper_words(conn, 1)], ["a", "www.ajmimc.com", "4", "b"])
+        self.assertEqual([w for w, _ in ctp.load_paper_words(conn, 1, strip_furniture=True)], ["a", "b"])
+
+
 if __name__ == "__main__":
     unittest.main()
