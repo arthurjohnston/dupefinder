@@ -15,82 +15,8 @@ where a publisher has already acted publicly.
 Open any page directly in a browser. Each is a self-contained HTML fragment with no external resources.
 
 The pages use `write_dupe_reports_html.py --neutral` wording: a "Text-overlap comparison" heading, a
-two-way arrow between the documents rather than a directional one, and no verdict labels. The red/green
-diff and every figure are exactly as originally rendered.
-
-## Layout
-
-- `full_copies/`: pairs where at least 80% of one document's words fall inside text shared with
-  the other. The documents are substantially the same text.
-- `partial_overlap/`: pairs where less than that is shared, but still at least one long verbatim passage.
-- A subdirectory inside either one groups several pairs from one related set of documents. A group
-  whose pairs fall on both sides of the 80% line appears in both.
-- Every pair in `full_copies/` is shown as one continuous word-level diff of the two documents end to
-  end. Where some shared text sits at a different position in each document, which an in-order diff
-  cannot place, the pair also has a *per-passage view* listing each matched passage separately.
-- Pages in `partial_overlap/` use either view: some are a single diff, others list the matched passages.
-- Pages whose case label starts `LEAD-` were added on 2026-10-04 from a later sweep of this project's
-  unreviewed candidates. Their bylines were read from the PDFs and they went through the checks below;
-  the label is the project's own numbering for pairs still being looked at.
-
-
-## How the figures below were measured
-
-Every pair was re-measured the same way for this table: 10-word shingles, lockstep X-drop extension of 3,
-over each document's full extracted text. "Shared text" is the share of each document's words that fall
-inside a matched run. A page may print a slightly different figure because some pages were rendered with
-other settings (the page footer names them).
-
-Each pair was also checked for the usual non-copying explanations before being included:
-
-- **Same authors on both sides.** Checked against both the extracted metadata and the publisher's own
-  Crossref record, with names normalized for order, accents and honorifics, plus a looser surname-and-initial
-  match. Pairs that share any author are not included here.
-- **Shared text that doesn't show copying between the two.** Pairs where most of the shared text turned
-  out to be a publisher's own template, journal boilerplate, or text both documents took from a common
-  outside source (such as a widely copied tutorial) were removed.
-- **The same document cataloged twice.** No pair shares a DOI.
-- **A retrieval error** where one record actually contains the other document's PDF: none found.
-- **Citation.** Where one document cites the other, that is noted below. A citation does not by itself
-  mean the reused text is attributed, so those pairs remain.
-
-Where a publisher has already acted publicly: the later document in `CE-N05` was retracted by Cureus on
-2017-12-13 (retraction notice 10.7759/cureus.r9).
-
-Documents that cite their counterpart: `CE-N14` (the later document lists the earlier one in its
-references).
-
-## Reworded and "spun" text
-
-Some pairs share text that has been reworded rather than repeated. The most recognisable kind is
-**article spinning**: software replaces words with dictionary synonyms one at a time and leaves the
-sentence structure alone, so the result is grammatical but often odd in context. A sentence such as
-"the benefit of PCA is to reduce the dimension of the data" comes out as "the profit of PCA is reduce
-dimensionality of the data". Titles get the same treatment: "Anticipated Security Model for Session
-Transfer" becomes "Probable Defense Representation for Session Transfer".
-Lighter rewording, by a person or a paraphrasing tool, does the same thing less mechanically:
-"furnish an alternative to the conventional" becomes "provide a replacement for the traditional".
-
-**Why it matters for the figures.** The overlap figures on this site count runs of 10 consecutive
-matching words, allowing an occasional substituted word inside a run. Spinning breaks text into short
-pieces, so the 10-word measurement can be very low even when almost every sentence of one document has
-a reworded counterpart in the other. Measured with 5-word runs and a wider allowance for substituted
-words, the same pairs show several times as much shared text. Where a page below was rendered with
-those looser settings, its footer says so.
-
-**What it looks like on a page.** In the word-level diff, a spun passage is a sentence that matches
-almost word for word, with single words marked as changed every few words. The changed words are
-usually synonyms of the originals rather than new content.
-
-Pages on this site that show reworded or spun text:
-
-- `LEAD-11` ([page](full_copies/LEAD-11-ijsrcseit-2019/LEAD-11-139195-139329-anticipated-security-model-for-session-transfer-and-services-vs-probable-defense-representation-for-session-transfer-and-net.html), [page](partial_overlap/LEAD-11-ijsrcseit-2019/LEAD-11-139756-139842-sentiment-analysis-for-product-recommendation-system-using-h-vs-sentiment-analysis-for-product-recommendation-system-using-e.html)): student papers in one journal with
-  synonym-swapped titles ("Anticipated Security Model" / "Probable Defense Representation") and
-  machine-spun phrasing in the body.
-- `LEAD-15e` ([page](partial_overlap/LEAD-15e-explainable-ai-for-cloud-based-machine-learning-interpretabl-vs-transparency-and-interpretability-in-cloudbased-machine-lear.html)): section headings and sentences
-  reworded one for one, as a paraphrasing tool would; the 10-word measurement shows only 7% / 9%.
-- `LEAD-20` ([page](partial_overlap/LEAD-20-attendance-management-system-using-facial-recognition-vs-attendance-management-system-based-on-facial-recognition.html)): a paper reworded sentence by sentence,
-  keeping the original's misspelled heading "MEHODOLOGY".
+two-way arrow between the documents rather than a directional one, and no verdict labels. That wording
+doesn't change the red/green diff or any figure.
 
 ## Pairs where the shared material is data
 
@@ -132,7 +58,7 @@ to report identically.
 
 Pairs are grouped by where the two documents were published, taken from each DOI's registration
 record (Crossref, or DataCite for repository and preprint deposits). "Full copy" pages are in
-`full_copies/` and "partial" pages in `partial_overlap/`, as described above.
+`full_copies/` (at least 80% of one document's words shared) and "partial" pages in `partial_overlap/`.
 
 ### Both documents: Zestera Publications (27 pairs)
 
@@ -151,39 +77,39 @@ Journals (10), with the number of articles on this site from each (one article c
 
 | case | page | overlap | shared text (A / B) | length in words (A / B) |
 |---|---|---|---|---|
-| CE-36 | [CE-36-a-novel-ensemble-deep-learning-approach-for-accurate-credit--vs-hybrid-ensemble-and-deep-learning-approach-for-improved-cred.html](full_copies/CE-36-a-novel-ensemble-deep-learning-approach-for-accurate-credit--vs-hybrid-ensemble-and-deep-learning-approach-for-improved-cred.html) | full copy | 96% / 93% | 4,839 / 4,982 |
-| CE-37 | [37-140649-140665-o-insight-system-a-multi-agent-ai-platform-for-automated-iee-vs-oretes-insight-system-a-multi-agent-ai-platform-for-automate.html](full_copies/CE-37-insight-system/37-140649-140665-o-insight-system-a-multi-agent-ai-platform-for-automated-iee-vs-oretes-insight-system-a-multi-agent-ai-platform-for-automate.html) | full copy | 96% / 91% | 5,765 / 6,027 |
-| CE-37 | [37-140649-140684-o-insight-system-a-multi-agent-ai-platform-for-automated-iee-vs-oretes-insight-system-a-multi-agent-ai-platform-for-automate.html](full_copies/CE-37-insight-system/37-140649-140684-o-insight-system-a-multi-agent-ai-platform-for-automated-iee-vs-oretes-insight-system-a-multi-agent-ai-platform-for-automate.html) | full copy | 94% / 91% | 5,765 / 5,980 |
-| CE-37 | [37-140649-140684-per-run-o-insight-system-a-multi-agent-ai-platform-for-automated-iee-vs-oretes-insight-system-a-multi-agent-ai-platform-for-automate.html](full_copies/CE-37-insight-system/37-140649-140684-per-run-o-insight-system-a-multi-agent-ai-platform-for-automated-iee-vs-oretes-insight-system-a-multi-agent-ai-platform-for-automate.html) *(per-passage view)* | full copy | 94% / 91% | 5,765 / 5,980 |
-| CE-38 | [38-140562-140693-design-and-implementation-of-an-ai-based-vulnerability-manag-vs-ai-powered-regulatory-compliance-checker-for-contracts.html](full_copies/CE-38-gift-zestera-student-projects/38-140562-140693-design-and-implementation-of-an-ai-based-vulnerability-manag-vs-ai-powered-regulatory-compliance-checker-for-contracts.html) | full copy | 81% / 80% | 4,614 / 4,643 |
-| CE-38 | [38-140564-140604-study-planner-app-vs-ai-study-habit-analyzer.html](full_copies/CE-38-gift-zestera-student-projects/38-140564-140604-study-planner-app-vs-ai-study-habit-analyzer.html) | full copy | 91% / 92% | 4,316 / 4,251 |
-| CE-38 | [38-140581-140679-agrisahayak-ai-based-smart-agriculture-management-dashboard--vs-agrisahayak-ai-based-digital-agriculture-assistant.html](full_copies/CE-38-gift-zestera-student-projects/38-140581-140679-agrisahayak-ai-based-smart-agriculture-management-dashboard--vs-agrisahayak-ai-based-digital-agriculture-assistant.html) | full copy | 93% / 92% | 3,873 / 3,888 |
-| CE-38 | [38-140601-140657-debeats-full-stack-food-delivery-application-vs-busbee-real-time-school-bus-monitoring-system.html](full_copies/CE-38-gift-zestera-student-projects/38-140601-140657-debeats-full-stack-food-delivery-application-vs-busbee-real-time-school-bus-monitoring-system.html) | full copy | 84% / 80% | 4,562 / 4,821 |
-| LEAD-15c | [LEAD-15c-a-modern-learning-management-system-for-smart-vs-a-modern-web-based-e-learning-platform-for-online-education.html](full_copies/LEAD-15c-a-modern-learning-management-system-for-smart-vs-a-modern-web-based-e-learning-platform-for-online-education.html) | full copy | 96% / 98% | 1,951 / 1,861 |
-| LEAD-15c | [LEAD-15c-per-run-a-modern-learning-management-system-for-smart-vs-a-modern-web-based-e-learning-platform-for-online-education.html](full_copies/LEAD-15c-per-run-a-modern-learning-management-system-for-smart-vs-a-modern-web-based-e-learning-platform-for-online-education.html) *(per-passage view)* | full copy | 96% / 98% | 1,951 / 1,861 |
-| CE-34 | [34-advanced-agricultural-decision-system-using-recurrent-polyno-vs-advanced-agricultural-decision-system-using-recurrent-polyno.html](partial_overlap/CE-34-agricultural-decision-system/34-advanced-agricultural-decision-system-using-recurrent-polyno-vs-advanced-agricultural-decision-system-using-recurrent-polyno.html) | partial | 58% / 55% | 3,277 / 3,472 |
-| CE-34 | [34b-140288-140417-a-data-driven-sound-analysis-approach-for-detecting-mechanic-vs-transformer-driven-wavlm-audio-modelling-for-robust-predicti.html](partial_overlap/CE-34-agricultural-decision-system/34b-140288-140417-a-data-driven-sound-analysis-approach-for-detecting-mechanic-vs-transformer-driven-wavlm-audio-modelling-for-robust-predicti.html) | partial | 59% / 50% | 3,344 / 4,007 |
-| CE-35 | [CE-35-advanced-ai-facing-voting-system-vs-advanced-ai-facing-voting-system.html](partial_overlap/CE-35-advanced-ai-facing-voting-system-vs-advanced-ai-facing-voting-system.html) | partial | 74% / 60% | 3,115 / 3,834 |
-| CE-38 | [38-140555-140566-ai-doctor-voice-amp-vision-vs-realestate-houseprice-prediction.html](partial_overlap/CE-38-gift-zestera-student-projects/38-140555-140566-ai-doctor-voice-amp-vision-vs-realestate-houseprice-prediction.html) | partial | 63% / 62% | 3,861 / 3,940 |
-| CE-38 | [38-140555-140566-per-run-ai-doctor-voice-amp-vision-vs-realestate-houseprice-prediction.html](partial_overlap/CE-38-gift-zestera-student-projects/38-140555-140566-per-run-ai-doctor-voice-amp-vision-vs-realestate-houseprice-prediction.html) *(per-passage view)* | partial | 63% / 62% | 3,861 / 3,940 |
-| CE-38 | [38-140567-140578-per-run-student-study-portal-vs-automated-examination-seating-arrangement-and-hall-allocatio.html](partial_overlap/CE-38-gift-zestera-student-projects/38-140567-140578-per-run-student-study-portal-vs-automated-examination-seating-arrangement-and-hall-allocatio.html) *(per-passage view)* | partial | 61% / 66% | 3,454 / 3,273 |
-| CE-38 | [38-140567-140578-student-study-portal-vs-automated-examination-seating-arrangement-and-hall-allocatio.html](partial_overlap/CE-38-gift-zestera-student-projects/38-140567-140578-student-study-portal-vs-automated-examination-seating-arrangement-and-hall-allocatio.html) | partial | 61% / 66% | 3,454 / 3,273 |
-| CE-38 | [38-140602-140673-design-and-implementation-of-smart-mart-an-ai-powered-e-comm-vs-design-and-implementation-of-home-deal-a-web-based-house-ren.html](partial_overlap/CE-38-gift-zestera-student-projects/38-140602-140673-design-and-implementation-of-smart-mart-an-ai-powered-e-comm-vs-design-and-implementation-of-home-deal-a-web-based-house-ren.html) | partial | 45% / 40% | 4,922 / 5,164 |
-| CE-38 | [38-140602-140673-per-run-design-and-implementation-of-smart-mart-an-ai-powered-e-comm-vs-design-and-implementation-of-home-deal-a-web-based-house-ren.html](partial_overlap/CE-38-gift-zestera-student-projects/38-140602-140673-per-run-design-and-implementation-of-smart-mart-an-ai-powered-e-comm-vs-design-and-implementation-of-home-deal-a-web-based-house-ren.html) *(per-passage view)* | partial | 45% / 40% | 4,922 / 5,164 |
-| CE-38 | [38-140606-140637-hospital-managemnet-system-vs-the-women-safety-tracker-app.html](partial_overlap/CE-38-gift-zestera-student-projects/38-140606-140637-hospital-managemnet-system-vs-the-women-safety-tracker-app.html) | partial | 75% / 77% | 4,307 / 4,212 |
-| CE-38 | [38-140618-140657-per-run-smart-inventory-and-product-management-system-vs-busbee-real-time-school-bus-monitoring-system.html](partial_overlap/CE-38-gift-zestera-student-projects/38-140618-140657-per-run-smart-inventory-and-product-management-system-vs-busbee-real-time-school-bus-monitoring-system.html) *(per-passage view)* | partial | 31% / 34% | 5,320 / 4,821 |
-| CE-38 | [38-140618-140657-smart-inventory-and-product-management-system-vs-busbee-real-time-school-bus-monitoring-system.html](partial_overlap/CE-38-gift-zestera-student-projects/38-140618-140657-smart-inventory-and-product-management-system-vs-busbee-real-time-school-bus-monitoring-system.html) | partial | 31% / 34% | 5,320 / 4,821 |
-| CE-38 | [38-140627-140693-design-and-implementation-of-an-ai-based-vulnerability-manag-vs-ai-powered-regulatory-compliance-checker-for-contracts.html](partial_overlap/CE-38-gift-zestera-student-projects/38-140627-140693-design-and-implementation-of-an-ai-based-vulnerability-manag-vs-ai-powered-regulatory-compliance-checker-for-contracts.html) | partial | 80% / 80% | 4,664 / 4,643 |
-| LEAD-12 | [LEAD-12-140295-140440-unsupervised-deep-characterization-of-machine-behavior-throu-vs-leveraging-transformed-based-speech-representation-for-indus.html](partial_overlap/LEAD-12-telangana-zestera/LEAD-12-140295-140440-unsupervised-deep-characterization-of-machine-behavior-throu-vs-leveraging-transformed-based-speech-representation-for-indus.html) | partial | 71% / 70% | 3,847 / 3,903 |
-| LEAD-12 | [LEAD-12-140317-140463-intelligent-context-fusion-for-early-anomaly-detection-in-io-vs-detecting-anomalous-patterns-in-iot-healthcare-systems-throu.html](partial_overlap/LEAD-12-telangana-zestera/LEAD-12-140317-140463-intelligent-context-fusion-for-early-anomaly-detection-in-io-vs-detecting-anomalous-patterns-in-iot-healthcare-systems-throu.html) | partial | 73% / 63% | 2,791 / 3,275 |
-| LEAD-12 | [LEAD-12-140318-140420-svetnet-a-deep-feature-integrated-hybrid-framework-for-hiera-vs-tri-category-medicinal-plant-classification-using-fine-grain.html](partial_overlap/LEAD-12-telangana-zestera/LEAD-12-140318-140420-svetnet-a-deep-feature-integrated-hybrid-framework-for-hiera-vs-tri-category-medicinal-plant-classification-using-fine-grain.html) | partial | 71% / 60% | 4,280 / 4,786 |
-| LEAD-12 | [LEAD-12-140306-140451-deit-based-feature-extraction-with-ensemble-machine-learning-vs-a-dual-model-interpretable-pipeline-for-multi-class-bone-fra.html](partial_overlap/LEAD-12-telangana-zestera/LEAD-12-140306-140451-deit-based-feature-extraction-with-ensemble-machine-learning-vs-a-dual-model-interpretable-pipeline-for-multi-class-bone-fra.html) | partial | 70% / 55% | 3,134 / 3,797 |
-| LEAD-12 | [LEAD-12-140338-140444-synaptiq-a-hybrid-neuro-analytical-framework-for-multidimens-vs-automated-multiclass-eeg-signal-classification-for-early-dia.html](partial_overlap/LEAD-12-telangana-zestera/LEAD-12-140338-140444-synaptiq-a-hybrid-neuro-analytical-framework-for-multidimens-vs-automated-multiclass-eeg-signal-classification-for-early-dia.html) | partial | 61% / 64% | 2,595 / 2,527 |
-| LEAD-12 | [LEAD-12-140202-140330-a-scalable-ai-driven-framework-for-cybersecurity-training-si-vs-next-gen-ai-cybersecurity-simulator-with-real-time-network-i.html](partial_overlap/LEAD-12-telangana-zestera/LEAD-12-140202-140330-a-scalable-ai-driven-framework-for-cybersecurity-training-si-vs-next-gen-ai-cybersecurity-simulator-with-real-time-network-i.html) | partial | 61% / 60% | 2,542 / 2,573 |
-| LEAD-12 | [LEAD-12-140454-140741-structured-representation-learning-of-multi-class-gait-dynam-vs-adaptive-latent-motion-intelligence-for-multi-gait-behaviora.html](partial_overlap/LEAD-12-telangana-zestera/LEAD-12-140454-140741-structured-representation-learning-of-multi-class-gait-dynam-vs-adaptive-latent-motion-intelligence-for-multi-gait-behaviora.html) | partial | 60% / 53% | 3,625 / 3,951 |
-| LEAD-12 | [LEAD-12-140414-140429-a-next-generation-iot-driven-robotic-rescue-paradigm-for-bor-vs-torquemax-rs-an-iot-synchronized-deep-shaft-robotic-extracti.html](partial_overlap/LEAD-12-telangana-zestera/LEAD-12-140414-140429-a-next-generation-iot-driven-robotic-rescue-paradigm-for-bor-vs-torquemax-rs-an-iot-synchronized-deep-shaft-robotic-extracti.html) | partial | 61% / 64% | 2,945 / 2,816 |
-| LEAD-12 | [LEAD-12-140259-140318-svetnet-a-novel-explainable-deep-learning-approach-for-medic-vs-svetnet-a-deep-feature-integrated-hybrid-framework-for-hiera.html](partial_overlap/LEAD-12-telangana-zestera/LEAD-12-140259-140318-svetnet-a-novel-explainable-deep-learning-approach-for-medic-vs-svetnet-a-deep-feature-integrated-hybrid-framework-for-hiera.html) | partial | 26% / 23% | 3,656 / 4,280 |
-| LEAD-12 | [LEAD-12-140294-140468-multi-feature-wavelet-based-network-intrusion-detection-usin-vs-scalable-ai-framework-for-real-time-anomaly-detection-and-au.html](partial_overlap/LEAD-12-telangana-zestera/LEAD-12-140294-140468-multi-feature-wavelet-based-network-intrusion-detection-usin-vs-scalable-ai-framework-for-real-time-anomaly-detection-and-au.html) | partial | 46% / 39% | 2,927 / 3,449 |
+| CE-36 | [CE-36-a-novel-ensemble-deep-learning-approach-for-accurate-credit--vs-hybrid-ensemble-and-deep-learning-approach-for-improved-cred.html](full_copies/CE-36-a-novel-ensemble-deep-learning-approach-for-accurate-credit--vs-hybrid-ensemble-and-deep-learning-approach-for-improved-cred.html) | full copy | 98% / 98% | 4,715 / 4,708 |
+| CE-37 | [37-140649-140665-o-insight-system-a-multi-agent-ai-platform-for-automated-iee-vs-oretes-insight-system-a-multi-agent-ai-platform-for-automate.html](full_copies/CE-37-insight-system/37-140649-140665-o-insight-system-a-multi-agent-ai-platform-for-automated-iee-vs-oretes-insight-system-a-multi-agent-ai-platform-for-automate.html) | full copy | 98% / 96% | 5,657 / 5,738 |
+| CE-37 | [37-140649-140684-o-insight-system-a-multi-agent-ai-platform-for-automated-iee-vs-oretes-insight-system-a-multi-agent-ai-platform-for-automate.html](full_copies/CE-37-insight-system/37-140649-140684-o-insight-system-a-multi-agent-ai-platform-for-automated-iee-vs-oretes-insight-system-a-multi-agent-ai-platform-for-automate.html) | full copy | 96% / 96% | 5,657 / 5,691 |
+| CE-37 | [37-140649-140684-per-run-o-insight-system-a-multi-agent-ai-platform-for-automated-iee-vs-oretes-insight-system-a-multi-agent-ai-platform-for-automate.html](full_copies/CE-37-insight-system/37-140649-140684-per-run-o-insight-system-a-multi-agent-ai-platform-for-automated-iee-vs-oretes-insight-system-a-multi-agent-ai-platform-for-automate.html) *(per-passage view)* | full copy | 96% / 96% | 5,657 / 5,691 |
+| CE-38 | [38-140562-140693-design-and-implementation-of-an-ai-based-vulnerability-manag-vs-ai-powered-regulatory-compliance-checker-for-contracts.html](full_copies/CE-38-gift-zestera-student-projects/38-140562-140693-design-and-implementation-of-an-ai-based-vulnerability-manag-vs-ai-powered-regulatory-compliance-checker-for-contracts.html) | full copy | 83% / 82% | 4,480 / 4,498 |
+| CE-38 | [38-140564-140604-study-planner-app-vs-ai-study-habit-analyzer.html](full_copies/CE-38-gift-zestera-student-projects/38-140564-140604-study-planner-app-vs-ai-study-habit-analyzer.html) | full copy | 98% / 98% | 4,036 / 4,024 |
+| CE-38 | [38-140581-140679-agrisahayak-ai-based-smart-agriculture-management-dashboard--vs-agrisahayak-ai-based-digital-agriculture-assistant.html](full_copies/CE-38-gift-zestera-student-projects/38-140581-140679-agrisahayak-ai-based-smart-agriculture-management-dashboard--vs-agrisahayak-ai-based-digital-agriculture-assistant.html) | full copy | 98% / 98% | 3,656 / 3,672 |
+| CE-38 | [38-140601-140657-debeats-full-stack-food-delivery-application-vs-busbee-real-time-school-bus-monitoring-system.html](full_copies/CE-38-gift-zestera-student-projects/38-140601-140657-debeats-full-stack-food-delivery-application-vs-busbee-real-time-school-bus-monitoring-system.html) | full copy | 89% / 85% | 4,360 / 4,563 |
+| LEAD-15c | [LEAD-15c-a-modern-learning-management-system-for-smart-vs-a-modern-web-based-e-learning-platform-for-online-education.html](full_copies/LEAD-15c-a-modern-learning-management-system-for-smart-vs-a-modern-web-based-e-learning-platform-for-online-education.html) | full copy | 96% / 98% | 1,797 / 1,768 |
+| LEAD-15c | [LEAD-15c-per-run-a-modern-learning-management-system-for-smart-vs-a-modern-web-based-e-learning-platform-for-online-education.html](full_copies/LEAD-15c-per-run-a-modern-learning-management-system-for-smart-vs-a-modern-web-based-e-learning-platform-for-online-education.html) *(per-passage view)* | full copy | 96% / 98% | 1,797 / 1,768 |
+| CE-34 | [34-advanced-agricultural-decision-system-using-recurrent-polyno-vs-advanced-agricultural-decision-system-using-recurrent-polyno.html](partial_overlap/CE-34-agricultural-decision-system/34-advanced-agricultural-decision-system-using-recurrent-polyno-vs-advanced-agricultural-decision-system-using-recurrent-polyno.html) | partial | 63% / 58% | 3,037 / 3,323 |
+| CE-34 | [34b-140288-140417-a-data-driven-sound-analysis-approach-for-detecting-mechanic-vs-transformer-driven-wavlm-audio-modelling-for-robust-predicti.html](partial_overlap/CE-34-agricultural-decision-system/34b-140288-140417-a-data-driven-sound-analysis-approach-for-detecting-mechanic-vs-transformer-driven-wavlm-audio-modelling-for-robust-predicti.html) | partial | 58% / 49% | 3,236 / 3,837 |
+| CE-35 | [CE-35-advanced-ai-facing-voting-system-vs-advanced-ai-facing-voting-system.html](partial_overlap/CE-35-advanced-ai-facing-voting-system-vs-advanced-ai-facing-voting-system.html) | partial | 77% / 61% | 2,992 / 3,749 |
+| CE-38 | [38-140555-140566-ai-doctor-voice-amp-vision-vs-realestate-houseprice-prediction.html](partial_overlap/CE-38-gift-zestera-student-projects/38-140555-140566-ai-doctor-voice-amp-vision-vs-realestate-houseprice-prediction.html) | partial | 66% / 64% | 3,654 / 3,784 |
+| CE-38 | [38-140555-140566-per-run-ai-doctor-voice-amp-vision-vs-realestate-houseprice-prediction.html](partial_overlap/CE-38-gift-zestera-student-projects/38-140555-140566-per-run-ai-doctor-voice-amp-vision-vs-realestate-houseprice-prediction.html) *(per-passage view)* | partial | 66% / 64% | 3,654 / 3,784 |
+| CE-38 | [38-140567-140578-per-run-student-study-portal-vs-automated-examination-seating-arrangement-and-hall-allocatio.html](partial_overlap/CE-38-gift-zestera-student-projects/38-140567-140578-per-run-student-study-portal-vs-automated-examination-seating-arrangement-and-hall-allocatio.html) *(per-passage view)* | partial | 70% / 76% | 3,087 / 2,903 |
+| CE-38 | [38-140567-140578-student-study-portal-vs-automated-examination-seating-arrangement-and-hall-allocatio.html](partial_overlap/CE-38-gift-zestera-student-projects/38-140567-140578-student-study-portal-vs-automated-examination-seating-arrangement-and-hall-allocatio.html) | partial | 70% / 76% | 3,087 / 2,903 |
+| CE-38 | [38-140602-140673-design-and-implementation-of-smart-mart-an-ai-powered-e-comm-vs-design-and-implementation-of-home-deal-a-web-based-house-ren.html](partial_overlap/CE-38-gift-zestera-student-projects/38-140602-140673-design-and-implementation-of-smart-mart-an-ai-powered-e-comm-vs-design-and-implementation-of-home-deal-a-web-based-house-ren.html) | partial | 47% / 43% | 4,692 / 4,888 |
+| CE-38 | [38-140602-140673-per-run-design-and-implementation-of-smart-mart-an-ai-powered-e-comm-vs-design-and-implementation-of-home-deal-a-web-based-house-ren.html](partial_overlap/CE-38-gift-zestera-student-projects/38-140602-140673-per-run-design-and-implementation-of-smart-mart-an-ai-powered-e-comm-vs-design-and-implementation-of-home-deal-a-web-based-house-ren.html) *(per-passage view)* | partial | 47% / 43% | 4,692 / 4,888 |
+| CE-38 | [38-140606-140637-hospital-managemnet-system-vs-the-women-safety-tracker-app.html](partial_overlap/CE-38-gift-zestera-student-projects/38-140606-140637-hospital-managemnet-system-vs-the-women-safety-tracker-app.html) | full copy | 80% / 80% | 4,049 / 4,071 |
+| CE-38 | [38-140618-140657-per-run-smart-inventory-and-product-management-system-vs-busbee-real-time-school-bus-monitoring-system.html](partial_overlap/CE-38-gift-zestera-student-projects/38-140618-140657-per-run-smart-inventory-and-product-management-system-vs-busbee-real-time-school-bus-monitoring-system.html) *(per-passage view)* | partial | 32% / 37% | 5,185 / 4,563 |
+| CE-38 | [38-140618-140657-smart-inventory-and-product-management-system-vs-busbee-real-time-school-bus-monitoring-system.html](partial_overlap/CE-38-gift-zestera-student-projects/38-140618-140657-smart-inventory-and-product-management-system-vs-busbee-real-time-school-bus-monitoring-system.html) | partial | 32% / 37% | 5,185 / 4,563 |
+| CE-38 | [38-140627-140693-design-and-implementation-of-an-ai-based-vulnerability-manag-vs-ai-powered-regulatory-compliance-checker-for-contracts.html](partial_overlap/CE-38-gift-zestera-student-projects/38-140627-140693-design-and-implementation-of-an-ai-based-vulnerability-manag-vs-ai-powered-regulatory-compliance-checker-for-contracts.html) | full copy | 84% / 82% | 4,436 / 4,498 |
+| LEAD-12 | [LEAD-12-140295-140440-unsupervised-deep-characterization-of-machine-behavior-throu-vs-leveraging-transformed-based-speech-representation-for-indus.html](partial_overlap/LEAD-12-telangana-zestera/LEAD-12-140295-140440-unsupervised-deep-characterization-of-machine-behavior-throu-vs-leveraging-transformed-based-speech-representation-for-indus.html) | partial | 74% / 74% | 3,723 / 3,724 |
+| LEAD-12 | [LEAD-12-140317-140463-intelligent-context-fusion-for-early-anomaly-detection-in-io-vs-detecting-anomalous-patterns-in-iot-healthcare-systems-throu.html](partial_overlap/LEAD-12-telangana-zestera/LEAD-12-140317-140463-intelligent-context-fusion-for-early-anomaly-detection-in-io-vs-detecting-anomalous-patterns-in-iot-healthcare-systems-throu.html) | partial | 70% / 59% | 2,522 / 2,977 |
+| LEAD-12 | [LEAD-12-140318-140420-svetnet-a-deep-feature-integrated-hybrid-framework-for-hiera-vs-tri-category-medicinal-plant-classification-using-fine-grain.html](partial_overlap/LEAD-12-telangana-zestera/LEAD-12-140318-140420-svetnet-a-deep-feature-integrated-hybrid-framework-for-hiera-vs-tri-category-medicinal-plant-classification-using-fine-grain.html) | partial | 72% / 62% | 3,988 / 4,643 |
+| LEAD-12 | [LEAD-12-140306-140451-deit-based-feature-extraction-with-ensemble-machine-learning-vs-a-dual-model-interpretable-pipeline-for-multi-class-bone-fra.html](partial_overlap/LEAD-12-telangana-zestera/LEAD-12-140306-140451-deit-based-feature-extraction-with-ensemble-machine-learning-vs-a-dual-model-interpretable-pipeline-for-multi-class-bone-fra.html) | partial | 71% / 56% | 2,894 / 3,687 |
+| LEAD-12 | [LEAD-12-140338-140444-synaptiq-a-hybrid-neuro-analytical-framework-for-multidimens-vs-automated-multiclass-eeg-signal-classification-for-early-dia.html](partial_overlap/LEAD-12-telangana-zestera/LEAD-12-140338-140444-synaptiq-a-hybrid-neuro-analytical-framework-for-multidimens-vs-automated-multiclass-eeg-signal-classification-for-early-dia.html) | partial | 64% / 67% | 2,480 / 2,427 |
+| LEAD-12 | [LEAD-12-140202-140330-a-scalable-ai-driven-framework-for-cybersecurity-training-si-vs-next-gen-ai-cybersecurity-simulator-with-real-time-network-i.html](partial_overlap/LEAD-12-telangana-zestera/LEAD-12-140202-140330-a-scalable-ai-driven-framework-for-cybersecurity-training-si-vs-next-gen-ai-cybersecurity-simulator-with-real-time-network-i.html) | partial | 62% / 61% | 2,374 / 2,405 |
+| LEAD-12 | [LEAD-12-140454-140741-structured-representation-learning-of-multi-class-gait-dynam-vs-adaptive-latent-motion-intelligence-for-multi-gait-behaviora.html](partial_overlap/LEAD-12-telangana-zestera/LEAD-12-140454-140741-structured-representation-learning-of-multi-class-gait-dynam-vs-adaptive-latent-motion-intelligence-for-multi-gait-behaviora.html) | partial | 60% / 54% | 3,295 / 3,714 |
+| LEAD-12 | [LEAD-12-140414-140429-a-next-generation-iot-driven-robotic-rescue-paradigm-for-bor-vs-torquemax-rs-an-iot-synchronized-deep-shaft-robotic-extracti.html](partial_overlap/LEAD-12-telangana-zestera/LEAD-12-140414-140429-a-next-generation-iot-driven-robotic-rescue-paradigm-for-bor-vs-torquemax-rs-an-iot-synchronized-deep-shaft-robotic-extracti.html) | partial | 60% / 62% | 2,796 / 2,708 |
+| LEAD-12 | [LEAD-12-140259-140318-svetnet-a-novel-explainable-deep-learning-approach-for-medic-vs-svetnet-a-deep-feature-integrated-hybrid-framework-for-hiera.html](partial_overlap/LEAD-12-telangana-zestera/LEAD-12-140259-140318-svetnet-a-novel-explainable-deep-learning-approach-for-medic-vs-svetnet-a-deep-feature-integrated-hybrid-framework-for-hiera.html) | partial | 21% / 18% | 3,424 / 3,988 |
+| LEAD-12 | [LEAD-12-140294-140468-multi-feature-wavelet-based-network-intrusion-detection-usin-vs-scalable-ai-framework-for-real-time-anomaly-detection-and-au.html](partial_overlap/LEAD-12-telangana-zestera/LEAD-12-140294-140468-multi-feature-wavelet-based-network-intrusion-detection-usin-vs-scalable-ai-framework-for-real-time-anomaly-detection-and-au.html) | partial | 50% / 42% | 2,704 / 3,169 |
 
 ### Both documents: ScienceTech Xplore (16 pairs)
 
@@ -305,7 +231,7 @@ Journals (3), with the number of articles on this site from each (one article co
 | LEAD-09 | [LEAD-09-guidelines-for-securing-radio-frequency-identification-rfid--vs-multi-agent-rfid-process-in-project-chain-management.html](partial_overlap/LEAD-09-guidelines-for-securing-radio-frequency-identification-rfid--vs-multi-agent-rfid-process-in-project-chain-management.html) | partial | National Institute of Standards and Technology / Science Arena Publications | 2% / 32% | 54,640 / 3,130 |
 | LEAD-10 | [LEAD-10-review-of-mathematical-frameworks-for-fairness-in-machine-le-vs-fairness-metrics-a-comparative-analysis.html](partial_overlap/LEAD-10-review-of-mathematical-frameworks-for-fairness-in-machine-le-vs-fairness-metrics-a-comparative-analysis.html) | partial | arXiv / IEEE | 4% / 8% | 12,891 / 6,115 |
 | LEAD-15a | [LEAD-15a-a-study-of-cyber-security-challenges-and-its-emerging-trends-vs-a-review-on-cybersecurity-issues-and-emerging-trends-in-mode.html](partial_overlap/LEAD-15a-a-study-of-cyber-security-challenges-and-its-emerging-trends-vs-a-review-on-cybersecurity-issues-and-emerging-trends-in-mode.html) | partial | arXiv / Zenodo | 14% / 17% | 2,724 / 2,166 |
-| LEAD-15b | [LEAD-15b-enabling-identity-based-integrity-auditing-and-data-sharing--vs-improving-security-in-cloud-storage-auditing-by-identity-hid.html](partial_overlap/LEAD-15b-enabling-identity-based-integrity-auditing-and-data-sharing--vs-improving-security-in-cloud-storage-auditing-by-identity-hid.html) | partial | IEEE / Zestera Publications | 8% / 28% | 11,514 / 2,936 |
+| LEAD-15b | [LEAD-15b-enabling-identity-based-integrity-auditing-and-data-sharing--vs-improving-security-in-cloud-storage-auditing-by-identity-hid.html](partial_overlap/LEAD-15b-enabling-identity-based-integrity-auditing-and-data-sharing--vs-improving-security-in-cloud-storage-auditing-by-identity-hid.html) | partial | IEEE / Zestera Publications | 8% / 29% | 11,514 / 2,825 |
 | LEAD-15e | [LEAD-15e-explainable-ai-for-cloud-based-machine-learning-interpretabl-vs-transparency-and-interpretability-in-cloudbased-machine-lear.html](partial_overlap/LEAD-15e-explainable-ai-for-cloud-based-machine-learning-interpretabl-vs-transparency-and-interpretability-in-cloudbased-machine-lear.html) | partial | Science Research Society / Ess & Ess Research Publications | 7% / 9% | 3,953 / 3,192 |
 | LEAD-15f | [LEAD-15f-the-role-of-artificial-intelligence-in-advancing-public-serv-vs-the-impact-of-artificial-governance-on-indian-public-adminis.html](partial_overlap/LEAD-15f-the-role-of-artificial-intelligence-in-advancing-public-serv-vs-the-impact-of-artificial-governance-on-indian-public-adminis.html) | partial | Goacademica Research and Publishing / Zenodo | 7% / 21% | 6,457 / 2,047 |
 | LEAD-20 | [LEAD-20-attendance-management-system-using-facial-recognition-vs-attendance-management-system-based-on-facial-recognition.html](partial_overlap/LEAD-20-attendance-management-system-using-facial-recognition-vs-attendance-management-system-based-on-facial-recognition.html) | partial | Zain Publications / International Journal for Research in Applied Science and Engineering Technology | 4% / 3% | 2,827 / 2,739 |
@@ -318,7 +244,7 @@ and authors on the page are taken from the PDF: "Multi Agent Rfid Process In Pro
 *Specialty Journal of Psychology and Management* (Science Arena Publications), 2015.
 
 `LEAD-20`: the second document rewords the first sentence by sentence rather than repeating it, so
-the standard 10-word measurement above finds little (4% / 3%). Its page is rendered with 5-word matches
+the standard 10-word measurement finds little (4% / 3%). Its page is rendered with 5-word matches
 and a wider substitution allowance (the footer names the settings) so the reworded passages are visible.
 
 `LEAD-19`: the first document is the published abstract of an IEEE Transactions on Computers paper
