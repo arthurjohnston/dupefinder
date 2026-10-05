@@ -18,91 +18,6 @@ The pages use `write_dupe_reports_html.py --neutral` wording: a "Text-overlap co
 two-way arrow between the documents rather than a directional one, and no verdict labels. That wording
 doesn't change the red/green diff or any figure.
 
-## Layout
-
-- `full_copies/`: pairs where at least 80% of one document's words fall inside text shared with
-  the other. The documents are substantially the same text.
-- `partial_overlap/`: pairs where less than that is shared, but still at least one long verbatim passage.
-- A subdirectory inside either one groups several pairs from one related set of documents. A group
-  whose pairs fall on both sides of the 80% line appears in both.
-  Two CE-38 pairs (Hospital Management / Women Safety Tracker, and the second Vulnerability Management /
-  Compliance Checker pair) reached 80% when the Zestera mastheads were removed. They are listed as full
-  copies but stay in `partial_overlap/` so that existing links to them keep working.
-- Every pair in `full_copies/` is shown as one continuous word-level diff of the two documents end to
-  end. Where some shared text sits at a different position in each document, which an in-order diff
-  cannot place, the pair also has a *per-passage view* listing each matched passage separately.
-- Pages in `partial_overlap/` use either view: some are a single diff, others list the matched passages.
-- Pages whose case label starts `LEAD-` were added on 2026-10-04 from a later sweep of this project's
-  unreviewed candidates. Their bylines were read from the PDFs and they went through the checks below;
-  the label is the project's own numbering for pairs still being looked at.
-
-
-## How the figures below were measured
-
-Every pair was re-measured the same way for this table: 10-word shingles, lockstep X-drop extension of 3,
-over each document's full extracted text. "Shared text" is the share of each document's words that fall
-inside a matched run. A page may print a slightly different figure because some pages were rendered with
-other settings (the page footer names them).
-
-For articles from Zestera Publications, every page carries a running masthead, page footer and
-received/accepted/published line (for example "AMERICAN JOURNAL OF MANAGEMENT AND IOT MEDICAL COMPUTING
-Peer Reviewed, Referred & Indexed Journal E-ISSN: 3069-0110"). Two articles from the same journal share
-that text without either copying the other, so it is removed from both documents before matching, and
-the word counts in the tables leave it out. Removing it moves a pair's figures by up to 10 points, and
-most go up, because the masthead had been splitting shared passages at each page break. The 34 pages
-for these pairs were re-rendered the same way (`write_dupe_reports_html.py --strip-page-furniture`).
-
-Each pair was also checked for the usual non-copying explanations before being included:
-
-- **Same authors on both sides.** Checked against both the extracted metadata and the publisher's own
-  Crossref record, with names normalized for order, accents and honorifics, plus a looser surname-and-initial
-  match. Pairs that share any author are not included here.
-- **Shared text that doesn't show copying between the two.** Pairs where most of the shared text turned
-  out to be a publisher's own template, journal boilerplate, or text both documents took from a common
-  outside source (such as a widely copied tutorial) were removed.
-- **The same document cataloged twice.** No pair shares a DOI.
-- **A retrieval error** where one record actually contains the other document's PDF: none found.
-- **Citation.** Where one document cites the other, that is noted below. A citation does not by itself
-  mean the reused text is attributed, so those pairs remain.
-
-Where a publisher has already acted publicly: the later document in `CE-N05` was retracted by Cureus on
-2017-12-13 (retraction notice 10.7759/cureus.r9).
-
-Documents that cite their counterpart: `CE-N14` (the later document lists the earlier one in its
-references).
-
-## Reworded and "spun" text
-
-Some pairs share text that has been reworded rather than repeated. The most recognisable kind is
-**article spinning**: software replaces words with dictionary synonyms one at a time and leaves the
-sentence structure alone, so the result is grammatical but often odd in context. A sentence such as
-"the benefit of PCA is to reduce the dimension of the data" comes out as "the profit of PCA is reduce
-dimensionality of the data". Titles get the same treatment: "Anticipated Security Model for Session
-Transfer" becomes "Probable Defense Representation for Session Transfer".
-Lighter rewording, by a person or a paraphrasing tool, does the same thing less mechanically:
-"furnish an alternative to the conventional" becomes "provide a replacement for the traditional".
-
-**Why it matters for the figures.** The overlap figures on this site count runs of 10 consecutive
-matching words, allowing an occasional substituted word inside a run. Spinning breaks text into short
-pieces, so the 10-word measurement can be very low even when almost every sentence of one document has
-a reworded counterpart in the other. Measured with 5-word runs and a wider allowance for substituted
-words, the same pairs show several times as much shared text. Where a page below was rendered with
-those looser settings, its footer says so.
-
-**What it looks like on a page.** In the word-level diff, a spun passage is a sentence that matches
-almost word for word, with single words marked as changed every few words. The changed words are
-usually synonyms of the originals rather than new content.
-
-Pages on this site that show reworded or spun text:
-
-- `LEAD-11` ([page](full_copies/LEAD-11-ijsrcseit-2019/LEAD-11-139195-139329-anticipated-security-model-for-session-transfer-and-services-vs-probable-defense-representation-for-session-transfer-and-net.html), [page](partial_overlap/LEAD-11-ijsrcseit-2019/LEAD-11-139756-139842-sentiment-analysis-for-product-recommendation-system-using-h-vs-sentiment-analysis-for-product-recommendation-system-using-e.html)): student papers in one journal with
-  synonym-swapped titles ("Anticipated Security Model" / "Probable Defense Representation") and
-  machine-spun phrasing in the body.
-- `LEAD-15e` ([page](partial_overlap/LEAD-15e-explainable-ai-for-cloud-based-machine-learning-interpretabl-vs-transparency-and-interpretability-in-cloudbased-machine-lear.html)): section headings and sentences
-  reworded one for one, as a paraphrasing tool would; the 10-word measurement shows only 7% / 9%.
-- `LEAD-20` ([page](partial_overlap/LEAD-20-attendance-management-system-using-facial-recognition-vs-attendance-management-system-based-on-facial-recognition.html)): a paper reworded sentence by sentence,
-  keeping the original's misspelled heading "MEHODOLOGY".
-
 ## Pairs where the shared material is data
 
 In most pairs the shared material is prose. In these five it also includes measured or surveyed
@@ -143,7 +58,7 @@ to report identically.
 
 Pairs are grouped by where the two documents were published, taken from each DOI's registration
 record (Crossref, or DataCite for repository and preprint deposits). "Full copy" pages are in
-`full_copies/` and "partial" pages in `partial_overlap/`, as described above.
+`full_copies/` (at least 80% of one document's words shared) and "partial" pages in `partial_overlap/`.
 
 ### Both documents: Zestera Publications (27 pairs)
 
@@ -329,7 +244,7 @@ and authors on the page are taken from the PDF: "Multi Agent Rfid Process In Pro
 *Specialty Journal of Psychology and Management* (Science Arena Publications), 2015.
 
 `LEAD-20`: the second document rewords the first sentence by sentence rather than repeating it, so
-the standard 10-word measurement above finds little (4% / 3%). Its page is rendered with 5-word matches
+the standard 10-word measurement finds little (4% / 3%). Its page is rendered with 5-word matches
 and a wider substitution allowance (the footer names the settings) so the reworded passages are visible.
 
 `LEAD-19`: the first document is the published abstract of an IEEE Transactions on Computers paper
