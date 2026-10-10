@@ -1,0 +1,42 @@
+    artificial -> counterfeit    min-lemma diff (artificial / counterfeit)   first-synset diff
+  intelligence -> consciousness  min-lemma diff (intelligence / awareness)   first-synset diff
+          deep -> profound       min-lemma diff (abstruse / fundamental)   first-synset diff
+        random -> irregular      min-lemma diff (random / atypical)   first-synset diff
+        forest -> woodland       min-lemma diff (afforest / forest)   first-synset SAME
+        random -> arbitrary      min-lemma diff (random / arbitrary)   first-synset diff
+           big -> colossal       min-lemma diff (adult / colossal)   first-synset diff
+          data -> information    min-lemma SAME (data / data)   first-synset diff
+           big -> huge           min-lemma diff (adult / brobdingnagian)   first-synset diff
+          data -> information    min-lemma SAME (data / data)   first-synset diff
+       network -> organization   min-lemma diff (electronic_network / administration)   first-synset diff
+        mobile -> versatile      min-lemma diff (fluid / various)   first-synset diff
+       network -> organization   min-lemma diff (electronic_network / administration)   first-synset diff
+      wireless -> remote         min-lemma diff (radio / distant)   first-synset diff
+       network -> organization   min-lemma diff (electronic_network / administration)   first-synset diff
+         error -> blunder        min-lemma diff (computer_error / bloomer)   first-synset diff
+        breast -> bosom          min-lemma SAME (boob / boob)   first-synset diff
+        cancer -> peril          min-lemma diff (cancer / danger)   first-synset diff
+       failure -> disappointment min-lemma diff (bankruptcy / dashing_hopes)   first-synset diff
+        signal -> flag           min-lemma diff (bespeak / droop)   first-synset diff
+         noise -> commotion      min-lemma diff (dissonance / commotion)   first-synset diff
+      decision -> choice         min-lemma diff (conclusion / alternative)   first-synset diff
+     computing -> figuring       min-lemma SAME (calculate / calculate)   first-synset diff
+         image -> picture        min-lemma diff (double / characterisation)   first-synset diff
+    processing -> handling       min-lemma diff (action / address)   first-synset diff
+   recognition -> acknowledgement min-lemma SAME (acknowledgement / acknowledgement)   first-synset SAME
+  'ant colony' -> 'subterranean insect settlement': different word count (multi-word substitution)
+         naive -> credulous      min-lemma diff (naif / credulous)   first-synset diff
+  'data warehouse' -> 'information distribution center': different word count (multi-word substitution)
+
+word substitutions collapsed: min-lemma 5/27, first-synset 2/27
+
+direct WordNet synonyms (share a synset): 7/27
+synonym-graph closure: 44,724 words, largest component 18,994 words (42%), next 35, 25
+  'data' in largest component: True
+  'network' in largest component: True
+  'random' in largest component: False
+  'cancer' in largest component: True
+  'intelligence' in largest component: True
+  'learning' in largest component: False
+  'model' in largest component: True
+  'system' in largest component: True

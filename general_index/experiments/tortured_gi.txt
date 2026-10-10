@@ -1,0 +1,18 @@
+5,627 docs (partial) scanned
+  TORTURED 'malignant growth'                 3 docs  (legit 'cancer': 0 docs)  years {'no-meta': 2, None: 1}
+  TORTURED 'web of thing'                     1 docs  (legit 'internet of thing': 12 docs)  years {'no-meta': 1}
+  TORTURED 'neural organization'              1 docs  (legit 'neural network': 85 docs)  years {'no-meta': 1}
+  TORTURED 'profound learning'                1 docs  (legit 'deep learning': 6 docs)  years {'no-meta': 1}
+  TORTURED 'information mining'               1 docs  (legit 'data mining': 7 docs)  years {'no-meta': 1}
+tortured phrases with no hit: ['arbitrary woodland', 'bosom malignant growth', 'bosom peril', 'choice tree', 'cloud figuring', 'colossal information', 'counterfeit consciousness', 'credulous bayes', 'fake neural organization', 'flag handling', 'huge information', 'irregular backwoods', 'irregular woodland', 'kidney disappointment', 'lung malignant growth', 'man make consciousness', 'mean square blunder', 'molecule swarm', 'picture handling', 'remote organization', 'subterranean insect state', 'versatile organization', 'worldwide positioning framework']
+
+CPU seconds for the same 100MB chunk: {'baseline': 1.32, '+tortured lookup': 1.52, '+second normalized 5-gram hash': 2.99}  -> relative: {'baseline': '1.00x', '+tortured lookup': '1.16x', '+second normalized 5-gram hash': '2.27x'}
+
+docs carrying tortured phrases:
+  000404f43ba8 ['malignant growth']
+  3000d9aa1b15 ['web of thing']
+  3003e5cfca43 ['malignant growth']
+  3003a531d0e1 ['malignant growth']
+  3000728ad6b1 ['neural organization']
+  3002a757d010 ['profound learning']
+  300192b5e999 ['information mining']

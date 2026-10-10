@@ -2738,3 +2738,128 @@ computer-ethics (276 paper pairs; 15-pair random sample all genuinely the same p
 `ai_check='yes'` (self-reuse). Known remaining gap: `build_dupe_candidates.py`'s upsert still overwrites
 `same_author` on a re-scanned pair, so a manual `(a)` correction for a variant this normalization can't
 catch (initials, transliterations) could be reverted by a `--full-rescan`.
+
+## Spin / paraphrase detection is not part of the workflow yet (2026-10-04, not implemented)
+
+**Problem.** Candidate generation finds spun text (paragraph embeddings compare meaning, not wording --
+CE-N04 entered the queue at cosine 0.95), but every overlap measurement after that counts 10-word exact
+runs, so spun or paraphrased pairs are undervalued and can sit in the "fragments only" backlog unread.
+Measured on known cases (10-word / x-drop 3 vs 5-word / x-drop 8 vs 4-word gapped, coverage of A):
+CE-N04 6% exact but 13% / 15% / 18% once x-drop bridges the swaps (longest run 24 -> 111 words); the
+paraphrase-tool pair 22821/81350 7% / 25% / 43%; LEAD-19a (SecCloud abstract) 8% -> 55%; LEAD-20 4% -> 17%.
+
+**What was done by hand on 2026-10-04 (not reproducible from the repo):** `rank_paper_pairs.py
+--shingle-size 5 --x-drop 8` over the 9,145 low-overlap cross-author backlog pairs (never-reviewed +
+"unsure"), compared pair by pair against the earlier 10-word / x-drop 3 run with a throwaway script, kept
+pairs whose coverage rose 10+ points. 200 pairs cleared the triage bar only under the looser settings; 34
+gained 10+ points; nearly all were benign (preprint vs published, same group, licence/masthead text,
+shared formal definitions, the CE-38 template). Two real finds: LEAD-19 (two different spins of one IEEE
+paper) and LEAD-20 (a paper reworded sentence by sentence). Details in private/FLAGGED_CASES_INDEX.txt's
+"SPIN / PARAPHRASE PASS".
+
+**To do:**
+1. `rank_paper_pairs.py --spin-check`: measure each pair at both settings, report the coverage gain, and
+   flag spin-shaped pairs (large gain while exact coverage stays low). Replaces the throwaway script.
+   Decide the thresholds from the calibration above (gain >= 10 points worked as a first cut).
+2. Unit tests: a synthetic spun pair that must be flagged; a verbatim pair and an unrelated pair that
+   must not be. Watch the false-positive families listed above.
+3. Docs: CLAUDE.md (the mode, settings, calibration, false-positive types); REVIEWING.md (how spinning
+   looks in a diff -- matching sentence skeletons with a swapped word every few words, contextually odd
+   synonyms like "profit of PCA" / "obvious information possession" -- and that 10-word figures
+   understate it).
+4. Optional: a `run_pipeline.py` stage so every new batch gets the check.
+5. Known blind spot: rewriting heavy enough that no 5-word stretch survives (e.g. a full LLM rewrite).
+   Only a sentence-level embedding comparison (`compare_two_papers.py`'s second method) would see it;
+   too costly corpus-wide as is -- consider it for a shortlist only.
+
+## Look up commonly known "tortured phrases" (2026-10-05, not started)
+
+Tortured phrases are the odd synonym swaps that paraphrasing tools leave behind ("counterfeit
+consciousness" for "artificial intelligence", "profound learning" for "deep learning", "web of thing"
+for "internet of things"). The term and the first large catalogue come from Cabanac, Labbé & Magazinov
+(2021). A known list can be matched directly: against the General Index's 2-4-gram rows while slices
+stream, and against this project's own extracted paragraphs.
+
+**To do:**
+1. Collect the phrases already known or commonly seen. Start with the published catalogues: Cabanac et
+   al.'s paper and the Problematic Paper Screener's tortured-phrase detector list, plus later papers
+   that extend them by field. Add any seen in this project's own confirmed spin cases (CE-N04, LEAD-19,
+   LEAD-20; see the spin / paraphrase section above).
+2. Store them as a versioned list (tortured phrase -> expected phrase, source). Normalize to the
+   General Index form: lemmatized, lowercase, no punctuation.
+3. Note which entries are ambiguous on their own, so scoring can count distinct phrases per document
+   rather than single hits.
+
+Context: general_index/BUCKETING_IDEAS.md sections 6-8. A 27-entry test list found "neural
+organization", "profound learning" and "web of thing" in 5.6k partial General Index documents. Adding
+the lookup to gi_sample_5grams.py was measured at +16% CPU and almost no disk.
+
+## General Index results DB: schema follow-ups for decision/type/severity (2026-10-06, not started)
+
+From the review session's read of gi.sqlite3, gi_db.py and gi_agent_review.py after the
+decision/type/severity change (one verdict column split into decision / type / severity, with the
+`results` view coalescing human over agent). Do these after the step-2 scaling rewrite lands, since
+that rewrite is editing gi_db.py.
+
+1. **Fix first (correctness): `reviewed_same_paper()` reads only `reviews.verdict`.** gi_db.py
+   (~line 309) selects `where lower(trim(verdict)) = 'same paper'`; gi_report.py and gi_write_pages.py
+   depend on it. A human review that sets only `type = 'same paper'` would not mark the pair "same work
+   (reviewed)" on the next rerun. Change it to `lower(trim(coalesce(type, verdict))) = 'same paper'`,
+   or retire `verdict` for human rows and migrate the one existing row (it already has
+   type = 'same paper').
+2. **Move the schema into gi_db.py.**
+   - `create table reviews` in gi_db.py (~line 76) has no `decision`, `type` or `severity`; the live
+     table does (added by hand with ALTER). A fresh `gi_db.py init` would build reviews without them.
+     Add them to the DDL, plus an add-column-if-missing step (the pattern `ensure_tables()` uses in
+     gi_agent_review.py) so existing databases get them too.
+   - The `results` and `to_review_agent` views exist only because gi_agent_review.py's
+     `ensure_tables()` creates them. Define them in gi_db.py beside `to_review` / `lead_details`, and
+     have gi_agent_review.py call that (or keep only the agent_reviews table DDL there).
+3. **`results` mixes human and agent values in one row.** It coalesces `type` and `severity` column by
+   column, so a human row with `type` set and `severity` blank shows the human type with the agent's
+   severity (graded for a possibly different type). There is also no effective `decision` column.
+   Instead: if a reviews row exists, take decision/type/severity all from it, else all from the latest
+   agent row, with one `source` column ('human' / 'ai').
+4. **"Conference paper -> extended journal paper" is classed as a problem type.** The prompt's `text
+   recycling` definition includes it, and text recycling is in PROBLEM_TYPES, so the model has to
+   override decision to "no problem" (the v3 FedCSIS row did exactly that: text recycling / no problem
+   / low). Move declared extensions to `legitimate reuse` and keep `text recycling` for undisclosed
+   reuse of one's own text, so decision follows from type except in deliberate cases. Prompt change:
+   bump the prompt version (v4).
+5. **Human vocabulary is unchecked.** Agent output is constrained by the JSON schema; human rows are
+   free text, so 'copying', 'Copying' and 'cross-author copying' become three types in `results`.
+   SQLite can't add a CHECK to an existing table: add a small `review_types` lookup table, or
+   validation in a review-insert helper. Also update the comment on `reviews.verdict` in gi_db.py,
+   which still lists the old five words.
+6. **Columns worth adding to `reviews`:**
+   - `earlier_paper` ('a' / 'b' / 'unclear'): direction matters for any writeup, and the database years
+     are wrong for at least 5 of the 43 reviewed pairs (GI-24 and GI-33 show 1970; GI-08, GI-10 and
+     GI-35 are off by a year).
+   - `reviewed_by` ('human' / 'agent-assisted' / a name): the review session has 43 agent-assisted
+     draft verdicts waiting, which should be distinguishable from the user's own by column, not by a
+     note prefix.
+   - `confidence` (optional).
+
+**Then:** tell the review session (or the user) when this lands. Its draft review inserts fill only
+the old `verdict` column and will be regenerated against the final columns. Its files (draft inserts
+`reviews_draft.sql`, `REVIEW_SUMMARY.md`, this note, the per-batch scripts) were copied out of its
+session scratchpad into `general_index/data/review_session/` on 2026-10-06 (gitignored: they name
+authors). After the change, rerun
+gi_report.py -> gi_rank_leads.py -> gi_recall.py and confirm recall is still 80 of 697 and
+`to_review` still has 43 rows.
+
+## General Index: verify paywalled pairs from the index's own full 5-grams (2026-10-09)
+
+Only ~15% of lead papers have a free PDF (66% of the rest have no open copy at all), so full-text
+verification can't reach most leads. The General Index holds every 5-gram of every document; the
+pipeline keeps only 1 in 8 (gi_sample_5grams.py). For a chosen set of pairs (e.g. all tier 1-2):
+- re-stream the shards keeping ALL 5-grams for just those documents' dkeys (one pass per shard,
+  hours each; the dkey set fits in memory);
+- compute exact containment both ways (lemmatized 5-grams, not sampled) as a PDF-free overlap figure;
+- guard against the wrong-DOI problem (general_index/PILOT_FINDINGS.md, "Index documents filed under
+  the wrong DOI": 49% of random high-overlap pairs) by checking each index document against its DOI's
+  OpenAlex abstract (cached in gi.sqlite3 `abstracts`): the abstract's 5-grams should be in the
+  document;
+- limits: lemmatized text can't show readable passages on a page, only how much is shared; test it
+  first on one shard against the pairs that DO have full text (fulltext table) to see how well the
+  index figure tracks the PDF figure.

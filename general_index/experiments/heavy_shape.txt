@@ -1,0 +1,12 @@
+
+pairs with >= 10 shared: 5,037
+  containment (of smaller) quantiles p10/p25/p50/p75/p90: [0.02 0.05 0.15 0.63 0.97]
+  size ratio larger/smaller p10/p50/p90: [1.   1.4  4.77]
+  twin-shaped (cont>=0.8, sizes within 25%): 15%;  contained (cont>=0.8, ratio>2): 2%;  partial (cont<0.3): 62%
+  docs involved: 5,794; docs in >=5 such pairs: 381; max degree 62
+
+pairs with >= 50 shared: 1,000
+  containment (of smaller) quantiles p10/p25/p50/p75/p90: [0.22 0.57 0.94 0.98 0.99]
+  size ratio larger/smaller p10/p50/p90: [1.   1.03 2.55]
+  twin-shaped (cont>=0.8, sizes within 25%): 56%;  contained (cont>=0.8, ratio>2): 3%;  partial (cont<0.3): 14%
+  docs involved: 1,554; docs in >=5 such pairs: 35; max degree 9

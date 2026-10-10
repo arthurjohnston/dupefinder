@@ -1,0 +1,98 @@
+3064 docs with >=50 5-grams; median size 513, max 14769
+planted 200 pairs; corpus 3104 docs
+
+== mod-4, evidence-only thresholds  (records stored: 557,268, 180/doc)
+  evidence>=5   cont>=0.0   background FP=24    T1:40/40  T2S=100:40/40  T2S=25:30/40  T2S=50:40/40  T3:40/40
+  evidence>=10  cont>=0.0   background FP=0     T1:40/40  T2S=100:40/40  T2S=25:2/40  T2S=50:35/40  T3:40/40
+  evidence>=15  cont>=0.0   background FP=0     T1:40/40  T2S=100:40/40  T2S=25:0/40  T2S=50:8/40  T3:37/40
+  evidence>=20  cont>=0.0   background FP=0     T1:40/40  T2S=100:37/40  T2S=25:0/40  T2S=50:0/40  T3:30/40
+
+background pairs with >=5 shared samples: 24
+
+cont=0.33 shared=5 sizes=15/18
+    摘 要 库 厦 门
+    厦 门 大 学 博
+    大 学 博 硕 士
+    学 博 硕 士 论
+    士 论 文 摘 要
+
+cont=0.16 shared=6 sizes=52/37
+    zero for negative f 2
+    wr and goodness of fit
+    f 2 against all reflection
+    collection and structure refinement detail
+    r be base on f
+    choice of reflection for refinement
+
+cont=0.14 shared=5 sizes=35/221
+    j k l m n
+    s t u v w
+    q r s t u
+    c d e f g
+    h i j k l
+
+cont=0.14 shared=5 sizes=632/36
+        
+        
+        
+        
+        
+
+cont=0.05 shared=8 sizes=1552/151
+        
+        
+    1 1 1 2 2
+    2 1 1 2 2
+        
+        2
+
+cont=0.04 shared=5 sizes=133/420
+        
+        
+        
+        
+        
+
+cont=0.04 shared=5 sizes=1866/133
+        
+        
+        
+        
+        
+
+cont=0.04 shared=5 sizes=1024/133
+        
+        
+        
+        
+        
+
+cont=0.04 shared=5 sizes=139/1552
+        
+        
+        
+       1 1
+        
+
+cont=0.03 shared=5 sizes=216/156
+    r i p t 11
+    e p t e d
+    r i p t 13
+    r i p t 9
+    c c e p t
+
+cont=0.03 shared=6 sizes=191/282
+    license and -pron- intended use
+    nature remain neutral with regard
+    publish map and institutional affiliation
+    indicate otherwise in a credit
+    long as -pron- give appropriate
+    commons attribution 4.0 international license
+
+cont=0.03 shared=6 sizes=191/338
+    license and -pron- intended use
+    nature remain neutral with regard
+    publish map and institutional affiliation
+    indicate otherwise in a credit
+    long as -pron- give appropriate
+    commons attribution 4.0 international license
