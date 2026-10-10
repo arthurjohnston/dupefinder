@@ -48,7 +48,8 @@ from pathlib import Path
 import db
 import text_overlap as to
 from compare_two_papers import (DEFAULT_GAP_EXTEND, DEFAULT_GAP_OPEN, DEFAULT_MAX_GAP,
-                                 DegenerateGappedPair, find_shingle_matches, load_paper_words)
+                                 DegenerateGappedPair, drop_furniture_runs, find_shingle_matches,
+                                 load_paper_words)
 from review_dupes import WORD_RE
 from write_dupe_reports import slugify
 
@@ -352,7 +353,8 @@ def expand_context(conn, paper_id, start_para, end_para, context=CONTEXT_PARAGRA
 
 def render_shingle_exhibits(conn, paper_id_1, paper_id_2, earlier_id, shingle_size, max_exhibits,
                              mismatch_penalty=1, x_drop=None, gap_open=None,
-                             gap_extend=DEFAULT_GAP_EXTEND, max_gap=DEFAULT_MAX_GAP):
+                             gap_extend=DEFAULT_GAP_EXTEND, max_gap=DEFAULT_MAX_GAP,
+                             drop_furniture=False):
     """This page's sole exhibit source (see the module docstring for why the potential_dupes-
     sourced candidates aren't rendered as their own exhibits any more): runs
     compare_two_papers.py's exact word-shingle matcher directly across the two papers' full text,
@@ -369,12 +371,17 @@ def render_shingle_exhibits(conn, paper_id_1, paper_id_2, earlier_id, shingle_si
     exhibit exists to point at. `x_drop` (None disables, matching find_shingle_matches()'s own
     default) enables seed-and-extend tolerance for isolated word substitutions past each exact
     seed's boundary -- see that function's and _extend_xdrop()'s docstrings; a bridged exhibit's
-    metrics line shows how many substitutions it contains."""
+    metrics line shows how many substitutions it contains. `drop_furniture` removes shared
+    masthead/running-header/byline runs first (compare_two_papers.drop_furniture_runs()); the
+    third return value is how many it removed (0 when off)."""
     words_1 = load_paper_words(conn, paper_id_1)
     words_2 = load_paper_words(conn, paper_id_2)
     runs = find_shingle_matches(words_1, words_2, shingle_size=shingle_size,
                                  mismatch_penalty=mismatch_penalty, x_drop=x_drop,
                                  gap_open=gap_open, gap_extend=gap_extend, max_gap=max_gap)
+    furniture = []
+    if drop_furniture:
+        runs, furniture = drop_furniture_runs(runs, words_1, words_2, shingle_size)
     shown = runs[:max_exhibits]
 
     # Selection above keeps the longest N runs (find_shingle_matches()'s own length-descending
@@ -443,7 +450,7 @@ def render_shingle_exhibits(conn, paper_id_1, paper_id_2, earlier_id, shingle_si
       <p>{rendered_b}</p></div>
   </div>
 </section>""")
-    return exhibits, len(runs)
+    return exhibits, len(runs), len(furniture)
 
 
 
@@ -597,7 +604,8 @@ def _wdd_gap_items(words_a, words_b, equal_tag="shared-weak"):
 def render_whole_document_diff(conn, paper_id_1, paper_id_2, earlier_id, shingle_size,
                                 mismatch_penalty=1, x_drop=None,
                                 max_gap_words=DEFAULT_MAX_GAP_WORDS, gap_open=None,
-                                gap_extend=DEFAULT_GAP_EXTEND, max_gap=DEFAULT_MAX_GAP):
+                                gap_extend=DEFAULT_GAP_EXTEND, max_gap=DEFAULT_MAX_GAP,
+                                drop_furniture=False):
     """Render both complete documents as ONE continuous word-level diff, in reading order, instead
     of N separate per-run exhibits. Returns (html, stats, total_runs).
 
@@ -633,6 +641,11 @@ def render_whole_document_diff(conn, paper_id_1, paper_id_2, earlier_id, shingle
     runs = find_shingle_matches(words_a, words_b, shingle_size=shingle_size,
                                  mismatch_penalty=mismatch_penalty, x_drop=x_drop,
                                  gap_open=gap_open, gap_extend=gap_extend, max_gap=max_gap)
+    # Furniture runs dropped here render as ordinary gap text below (diffed, not highlighted as a
+    # finding), and stay out of the coverage figures.
+    furniture = []
+    if drop_furniture:
+        runs, furniture = drop_furniture_runs(runs, words_a, words_b, shingle_size)
     spine, dropped = _wdd_spine(runs)
 
     covered_a, covered_b = set(), set()
@@ -709,6 +722,7 @@ def render_whole_document_diff(conn, paper_id_1, paper_id_2, earlier_id, shingle
         "paper_a": pid_a, "paper_b": pid_b,
         "words_a": len(words_a), "words_b": len(words_b),
         "runs": len(runs), "spine_runs": len(spine), "dropped_runs": len(dropped),
+        "furniture_runs": len(furniture),
         "substitutions": subs, "indels": indels, "gapped": gap_open is not None,
         "covered_a": len(covered_a), "covered_b": len(covered_b),
         "unplaced_a": unplaced_a, "unplaced_b": unplaced_b,
@@ -734,7 +748,8 @@ def render_case(conn, paper_id_1, paper_id_2, dupe_rows, source_note=None, short
                  classification=None, mismatch_penalty=1, x_drop=None,
                  include_shingle_count_in_title=True, library_db_path=None,
                  whole_document=False, max_gap_words=DEFAULT_MAX_GAP_WORDS, gap_open=None,
-                 gap_extend=DEFAULT_GAP_EXTEND, max_gap=DEFAULT_MAX_GAP, neutral=False):
+                 gap_extend=DEFAULT_GAP_EXTEND, max_gap=DEFAULT_MAX_GAP, neutral=False,
+                 drop_furniture=False, found_by=None):
     """dupe_rows: list of potential_dupes rows (sqlite3.Row) for this pair,
     already sorted the way they should display -- may be EMPTY: a pair found by
     find_title_bucket_dupes.py rather than the embedding-similarity pipeline can have zero
@@ -811,20 +826,23 @@ def render_case(conn, paper_id_1, paper_id_2, dupe_rows, source_note=None, short
     lcs_vals = [r["lcs_ratio"] for r in dupe_rows if r["lcs_ratio"] is not None]
     no_candidates = not dupe_rows
 
-    shingle_exhibits, shingle_total = [], 0
+    shingle_exhibits, shingle_total, furniture_total = [], 0, 0
     wdd_stats = None
     if shingle_size and whole_document:
         wdd_html, wdd_stats, shingle_total = render_whole_document_diff(
             conn, paper_id_1, paper_id_2, earlier_id, shingle_size,
             mismatch_penalty=mismatch_penalty, x_drop=x_drop, max_gap_words=max_gap_words,
             gap_open=gap_open, gap_extend=gap_extend, max_gap=max_gap,
+            drop_furniture=drop_furniture,
         )
         shingle_exhibits = [wdd_html]
+        furniture_total = wdd_stats["furniture_runs"]
     elif shingle_size:
-        shingle_exhibits, shingle_total = render_shingle_exhibits(
+        shingle_exhibits, shingle_total, furniture_total = render_shingle_exhibits(
             conn, paper_id_1, paper_id_2, earlier_id, shingle_size, max_shingle_exhibits,
             mismatch_penalty=mismatch_penalty, x_drop=x_drop,
             gap_open=gap_open, gap_extend=gap_extend, max_gap=max_gap,
+            drop_furniture=drop_furniture,
         )
     # Under --gap-open a reported run is no longer a purely exact match: it can contain substituted
     # words AND inserted/deleted ones. Every heading, legend and footer that says "exact" has to stop
@@ -899,7 +917,11 @@ def render_case(conn, paper_id_1, paper_id_2, dupe_rows, source_note=None, short
         f'<span>{run_kind} shingle runs ({shingle_size}+ words) <strong>{shingle_total}</strong></span>'
         if shingle_size else ""
     )
-    if no_candidates:
+    if no_candidates and found_by is not None:
+        # The caller says how the pair was found (e.g. the General Index pilot), so "0 candidate
+        # passages (title-match only)" would be wrong, not just empty.
+        candidate_summary = ""
+    elif no_candidates:
         candidate_summary = '<span>candidate passages <strong>0 (title-match only)</strong></span>'
     else:
         candidate_summary = (
@@ -907,7 +929,10 @@ def render_case(conn, paper_id_1, paper_id_2, dupe_rows, source_note=None, short
             f'<span>similarity range <strong>{min(sims):.3f}&ndash;{max(sims):.3f}</strong></span>'
             f'<span>median LCS ratio <strong>{sorted(lcs_vals)[len(lcs_vals)//2]:.2f}</strong></span>'
         )
-    if no_candidates:
+    custom_found_by = found_by is not None
+    if custom_found_by:
+        pass
+    elif no_candidates:
         found_by = (
             "This pair was found by matching on title alone (find_title_bucket_dupes.py) "
             "&mdash; the usual paragraph-embedding similarity search never generated a candidate "
@@ -928,6 +953,8 @@ def render_case(conn, paper_id_1, paper_id_2, dupe_rows, source_note=None, short
             f"one document rather than a handful of reused passages &mdash; what it shows is how "
             f"little differs, and where."
         )
+    elif shingle_size and custom_found_by:
+        dek = found_by  # no "instead of embedding similarity" framing: no embedding search was involved
     elif shingle_size:
         dek = (
             f"{found_by} The exhibits below are {run_kind} word-shingle matches instead &mdash; a "
@@ -939,6 +966,7 @@ def render_case(conn, paper_id_1, paper_id_2, dupe_rows, source_note=None, short
         )
     else:
         dek = f"{found_by} --no-shingles was set, so no exhibits are rendered below."
+    dek_html = f'<p class="dek">{dek}</p>' if dek.strip() else ""
 
     # --neutral pages are for showing the tool's output to people outside a review, so they carry
     # no verdict: no classification badge, no directional arrow, no review_dupes.py commands.
@@ -970,7 +998,7 @@ def render_case(conn, paper_id_1, paper_id_2, dupe_rows, source_note=None, short
     {classification_html}
     <p class="eyebrow">{eyebrow}</p>
     <h1>{html.escape(title1 if earlier_id != paper_id_2 else title2)} {arrow} {html.escape(title2 if earlier_id != paper_id_2 else title1)}</h1>
-    <p class="dek">{dek}</p>
+    {dek_html}
     {source_html}
     <div class="comparison">
       {left}
@@ -986,7 +1014,7 @@ def render_case(conn, paper_id_1, paper_id_2, dupe_rows, source_note=None, short
   {shingle_divider}
   {"".join(shingle_exhibits)}
   <footer>Generated by write_dupe_reports_html.py from library.sqlite3&rsquo;s potential_dupes table
-    (grouping/stats only){f" and a {shingle_size}+-word word-shingle scan" if shingle_size else ""}{f", extended with X-drop {x_drop}" if shingle_size and x_drop is not None else ""}{f" and gapped alignment (gap open {gap_open}, extend {gap_extend}, max gap {max_gap}) &mdash; so a run may contain substituted and inserted/deleted words" if gapped else (" &mdash; so a run may contain substituted words, but no insertions or deletions" if shingle_size and x_drop is not None else (" &mdash; exact matches only" if shingle_size else ""))}.</footer>
+    (grouping/stats only){f" and a {shingle_size}+-word word-shingle scan" if shingle_size else ""}{f", extended with X-drop {x_drop}" if shingle_size and x_drop is not None else ""}{f" and gapped alignment (gap open {gap_open}, extend {gap_extend}, max gap {max_gap}) &mdash; so a run may contain substituted and inserted/deleted words" if gapped else (" &mdash; so a run may contain substituted words, but no insertions or deletions" if shingle_size and x_drop is not None else (" &mdash; exact matches only" if shingle_size else ""))}.{f" Shared page furniture (journal masthead, running headers/footers, byline and affiliation before the abstract) was filtered out first: {furniture_total} run{'' if furniture_total == 1 else 's'} removed, and not counted in any figure above." if drop_furniture and shingle_size else ""}</footer>
 </div>"""
     slug = f"{slugify(title1)}-vs-{slugify(title2)}"
     if shingle_size and include_shingle_count_in_title:
@@ -1008,6 +1036,11 @@ def parse_args():
                                          "--ids/--status resolves to a single paper pair")
     parser.add_argument("--source-note", help="HTML snippet (e.g. an external citation/link) shown "
                                                 "under the dek; only applies to a single paper pair")
+    parser.add_argument("--found-by", default=None,
+                        help="HTML sentence saying how this pair was found, replacing the built-in one "
+                             "(which assumes potential_dupes rows, or find_title_bucket_dupes.py for "
+                             "--paper-ids). An empty string drops it. With --paper-ids it also drops the "
+                             "'candidate passages 0' metric. Only applies to a single paper pair.")
     parser.add_argument("--classification", help="plain-text badge rendered first thing on the page, "
                                                     "above the eyebrow (e.g. 'Paper-mill pattern "
                                                     "· 1 of 22 in this set') -- an editorial "
@@ -1084,6 +1117,13 @@ def parse_args():
                               "on by default so a directory/gallery of many published pages can be "
                               "triaged by scale without opening each one; has no effect with "
                               "--no-shingles, since there's no count to append then")
+    parser.add_argument("--drop-furniture", action="store_true",
+                         help="drop shingle runs that are page furniture -- a journal masthead or "
+                              "running header/footer repeated on every page, or byline/affiliation "
+                              "text before the abstract -- before rendering or counting anything; "
+                              "see compare_two_papers.drop_furniture_runs(). Two papers in the same "
+                              "journal otherwise match the masthead on every page against every page. "
+                              "The footer says how many runs were removed. Off by default.")
     parser.add_argument("--skip-identical-titles", action="store_true",
                          help="skip a pair entirely (no file, no shingle scan run at all) when the "
                               "two papers' titles are exactly identical after stripping whitespace "
@@ -1158,6 +1198,7 @@ def main():
             slug, body, shingle_total = render_case(
                 conn, pid1, pid2, group_rows,
                 source_note=args.source_note if single else None,
+                found_by=args.found_by if single else None,
                 short_title=args.title if single else None,
                 shingle_size=shingle_size,
                 max_shingle_exhibits=args.max_shingle_exhibits,
@@ -1172,6 +1213,7 @@ def main():
                 gap_open=args.gap_open,
                 gap_extend=args.gap_extend,
                 max_gap=args.max_gap,
+                drop_furniture=args.drop_furniture,
             )
         except DegenerateGappedPair as exc:
             # Skip the pair rather than abort a multi-pair run; a single --ids/--paper-ids run

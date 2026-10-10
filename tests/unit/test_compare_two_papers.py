@@ -220,6 +220,54 @@ class TestOrderIndependence(unittest.TestCase):
         self.assertEqual(self._coverage(self._words(b), self._words(moved)), 1.0)
 
 
+class TestDropFurnitureRuns(unittest.TestCase):
+    """drop_furniture_runs(): a shared running header and a shared pre-abstract byline go; shared
+    body text stays, including a long body run that merely crosses a page footer."""
+
+    HEADER = "vol two issue one international journal of applied things peer reviewed issn"
+    BYLINE = "department of computer science some college somewhere india"
+
+    def _doc(self, body_parts):
+        # Front matter, then the header before every body part (one per "page").
+        text = f"{self.BYLINE} abstract " + " ".join(f"{self.HEADER} {b}" for b in body_parts)
+        return words(text)
+
+    def _shared(self, kept, phrase):
+        return any(phrase in r.text_a.lower() for r in kept)
+
+    def test_header_and_byline_dropped_body_kept(self):
+        # A page of shared body is longer than the header around it, as on any real page; the
+        # header joins onto the run at both ends, and the body still has to dominate.
+        shared = ("the proposed system follows a modular client server architecture for scale "
+                  + " ".join(f"s{i}" for i in range(30)))
+        a = self._doc(["alpha bravo charlie delta echo", shared, "golf hotel india juliet",
+                       "kilo lima mike november"])
+        b = self._doc(["one two three four five", "six seven eight nine ten", shared,
+                       "eleven twelve thirteen fourteen"])
+        runs = ctp.find_shingle_matches(a, b, shingle_size=5)
+        kept, dropped = ctp.drop_furniture_runs(runs, a, b, 5)
+        self.assertTrue(dropped)
+        self.assertEqual(len(kept), 1)
+        self.assertIn("modular client server architecture", kept[0].text_a)
+        self.assertFalse(self._shared(kept, "some college somewhere"))
+
+    def test_long_body_run_crossing_a_footer_is_kept(self):
+        body = " ".join(f"w{i}" for i in range(60))
+        a = self._doc(["x1 x2 x3", body, "x4 x5 x6", "x7 x8 x9"])
+        b = self._doc(["y1 y2 y3", body, "y4 y5 y6", "y7 y8 y9"])
+        runs = ctp.find_shingle_matches(a, b, shingle_size=5)
+        kept, _ = ctp.drop_furniture_runs(runs, a, b, 5)
+        self.assertTrue(any("w30" in r.text_a.split() for r in kept))
+
+    def test_no_abstract_heading_means_no_front_matter_rule(self):
+        a = words("department of computer science some college somewhere india then a b c")
+        b = words("department of computer science some college somewhere india then x y z")
+        runs = ctp.find_shingle_matches(a, b, shingle_size=5)
+        kept, dropped = ctp.drop_furniture_runs(runs, a, b, 5)
+        self.assertEqual(len(kept), 1)
+        self.assertEqual(dropped, [])
+
+
 class TestExtendGappedBoundaries(unittest.TestCase):
     def test_never_returns_a_worse_boundary(self):
         a = ["alpha", "bravo", "charlie"]
