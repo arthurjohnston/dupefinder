@@ -7,7 +7,7 @@ set -uo pipefail
 G=/home/arthur/Sites/dupefinder/general_index; P=$G/../.venv/bin/python3; D=$G/..
 RUN=leads12_s16c
 cd $G
-while pgrep -f run_qwen_eval_after_batch.sh > /dev/null; do sleep 60; done
+[ -n "${NO_WAIT:-}" ] || while pgrep -f run_qwen_eval_after_batch.sh > /dev/null; do sleep 60; done
 echo "$(date +%T) == $RUN: remaining tier 1-2 leads"
 ./gi_verify.sh $RUN arthur.j.johnston@gmail.com --tiers 1 2 > data/verify_$RUN.log 2>&1
 tail -2 data/verify_$RUN.log
