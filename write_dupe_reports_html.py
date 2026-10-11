@@ -743,13 +743,29 @@ def paper_authors(conn, paper_id):
     return [r[0] for r in rows]
 
 
+def resolve_earlier_id(conn, paper_id_1, paper_id_2, dupe_rows):
+    """Which of the two papers is the earlier one, or None when that isn't known. Prefers the
+    rows' own earlier_paper_id (matches build_dupe_candidates.py's NULL-when-unknown convention);
+    falls back to raw year if every row leaves it NULL. Shared with
+    write_dupe_reports_screenshots.py, which has to orient its own title screenshots the same way
+    render_case() orients the paper cards."""
+    earlier_id = next((r["earlier_paper_id"] for r in dupe_rows if r["earlier_paper_id"]), None)
+    if earlier_id is None:
+        year1 = conn.execute("SELECT year FROM papers WHERE id=?", (paper_id_1,)).fetchone()[0]
+        year2 = conn.execute("SELECT year FROM papers WHERE id=?", (paper_id_2,)).fetchone()[0]
+        if year1 and year2 and year1 != year2:
+            earlier_id = paper_id_1 if year1 < year2 else paper_id_2
+    return earlier_id
+
+
 def render_case(conn, paper_id_1, paper_id_2, dupe_rows, source_note=None, short_title=None,
                  shingle_size=DEFAULT_SHINGLE_SIZE, max_shingle_exhibits=DEFAULT_MAX_SHINGLE_EXHIBITS,
                  classification=None, mismatch_penalty=1, x_drop=None,
                  include_shingle_count_in_title=True, library_db_path=None,
                  whole_document=False, max_gap_words=DEFAULT_MAX_GAP_WORDS, gap_open=None,
                  gap_extend=DEFAULT_GAP_EXTEND, max_gap=DEFAULT_MAX_GAP, neutral=False,
-                 drop_furniture=False, found_by=None):
+                 drop_furniture=False, found_by=None, exhibit_renderer=None,
+                 pre_exhibits_html="", extra_style="", generator="write_dupe_reports_html.py"):
     """dupe_rows: list of potential_dupes rows (sqlite3.Row) for this pair,
     already sorted the way they should display -- may be EMPTY: a pair found by
     find_title_bucket_dupes.py rather than the embedding-similarity pipeline can have zero
@@ -787,6 +803,12 @@ def render_case(conn, paper_id_1, paper_id_2, dupe_rows, source_note=None, short
     a handle since both cascade to every row between the pair), so the block is only rendered when
     `dupe_rows` is non-empty AND `library_db_path` is given -- None (default) renders no block,
     matching this page's behavior before this parameter existed.
+    `exhibit_renderer`, `pre_exhibits_html`, `extra_style` and `generator` exist for
+    write_dupe_reports_screenshots.py, which keeps this header/stats section and swaps only the
+    exhibits: `exhibit_renderer` replaces render_shingle_exhibits() (same signature and return
+    shape), `pre_exhibits_html` is inserted between the header and the exhibit list, `extra_style`
+    is appended to STYLE, and `generator` is the script the footer names. Their defaults leave
+    this page byte-identical to what it was before they existed.
     Returns (slug, html_str)."""
     p1 = conn.execute("SELECT title, year, doi FROM papers WHERE id=?", (paper_id_1,)).fetchone()
     p2 = conn.execute("SELECT title, year, doi FROM papers WHERE id=?", (paper_id_2,)).fetchone()
@@ -794,12 +816,7 @@ def render_case(conn, paper_id_1, paper_id_2, dupe_rows, source_note=None, short
     title2, year2, doi2 = p2
     authors1, authors2 = paper_authors(conn, paper_id_1), paper_authors(conn, paper_id_2)
 
-    # Chronology: prefer the rows' own earlier/later_paper_id (matches build_dupe_candidates.py's
-    # NULL-when-unknown convention); fall back to raw year if every row leaves it NULL.
-    earlier_id = next((r["earlier_paper_id"] for r in dupe_rows if r["earlier_paper_id"]), None)
-    if earlier_id is None:
-        if year1 and year2 and year1 != year2:
-            earlier_id = paper_id_1 if year1 < year2 else paper_id_2
+    earlier_id = resolve_earlier_id(conn, paper_id_1, paper_id_2, dupe_rows)
 
     def card(pid, title, year, doi, authors, role):
         by = ", ".join(authors) if authors else "(authors unknown)"
@@ -838,7 +855,7 @@ def render_case(conn, paper_id_1, paper_id_2, dupe_rows, source_note=None, short
         shingle_exhibits = [wdd_html]
         furniture_total = wdd_stats["furniture_runs"]
     elif shingle_size:
-        shingle_exhibits, shingle_total, furniture_total = render_shingle_exhibits(
+        shingle_exhibits, shingle_total, furniture_total = (exhibit_renderer or render_shingle_exhibits)(
             conn, paper_id_1, paper_id_2, earlier_id, shingle_size, max_shingle_exhibits,
             mismatch_penalty=mismatch_penalty, x_drop=x_drop,
             gap_open=gap_open, gap_extend=gap_extend, max_gap=max_gap,
@@ -992,7 +1009,7 @@ def render_case(conn, paper_id_1, paper_id_2, dupe_rows, source_note=None, short
     </div>"""
 
     body = f"""<title>{html.escape(tab_title)}</title>
-<style>{STYLE}</style>
+<style>{STYLE}{extra_style}</style>
 <div class="page">
   <div class="lede">
     {classification_html}
@@ -1011,9 +1028,9 @@ def render_case(conn, paper_id_1, paper_id_2, dupe_rows, source_note=None, short
     </div>
     {actions_html}
   </div>
-  {shingle_divider}
+  {pre_exhibits_html}{shingle_divider}
   {"".join(shingle_exhibits)}
-  <footer>Generated by write_dupe_reports_html.py from library.sqlite3&rsquo;s potential_dupes table
+  <footer>Generated by {generator} from library.sqlite3&rsquo;s potential_dupes table
     (grouping/stats only){f" and a {shingle_size}+-word word-shingle scan" if shingle_size else ""}{f", extended with X-drop {x_drop}" if shingle_size and x_drop is not None else ""}{f" and gapped alignment (gap open {gap_open}, extend {gap_extend}, max gap {max_gap}) &mdash; so a run may contain substituted and inserted/deleted words" if gapped else (" &mdash; so a run may contain substituted words, but no insertions or deletions" if shingle_size and x_drop is not None else (" &mdash; exact matches only" if shingle_size else ""))}.{f" Shared page furniture (journal masthead, running headers/footers, byline and affiliation before the abstract) was filtered out first: {furniture_total} run{'' if furniture_total == 1 else 's'} removed, and not counted in any figure above." if drop_furniture and shingle_size else ""}</footer>
 </div>"""
     slug = f"{slugify(title1)}-vs-{slugify(title2)}"

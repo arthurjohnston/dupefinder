@@ -1,8 +1,10 @@
 """Write neutral HTML comparison pages for full-text-confirmed General Index leads (from gi.sqlite3).
 
 One page per pair in `fulltext` with verdict 'real overlap' and no byline overlap, not reviewed as
-'same paper' (`reviews`), via write_dupe_reports_html.py --paper-ids (no potential_dupes table
-needed), with an "Overlap evidence" block at the top:
+'same paper' (`reviews`), via write_dupe_reports_screenshots.py --paper-ids (no potential_dupes table
+needed): each overlap as crops of both PDFs side by side with the shared words highlighted, images in
+OUT_DIR/img/GI-NN/ (--text-pages: the old text diffs, write_dupe_reports_html.py). With an "Overlap
+evidence" block at the top:
   - full text (from `fulltext`): each paper's % of words inside a run shared with the other, matched
     words, longest run, verdict;
   - the General Index evidence that put the pair on the list (from `leads` + `pairs`): shared sampled
@@ -21,7 +23,7 @@ Pairs reviewed as "same paper" have no page and are listed, marked, at the end o
 --no-db-writes opens gi.sqlite3 read-only and skips the fulltext.page / page_number updates (every
 pair must already have a page_number); --index-only rewrites index.html from the existing pages.
 
-Usage: gi_write_pages.py [OUT_DIR] [--db data/gi.sqlite3] [--sample-rate 4] [--no-db-writes] [--index-only]
+Usage: gi_write_pages.py [OUT_DIR] [--db data/gi.sqlite3] [--sample-rate 4] [--no-db-writes] [--index-only] [--text-pages]
 OUT_DIR defaults to data/fulltext_pages_s0123.
 """
 import argparse
@@ -228,6 +230,10 @@ def main():
     ap.add_argument("--no-db-writes", action="store_true",
                     help="open gi.sqlite3 read-only; don't update fulltext.page / page_number")
     ap.add_argument("--index-only", action="store_true", help="only rewrite OUT_DIR/index.html")
+    ap.add_argument("--text-pages", action="store_true",
+                    help="write the old text-diff pages (write_dupe_reports_html.py) instead of the default "
+                         "screenshot pages (write_dupe_reports_screenshots.py: PDF crops with the overlap "
+                         "highlighted, images in OUT_DIR/img/)")
     args = ap.parse_args()
     if args.no_db_writes or args.index_only:
         db = sqlite3.connect(f"file:{args.db}?mode=ro", uri=True, timeout=300)
@@ -268,13 +274,14 @@ def main():
         before = set(os.listdir(args.out_dir))
         note = evidence_note(rep, lead, args.sample_rate, res["doi_a"], res,
                              local_pdf(lib, a, args.out_dir), local_pdf(lib, b, args.out_dir))
-        p = subprocess.run([PY, str(ROOT / "write_dupe_reports_html.py"), "--library-db", lib,
+        script = "write_dupe_reports_html.py" if args.text_pages else "write_dupe_reports_screenshots.py"
+        p = subprocess.run([PY, str(ROOT / script), "--library-db", lib,
                             "--paper-ids", f"{a},{b}", "--out-dir", args.out_dir, "--neutral",
                             "--shingle-size", "10", "--x-drop", "3", "--case-number", f"GI-{n:02d}",
                             "--source-note", note, "--found-by", ""], capture_output=True, text=True)
-        new = sorted(set(os.listdir(args.out_dir)) - before)
+        new = sorted(f for f in set(os.listdir(args.out_dir)) - before if f.endswith(".html"))
         if p.returncode != 0 or not new:
-            print(f"GI-{n:02d}: write_dupe_reports_html failed: {p.stderr[-300:]}", file=sys.stderr)
+            print(f"GI-{n:02d}: {script.removesuffix('.py')} failed: {p.stderr[-300:]}", file=sys.stderr)
             continue
         page = Path(args.out_dir) / new[0]
         raw = page.read_bytes()

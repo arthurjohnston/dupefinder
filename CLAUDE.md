@@ -495,6 +495,21 @@ found on 2026-09-26 were repaired this way (141,252 -> 141,247 downloaded).
 Not automated as a bulk pass, and deliberately: the only reliable signal is pairwise, so there is no
 corpus-wide sweep to run that wouldn't either miss most of them or delete real papers.
 
+### `write_dupe_reports_screenshots.py` — the same page, with PDF images instead of text diffs
+
+Same top section as `write_dupe_reports_html.py` (it calls that module's `render_case()` with its own
+exhibit renderer), then the title/byline area of both papers' page 1 side by side, then one exhibit per
+shingle run: a crop of each PDF around the passage, side by side, matched words highlighted yellow and
+words substituted or inserted inside the run pink. The run is a span of word positions in the extracted
+text, which doesn't map onto the PDF 1:1 (headers dropped, dehyphenation, ligatures), so each side is
+located by content in PyMuPDF's own word list (`locate_sequence()`: k-gram votes, then a `difflib`
+alignment). A side that can't be placed (no text layer, missing PDF) falls back to the text excerpt with
+a note. Each crop is zoomed from its own measured text size (`--text-px`), so both sides read at the same
+size whatever the fonts; an exhibit too wide for side by side stacks. Images are separate JPEGs in
+`OUT_DIR/img/<case>/` (`--embed-images` inlines them). Located 276 of 276 displayed runs on both sides
+across six General Index pairs (2026-10-10). It is the default for `general_index/gi_write_pages.py`
+(`--text-pages` there gives the text version).
+
 ### `text_overlap.py` — accurate-but-unscalable textual overlap checks
 
 Cosine similarity on embeddings is semantic, not textual, and can be fooled by two paragraphs that
