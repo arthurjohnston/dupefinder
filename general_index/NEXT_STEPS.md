@@ -197,6 +197,30 @@ work opened from disk. Regenerate with `gi_write_pages.py` (`--no-db-writes` for
 - `data/leads_s0123_fulltext_report.txt` — rank_paper_pairs text report with a
   `compare_two_papers.py` rerun command per pair (library: `data/verify_leads12_s0123/library.sqlite3`).
 
+## Queued full-text batches (2026-10-10)
+
+The user doesn't want pairs where one paper is already retracted (tiers 1 and 3), except as test sets.
+Three chained scripts, each waiting for the one before:
+
+1. `run_qwen_eval_after_batch.sh`: the 56-pair local-model evaluation on Qwen3-30B, compared with Opus
+   (`data/compare_qwen_vs_opus.tsv`). gpt-oss-20b's result: decision agrees 40/56, but it called 11 pairs
+   "cross-author copying" that Opus didn't call a problem.
+2. `run_next_batch_after_qwen.sh` (run `leads12_s16c`): every remaining tier 1-2 lead by rank. Tier 1
+   is exhausted, so this is the 12,356 tier-2 pairs.
+3. `run_tier45_sample_after_batch.sh`: random samples, stratified by the larger side's index overlap
+   (`gi_verify.py select --per-band N --strat-tiers T --min-band B`):
+   - `strat4_s16`: tier 4, 1,000 per band (15-30/30-50/50-70/70-90/90+), 5,000 pairs. Tier 4 holds
+     1.87M DOI pairs: 1.56M with no abstract to check, 308k whose abstracts share no 20-word run.
+   - `strat5_s16`: tier 5's "near-identical copy" kind (35k pairs, all at 70%+), 300 per band, 600
+     pairs. Expected to be mostly the index holding one PDF twice; this measures it. The other kind (1.93M
+     pairs) has a side with no metadata at all, so it can't be retrieved.
+   - then `gi_check_index_text.py` over both (`data/index_text_check_tier45.tsv`): in the last random
+     batch (strat_s16a) 12 of 16 measured 50%+ pairs were the index's wrong-DOI error, not overlap.
+
+What to expect from strat_s16a's rates: about 4% of selected pairs end with both PDFs, so ~200 measured
+tier-4 pairs, ~40 per band. Its yield by band (all tiers but 1 and 3): 50%+ 4 real of 16, 15-50% 6 of
+11, 5-15% 2 of 12. Use the result to decide whether ranked tier-4 batches are worth it and from which band.
+
 ## Next steps, in priority order
 
 1. **Review the remaining 43 by hand** (REVIEWING.md). Record every verdict in

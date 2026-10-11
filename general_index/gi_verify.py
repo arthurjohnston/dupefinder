@@ -71,11 +71,19 @@ def stratified(db, args):
     """--per-band N random cross-author leads in each band of the larger side's index overlap (STRATA),
     for calibrating index overlap against full-text overlap. Kept leads only (no filter reason), no
     shared author, not a retraction tier (1, 3), both sides with a title; one per DOI pair. Draws random
-    pair_ids until every band is full, so rare bands (90%+) cost more draws but no full scan."""
+    pair_ids until every band is full, so rare bands (90%+) cost more draws but no full scan.
+    --strat-tiers limits it to those tiers instead (5 admits only the "near-identical copy" kind: the
+    other kind has a side with no metadata at all, so nothing to retrieve it by); --min-band drops the
+    bands below it (tiers 2-5 hold only pairs at 15%+, gi_rank_leads.py --min-pct)."""
     import random
     rng = random.Random(args.seed)
     lo, hi = db.execute("select min(pair_id), max(pair_id) from pairs").fetchone()
-    need = {b: args.per_band for b in STRATA}
+    need = {b: (args.per_band if b[0] >= args.min_band else 0) for b in STRATA}
+    if args.strat_tiers:
+        tier_sql = f"ld.tier in ({','.join(str(int(t)) for t in args.strat_tiers)})"
+    else:
+        tier_sql = "coalesce(ld.tier, 0) not in (1, 3)"
+    unidentified_ok = "partner unidentified (near-identical copy)" if 5 in (args.strat_tiers or []) else ""
     seen, chosen, draws = set(), [], 0
     done = {(r[0], r[1]) for r in db.execute("select pair_lo, pair_hi from fulltext")}
     while any(need.values()) and draws < args.max_draws:
@@ -89,10 +97,11 @@ def stratified(db, args):
             continue
         for r in db.execute(f"""select ld.*, p.dkey_a, p.dkey_b from lead_details ld join pairs p using (pair_id)
                                 where ld.pair_id in ({','.join('?' * len(ids))}) and coalesce(ld.reason, '') = ''
-                                and ld.authors = 'no shared author' and coalesce(ld.tier, 0) not in (1, 3)
-                                and coalesce(ld.abstracts, '') not like 'partner unidentified%'
+                                and ld.authors = 'no shared author' and {tier_sql}
+                                and (coalesce(ld.abstracts, '') not like 'partner unidentified%'
+                                     or ld.abstracts = ?)
                                 and coalesce(ld.abstracts, '') != 'identical (artifact)'
-                                and coalesce(ld.title_a, '') != '' and coalesce(ld.title_b, '') != ''""", ids):
+                                and coalesce(ld.title_a, '') != '' and coalesce(ld.title_b, '') != ''""", (*ids, unidentified_ok)):
             mx = max(r["pct_a"], r["pct_b"])
             band = next((b for b in STRATA if b[0] <= mx < b[1]), None)
             key = (r["pair_lo"], r["pair_hi"])
@@ -101,7 +110,7 @@ def stratified(db, args):
                 need[band] -= 1
                 chosen.append(r)
     print(f"{draws:,} pair_ids drawn; per band: " + ", ".join(
-        f"{a}-{b if b <= 100 else ''}%: {args.per_band - need[(a, b)]}" for a, b in STRATA))
+        f"{a}-{b if b <= 100 else ''}%: {args.per_band - need[(a, b)]}" for a, b in STRATA if a >= args.min_band))
     return chosen
 
 
@@ -340,6 +349,9 @@ def main():
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--per-band", type=int, default=0,
                     help="select: N random cross-author leads per index-overlap band instead of by rank")
+    ap.add_argument("--strat-tiers", nargs="+", type=int,
+                    help="--per-band: only these tiers (default: every tier but the retraction tiers 1 and 3)")
+    ap.add_argument("--min-band", type=int, default=5, help="--per-band: skip bands starting below this %%")
     ap.add_argument("--seed", type=int, default=1)
     ap.add_argument("--max-draws", type=int, default=5_000_000)
     ap.add_argument("--library")
