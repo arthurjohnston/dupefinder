@@ -278,10 +278,12 @@ def main():
         p = subprocess.run([PY, str(ROOT / script), "--library-db", lib,
                             "--paper-ids", f"{a},{b}", "--out-dir", args.out_dir, "--neutral",
                             "--shingle-size", "10", "--x-drop", "3", "--case-number", f"GI-{n:02d}",
+                            # every pair here passed the full-text check already: a few long runs is a page
+                            "--min-shingle-matches", "0",
                             "--source-note", note, "--found-by", ""], capture_output=True, text=True)
         new = sorted(f for f in set(os.listdir(args.out_dir)) - before if f.endswith(".html"))
         if p.returncode != 0 or not new:
-            print(f"GI-{n:02d}: {script.removesuffix('.py')} failed: {p.stderr[-300:]}", file=sys.stderr)
+            print(f"GI-{n:02d}: {script.removesuffix('.py')} failed: {(p.stderr or p.stdout)[-300:]}", file=sys.stderr)
             continue
         page = Path(args.out_dir) / new[0]
         raw = page.read_bytes()
