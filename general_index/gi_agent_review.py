@@ -231,7 +231,7 @@ class LocalModel:
     def create(self, req):
         from types import SimpleNamespace as NS
         body = {"messages": [{"role": "system", "content": SYSTEM}] + req["messages"],
-                "max_tokens": 12000, "temperature": 0,
+                "max_tokens": 6000, "temperature": 0,
                 "response_format": {"type": "json_schema", "json_schema": {"name": "verdict", "schema": LOCAL_SCHEMA}},
                 # gpt-oss reads its reasoning effort from the chat template; other models ignore it
                 "chat_template_kwargs": {"reasoning_effort": {"xhigh": "high", "max": "high"}.get(self.effort, self.effort)}}
