@@ -87,6 +87,12 @@ create table if not exists reviews (
     note text, reviewed_at text,
     unique (pair_lo, pair_hi)
 );
+create table if not exists review_flags (   -- your extra judgements on a pair, beside the verdict
+    pair_lo text, pair_hi text,
+    flag text,                    -- 'paper mill': you think both papers came from a paper mill
+    flagged_at text,
+    primary key (pair_lo, pair_hi, flag)
+);
 create index if not exists idx_documents_doi on documents(lower(doi));
 create index if not exists idx_leads_tier on leads(tier);
 create index if not exists idx_leads_pair on leads(pair_lo, pair_hi);

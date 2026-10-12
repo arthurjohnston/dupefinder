@@ -221,6 +221,9 @@ What to expect from strat_s16a's rates: about 4% of selected pairs end with both
 tier-4 pairs, ~40 per band. Its yield by band (all tiers but 1 and 3): 50%+ 4 real of 16, 15-50% 6 of
 11, 5-15% 2 of 12. Use the result to decide whether ranked tier-4 batches are worth it and from which band.
 
+How a pair becomes a lead (the 5-gram thresholds, the tiers) and the current estimates per tier:
+HOW_LEADS_ARE_FLAGGED.md.
+
 ## Next steps, in priority order
 
 1. **Review the remaining 43 by hand** (REVIEWING.md). Record every verdict in

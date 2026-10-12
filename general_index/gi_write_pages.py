@@ -24,6 +24,7 @@ Pairs reviewed as "same paper" have no page and are listed, marked, at the end o
 pair must already have a page_number); --index-only rewrites index.html from the existing pages.
 
 Usage: gi_write_pages.py [OUT_DIR] [--db data/gi.sqlite3] [--sample-rate 4] [--no-db-writes] [--index-only] [--text-pages]
+                         [--pages 10,40,44]
 OUT_DIR defaults to data/fulltext_pages_s0123.
 """
 import argparse
@@ -53,11 +54,34 @@ def fulltext_lines(res):
     pct = lambda v: "?" if v is None else f"{v:.0f}%"
     return [
         "<strong>Full text</strong> (both PDFs, 10-word exact word-shingle matching, x-drop 3)",
-        f"Paper A: {pct(res['ft_pct_a'])} of its words are inside a run shared with paper B",
-        f"Paper B: {pct(res['ft_pct_b'])} of its words are inside a run shared with paper A",
+        f"Paper A (left): {pct(res['ft_pct_a'])} of its words are inside a run shared with paper B",
+        f"Paper B (right): {pct(res['ft_pct_b'])} of its words are inside a run shared with paper A",
         f"Matched words: {res['ft_matched_words']:,}; longest shared run: {res['ft_longest']:,} words; "
         f"verdict: {html.escape(res['ft_verdict'] or '')}",
     ]
+
+
+def page_order(lib, a, b):
+    """(left, right) paper ids as the comparison page lays them out: the earlier paper on the left, else the
+    lower id -- write_dupe_reports_screenshots.py / _html.py sort --paper-ids and orient by
+    resolve_earlier_id(). The evidence block has to follow this, not fulltext's own A/B order."""
+    if str(ROOT) not in sys.path:
+        sys.path.insert(0, str(ROOT))
+    from write_dupe_reports_html import resolve_earlier_id
+    lo, hi = sorted((a, b))
+    conn = sqlite3.connect(f"file:{lib}?mode=ro", uri=True)
+    earlier = resolve_earlier_id(conn, lo, hi, [])
+    conn.close()
+    return (hi, lo) if earlier == hi else (lo, hi)
+
+
+def oriented(res, left):
+    """The fulltext row's A/B fields, swapped when its paper_b is the page's left paper."""
+    row = dict(res)
+    if left == res["paper_b"]:
+        for x in ("doi", "year", "paper", "ft_pct"):
+            row[f"{x}_a"], row[f"{x}_b"] = res[f"{x}_b"], res[f"{x}_a"]
+    return row
 
 
 def local_pdf(lib, pid, out_dir):
@@ -82,7 +106,13 @@ def pdf_line(label, link):
 
 def evidence_note(rep, lead, sample_rate, doi_a, res, pdf_a=None, pdf_b=None):
     """rep: the pair's first non-too-short `leads` row (report order) joined to `pairs`; lead: its
-    ranked (primary) row. Both may list the pair in the other order; re-oriented to this page's A."""
+    ranked (primary) row. Both may list the pair in the other order; re-oriented to this page's A.
+    rep None (the pair's lead rows are gone, e.g. after the 16-shard rebuild): full-text evidence only."""
+    local = ["<strong>Local PDFs</strong>", pdf_line("Paper A (left)", pdf_a), pdf_line("Paper B (right)", pdf_b)]
+    if rep is None:
+        return "<br>".join(local + ["<strong>Overlap evidence</strong>"] + fulltext_lines(res)
+                           + ["<strong>General Index</strong>: no lead row for this pair any more (the ranked "
+                              "list was rebuilt), so the index figures aren't shown"])
     flip = rep["doi_a"].lower() != doi_a.lower()
     pa, pb = (rep["pct_b"], rep["pct_a"]) if flip else (rep["pct_a"], rep["pct_b"])
     sa, sb = (rep["sampled_b"], rep["sampled_a"]) if flip else (rep["sampled_a"], rep["sampled_b"])
@@ -93,15 +123,14 @@ def evidence_note(rep, lead, sample_rate, doi_a, res, pdf_a=None, pdf_b=None):
     lines = [
         f"Shared sampled 5-grams: {shared:,} (1 in {sample_rate} of all 5-grams are sampled, so roughly "
         f"{shared * sample_rate:,} shared in all)",
-        f"Paper A: {pa:.1f}% of its {int(sa):,} sampled 5-grams found in paper B",
-        f"Paper B: {pb:.1f}% of its {int(sb):,} sampled 5-grams found in paper A",
+        f"Paper A (left): {pa:.1f}% of its {int(sa):,} sampled 5-grams found in paper B",
+        f"Paper B (right): {pb:.1f}% of its {int(sb):,} sampled 5-grams found in paper A",
         f"Band (the larger share): {html.escape(rep['band'])}",
         f"Lead tier: {html.escape(tier)} ({html.escape(TIERS.get(tier, ''))})",
         f"Abstracts: {html.escape(abstracts)}{html.escape(run)}",
         "<em>The index's 5-grams are lemmatized and skip windows that start or end on a stopword, so its "
         "shares are an estimate from a different text model than the full-text figures above.</em>",
     ]
-    local = ["<strong>Local PDFs</strong>", pdf_line("Paper A", pdf_a), pdf_line("Paper B", pdf_b)]
     return "<br>".join(local + ["<strong>Overlap evidence</strong>"] + fulltext_lines(res)
                        + ["<strong>General Index</strong> (sampled 5-grams)"] + lines)
 
@@ -143,6 +172,10 @@ def write_index(db, out_dir, pages=None):
     from write_dupe_reports_html import STYLE  # the pages' own stylesheet, so the index matches them
     out_dir = Path(out_dir)
     have_results = db.execute("select 1 from sqlite_master where name = 'results'").fetchone() is not None
+    flags = {}
+    if db.execute("select 1 from sqlite_master where name = 'review_flags'").fetchone():
+        for r in db.execute("select pair_lo, pair_hi, flag from review_flags order by flag"):
+            flags.setdefault((r[0], r[1]), []).append(r[2])
     rows = db.execute("""select f.*, r.verdict as human_verdict from fulltext f
                          left join reviews r on r.pair_lo = f.pair_lo and r.pair_hi = f.pair_hi
                          where f.ft_verdict = 'real overlap' and f.byline = 'no byline overlap'""").fetchall()
@@ -157,7 +190,7 @@ def write_index(db, out_dir, pages=None):
         pa, pb = _lib_paper(f["library"], f["paper_a"]), _lib_paper(f["library"], f["paper_b"])
         score = ((f["ft_pct_a"] or 0) + (f["ft_pct_b"] or 0)) / 2
         entries.append(dict(f=f, res=res, page=page, pa=pa, pb=pb, score=score,
-                            reviewed=f["human_verdict"]))
+                            reviewed=f["human_verdict"], flags=flags.get(key, [])))
     shown = sorted([e for e in entries if e["page"]], key=lambda e: (-e["score"], -(e["f"]["ft_matched_words"] or 0)))
     no_page = sorted([e for e in entries if not e["page"]], key=lambda e: -e["score"])
 
@@ -168,7 +201,7 @@ def write_index(db, out_dir, pages=None):
             if doi and not doi.startswith("gi:") else html.escape(doi or "")
         return f'<div class="paper">{title}<div class="meta">{html.escape(str(year))} &middot; {link}</div></div>'
 
-    def decision_cell(res, reviewed):
+    def decision_cell(res, reviewed, flags=()):
         tags = []
         if res is not None:
             if res["type"]:
@@ -176,11 +209,13 @@ def write_index(db, out_dir, pages=None):
             if res["severity"]:
                 tags.append(f'severity: {html.escape(res["severity"])} ({html.escape(res["severity_source"] or "")})')
             if res["ai_decision"]:
-                tags.append(f'AI: {html.escape(res["ai_decision"])}')
+                local = " (local model)" if "local:" in (res["ai_prompt_version"] or "") else ""
+                tags.append(f'AI{local}: {html.escape(res["ai_decision"])}')
             if res["human_decision"]:
                 tags.append(f'human: {html.escape(res["human_decision"])}')
         if reviewed:
             tags.append(f'reviewed: {html.escape(reviewed)}')
+        tags += [f'flag: {html.escape(fl)}' for fl in flags]
         return "".join(f'<span class="tag">{t}</span>' for t in tags)
 
     def row_html(rank, e):
@@ -192,7 +227,7 @@ def write_index(db, out_dir, pages=None):
                 f'<td class="num">{f["ft_pct_a"]:.0f}% / {f["ft_pct_b"]:.0f}%</td>'
                 f'<td class="num">{f["ft_matched_words"]:,}</td><td class="num">{f["ft_longest"]:,}</td>'
                 f'<td>{paper_cell(e["pa"], f["doi_a"], f["year_a"])}{paper_cell(e["pb"], f["doi_b"], f["year_b"])}</td>'
-                f'<td>{decision_cell(e["res"], e["reviewed"])}</td><td>{page}</td></tr>')
+                f'<td>{decision_cell(e["res"], e["reviewed"], e["flags"])}</td><td>{page}</td></tr>')
 
     head = ("<tr><th>#</th><th>Score</th><th>A / B</th><th>Matched words</th><th>Longest run</th>"
             "<th>Papers (A, then B)</th><th>Decisions</th><th>Page</th></tr>")
@@ -229,6 +264,8 @@ def main():
     ap.add_argument("--sample-rate", type=int, default=4)
     ap.add_argument("--no-db-writes", action="store_true",
                     help="open gi.sqlite3 read-only; don't update fulltext.page / page_number")
+    ap.add_argument("--pages", type=lambda s: {int(x) for x in s.split(",")},
+                    help="only (re)write these page numbers, e.g. 10,40,44 (index.html is still rebuilt)")
     ap.add_argument("--index-only", action="store_true", help="only rewrite OUT_DIR/index.html")
     ap.add_argument("--text-pages", action="store_true",
                     help="write the old text-diff pages (write_dupe_reports_html.py) instead of the default "
@@ -254,6 +291,8 @@ def main():
         if key in same_paper:
             continue
         n = res["page_number"]
+        if args.pages is not None and n not in args.pages:
+            continue
         if n is None and args.no_db_writes:
             print(f"{res['doi_a']} | {res['doi_b']}: no page_number and --no-db-writes, skipped")
             continue
@@ -266,14 +305,16 @@ def main():
         lead = db.execute("select * from leads where pair_lo = ? and pair_hi = ? and primary_pair = 1",
                           key).fetchone()
         a, b, lib = res["paper_a"], res["paper_b"], res["library"]
-        if not (rep and a and b and lib):
-            print(f"GI-{n:02d}: missing {'lead' if not rep else 'library papers'}, skipped")
+        if not (a and b and lib):
+            print(f"GI-{n:02d}: missing library papers, skipped")
             continue
         for old in Path(args.out_dir).glob(f"GI-{n:02d}-*.html"):
             old.unlink()
         before = set(os.listdir(args.out_dir))
-        note = evidence_note(rep, lead, args.sample_rate, res["doi_a"], res,
-                             local_pdf(lib, a, args.out_dir), local_pdf(lib, b, args.out_dir))
+        view = oriented(res, page_order(lib, a, b)[0])  # paper A = the page's left card
+        note = evidence_note(rep, lead, args.sample_rate, view["doi_a"], view,
+                             local_pdf(lib, view["paper_a"], args.out_dir),
+                             local_pdf(lib, view["paper_b"], args.out_dir))
         script = "write_dupe_reports_html.py" if args.text_pages else "write_dupe_reports_screenshots.py"
         p = subprocess.run([PY, str(ROOT / script), "--library-db", lib,
                             "--paper-ids", f"{a},{b}", "--out-dir", args.out_dir, "--neutral",
@@ -293,7 +334,8 @@ def main():
         pages_written[key] = new[0]
         if not args.no_db_writes:
             db.execute("update fulltext set page = ? where pair_lo = ? and pair_hi = ?", (new[0], *key))
-        flip = rep["doi_a"].lower() != res["doi_a"].lower()
+        flip = bool(rep) and rep["doi_a"].lower() != res["doi_a"].lower()
+        rep = rep or {"shared": "", "pct_a": "", "pct_b": "", "band": ""}
         conn = sqlite3.connect(lib)
         title = lambda pid: (conn.execute("select title from papers where id = ?", (pid,)).fetchone() or [""])[0] or ""
         index_rows.append({"n": n, "page": new[0], "shared_5grams_sampled": rep["shared"],
@@ -307,6 +349,10 @@ def main():
     if not args.no_db_writes:
         db.commit()
     index_rows.sort(key=lambda r: r["n"])
+    if args.pages is not None:  # a partial run: don't overwrite _index.tsv with just these rows
+        print(f"{written} pages written to {args.out_dir}")
+        write_index(db, args.out_dir, pages_written)
+        return
     with open(Path(args.out_dir) / "_index.tsv", "w") as f:
         w = csv.DictWriter(f, fieldnames=list(index_rows[0]), delimiter="\t")
         w.writeheader()

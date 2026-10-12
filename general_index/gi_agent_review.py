@@ -283,9 +283,13 @@ def ensure_tables(db):
            a.checks_for_human as agent_checks, a.prompt_version as agent_prompt_version
     from to_review t
     left join agent_reviews a on a.agent_review_id = (
-        select max(agent_review_id) from agent_reviews x
-        where x.pair_lo = t.pair_lo and x.pair_hi = t.pair_hi and x.type is not null);
+        select agent_review_id from agent_reviews x
+        where x.pair_lo = t.pair_lo and x.pair_hi = t.pair_hi and x.type is not null
+        order by x.model like 'local:%', x.agent_review_id desc limit 1);
 
+    -- The agent's answer in both views: a Claude review where there is one, else a local model's (the
+    -- local models are a cheaper triage pass, measured against Claude on data/local_eval_pairs.tsv), the
+    -- latest of either kind.
     -- One row per full-text pair: the measurements, the agent's and the human's decisions, and the
     -- effective type/severity (the human's where set, else the agent's; *_source says which).
     drop view if exists results;
@@ -302,8 +306,9 @@ def ensure_tables(db):
     from fulltext f
     left join reviews r on r.pair_lo = f.pair_lo and r.pair_hi = f.pair_hi
     left join agent_reviews a on a.agent_review_id = (
-        select max(agent_review_id) from agent_reviews x
-        where x.pair_lo = f.pair_lo and x.pair_hi = f.pair_hi and x.type is not null);
+        select agent_review_id from agent_reviews x
+        where x.pair_lo = f.pair_lo and x.pair_hi = f.pair_hi and x.type is not null
+        order by x.model like 'local:%', x.agent_review_id desc limit 1);
     """)
 
 
@@ -458,7 +463,7 @@ def main():
             args.prompt_version = f"{args.prompt_version}+{local.model}"
         args.model = local.model
         print(f"local model {local.model} at {args.local_url}; rows stored as prompt version {args.prompt_version}")
-    db = sqlite3.connect(args.db)
+    db = sqlite3.connect(args.db, timeout=300)
     db.row_factory = sqlite3.Row
     ensure_tables(db)
     where = "f.ft_verdict = 'real overlap'"
