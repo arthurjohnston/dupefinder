@@ -21,7 +21,14 @@ independently, not only on what the abstract check confirmed. Tiers, best first:
 Within a tier: two-sided overlap before one-sided containment (shape), then pairs with a book or
 chapter DOI on either side (an ISBN in the DOI) last -- the index often lists a book's editors as a
 chapter's authors, so a chapter reprinting its author's own journal paper reads as cross-author --
-then by the smaller share and by shared samples.
+then by the smaller share and by shared samples. Before all of those within a tier, gi_preprints.pair_priority():
+pairs whose later (copying) side is from a major publisher (major_publisher_doi_prefixes.tsv) go first -- a
+copy in a major journal is the most consequential finding -- and those where the order is unknown (same or
+missing year) and one side is major next; a known paper-mill venue inside a major publisher ranks ordinary.
+Pairs whose later side has a preprint/repository DOI (preprint_doi_prefixes.tsv) go last, and pairs where the
+order is unknown and a side has one just before them -- those uploads are most often the authors' own or an
+aggregator's copy, rarely a publishable finding. A preprint copied FROM is ordinary. The --tsv output has the
+note in its last column, "priority".
 
 primary_pair = 1 marks the first document pair (in rank order) of each DOI pair: the index holds some
 PDFs twice under one DOI, and counts per DOI pair should use only those.
@@ -33,10 +40,11 @@ import csv
 import re
 
 import gi_db
+import gi_preprints
 from gi_filters import venue
 
 TSV_COLS = ["tier", "shape", "book_side", "shared", "pct_a", "pct_b", "abstracts", "abs_run",
-            "retraction_watch", "doi_a", "year_a", "title_a", "author_a", "doi_b", "year_b", "title_b", "author_b"]
+            "retraction_watch", "doi_a", "year_a", "title_a", "author_a", "doi_b", "year_b", "title_b", "author_b", "priority"]
 
 
 def main():
@@ -58,7 +66,7 @@ def main():
 
     leads, skipped_both_unnamed = [], 0
     rows = db.execute("""select l.pair_id, l.doi_a, l.doi_b, l.pair_lo, l.pair_hi, l.reason, l.authors,
-                                p.shared, p.pct_a, p.pct_b
+                                p.shared, p.pct_a, p.pct_b, p.dkey_a, p.dkey_b
                          from leads l join pairs p using (pair_id)
                          where l.reason = 'no metadata' or (l.reason = '' and l.authors = 'no shared author')
                          order by l.pair_id""")
@@ -99,11 +107,21 @@ def main():
             tier = 4
         book = bool(re.search(r"97[89][-0-9]{9,}|/b978|/978", da + " " + db_))
         shape = "one-sided" if lo_pct < 10 and hi_pct >= 3 * lo_pct else "two-sided"
-        leads.append(dict(pair_id=r["pair_id"], lo=r["pair_lo"], hi=r["pair_hi"], tier=tier, shape=shape,
+        leads.append(dict(pair_id=r["pair_id"], doi_a=da, doi_b=db_, lo=r["pair_lo"], hi=r["pair_hi"], tier=tier, shape=shape,
                           book_side="yes" if book else "", abstracts=abs_state,
                           abs_run=ab["longest_run"] if ab else None, retraction_watch=rw,
-                          lo_pct=lo_pct, shared=r["shared"]))
-    leads.sort(key=lambda x: (x["tier"], x["book_side"] == "yes", x["shape"] == "one-sided",
+                          lo_pct=lo_pct, shared=r["shared"], dkeys=(r["dkey_a"], r["dkey_b"])))
+    # promotion (later side a major publisher) / demotion (later side a preprint): years are needed only for
+    # pairs with such a DOI on a side -- most of them, so read the years (lead_details' substr(pub_date, 1, 4))
+    # in one pass over documents rather than per pair
+    flagged = [x for x in leads
+               if any(gi_preprints.is_preprint_doi(d) or gi_preprints.major_publisher(d) for d in (x["doi_a"], x["doi_b"]))]
+    need = {k for x in flagged for k in x["dkeys"]}
+    years = {k: y for k, y in db.execute("select dkey, substr(pub_date, 1, 4) from documents") if k in need}
+    for x in flagged:
+        x["priority"] = gi_preprints.pair_priority(
+            x["doi_a"], x["doi_b"], gi_preprints.earlier_by_year(*(years.get(k) for k in x["dkeys"])))[0]
+    leads.sort(key=lambda x: (x["tier"], x.get("priority", 0), x["book_side"] == "yes", x["shape"] == "one-sided",
                               -x["lo_pct"], -x["shared"]))
     seen = set()
     for i, x in enumerate(leads, 1):
@@ -127,7 +145,9 @@ def main():
                             f"{r['pct_b']:.1f}", r["abstracts"], r["abs_run"] if r["abs_run"] is not None else "",
                             r["retraction_watch"], r["doi_a"], r["year_a"] or "", " ".join((r["title_a"] or "").split()),
                             r["author_a"] or "", r["doi_b"], r["year_b"] or "", " ".join((r["title_b"] or "").split()),
-                            r["author_b"] or ""])
+                            r["author_b"] or "",
+                            gi_preprints.pair_priority(r["doi_a"], r["doi_b"],
+                                                       gi_preprints.earlier_by_year(r["year_a"], r["year_b"]))[1] or ""])
     total = {t: sum(1 for x in leads if x["tier"] == t) for t in (1, 2, 3, 4, 5)}
     prim = {t: sum(1 for x in leads if x["tier"] == t and x["primary_pair"]) for t in (1, 2, 3, 4, 5)}
     print(f"{len(leads):,} cross-author leads at >= {args.min_pct}% ({len(seen):,} distinct DOI pairs); "

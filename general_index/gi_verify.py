@@ -123,6 +123,14 @@ def ranked(db, args):
                           and not exists (select 1 from fulltext f where f.pair_lo = ld.pair_lo
                                           and f.pair_hi = ld.pair_hi)
                           order by ld.lead_rank""").fetchall()
+    # Within a tier, by gi_preprints.pair_priority(): a later (copying) paper from a major publisher first (a
+    # copy in a major journal is the most consequential finding), order unknown with one side major next; copying
+    # BY a preprint/repository upload last, "possibly by" one just before -- those are most often the authors'
+    # own or an aggregator's copy. So a --limit batch spends its retrievals on the promoted pairs first. Stable:
+    # lead_rank order holds otherwise. (stratified() is a calibration sample and is deliberately left unsorted.)
+    import gi_preprints
+    rows.sort(key=lambda r: (r["tier"], gi_preprints.pair_priority(
+        r["doi_a"], r["doi_b"], gi_preprints.earlier_by_year(r["year_a"], r["year_b"]))[0]))
     return rows[:args.limit] if args.limit else rows
 
 

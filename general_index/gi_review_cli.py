@@ -13,7 +13,12 @@ verdict column, replaces your earlier review of the pair), the flags to `review_
 pair's earlier flags), and rewrites the pages' index.html on exit.
 
 Queue (default): pages you haven't reviewed, the agent's cross-author / data copying calls first, then the
-rest of its problem calls, then everything else, larger overlap first. --gi 12,40 for specific pages
+rest of its problem calls, then everything else; within each of those, pairs whose later (copying) paper is
+from a major publisher first (gi_preprints.pair_priority(), major_publisher_doi_prefixes.tsv; a known
+paper-mill venue inside one ranks ordinary), then larger overlap first. Pairs whose later (copying) paper is
+a preprint or repository upload (gi_preprints.py, preprint_doi_prefixes.tsv) go after all of that, still
+in the queue, with a note: such uploads are most often the authors' own or an aggregator's copy, rarely a
+publishable finding. Pairs where the order is unknown and one side is a preprint go just before them. --gi 12,40 for specific pages
 (reviewed or not); --include-reviewed to go back over yours too. --ai-type cross-author,data (or duplicate,
 recycling, legitimate, same-paper, third-source, boilerplate, citations, artifact, unsure, none = not reviewed
 by the agent) and --ai-decision problem / no-problem / unsure / none keep only those pairs.
@@ -203,7 +208,30 @@ def load_queue(db, gi=None, include_reviewed=False, ai_types=None, ai_decisions=
     if ai_decisions:
         keep = {AI_DECISIONS[d] for d in ai_decisions}
         rows = [r for r in rows if r["ai_decision"] in keep]
-    return [r for r in rows if include_reviewed or r["human_decision"] is None]
+    rows = [r for r in rows if include_reviewed or r["human_decision"] is None]
+    import gi_write_pages
+    return sorted(rows, key=lambda r: queue_key(r, gi_write_pages.priority_status(r)[0]))
+
+
+def ai_group(r):
+    """0: the agent's cross-author / data copying calls, 1: its other problem calls, 2: the rest (QUEUE_SQL)."""
+    if r["ai_decision"] == "problem":
+        return 0 if r["ai_type"] in ("cross-author copying", "data copying") else 1
+    return 2
+
+
+def queue_key(r, priority):
+    """The queue order. priority: gi_preprints.pair_priority()'s rank (< 0 promoted, > 0 demoted).
+    1. demoted pairs (copying BY a preprint/repository upload, or possibly by one) go last overall, "possibly
+       by" (1) before "later paper is a preprint" (2): such uploads are most often the authors' own or an
+       aggregator's copy, rarely a publishable finding;
+    2. otherwise the agent's grouping leads (ai_group()), so a major-publisher pair the agent called "no
+       problem" never jumps an ordinary pair it called cross-author copying;
+    3. within an agent group, later paper from a major publisher (-2) first, order unknown with one side
+       major (-1) next, then ordinary (0);
+    4. larger overlap first. Verdicts are untouched; only the order."""
+    pct = max(r["ft_pct_a"] or 0, r["ft_pct_b"] or 0)
+    return (max(priority, 0), ai_group(r), min(priority, 0), -pct)
 
 
 def paper_info(lib, pid):
@@ -238,7 +266,7 @@ def wrap(label, text, width=100):
     return textwrap.fill(text or "", width=width, initial_indent=label, subsequent_indent=" " * len(label))
 
 
-def show_pair(pair, i, total, titles, flags=()):
+def show_pair(pair, i, total, titles, flags=(), priority=(0, None)):
     pct = lambda v: "?" if v is None else f"{v:.0f}%"
     print("\n" + "=" * 100)
     print(f"GI-{pair['page_number']:02d}   ({i} of {total})   A {pct(pair['ft_pct_a'])} / B {pct(pair['ft_pct_b'])} "
@@ -248,6 +276,15 @@ def show_pair(pair, i, total, titles, flags=()):
         print(wrap(f"  {side}: ", f"{title} ({year or '?'}) {doi}"))
         if not pdf:
             print("     (no local PDF)")
+    rank, note = priority
+    if note and rank > 0:
+        print(f"  NOTE: {note} -- queued after the other pairs: a preprint/repository upload is most "
+              "often the authors' own or an aggregator's copy")
+    elif note and rank < 0:
+        print(f"  NOTE: {note} -- queued first within the agent's group: a copy in a major journal is the "
+              "most consequential finding")
+    elif note:
+        print(f"  NOTE: {note}")
     if pair["ai_decision"]:
         pv = pair["ai_prompt_version"] or ""
         who = f"local {pv.split('local:', 1)[1].removesuffix('.gguf')}" if "local:" in pv else "Claude"
@@ -416,7 +453,7 @@ def main():
         page = page_path(pages_dir, pair)
         pdfs = [p for p in [titles[0][1], titles[1][1]] if p]
         saved_flags = pair_flags(db, pair)
-        show_pair(shown, i, len(queue), titles, saved_flags)
+        show_pair(shown, i, len(queue), titles, saved_flags, gi_write_pages.priority_status(pair))
         print(f"  page: {page or '(no page in ' + str(pages_dir) + ')'}")
         for side, pdf in zip("AB", pdfs):
             print(f"  PDF {side}: {pdf}")

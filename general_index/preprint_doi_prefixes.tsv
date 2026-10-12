@@ -1,0 +1,72 @@
+prefix	suffix_regex	server	registration_agency	how_verified	count_in_leads
+10.48550		arXiv	DataCite	DataCite /prefixes: client arxiv.content (arXiv)	0
+10.2139		SSRN	Crossref	Crossref /prefixes: Elsevier BV (member 78); works 1.26M posted-content + 242k journal-article, all ssrn.* (SSRN eJournal postings)	20019
+10.5281		Zenodo	DataCite	DataCite /prefixes: client cern.zenodo (Zenodo)	2768
+10.6084		figshare	DataCite	DataCite /prefixes: client figshare.ars (figshare Academic Research System)	318
+10.25452		figshare (Figshare+)	DataCite	DataCite /clients?query=figshare: figshare.plus	0
+10.25573		figshare (Figshare for Institutions)	DataCite	DataCite /clients?query=figshare: si.figshare	0
+10.23640		figshare (ORCID)	DataCite	DataCite /clients?query=figshare: figshare.orcid	0
+10.23641		figshare (ASHA)	DataCite	DataCite /clients?query=figshare: figshare.asha	0
+10.25383		figshare (City, University of London)	DataCite	DataCite /clients?query=figshare: figshare.city	0
+10.25405		figshare (Newcastle University)	DataCite	DataCite /clients?query=figshare: figshare.ncl	0
+10.17634		figshare (Newcastle University)	DataCite	DataCite /clients?query=figshare: figshare.ncl	0
+10.25422		figshare (University of Arizona ReDATA)	DataCite	DataCite /clients?query=figshare: figshare.ariz	0
+10.25375		figshare (University of Cape Town)	DataCite	DataCite /clients?query=figshare: figshare.uct	0
+10.25444		figshare (NHLBI)	DataCite	DataCite /clients?query=figshare: nihnhlbi.fig	0
+10.57831		figshare (Griffith University)	DataCite	DataCite /clients?query=figshare: griffith.figshare	0
+10.48420		figshare (University of Manchester)	DataCite	DataCite /clients?query=figshare: borq.00001-2020	0
+10.82444		figshare (University of Warwick)	DataCite	DataCite /clients?query=figshare: warwick.figshare	0
+10.60696		figshare (University of Cincinnati)	DataCite	DataCite /clients?query=figshare: cin.fig	0
+10.83056		figshare (Manchester Metropolitan University)	DataCite	DataCite /clients?query=figshare: mmu.fig	0
+10.83399		figshare (UCB)	DataCite	DataCite /clients?query=figshare: ucb.figshare	0
+10.71741		figshare (UTS)	DataCite	DataCite /clients?query=figshare: uts.repo (UTS Figshare)	0
+10.17045		figshare (Stockholm University)	DataCite	DataCite /clients?query=figshare: snd.su (Stockholm University Figshare Repository)	0
+10.17028		figshare (Loughborough University)	DataCite	DataCite /clients?query=figshare: bl.lboro (Loughborough Research Repository, figshare-hosted)	2
+10.26174		figshare (Loughborough University)	DataCite	DataCite /clients?query=figshare: bl.lboro	0
+10.13140		ResearchGate	DataCite	DataCite /prefixes: client rg.rg (ResearchGate)	72
+10.21203		Research Square	Crossref	Crossref /prefixes: Research Square Platform LLC (member 8761); 525k posted-content	160
+10.20944		Preprints.org	Crossref	Crossref /prefixes: MDPI AG (member 1968); all 140k works posted-content (preprints*)	487
+10.31219		OSF Preprints	Crossref	Crossref /prefixes: Center for Open Science (member 15934); all posted-content	42
+10.31234		PsyArXiv	Crossref	Crossref /prefixes: Center for Open Science; all posted-content	29
+10.31235		SocArXiv	Crossref	Crossref /prefixes: Center for Open Science; all posted-content	45
+10.31223		EarthArXiv	Crossref	Crossref /prefixes: California Digital Library (member 29705); all posted-content	5
+10.31224		engrXiv	Crossref	Crossref /prefixes: Open Engineering Inc (member 33966); all posted-content (group-title engrXiv)	12
+10.31730		AfricArXiv	Crossref	Crossref /prefixes: Center for Open Science; posted-content, group-title AfricArXiv	0
+10.31230		MarXiv	Crossref	Crossref /prefixes: Center for Open Science; posted-content, group-title MarXiv	2
+10.31228		LawArXiv	Crossref	Crossref /prefixes: Center for Open Science; posted-content, group-title LawArXiv	18
+10.31222		MetaArXiv	Crossref	Crossref /prefixes: Center for Open Science; posted-content, group-title MetaArXiv	0
+10.31236		SportRxiv	Crossref	Crossref /prefixes: Center for Open Science; posted-content, group-title SportRxiv	0
+10.51224		SportRxiv	Crossref	Crossref /prefixes: Society for Transparency, Openness, and Replication in Kinesiology; mostly posted-content (srxiv.*)	0
+10.31233		PaleorXiv	Crossref	Crossref /prefixes: Center for Open Science; posted-content, group-title PaleorXiv	0
+10.31231		MindRxiv	Crossref	Crossref /prefixes: Center for Open Science; posted-content, group-title MindRxiv	0
+10.31232		NutriXiv	Crossref	Crossref /prefixes: Center for Open Science; posted-content, group-title NutriXiv	0
+10.31237		Thesis Commons	Crossref	Crossref /prefixes: Center for Open Science; posted-content, group-title Thesis Commons	3
+10.35542		EdArXiv	Crossref	Crossref /prefixes: Center for Open Science; posted-content, group-title EdArXiv	0
+10.31227		INA-Rxiv	Crossref	Crossref /prefixes: Center for Open Science; posted-content, group-title INA-Rxiv	6
+10.31221		Arabixiv	Crossref	Crossref /prefixes: Center for Open Science; posted-content, group-title Arabixiv	0
+10.31226		Frenxiv	Crossref	Crossref /prefixes: Center for Open Science; posted-content, group-title Frenxiv	0
+10.31220		AgriXiv	Crossref	Crossref /prefixes: CABI Publishing; posted-content, group-title AgriXiv	0
+10.31225		FocUS Archive	Crossref	Crossref /prefixes: Center for Open Science; posted-content, group-title FocUS Archive	0
+10.31229		LIS Scholarship Archive (OSF)	Crossref	Crossref /prefixes: Center for Open Science; 488 posted-content; server name not confirmed (samples came back under other OSF prefixes)	9
+10.33767		MediArXiv	Crossref	Crossref /prefixes: Center for Open Science; posted-content, group-title MediArXiv	0
+10.35543		IndiaRxiv	Crossref	Crossref /prefixes: Open Access India; posted-content, group-title IndiaRxiv	0
+10.32942		EcoEvoRxiv	Crossref	Crossref /prefixes: California Digital Library; all posted-content	0
+10.17605		OSF (projects, registrations)	DataCite	DataCite /prefixes: client cos.osf (Open Science Framework)	7
+10.26434		ChemRxiv	Crossref	Crossref /prefixes: American Chemical Society (member 316); all 57k works posted-content (chemrxiv*); ACS journals use 10.1021	27
+10.22541		Authorea (incl. ESS Open Archive since 2023)	Crossref	Crossref /prefixes: Authorea, Inc. (member 9829); 81k posted-content	2
+10.36227		TechRxiv	Crossref	Crossref /prefixes: IEEE (member 263); all 31k works posted-content (techrxiv.*); IEEE journals use 10.1109	2
+10.32388		Qeios	Crossref	Crossref /prefixes: Qeios Ltd (member 17262); mixed entries/peer reviews/posted content, all on the Qeios preprint-and-review platform	0
+10.1101	(\d{6}|\d{8}|\d{4}\.\d{2}\.\d{2}\.\d{6,8})(?!\d)	bioRxiv/medRxiv	Crossref	Crossref: CSHL (member 246, 42,346 works) scanned in full -- journal suffixes are gad./gr./pdb./sqb./rna./cshperspect./lm./mcs.; its 44 regex hits are all bioRxiv (resource URL biorxiv.org); openRxiv (member 54368) samples: 99/100 pre-2019-12 and 87/100 overall match, the rest are 10.64898 or 8-digit medRxiv (10.1101/19004390), now included	3954
+10.64898		bioRxiv/medRxiv (openRxiv)	Crossref	Crossref /prefixes: openRxiv (member 54368, owner of bioRxiv/medRxiv since 2025); all sampled works posted-content	0
+10.2196	preprints\.	JMIR Preprints	Crossref	Crossref: JMIR Publications (member 1010) posted-content, 42,375 works, all preprints.NNNNN	55
+10.1590	scielopreprints\.	SciELO Preprints	Crossref	Crossref: FapUNIFESP (SciELO) prefix; posted-content samples are scielopreprints.NNNN (5,167 posted-content)	0
+10.33774		Cambridge Open Engage	Crossref	Crossref /prefixes: Cambridge University Press (member 56); all 5,890 works posted-content (coe-*); CUP journals use 10.1017	0
+10.31124		Advance (SAGE preprints)	Crossref	Crossref /prefixes: SAGE Publications; all 4,417 works posted-content (advance.*)	2
+10.7287	peerj\.preprints\.	PeerJ Preprints	Crossref	Crossref: PeerJ prefix 10.7287 also holds peer reviews and supplements; works/10.7287/peerj.preprints.1000v1 is posted-content subtype preprint	186
+10.14293	(pr2199\.|p2199-8442\.)	ScienceOpen Preprints	Crossref	Crossref: ScienceOpen prefix is mixed; posted-content samples pr2199.* and p2199-8442.1.sop-* (ScienceOpen Research s2199-1006 left out: a journal)	0
+10.3762	bxiv\.	Beilstein Archives	Crossref	Crossref: Beilstein-Institut prefix; posted-content (734) all bxiv.*; the journals are other suffixes	0
+10.1002	essoar\.	ESS Open Archive (ESSOAr)	Crossref	Crossref: Wiley prefix; posted-content (13,033) are essoar.NNNNNNNN.N	0
+10.1038	npre\.	Nature Precedings	Crossref	Crossref works/10.1038/npre.2008.1684.1 (typed journal-article; Nature Precedings was Nature's preprint server, 2007-2012)	232
+10.5194	([a-z]+-(19|20)\d{2}-\d+|(acpd|amtd|bgd|cpd|dwesd|esdd|essdd|esurfd|gid|gmdd|hessd|nhessd|npgd|osd|sed|soild|tcd|wesd)-\d+-\d+-\d{4})(?![\d-])	Copernicus discussion / EGUsphere preprint	Crossref	Crossref: works/10.5194/acp-2015-1000 and /acpd-14-1-2014 are posted-content subtype preprint (is-preprint-of); final articles are journal-volume-page-year. Old-form journals listed by hand (gmd, esd, essd, sd end in d but are final journals)	3369
+10.3386	[wth]\d+	NBER Working Papers	Crossref	Crossref: National Bureau of Economic Research; works/10.3386/w12345 typed report. A working-paper series, not a server: included as preprint-like (judgement call)	2149
+10.51094	jxiv\.	Jxiv	JaLC	doi.org RA lookup: JaLC; https://doi.org/10.51094/jxiv.1 redirects to jxiv.jst.go.jp	0

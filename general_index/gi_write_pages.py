@@ -18,7 +18,9 @@ Page numbers (GI-NN) live in fulltext.page_number, so a page keeps its number ac
 without one gets the next free number. Writes fulltext.page, OUT_DIR/_index.tsv and OUT_DIR/index.html:
 a landing page ranking every page by the averaged overlap score, the mean of the two full-text
 percentages ((ft_pct_a + ft_pct_b) / 2), with the agent's and the human's decisions from `results`.
-Pairs reviewed as "same paper" have no page and are listed, marked, at the end of the index.
+Pairs reviewed as "same paper" have no page and are listed, marked, at the end of the index. Pairs whose later
+(copying) paper is from a major publisher are ranked first, those whose later paper is a preprint/repository
+upload after the rest, all tagged (gi_preprints.pair_priority()).
 
 --no-db-writes opens gi.sqlite3 read-only and skips the fulltext.page / page_number updates (every
 pair must already have a page_number); --index-only rewrites index.html from the existing pages.
@@ -61,18 +63,42 @@ def fulltext_lines(res):
     ]
 
 
-def page_order(lib, a, b):
-    """(left, right) paper ids as the comparison page lays them out: the earlier paper on the left, else the
-    lower id -- write_dupe_reports_screenshots.py / _html.py sort --paper-ids and orient by
-    resolve_earlier_id(). The evidence block has to follow this, not fulltext's own A/B order."""
+def earlier_paper(lib, a, b):
+    """The earlier of two library papers (resolve_earlier_id(): by year), or None when that isn't known."""
     if str(ROOT) not in sys.path:
         sys.path.insert(0, str(ROOT))
     from write_dupe_reports_html import resolve_earlier_id
     lo, hi = sorted((a, b))
     conn = sqlite3.connect(f"file:{lib}?mode=ro", uri=True)
-    earlier = resolve_earlier_id(conn, lo, hi, [])
-    conn.close()
-    return (hi, lo) if earlier == hi else (lo, hi)
+    try:
+        return resolve_earlier_id(conn, lo, hi, [])
+    finally:
+        conn.close()
+
+
+def page_order(lib, a, b):
+    """(left, right) paper ids as the comparison page lays them out: the earlier paper on the left, else the
+    lower id -- write_dupe_reports_screenshots.py / _html.py sort --paper-ids and orient by
+    resolve_earlier_id(). The evidence block has to follow this, not fulltext's own A/B order."""
+    lo, hi = sorted((a, b))
+    return (hi, lo) if earlier_paper(lib, a, b) == hi else (lo, hi)
+
+
+def priority_status(f):
+    """(rank, note) for a fulltext row: gi_preprints.pair_priority() -- is the later (copying) paper from a
+    major publisher (promoted, rank < 0) or a preprint (demoted, rank > 0)? gi_preprints.py has the rule and
+    why. Which paper came first is decided as on the page (earlier_paper()), falling back to fulltext's own
+    years only when there is no library to ask (a library that says "same year" wins: its years were
+    corrected from the publisher, fulltext's may be a PDF date)."""
+    import gi_preprints
+    try:
+        if not (f["library"] and f["paper_a"] and f["paper_b"]):
+            raise LookupError
+        e = earlier_paper(f["library"], f["paper_a"], f["paper_b"])
+        earlier = "a" if e == f["paper_a"] else "b" if e == f["paper_b"] else None
+    except (LookupError, sqlite3.Error, TypeError):
+        earlier = gi_preprints.earlier_by_year(f["year_a"], f["year_b"])
+    return gi_preprints.pair_priority(f["doi_a"], f["doi_b"], earlier)
 
 
 def oriented(res, left):
@@ -189,10 +215,18 @@ def write_index(db, out_dir, pages=None):
             if have_results else None
         pa, pb = _lib_paper(f["library"], f["paper_a"]), _lib_paper(f["library"], f["paper_b"])
         score = ((f["ft_pct_a"] or 0) + (f["ft_pct_b"] or 0)) / 2
-        entries.append(dict(f=f, res=res, page=page, pa=pa, pb=pb, score=score,
+        demote, pnote = priority_status(f)
+        entries.append(dict(f=f, res=res, page=page, pa=pa, pb=pb, score=score, demote=demote, pnote=pnote,
                             reviewed=f["human_verdict"], flags=flags.get(key, [])))
-    shown = sorted([e for e in entries if e["page"]], key=lambda e: (-e["score"], -(e["f"]["ft_matched_words"] or 0)))
-    no_page = sorted([e for e in entries if not e["page"]], key=lambda e: -e["score"])
+    # gi_preprints.pair_priority() first (demote < 0 promoted, > 0 demoted), then the score. Pairs whose later
+    # (copying) paper is from a major publisher rank first (-2), order unknown with one side major next (-1);
+    # those whose later paper is a preprint/repository upload rank after the rest (2), order unknown and a side
+    # one just before them (1): such uploads are most often the authors' own or an aggregator's copy, rarely a
+    # publishable finding. The index has no AI-call grouping to keep (it is by score alone), so the priority
+    # leads here. Tagged, not hidden; verdicts untouched.
+    shown = sorted([e for e in entries if e["page"]],
+                   key=lambda e: (e["demote"], -e["score"], -(e["f"]["ft_matched_words"] or 0)))
+    no_page = sorted([e for e in entries if not e["page"]], key=lambda e: (e["demote"], -e["score"]))
 
     def paper_cell(paper, doi, year_fallback):
         title = html.escape((paper["title"] if paper else "") or "(untitled)")
@@ -201,8 +235,8 @@ def write_index(db, out_dir, pages=None):
             if doi and not doi.startswith("gi:") else html.escape(doi or "")
         return f'<div class="paper">{title}<div class="meta">{html.escape(str(year))} &middot; {link}</div></div>'
 
-    def decision_cell(res, reviewed, flags=()):
-        tags = []
+    def decision_cell(res, reviewed, flags=(), pnote=None):
+        tags = [html.escape(pnote)] if pnote else []
         if res is not None:
             if res["type"]:
                 tags.append(f'type: {html.escape(res["type"])} ({html.escape(res["type_source"] or "")})')
@@ -227,7 +261,7 @@ def write_index(db, out_dir, pages=None):
                 f'<td class="num">{f["ft_pct_a"]:.0f}% / {f["ft_pct_b"]:.0f}%</td>'
                 f'<td class="num">{f["ft_matched_words"]:,}</td><td class="num">{f["ft_longest"]:,}</td>'
                 f'<td>{paper_cell(e["pa"], f["doi_a"], f["year_a"])}{paper_cell(e["pb"], f["doi_b"], f["year_b"])}</td>'
-                f'<td>{decision_cell(e["res"], e["reviewed"], e["flags"])}</td><td>{page}</td></tr>')
+                f'<td>{decision_cell(e["res"], e["reviewed"], e["flags"], e["pnote"])}</td><td>{page}</td></tr>')
 
     head = ("<tr><th>#</th><th>Score</th><th>A / B</th><th>Matched words</th><th>Longest run</th>"
             "<th>Papers (A, then B)</th><th>Decisions</th><th>Page</th></tr>")
@@ -237,6 +271,10 @@ def write_index(db, out_dir, pages=None):
         extra = ("<h2>Without a page</h2><p>Reviewed as the same paper (or no page written), so not ranked above.</p>"
                  f'<div class="table-wrap"><table class="ranking">{head}'
                  + "\n".join(row_html("&ndash;", e) for e in no_page) + "</table></div>")
+    n_later = sum(e["demote"] == 2 for e in shown)
+    n_possibly = sum(e["demote"] == 1 for e in shown)
+    n_major = sum(e["demote"] == -2 for e in shown)
+    n_major_possibly = sum(e["demote"] == -1 for e in shown)
     doc = f"""<title>General Index full-text leads</title>
 <style>{STYLE}{INDEX_CSS}</style>
 <div class="page">
@@ -245,7 +283,16 @@ def write_index(db, out_dir, pages=None):
     <h1>General Index full-text leads, ranked</h1>
     <p class="source-note">Ranked by the averaged overlap score: the mean of the two full-text percentages
     (each paper's share of its words inside a run shared with the other; 10-word exact shingles, x-drop 3).
-    {len(shown)} pages; decisions come from the agent review (AI) and your reviews, yours taking precedence.</p>
+    {len(shown)} pages; decisions come from the agent review (AI) and your reviews, yours taking precedence.
+    Pairs whose later (copying) paper is from a major publisher ({n_major}) are ranked first and tagged, then
+    those where it is unknown which paper came first and one side is ({n_major_possibly}): a copy that got
+    into a major journal is the most consequential finding. Known paper-mill venues inside those publishers
+    (IOP's conference series, Materials Today: Proceedings, Springer's AISC/LNEE/LNNS, ...) are tagged but
+    rank normally.
+    Pairs whose later (copying) paper is a preprint or repository upload ({n_later}) are ranked last and
+    tagged, and those where it is unknown which paper came first and one side is a preprint ({n_possibly})
+    just before them: such uploads are most often the authors' own or an aggregator's copy, rarely a
+    publishable finding. A preprint that was copied from ranks normally.</p>
   </div>
   <div class="table-wrap"><table class="ranking">{head}
 {body}
