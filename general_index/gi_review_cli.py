@@ -28,6 +28,11 @@ with "can't tell which paper came first (both published YEAR)" as a reason.
 
 On the first menu, c is one key for "problem: cross-author copying, high, most of the paper copied".
 
+PubPeer: each pair shows the PubPeer link of its later (copying) paper (both papers' when the order is
+unknown). Saving a problem verdict writes the pair's PubPeer page (gi_pubpeer.py: data/pubpeer_pages/, the
+title pages as images, the passages as text, and the findings as Markdown with a Copy button) and opens it;
+t at the prompt does the same for any pair.
+
 Usage: gi_review_cli.py [--gi 12,40] [--ai-type cross-author,data] [--ai-decision problem] [--include-reviewed] [--pdfs] [--no-open] [--pages-dir data/fulltext_pages_s16]
                         [--db data/gi.sqlite3]
 """
@@ -181,7 +186,7 @@ def save_review(db, pair, decision, type_, severity, note, flags=()):
 
 QUEUE_SQL = """
 select f.page_number, f.page, f.pair_lo, f.pair_hi, f.doi_a, f.doi_b, f.year_a, f.year_b, f.library,
-       f.paper_a, f.paper_b, f.ft_pct_a, f.ft_pct_b, f.ft_matched_words, f.ft_longest,
+       f.paper_a, f.paper_b, f.ft_pct_a, f.ft_pct_b, f.ft_matched_words, f.ft_longest, f.byline,
        r.ai_decision, r.ai_type, r.ai_severity, r.ai_confidence, r.ai_summary, r.ai_checks, r.ai_prompt_version,
        r.human_decision, r.human_type, r.human_severity, r.human_note
 from fulltext f join results r using (pair_lo, pair_hi)
@@ -285,6 +290,15 @@ def show_pair(pair, i, total, titles, flags=(), priority=(0, None)):
               "most consequential finding")
     elif note:
         print(f"  NOTE: {note}")
+    import gi_pubpeer
+    earlier = pair.get("earlier")
+    if earlier in ("a", "b"):
+        later = "b" if earlier == "a" else "a"
+        url = gi_pubpeer.pubpeer_url(pair[f"doi_{later}"])
+        print(f"  PubPeer (later paper, {later.upper()}): {url or 'no DOI'}")
+    else:
+        urls = [gi_pubpeer.pubpeer_url(pair[f"doi_{s}"]) for s in "ab"]
+        print(f"  PubPeer (order unknown): A {urls[0] or 'no DOI'}   B {urls[1] or 'no DOI'}")
     if pair["ai_decision"]:
         pv = pair["ai_prompt_version"] or ""
         who = f"local {pv.split('local:', 1)[1].removesuffix('.gguf')}" if "local:" in pv else "Claude"
@@ -351,7 +365,8 @@ def ask_severity_and_reasons(pair, decision, from_problem=False):
 
 
 def review_one(pair, choices, counts, saved_flags=()):
-    """Ask for one verdict. Returns (decision, type, severity, note, flags), or 'skip' / 'quit' / 'reopen' / 'pdfs'."""
+    """Ask for one verdict. Returns (decision, type, severity, note, flags), or 'skip' / 'quit' / 'reopen' / 'pdfs' /
+    'pubpeer'."""
     ai = (pair["ai_decision"], pair["ai_type"]) if pair["ai_decision"] else None
     print("\nWhat do you think?")
     for k, (d, t, desc) in enumerate(choices, 1):
@@ -359,7 +374,7 @@ def review_one(pair, choices, counts, saved_flags=()):
         print(f"  {k:>2}  {d + ': ' + t:<34} {desc} [{counts.get((d, t), 0)}]{mark}")
     print(f"   c  {QUICK[0]}: {QUICK[1]}, {QUICK[2]}, {QUICK[3]} (skips severity and reasons)")
     keys = "   a  agree with the AI" if ai and ai[1] else ""
-    print(f"{keys}   o  reopen the page   p  open the PDFs   s  skip   q  quit")
+    print(f"{keys}   o  reopen the page   p  open the PDFs   t  PubPeer page   s  skip   q  quit")
     quick = False
     while True:
         ans = ask("> ").lower()
@@ -367,15 +382,15 @@ def review_one(pair, choices, counts, saved_flags=()):
             decision, type_, severity, reason = QUICK
             reasons, quick = [reason], True
             break
-        if ans in ("q", "s", "o", "p"):
-            return {"q": "quit", "s": "skip", "o": "reopen", "p": "pdfs"}[ans]
+        if ans in ("q", "s", "o", "p", "t"):
+            return {"q": "quit", "s": "skip", "o": "reopen", "p": "pdfs", "t": "pubpeer"}[ans]
         if ans == "a" and ai and ai[1]:
             decision, type_ = ai
             break
         if ans.isdigit() and 1 <= int(ans) <= len(choices):
             decision, type_ = choices[int(ans) - 1][:2]
             break
-        print("  a number from the list, or c / a / o / p / s / q")
+        print("  a number from the list, or c / a / o / p / t / s / q")
 
     converted = False
     year = same_year(pair)
@@ -411,6 +426,20 @@ def review_one(pair, choices, counts, saved_flags=()):
     if text.lower() == "e":
         text = edit_note()
     return decision, type_, severity, build_note(reasons, text), flags
+
+
+def pubpeer_page(db, pair, open_it=True):
+    """Write (and open) the pair's PubPeer page; a failure is printed, never fatal."""
+    import gi_pubpeer
+    print("  writing the PubPeer page ...")
+    try:
+        path, _ = gi_pubpeer.write_page(db, pair)
+    except Exception as e:
+        print(f"  PubPeer page failed: {e}")
+        return
+    print(f"  PubPeer page: {path}")
+    if open_it:
+        open_files([path])
 
 
 def main():
@@ -449,6 +478,8 @@ def main():
         shown = gi_write_pages.oriented(pair, gi_write_pages.page_order(pair["library"], pair["paper_a"],
                                                                        pair["paper_b"])[0])
         shown["swapped"] = shown["paper_a"] != pair["paper_a"]
+        e = gi_write_pages.earlier_paper(pair["library"], shown["paper_a"], shown["paper_b"])
+        shown["earlier"] = "a" if e == shown["paper_a"] else "b" if e == shown["paper_b"] else None
         titles = [paper_info(pair["library"], shown["paper_a"]), paper_info(pair["library"], shown["paper_b"])]
         page = page_path(pages_dir, pair)
         pdfs = [p for p in [titles[0][1], titles[1][1]] if p]
@@ -464,6 +495,9 @@ def main():
             if out in ("reopen", "pdfs"):
                 open_files(pdfs if out == "pdfs" else [page] if page else [])
                 continue
+            if out == "pubpeer":
+                pubpeer_page(db, pair, not args.no_open)
+                continue
             break
         if out == "quit":
             break
@@ -478,6 +512,8 @@ def main():
         counts[(decision, type_)] = counts.get((decision, type_), 0) + 1
         saved += 1
         print(f"saved GI-{pair['page_number']:02d}")
+        if decision == "problem":
+            pubpeer_page(db, pair, not args.no_open)
     print(f"\n{saved} review(s) saved")
     if saved:
         import gi_write_pages

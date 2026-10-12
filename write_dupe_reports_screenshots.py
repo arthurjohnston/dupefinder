@@ -36,6 +36,8 @@ choose_layout()).
 Images are written as separate JPEG files under OUT_DIR/img/<case>/ and referenced relatively
 (--embed-images inlines them as data: URIs instead): a 50-exhibit page carries 100+ crops, and
 separate files let the browser lazy-load them and let a reader open one full size.
+--text-exhibits keeps only the title/byline images and shows the passages as text diffs instead
+(general_index/gi_pubpeer.py's shareable pages).
 
     python3 write_dupe_reports_screenshots.py --library-db LIB --paper-ids 80,76 \\
         --out-dir general_index/data/screenshot_pages_trial --neutral --shingle-size 10 \\
@@ -806,6 +808,10 @@ def parse_args():
     p.add_argument("--embed-images", action="store_true",
                    help="inline the images as data: URIs (one self-contained file) instead of "
                         "writing them under OUT_DIR/img/")
+    p.add_argument("--text-exhibits", action="store_true",
+                   help="keep the title/byline images but show the shared passages as "
+                        "write_dupe_reports_html.py's text diffs: a much smaller page (with "
+                        "--embed-images, one file of a few hundred KB) for sharing, e.g. on PubPeer")
     return p.parse_args()
 
 
@@ -839,7 +845,7 @@ def main():
             include_shingle_count_in_title=not args.no_shingle_count_in_title,
             neutral=args.neutral, gap_open=args.gap_open, gap_extend=args.gap_extend,
             max_gap=args.max_gap, drop_furniture=args.drop_furniture,
-            exhibit_renderer=exhibits,
+            exhibit_renderer=None if args.text_exhibits else exhibits,
             pre_exhibits_html=render_title_shots(conn, sides, writer, pid1, pid2, earlier_id,
                                                  text_px=args.text_px),
             extra_style=EXTRA_STYLE, generator="write_dupe_reports_screenshots.py",
@@ -854,6 +860,10 @@ def main():
     out_path = args.out_dir / filename
     # NULs from a PDF's extracted text are invalid in HTML (gi_write_pages.py strips them too)
     out_path.write_text(body.replace("\x00", ""), encoding="utf-8")
+    if args.text_exhibits:
+        print(f"wrote {out_path}: {total} runs as text; {writer.count} title images, "
+              f"{writer.bytes_written / 1e6:.1f} MB")
+        return
     counts = Counter(s for pair in exhibits.outcomes for s in pair)
     both = sum(1 for a, b in exhibits.outcomes if a == b == "located")
     print(f"wrote {out_path}: {len(exhibits.outcomes)} exhibits of {total} runs; "
