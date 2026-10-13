@@ -1,0 +1,22 @@
+{
+ "GI-235": {
+  "file": "GI-235.html",
+  "reported": "2026-10-13",
+  "earlier_known": true,
+  "later": {
+   "title": "Antibiotic-resistanceStaphylococcus aureusisolated from cow’s milk in the Hawassa area, South Ethiopia",
+   "year": 2012,
+   "doi": "10.1186/1476-0711-11-26",
+   "pct": 49.0
+  },
+  "earlier": {
+   "title": "Antibiotic-resistant *Staphylococcus aureus* isolated from milk in the Mafikeng Area, North West province, South Africa",
+   "year": 2010,
+   "doi": "10.4102/sajs.v106i11/12.243",
+   "pct": 41.0
+  },
+  "matched_words": 1872,
+  "runs": 77,
+  "longest": 81
+ }
+}

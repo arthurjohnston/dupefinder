@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>General Index: reported pairs</title>
+<style>
+:root {
+  --bg: #f2f4ef; --surface: #ffffff; --ink: #1a1f1a; --ink-muted: #565f57;
+  --border: #d7dbd0; --accent-strong: #7c4a15;
+  --font-display: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --font-body: "Source Sans 3", -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #14170f; --surface: #1c2016; --ink: #e9ede4; --ink-muted: #a2ab98;
+    --border: #333a29; --accent-strong: #f0b46a;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #14170f; --surface: #1c2016; --ink: #e9ede4; --ink-muted: #a2ab98;
+  --border: #333a29; --accent-strong: #f0b46a;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.6 var(--font-body); }
+main { max-width: 1300px; margin: 0 auto; padding: 2.5rem 16px 5rem; }
+main > p { max-width: 78ch; }
+h1 { font-family: var(--font-display); line-height: 1.2; font-size: 2.2rem; margin: 0 0 1rem; }
+a { color: var(--accent-strong); }
+.table-wrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; }
+table { border-collapse: collapse; width: 100%; font-size: .9rem; }
+th, td { text-align: left; padding: .45rem .7rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+th { color: var(--ink-muted); font-weight: 600; white-space: nowrap; }
+td.num { white-space: nowrap; font-variant-numeric: tabular-nums; }
+td.art { min-width: 18rem; }
+</style>
+</head>
+<body>
+<main>
+<h1>General Index: reported pairs</h1>
+<p>Pairs of articles found by this project's scan of the
+<a href="https://archive.org/details/GeneralIndex">General Index</a> (word n-grams from over 100 million
+articles), checked against both articles' full text, and reported to the journal concerned. Each page shows
+the measured overlap: the shared passages side by side with the differences marked, and the longest one as
+printed in both articles. "Shared text" is the share of each article's words that fall inside a run of 10 or
+more matching words (allowing substituted words within a run). A page shows measured text overlap; it does
+not establish why the overlap exists, and none of these pages is a finding of misconduct by any named
+person.</p>
+<p>Where the publication years differ, the later article is listed first. Where they are the same, which
+came first is unknown and the order means nothing.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Case</th><th>Later article</th><th>Earlier article</th><th>Shared text (later / earlier)</th>
+<th>Longest passage</th><th>Reported</th></tr></thead>
+<tbody>
+<tr><td class="num"><a href="GI-235.html">GI-235</a></td>
+<td class="art">Antibiotic-resistanceStaphylococcus aureusisolated from cow’s milk in the Hawassa area, South Ethiopia (2012)<br><a href="https://doi.org/10.1186/1476-0711-11-26">doi:10.1186/1476-0711-11-26</a></td><td class="art">Antibiotic-resistant Staphylococcus aureus isolated from milk in the Mafikeng Area, North West province, South Africa (2010)<br><a href="https://doi.org/10.4102/sajs.v106i11/12.243">doi:10.4102/sajs.v106i11/12.243</a></td>
+<td class="num">49% / 41%</td>
+<td class="num">81 words</td><td class="num">2026-10-13</td></tr>
+</tbody>
+</table></div>
+<p><a href="../">Example output</a></p>
+</main>
+</body>
+</html>

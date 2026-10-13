@@ -18,6 +18,12 @@ The pages use `write_dupe_reports_html.py --neutral` wording: a "Text-overlap co
 two-way arrow between the documents rather than a directional one, and no verdict labels. That wording
 doesn't change the red/green diff or any figure.
 
+## General Index pairs reported
+
+Pairs found by this project's scan of the General Index, checked against both articles' full text and
+reported to the journal concerned, are in `general_index/`, with their own
+[index](general_index/index.html).
+
 ## Pairs where the shared material is data
 
 In most pairs the shared material is prose. In these five it also includes measured or surveyed
