@@ -7,13 +7,15 @@
    "title": "Antibiotic-resistanceStaphylococcus aureusisolated from cow’s milk in the Hawassa area, South Ethiopia",
    "year": 2012,
    "doi": "10.1186/1476-0711-11-26",
-   "pct": 49.0
+   "pct": 49.0,
+   "journal": "Annals of Clinical Microbiology and Antimicrobials"
   },
   "earlier": {
    "title": "Antibiotic-resistant *Staphylococcus aureus* isolated from milk in the Mafikeng Area, North West province, South Africa",
    "year": 2010,
    "doi": "10.4102/sajs.v106i11/12.243",
-   "pct": 41.0
+   "pct": 41.0,
+   "journal": "South African Journal of Science"
   },
   "matched_words": 1872,
   "runs": 77,
