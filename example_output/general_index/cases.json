@@ -20,5 +20,27 @@
   "matched_words": 1872,
   "runs": 77,
   "longest": 81
+ },
+ "GI-428": {
+  "file": "GI-428.html",
+  "reported": "2026-10-13",
+  "earlier_known": true,
+  "later": {
+   "title": "Effect of SP600125 on the mitotic spindle in HeLa Cells, leading to mitotic arrest, endoreduplication and apoptosis",
+   "year": 2016,
+   "doi": "10.1186/s13039-016-0296-y",
+   "pct": 36.0,
+   "journal": "Molecular Cytogenetics"
+  },
+  "earlier": {
+   "title": "JNK inhibitor SP600125 promotes the formation of polymerized tubulin, leading to G2/M phase arrest, endoreduplication, and delayed apoptosis",
+   "year": 2009,
+   "doi": "10.3858/emm.2009.41.9.073",
+   "pct": 19.0,
+   "journal": "Experimental and Molecular Medicine"
+  },
+  "matched_words": 1053,
+  "runs": 55,
+  "longest": 50
  }
 }
