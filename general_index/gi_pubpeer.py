@@ -10,22 +10,26 @@ one self-contained file (a few hundred KB) with
 
 The Markdown states only what was measured: how much of the later article's text is in the earlier one
 (and the reverse), whether the author lists share a name, whether the later article's references appear
-to cite the earlier one, and the five longest shared passages with their length and an excerpt. Which
+to cite the earlier one, and the TOP_PASSAGES (30) longest shared passages with their length and an excerpt. Which
 article is later comes from the publication years as on the result page (gi_write_pages.earlier_paper());
 when that isn't known (same year), the text says so and makes no claim about direction.
 
 gi_review_cli.py writes this page when you save a problem verdict, and on t at its prompt.
 
+It also has what gi_report_case.py (everything for reporting a case) builds on: findings() and publisher_page(), the
+comparison page for the journal and the project site. The emails are gi_contact.py.
+
 Usage: gi_pubpeer.py GI_NUMBER [GI_NUMBER ...] [--problems] [--out-dir data/pubpeer_pages] [--db data/gi.sqlite3]
        --problems: every pair you've reviewed as a problem
 """
 import argparse
+import base64
 import html
-import os
 import re
 import sqlite3
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 from urllib.parse import quote
 
@@ -36,10 +40,9 @@ import gi_write_pages
 ROOT = Path(__file__).resolve().parent.parent
 PY = sys.executable
 OUT_DIR = gi_db.DATA / "pubpeer_pages"
-TOP_PASSAGES = 5
+TOP_PASSAGES = 30
+WHOLE_DOCUMENT_PCT = 90  # above this share of either article, the comparison page is one interleaved diff
 EXCERPT_HEAD, EXCERPT_TAIL = 30, 10   # words quoted from the start and end of a long passage
-METHOD = ("Found by comparing the full texts of the two articles: runs of at least 10 identical words, "
-          "allowing an occasional single-word difference inside a run.")
 
 
 def pubpeer_url(doi):
@@ -64,8 +67,10 @@ def excerpt(text, head=EXCERPT_HEAD, tail=EXCERPT_TAIL):
 def clean_title(title):
     """Whitespace collapsed, and a title the metadata repeats after a quotation mark cut back to its first
     copy: 'STUDY OF SKIN STAPLES ... TRIAL "Study of Skin Staples ... Control' -> 'STUDY OF SKIN STAPLES ...
-    TRIAL'."""
-    title = " ".join((title or "").split())
+    TRIAL'. Italic markup from the metadata (<i>, <em>) becomes Markdown italics, other tags are dropped."""
+    title = re.sub(r"\s*<(i|em)>\s*(.*?)\s*</\1>\s*", r" *\2* ", title or "", flags=re.IGNORECASE)
+    title = html.unescape(re.sub(r"<[^>]+>", "", title))
+    title = " ".join(title.split())
     for q in ('"', "\u201c"):
         head, sep, rest = title.partition(" " + q)
         if sep and len(head) >= 20 and rest.lower().startswith(head[:20].lower()):
@@ -151,13 +156,13 @@ def markdown(fd):
         n = len(fd["passages"])
         lines.append("")
         lines.append(f"The {'longest shared passage' if n == 1 else f'{n} longest shared passages'} "
-                     f"(word counts in this article):")
+                     f"(word counts in this article)"
+                     + (". The attached image shows passage 1 as printed in both articles, the shared words "
+                        "highlighted:" if fd.get("shot") else ":"))
         lines.append("")
         for i, p in enumerate(fd["passages"], 1):
             text = p["excerpt"].replace('"', "'")
             lines.append(f"{i}. **{p['words']:,} words**: \"{text}\"")
-    lines.append("")
-    lines.append(f"*{METHOD}*")
     return "\n".join(lines)
 
 
@@ -180,10 +185,30 @@ BOX_STYLE = """<style>
   background: inherit; color: inherit; border: 1px solid #8888; border-radius: 4px; padding: 8px; }
 .pubpeer-box button { margin-top: 6px; padding: 6px 14px; font-size: 14px; cursor: pointer; }
 .pubpeer-box #pp-copied { margin-left: 8px; }
+.pubpeer-box .pp-shot { display: block; max-width: 100%; height: auto; margin-top: 6px; border: 1px solid #8888;
+  background: #fff; }
 </style>"""
 
 
-def box_html(fd, md):
+def jpeg_uri(data):
+    return "data:image/jpeg;base64," + base64.b64encode(data).decode("ascii")
+
+
+def shot_html(shot, name, earlier_known=True):
+    """The longest passage's image (JPEG bytes) in the box, with a link that saves it (both data: URIs, so
+    the page stays one file)."""
+    if not shot:
+        return ""
+    uri = jpeg_uri(shot)
+    name = html.escape(name, quote=True)
+    sides = "earlier article left, later right" if earlier_known else "the two articles, order unknown"
+    return (f'<p><b>Longest shared passage, as printed</b> ({sides}): '
+            f'<a download="{name}" href="{uri}">save the image</a> and attach it to the comment with '
+            f'PubPeer\'s image upload.</p>\n  <img class="pp-shot" src="{uri}" alt="The longest shared passage '
+            f'in both PDFs, the shared words highlighted">')
+
+
+def box_html(fd, md, shot=None, shot_name="longest.jpg"):
     first, second = fd["first"], fd["second"]
     links = []
     for p, label in ((second, "this article (the later one)" if fd["earlier_known"] else "this article"),
@@ -200,6 +225,7 @@ def box_html(fd, md):
   <p>{where} The text below is Markdown, which PubPeer comments accept; check it against the passages below before posting.</p>
   <textarea id="pp-md" readonly>{html.escape(md)}</textarea>
   <button type="button" onclick="ppCopy()">Copy Markdown</button><span id="pp-copied"></span>
+  {shot_html(shot, shot_name, fd["earlier_known"])}
 </section>
 {COPY_JS}"""
 
@@ -213,29 +239,103 @@ def insert_box(page_html, box):
     return page_html[:i] + box + "\n" + page_html[i:]
 
 
-def write_page(db, f, out_dir=OUT_DIR):
-    """Write the page for one fulltext row; returns (path, markdown)."""
+def case_name(f):
+    n = f["page_number"]
+    return f"GI-{n:02d}" if n is not None else f"{f['paper_a']}-{f['paper_b']}"
+
+
+def render(f, case, title_shots=True, whole_document=False):
+    """Run the page writer for one fulltext row in a scratch directory: every shared passage (the page writer's default), or with
+    `whole_document` both papers end to end as one interleaved diff. Returns (page, filename, shot): the
+    page with its images inlined, the writer's file name for it (GI-NN-<slug>.html), and the longest
+    passage's JPEG bytes (None when neither PDF could be used)."""
+    with tempfile.TemporaryDirectory() as d:
+        d = Path(d)
+        shot = d / "longest.jpg"
+        p = subprocess.run([PY, str(ROOT / "write_dupe_reports_screenshots.py"), "--library-db", f["library"],
+                            "--paper-ids", f"{f['paper_a']},{f['paper_b']}", "--out-dir", str(d), "--neutral",
+                            "--shingle-size", "10", "--x-drop", "3", "--case-number", case,
+                            "--min-shingle-matches", "0", "--found-by", "", "--text-exhibits", "--embed-images",
+                            "--longest-shot", str(shot),
+                            *([] if title_shots else ["--no-title-shots"]),
+                            *(["--whole-document"] if whole_document else [])],
+                           capture_output=True, text=True)
+        pages = sorted(d.glob("*.html"))
+        if p.returncode != 0 or not pages:
+            raise RuntimeError(f"{case}: page writer failed: {(p.stderr or p.stdout)[-300:]}")
+        page, _ = gi_share_pages.shareable(pages[0].read_text(encoding="utf-8").replace("\x00", ""), d)
+        return page, pages[0].name, (shot.read_bytes() if shot.exists() else None)
+
+
+def overlap_html(fd):
+    """The shared-text figures for the page's summary bar (the page writer itself reports only the run
+    count)."""
+    first, second = fd["first"], fd["second"]
+    if fd["earlier_known"]:
+        names = (f"the later article ({second['year']})", f"the earlier ({first['year']})")
+    else:
+        names = (f"doi:{second['doi']}", f"doi:{first['doi']}")
+    return (f'<span>shared text <strong>{pct(second["pct"])}</strong> of {html.escape(names[0])} &middot; '
+            f'<strong>{pct(first["pct"])}</strong> of {html.escape(names[1])}</span> '
+            f'<span>matched words <strong>{fd["matched_words"] or 0:,}</strong></span> ')
+
+
+def add_overlap(page, fd):
+    bar = '<div class="summary-bar">'
+    return page.replace(bar, bar + overlap_html(fd), 1)
+
+
+def write_page(db, f, out_dir=OUT_DIR, fd=None, name=None):
+    """Write the PubPeer page for one fulltext row (as `name`, default the writer's GI-NN-<slug>.html) and
+    the longest passage's image (GI-NN-longest.jpg) to out_dir; returns (path, markdown)."""
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
-    n = f["page_number"]
-    case = f"GI-{n:02d}" if n is not None else f"{f['paper_a']}-{f['paper_b']}"
-    for old in out_dir.glob(f"{case}-*.html"):
-        old.unlink()
-    before = set(os.listdir(out_dir))
-    p = subprocess.run([PY, str(ROOT / "write_dupe_reports_screenshots.py"), "--library-db", f["library"],
-                        "--paper-ids", f"{f['paper_a']},{f['paper_b']}", "--out-dir", str(out_dir), "--neutral",
-                        "--shingle-size", "10", "--x-drop", "3", "--case-number", case, "--min-shingle-matches", "0",
-                        "--found-by", "", "--text-exhibits", "--embed-images"], capture_output=True, text=True)
-    new = sorted(x for x in set(os.listdir(out_dir)) - before if x.endswith(".html"))
-    if p.returncode != 0 or not new:
-        raise RuntimeError(f"{case}: page writer failed: {(p.stderr or p.stdout)[-300:]}")
-    path = out_dir / new[0]
-    fd = findings(db, f)
+    case = case_name(f)
+    page, slug_name, shot = render(f, case)
+    fd = fd or findings(db, f)
+    fd["shot"] = shot is not None
     md = markdown(fd)
-    page = insert_box(path.read_text(encoding="utf-8").replace("\x00", ""), box_html(fd, md))
-    page, _ = gi_share_pages.shareable(page, out_dir)
+    shot_path = out_dir / f"{case}-longest.jpg"
+    if shot:
+        shot_path.write_bytes(shot)
+    page = insert_box(add_overlap(page, fd), box_html(fd, md, shot, shot_path.name))
+    if name is None:   # a re-run replaces the case's old page, whose slug may have changed
+        for old in out_dir.glob(f"{case}-*shingle-matches.html"):
+            old.unlink()
+    path = out_dir / (name or slug_name)
     path.write_text(page, encoding="utf-8")
     return path, md
+
+
+def shot_section(shot, earlier_known=True):
+    """The longest passage's image (JPEG bytes) as an exhibit of its own, for the publisher's page."""
+    sides = "earlier article left, later right" if earlier_known else "order unknown"
+    return f"""{BOX_STYLE}
+<section class="exhibit">
+  <div class="exhibit-head"><h3>Longest shared passage, as printed ({sides})</h3></div>
+  <img class="pp-shot" style="max-width:100%;height:auto" src="{jpeg_uri(shot)}" alt="The longest shared passage in both PDFs, the shared words highlighted">
+</section>"""
+
+
+def whole_document(fd):
+    """Whether the comparison page should be one interleaved diff of both articles: more than
+    WHOLE_DOCUMENT_PCT of either one is shared, so the finding is one document, not many passages."""
+    return max(fd["first"]["pct"] or 0, fd["second"]["pct"] or 0) > WHOLE_DOCUMENT_PCT
+
+
+def publisher_page(f, fd):
+    """The comparison page for the journal (and the project site): no PubPeer box, no title images, the
+    shared-text figures in the summary bar and the longest passage's image above the matches. Every shared
+    passage, or (whole_document(fd)) both articles end to end as one diff. Returns (page html, longest
+    passage JPEG bytes or None)."""
+    page, _, shot = render(f, case_name(f), title_shots=False, whole_document=whole_document(fd))
+    page = add_overlap(page, fd)
+    if shot:
+        # above the list of matches (its heading), after the papers and the summary figures
+        i = next((j for j in (page.find('<div class="exhibit-head"'), page.find('<section class="exhibit"'))
+                  if j >= 0), 0)
+        page = page[:i] + shot_section(shot, fd["earlier_known"]) + "\n" + page[i:]
+    return page, shot
 
 
 def main():

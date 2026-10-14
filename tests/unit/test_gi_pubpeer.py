@@ -34,6 +34,8 @@ class TestLinks(unittest.TestCase):
         self.assertEqual(pp.clean_title('STUDY OF SKIN STAPLES AND SUTURES "Study of Skin Staples and Sut'),
                          "STUDY OF SKIN STAPLES AND SUTURES")
         self.assertEqual(pp.clean_title('On "quoted" words  here'), 'On "quoted" words here')
+        self.assertEqual(pp.clean_title("Resistant <i>Staphylococcus aureus</i> in milk &amp; <b>meat</b>"),
+                         "Resistant *Staphylococcus aureus* in milk & meat")
 
 
 class TestMarkdown(unittest.TestCase):
@@ -55,11 +57,23 @@ class TestMarkdown(unittest.TestCase):
         self.assertNotIn("cite", md.split("passage")[0])
         self.assertIn("The longest shared passage", md)
 
+    def test_image_mentioned_only_when_there_is_one(self):
+        self.assertNotIn("attached image", pp.markdown(fd()))
+        self.assertIn("The attached image shows passage 1", pp.markdown({**fd(), "shot": True}))
+
     def test_order_unknown_makes_no_direction_claim(self):
         md = pp.markdown(fd(earlier_known=False))
         self.assertIn("can't be told from the publication years", md)
         self.assertNotIn("duplicate of", md)
         self.assertNotIn("earlier article", md)
+
+
+class TestWholeDocument(unittest.TestCase):
+    def test_threshold(self):
+        self.assertFalse(pp.whole_document(fd(pct_later=90.0)))
+        self.assertTrue(pp.whole_document(fd(pct_later=90.5)))
+        self.assertTrue(pp.whole_document({**fd(), "first": {**fd()["first"], "pct": 99.0}}))
+        self.assertFalse(pp.whole_document(fd(pct_later=None)))
 
 
 class TestPage(unittest.TestCase):
@@ -72,6 +86,22 @@ class TestPage(unittest.TestCase):
         out = pp.insert_box(page, "BOX")
         self.assertLess(out.index("BOX"), out.index("title-shots"))
         self.assertGreater(out.index("BOX"), out.index("</header>"))
+        self.assertNotIn("<img", box)
+
+    def test_box_with_image(self):
+        jpg = b"\xff\xd8\xff\xd9"
+        box = pp.box_html(fd(), "md", jpg, "GI-1-longest.jpg")
+        self.assertIn('download="GI-1-longest.jpg" href="data:image/jpeg;base64,', box)
+        self.assertIn('<img class="pp-shot" src="data:image/jpeg;base64,', box)
+        self.assertIn("earlier article left", box)
+        self.assertIn("order unknown", pp.box_html(fd(earlier_known=False), "md", jpg))
+
+    def test_overlap_in_summary_bar(self):
+        page = pp.add_overlap('<div class="summary-bar"><span>runs</span></div>', fd())
+        self.assertIn("shared text <strong>62%</strong> of the later article (2015) &middot; "
+                      "<strong>40%</strong> of the earlier (2011)", page)
+        self.assertIn("matched words <strong>2,480</strong>", page)
+        self.assertLess(page.index("shared text"), page.index("runs"))
 
 
 if __name__ == "__main__":

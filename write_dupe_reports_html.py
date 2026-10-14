@@ -42,6 +42,7 @@ still renders it (browsers tolerate a missing wrapper), just without the
 import argparse
 import difflib
 import html
+import re
 import sqlite3
 from pathlib import Path
 
@@ -58,7 +59,7 @@ DEFAULT_SHINGLE_SIZE = 10  # see compare_two_papers.py's find_shingle_matches() 
 # above -- it can't be fooled by a sentence-split error and catches sub-sentence verbatim spans,
 # but it also finds nothing this table doesn't already contain if every real match was already
 # above the LSH+cosine candidate-generation threshold; run alongside, not instead of.
-DEFAULT_MAX_SHINGLE_EXHIBITS = 50
+DEFAULT_MAX_SHINGLE_EXHIBITS = None   # no cap: every run of --shingle-size+ words is shown
 DEFAULT_MIN_SHINGLE_MATCHES = 10  # below this, a pair is skipped entirely (no file written) --
 # see --min-shingle-matches. Cheap noise filter: a pair whose only evidence is embedding
 # candidates plus a couple of short/no exact shingle runs isn't worth its own page by default;
@@ -733,6 +734,22 @@ def render_whole_document_diff(conn, paper_id_1, paper_id_2, earlier_id, shingle
     }
     return f'<div class="wdd">{"".join(parts)}</div>', stats, len(runs)
 
+TITLE_MARKUP = re.compile(r"&lt;(/?)(i|em|sub|sup)&gt;", re.IGNORECASE)
+
+
+def title_html(title):
+    """A catalogue title as HTML: escaped, except the inline markup Crossref titles carry (<i>, <em>,
+    <sub>, <sup>), which is kept, so "<i>Staphylococcus aureus</i>" shows in italics instead of as tags.
+    Other tags are dropped; entities already in the title ("&amp;") aren't escaped a second time."""
+    out = TITLE_MARKUP.sub(lambda m: f"<{m.group(1)}{m.group(2).lower()}>", html.escape(html.unescape(title or "")))
+    return re.sub(r"&lt;/?[a-zA-Z][^&]*?&gt;", "", out)
+
+
+def title_text(title):
+    """A catalogue title with its markup tags removed, for plain-text uses (the <title> tag)."""
+    return " ".join(html.unescape(re.sub(r"<[^>]+>", "", title or "")).split())
+
+
 def paper_authors(conn, paper_id):
     rows = conn.execute(
         """SELECT a.name FROM authors a
@@ -824,7 +841,7 @@ def render_case(conn, paper_id_1, paper_id_2, dupe_rows, source_note=None, short
         role_class = "later" if role.startswith("LATER") else ""
         return (
             f'<div class="paper-card"><p class="role {role_class}">{html.escape(role)}</p>'
-            f'<h2>{html.escape(title)}</h2>'
+            f'<h2>{title_html(title)}</h2>'
             f'<p class="meta">{html.escape(by)} &middot; {year or "n.d."}</p>'
             f'{doi_html}</div>'
         )
@@ -926,7 +943,7 @@ def render_case(conn, paper_id_1, paper_id_2, dupe_rows, source_note=None, short
 </div>"""
 
     source_html = f'<p class="source-note">{source_note}</p>' if source_note else ""
-    tab_title = short_title or (title1 if earlier_id != paper_id_2 else title2)[:40]
+    tab_title = short_title or title_text(title1 if earlier_id != paper_id_2 else title2)[:40]
     if shingle_size and include_shingle_count_in_title:
         tab_title = f"{tab_title} ({shingle_total} shingle match{'es' if shingle_total != 1 else ''})"
 
@@ -1014,7 +1031,7 @@ def render_case(conn, paper_id_1, paper_id_2, dupe_rows, source_note=None, short
   <div class="lede">
     {classification_html}
     <p class="eyebrow">{eyebrow}</p>
-    <h1>{html.escape(title1 if earlier_id != paper_id_2 else title2)} {arrow} {html.escape(title2 if earlier_id != paper_id_2 else title1)}</h1>
+    <h1>{title_html(title1 if earlier_id != paper_id_2 else title2)} {arrow} {title_html(title2 if earlier_id != paper_id_2 else title1)}</h1>
     {dek_html}
     {source_html}
     <div class="comparison">
@@ -1077,7 +1094,7 @@ def parse_args():
                               "the resulting page has no exhibits, just the header/summary stats")
     parser.add_argument("--max-shingle-exhibits", type=int, default=DEFAULT_MAX_SHINGLE_EXHIBITS,
                          help=f"cap the number of shingle-match exhibits rendered per pair, keeping "
-                              f"the longest ones (default {DEFAULT_MAX_SHINGLE_EXHIBITS}) -- but "
+                              f"the longest ones (default: no cap, every run is shown) -- but "
                               f"then DISPLAYED in the later/flagged paper's own reading order, not "
                               f"longest-first; see render_shingle_exhibits()'s docstring")
     parser.add_argument("--neutral", action="store_true",

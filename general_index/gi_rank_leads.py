@@ -117,7 +117,7 @@ def main():
     flagged = [x for x in leads
                if any(gi_preprints.is_preprint_doi(d) or gi_preprints.major_publisher(d) for d in (x["doi_a"], x["doi_b"]))]
     need = {k for x in flagged for k in x["dkeys"]}
-    years = {k: y for k, y in db.execute("select dkey, substr(pub_date, 1, 4) from documents") if k in need}
+    years = {k: gi_db.pub_year(d) for k, d in db.execute("select dkey, pub_date from documents") if k in need}
     for x in flagged:
         x["priority"] = gi_preprints.pair_priority(
             x["doi_a"], x["doi_b"], gi_preprints.earlier_by_year(*(years.get(k) for k in x["dkeys"])))[0]

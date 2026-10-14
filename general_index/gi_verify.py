@@ -27,6 +27,8 @@ Usage:
   gi_verify.py load-text --run NAME --library WORKDIR/library.sqlite3 --paragraphs-file WORKDIR/paragraphs.jsonl
   gi_verify.py move --run NAME --state WORKDIR/state.sqlite3 --library WORKDIR/library.sqlite3 --dest DIR
   gi_verify.py measure --run NAME --library WORKDIR/library.sqlite3 [--min-words 300] [--fix-years]
+  gi_verify.py epoch-years --library WORKDIR/library.sqlite3 [--state WORKDIR/state.sqlite3] [--dry-run]
+           (a year of 1970 from a 1970-01-01 "no date" -> the index's real year, or empty; see epoch_years())
 gi_verify.sh NAME runs select -> retrieve -> paths -> extract -> load-text -> measure -> move.
 """
 import argparse
@@ -245,13 +247,16 @@ def fix_years(lib):
     rows = lib.execute("select id, doi, year from papers where doi is not null").fetchall()
     dois, years = [r[1].lower() for r in rows], {}
     for i in range(0, len(dois), 50):
-        params = {"filter": "doi:" + "|".join(dois[i:i + 50]), "per-page": 50, "select": "doi,publication_year"}
+        params = {"filter": "doi:" + "|".join(dois[i:i + 50]), "per-page": 50,
+                  "select": "doi,publication_year,publication_date"}
         if key:
             params["api_key"] = key
         resp = requests.get("https://api.openalex.org/works", params=params, timeout=60)
         if resp.status_code == 200:
             for w in resp.json().get("results", []):
-                years[(w.get("doi") or "").replace("https://doi.org/", "").lower()] = w.get("publication_year")
+                # OpenAlex gives 1970-01-01 for a work with no date: that's no year, keep the library's
+                if gi_db.pub_year(w.get("publication_date") or w.get("publication_year")):
+                    years[(w.get("doi") or "").replace("https://doi.org/", "").lower()] = w.get("publication_year")
     n = 0
     for pid, doi, y in rows:
         oy = years.get(doi.lower())
@@ -260,6 +265,39 @@ def fix_years(lib):
             n += 1
     lib.commit()
     print(f"years corrected from OpenAlex: {n} of {len(rows)}")
+
+
+def epoch_years(db, args):
+    """Undo the epoch: a library year of 1970 that came from a 1970-01-01 date (gi_db.EPOCH_DATE, "no date"
+    in the index's metadata and in OpenAlex) becomes the index's real year for that DOI when it has one, else
+    empty. Fixes the library, the run's state.sqlite3 (--state) and the fulltext rows that copied the year.
+    --dry-run only prints."""
+    lib = sqlite3.connect(args.library)
+    st = sqlite3.connect(args.state) if args.state else None
+    changes = []
+    for pid, doi in lib.execute("select id, doi from papers where year = 1970").fetchall():
+        dates = [d for (d,) in db.execute("select pub_date from documents where lower(doi) = ?", ((doi or "").lower(),))]
+        years = sorted({gi_db.pub_year(d) for d in dates} - {None})
+        if any(str(d or "").startswith("1970") and not str(d).startswith(gi_db.EPOCH_DATE) for d in dates):
+            continue   # the index has a real 1970 date (not the epoch): leave it
+        new = int(years[0]) if years else None
+        changes.append((pid, doi, new))
+        print(f"  {doi}: 1970 -> {new or 'none'}  (index dates: {', '.join(map(str, dates)) or 'none'})")
+    if args.dry_run:
+        print(f"{args.library}: {len(changes)} epoch years (dry run, nothing written)")
+        return
+    for pid, doi, new in changes:
+        lib.execute("update papers set year = ? where id = ?", (new, pid))
+        if st:
+            st.execute("update papers set year = ? where lower(doi) = ? and year = 1970", (new, (doi or "").lower()))
+        for side in ("a", "b"):
+            db.execute(f"update fulltext set year_{side} = ? where library = ? and paper_{side} = ?",
+                       (str(new) if new else None, str(args.library), pid))
+    lib.commit()
+    if st:
+        st.commit()
+    db.commit()
+    print(f"{args.library}: {len(changes)} epoch years fixed")
 
 
 def surnames(lib, pid):
@@ -350,7 +388,7 @@ def measure(db, args):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("command", choices=["select", "paths", "load-text", "measure", "move"])
+    ap.add_argument("command", choices=["select", "paths", "load-text", "measure", "move", "epoch-years"])
     ap.add_argument("--run", required=True)
     ap.add_argument("--db", default=str(gi_db.DB_PATH))
     ap.add_argument("--tiers", nargs="+", type=int, default=[1, 2])
@@ -368,8 +406,13 @@ def main():
     ap.add_argument("--paragraphs-file", help="load-text: extract_papers.py's paragraphs.jsonl")
     ap.add_argument("--min-words", type=int, default=300)
     ap.add_argument("--fix-years", action="store_true")
+    ap.add_argument("--dry-run", action="store_true", help="epoch-years: print the changes, write nothing")
     args = ap.parse_args()
-    db = gi_db.connect(args.db)
+    if args.command == "epoch-years" and args.dry_run:   # a dry run doesn't touch gi.sqlite3 at all
+        db = sqlite3.connect(f"file:{args.db}?mode=ro", uri=True, timeout=300)
+        db.row_factory = sqlite3.Row
+    else:
+        db = gi_db.connect(args.db)
     if args.command == "select":
         select(db, args)
     elif args.command == "load-text":
@@ -380,6 +423,10 @@ def main():
         if not (args.state and args.library and args.dest):
             ap.error("move needs --state, --library and --dest")
         move(db, args)
+    elif args.command == "epoch-years":
+        if not args.library:
+            ap.error("epoch-years needs --library (and --state for the run's state.sqlite3)")
+        epoch_years(db, args)
     elif args.command == "paths":
         if not args.state:
             ap.error("paths needs --state")

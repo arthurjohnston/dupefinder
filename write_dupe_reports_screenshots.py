@@ -49,6 +49,7 @@ import base64
 import difflib
 import html
 import os
+import re
 import sqlite3
 import unicodedata
 from bisect import bisect_right
@@ -83,6 +84,7 @@ MAX_KGRAM_HITS = 40        # a k-gram occurring more often than this (running he
 # same") says nothing about where a run is, and would flood the offset vote
 REGION_GAP_PT = 150        # a vertical jump bigger than this within one column starts a new crop,
 # so a figure sitting between two matched paragraphs isn't rendered as part of the exhibit
+TITLE_BLOCK_MAX_PT = 150  # a text block taller than this isn't just a title (title_rect())
 MATCH_RGB = (1.0, 0.86, 0.15)
 DIFF_RGB = (1.0, 0.55, 0.55)
 
@@ -351,7 +353,8 @@ def title_rect(tokens, title, authors, page_rects, max_pages=3, context=24, auth
     Returns (page, text_rect, clip) or None when the title can't be placed (the catalogue title differs
     from the printed one, or there's no text layer) -- the caller then shows the top of page 1."""
     head = [t for t in tokens if t.page < max_pages]
-    needle = [n for n in (norm_token(w) for w in (title or "").split()) if n]
+    # markup tags out first: "<i>Staphylococcus" would otherwise match as "istaphylococcus"
+    needle = [n for n in (norm_token(w) for w in re.sub(r"<[^>]+>", " ", title or "").split()) if n]
     pairs = locate_sequence(needle, [t.norm for t in head], k=2)
     if not needle or len(pairs) < 0.6 * len(needle):
         return None
@@ -362,6 +365,16 @@ def title_rect(tokens, title, authors, page_rects, max_pages=3, context=24, auth
             for _, r in head[j].parts:
                 rect = _union(rect, r) if rect else tuple(r)
     blocks = {head[j].block for _, j in pairs if head[j].page == page}
+    # The whole of the title's own blocks: a catalogue title with words run together
+    # ("Antibiotic-resistanceStaphylococcus aureusisolated ...") only matches from the first intact word
+    # on, which put the clip's top edge partway down the printed title. Skipped for a block too tall to be
+    # a title (one that runs on into the abstract), which would swallow the page.
+    for blk in blocks:
+        rs = [r for t in head if t.page == page and t.block == blk for _, r in t.parts]
+        top, bottom = min(r[1] for r in rs), max(r[3] for r in rs)
+        if bottom - top <= TITLE_BLOCK_MAX_PT:
+            for r in rs:
+                rect = _union(rect, r)
     surnames = {n for a in authors[:12] for n in (norm_token(w) for w in a.replace(",", " ").split())
                 if len(n) >= 3}
     for t in head:
@@ -478,6 +491,7 @@ class ImageWriter:
         self.quality, self.embed, self.pixel_ratio = quality, embed, pixel_ratio
         self.bytes_written = 0
         self.count = 0
+        self.kept = None  # a list: every render is also appended as (name, jpeg bytes, width, height)
         if not embed:
             self.img_dir.mkdir(parents=True, exist_ok=True)
             for old in self.img_dir.glob("*.jpg"):
@@ -502,6 +516,8 @@ class ImageWriter:
         data = pix.tobytes("jpeg", jpg_quality=self.quality)
         self.bytes_written += len(data)
         self.count += 1
+        if self.kept is not None:
+            self.kept.append((name, data, pix.width, pix.height))
         if self.embed:
             src = "data:image/jpeg;base64," + base64.b64encode(data).decode("ascii")
         else:
@@ -768,6 +784,58 @@ def render_title_shots(conn, sides, writer, paper_id_1, paper_id_2, earlier_id,
 </section>"""
 
 
+def compose_shot(kept, labels, out_path, gap=24, pad=12, label_px=22, quality=DEFAULT_JPEG_QUALITY):
+    """One JPEG of one exhibit: each side's crops stacked top to bottom, the two sides next to each other
+    (left = `labels[0]`), a label over each. `kept` is ImageWriter.kept for that exhibit: names r01-a-N /
+    r01-b-N. Composed on a PyMuPDF page (the crops placed at their pixel size, then rendered 1:1), so it
+    needs nothing beyond what renders the crops. Returns the image's (width, height), or None if neither
+    side has an image."""
+    import pymupdf
+    cols = [[k for k in kept if k[0].split("-")[1] == tag] for tag in "ab"]
+    if not any(cols):
+        return None
+    col_w = [max((w for _, _, w, _ in c), default=0) for c in cols]
+    col_h = [sum(h for _, _, _, h in c) + pad * max(0, len(c) - 1) for c in cols]
+    width = pad * 2 + col_w[0] + col_w[1] + (gap if all(col_w) else 0)
+    height = pad * 2 + label_px + pad + max(col_h)
+    doc = pymupdf.open()
+    page = doc.new_page(width=width, height=height)
+    x = pad
+    for col, w, label in zip(cols, col_w, labels):
+        if not col:
+            continue
+        page.insert_text((x, pad + label_px * 0.8), label, fontsize=label_px * 0.75, fontname="helv")
+        y = pad * 2 + label_px
+        for _, data, iw, ih in col:
+            page.insert_image(pymupdf.Rect(x, y, x + iw, y + ih), stream=data)
+            y += ih + pad
+        x += w + gap
+    pix = page.get_pixmap(alpha=False)
+    Path(out_path).write_bytes(pix.tobytes("jpeg", jpg_quality=quality))
+    return pix.width, pix.height
+
+
+def longest_shot(conn, sides, writer, case_key, pid1, pid2, earlier_id, args, out_path):
+    """Render the longest run's two PDF crops (as an image exhibit would show them) and write them as one
+    JPEG to `out_path`, for attaching to a PubPeer comment. Returns compose_shot()'s size, or None."""
+    exhibits = ScreenshotExhibits(sides, writer, case_key, context_pt=args.context_pt, text_px=args.text_px)
+    writer.kept = []
+    try:
+        exhibits(conn, pid1, pid2, earlier_id, args.shingle_size, 1, mismatch_penalty=args.mismatch_penalty,
+                 x_drop=args.x_drop, gap_open=args.gap_open, gap_extend=args.gap_extend, max_gap=args.max_gap,
+                 drop_furniture=args.drop_furniture)
+        roles = ("EARLIER", "LATER") if earlier_id else ("PAPER A", "PAPER B")
+        order = (pid2, pid1) if earlier_id == pid2 else (pid1, pid2)
+        labels = []
+        for role, pid in zip(roles, order):
+            row = conn.execute("SELECT year, doi FROM papers WHERE id=?", (pid,)).fetchone()
+            facts = [str(x) for x in (row[0], row[1] and f"doi:{row[1]}") if x] if row else []
+            labels.append(role + (f" ({', '.join(facts)})" if facts else ""))
+        return compose_shot(writer.kept, labels, out_path)
+    finally:
+        writer.kept = None
+
+
 def parse_args():
     p = argparse.ArgumentParser(description="Write a two-paper overlap page with PDF screenshots "
                                             "as exhibits (see the module docstring).")
@@ -790,7 +858,7 @@ def parse_args():
     p.add_argument("--drop-furniture", action="store_true", help="as in write_dupe_reports_html.py")
     p.add_argument("--max-exhibits", "--max-shingle-exhibits", dest="max_exhibits", type=int,
                    default=DEFAULT_MAX_SHINGLE_EXHIBITS,
-                   help=f"cap on exhibits, keeping the longest runs (default {DEFAULT_MAX_SHINGLE_EXHIBITS}); "
+                   help=f"cap on exhibits, keeping the longest runs (default: no cap, every run is shown); "
                         f"the page says how many were left out")
     p.add_argument("--min-shingle-matches", type=int, default=DEFAULT_MIN_SHINGLE_MATCHES,
                    help="write nothing if the scan found fewer runs than this, as in write_dupe_reports_html.py")
@@ -812,6 +880,14 @@ def parse_args():
                    help="keep the title/byline images but show the shared passages as "
                         "write_dupe_reports_html.py's text diffs: a much smaller page (with "
                         "--embed-images, one file of a few hundred KB) for sharing, e.g. on PubPeer")
+    p.add_argument("--whole-document", action="store_true",
+                   help="with --text-exhibits: both papers end to end as one interleaved diff "
+                        "(write_dupe_reports_html.py --whole-document) instead of one exhibit per run")
+    p.add_argument("--no-title-shots", action="store_true",
+                   help="leave out the title/byline images (gi_pubpeer.py --publisher: the publisher has the articles)")
+    p.add_argument("--longest-shot", type=Path,
+                   help="also write the longest run's two PDF crops, side by side, as one JPEG to this path "
+                        "(for attaching to a PubPeer comment)")
     return p.parse_args()
 
 
@@ -846,8 +922,9 @@ def main():
             neutral=args.neutral, gap_open=args.gap_open, gap_extend=args.gap_extend,
             max_gap=args.max_gap, drop_furniture=args.drop_furniture,
             exhibit_renderer=None if args.text_exhibits else exhibits,
-            pre_exhibits_html=render_title_shots(conn, sides, writer, pid1, pid2, earlier_id,
-                                                 text_px=args.text_px),
+            whole_document=args.whole_document and args.text_exhibits,
+            pre_exhibits_html="" if args.no_title_shots else render_title_shots(
+                conn, sides, writer, pid1, pid2, earlier_id, text_px=args.text_px),
             extra_style=EXTRA_STYLE, generator="write_dupe_reports_screenshots.py",
         )
     except DegenerateGappedPair as exc:
@@ -860,6 +937,10 @@ def main():
     out_path = args.out_dir / filename
     # NULs from a PDF's extracted text are invalid in HTML (gi_write_pages.py strips them too)
     out_path.write_text(body.replace("\x00", ""), encoding="utf-8")
+    if args.longest_shot:
+        size = longest_shot(conn, sides, writer, case_key, pid1, pid2, earlier_id, args, args.longest_shot)
+        print(f"wrote {args.longest_shot}: {size[0]}x{size[1]}" if size else
+              "no longest-run image: neither PDF could be used")
     if args.text_exhibits:
         print(f"wrote {out_path}: {total} runs as text; {writer.count} title images, "
               f"{writer.bytes_written / 1e6:.1f} MB")

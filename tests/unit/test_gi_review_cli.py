@@ -96,6 +96,7 @@ class TestSave(unittest.TestCase):
         self.assertEqual(cli.parse_flags("m"), ["paper mill"])
         self.assertEqual(cli.parse_flags("M, m"), ["paper mill"])
         self.assertIsNone(cli.parse_flags("x"))
+        self.assertEqual(cli.parse_flags("e m"), ["not qualified", "paper mill"])
 
 
 if __name__ == "__main__":

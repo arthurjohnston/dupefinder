@@ -38,6 +38,20 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 DATA = HERE / "data"
 DB_PATH = DATA / "gi.sqlite3"
+# Some metadata sources give 1970-01-01, the Unix epoch, for an article with no date (the index's own
+# metadata for several Bangladesh/Nepal JOL journals, and OpenAlex). It means "not set", never 1970.
+EPOCH_DATE = "1970-01-01"
+
+
+def pub_year(date):
+    """The year of a metadata date ('2012-02-21', '2009-12', 2012), or None when it's missing or the epoch."""
+    s = str(date or "")
+    return None if not s or s.startswith(EPOCH_DATE) else s[:4]
+
+
+def year_sql(col):
+    """SQL for pub_year(): the first four characters of `col`, NULL for the epoch."""
+    return f"(case when {col} like '{EPOCH_DATE}%' then null else substr({col}, 1, 4) end)"
 ROOT = HERE.parent
 
 SCHEMA = """
@@ -101,8 +115,10 @@ create index if not exists idx_ac_pair on abstract_checks(pair_lo, pair_hi);
 drop view if exists lead_details;
 create view lead_details as
 select l.*, p.shared, p.pct_a, p.pct_b, p.sampled_a, p.sampled_b, p.containment,
-       da.title as title_a, substr(da.pub_date, 1, 4) as year_a, da.author as author_a, da.meta_source as source_a,
-       db.title as title_b, substr(db.pub_date, 1, 4) as year_b, db.author as author_b, db.meta_source as source_b
+       da.title as title_a, (case when da.pub_date like '1970-01-01%' then null else substr(da.pub_date, 1, 4) end) as year_a,
+       da.author as author_a, da.meta_source as source_a,
+       db.title as title_b, (case when db.pub_date like '1970-01-01%' then null else substr(db.pub_date, 1, 4) end) as year_b,
+       db.author as author_b, db.meta_source as source_b
 from leads l join pairs p using (pair_id)
 left join documents da on da.dkey = p.dkey_a left join documents db on db.dkey = p.dkey_b;
 
@@ -197,8 +213,8 @@ def import_documents(db, meta_db=DATA / "gi_meta.sqlite3", slices=None):
                then pub.author when a.title is not null then a.author end,
           case when m.doi is not null then m.journal when a.title is not null and a.doi is not null and pub.doi is not null
                then pub.journal end,
-          case when m.doi is not null then m.pub_date when a.title is not null and a.doi is not null and pub.doi is not null
-               then pub.pub_date end,
+          nullif(case when m.doi is not null then m.pub_date when a.title is not null and a.doi is not null and pub.doi is not null
+               then pub.pub_date end, '1970-01-01'),   -- the epoch means no date (EPOCH_DATE)
           case when m.doi is not null then m.doc_size when a.title is not null and a.doi is not null and pub.doi is not null
                then pub.doc_size when a.title is not null then a.doc_size end,
           case when m.doi is not null then 'slice' when a.title is not null and a.doi is not null and pub.doi is not null

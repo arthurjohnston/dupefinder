@@ -4,9 +4,11 @@ For each pair: prints the overlap figures and the agent's verdict, opens the com
 $GI_REVIEW_OPENER; --pdfs opens both PDFs too, or press p at the prompt), then asks
   1. what you think of it: decision and type, offered as one numbered list, most common first (counted over
      your reviews and the agent's);
-  2. severity (problem / unsure only; Enter keeps the agent's);
+  2. severity (problem / unsure only; Enter gives medium, the agent's is shown; high also writes the emails
+     to the earlier authors, their publisher and the later authors' institution, see below);
   3. the common reasons for that decision (pick any, by number);
-  4. for an unsure verdict, flags: m = you think both papers came from a paper mill;
+  4. for an unsure verdict, flags: m = you think both papers came from a paper mill, e = not qualified to
+     judge it (higher-level math, say);
   5. an optional note in your own words ('e' opens $EDITOR).
 It saves to `reviews` in gi.sqlite3 exactly like REVIEW_COMMANDS.md's gi_review (same vocabulary, same
 verdict column, replaces your earlier review of the pair), the flags to `review_flags` (replacing the
@@ -26,12 +28,16 @@ by the agent) and --ai-decision problem / no-problem / unsure / none keep only t
 A problem verdict on two papers from the same year is saved as unsure (the type kept as the best guess),
 with "can't tell which paper came first (both published YEAR)" as a reason.
 
-On the first menu, c is one key for "problem: cross-author copying, high, most of the paper copied".
+On the first menu, c is one key for "problem: cross-author copying, medium, most of the paper copied".
 
 PubPeer: each pair shows the PubPeer link of its later (copying) paper (both papers' when the order is
-unknown). Saving a problem verdict writes the pair's PubPeer page (gi_pubpeer.py: data/pubpeer_pages/, the
-title pages as images, the passages as text, and the findings as Markdown with a Copy button) and opens it;
-t at the prompt does the same for any pair.
+unknown). Saving a problem verdict, or agreeing (a) with the AI's problem verdict (even when the same year
+saves it as unsure), writes the pair's report files (gi_report_case.py: in data/dupe_publisher/GI-NN/ the PubPeer
+page, with the findings as Markdown and a Copy button, the attachment for the journal, and the draft email
+to the later article's journal; a high-severity verdict also gets the drafts to the later authors' institution,
+the earlier authors and the earlier publisher;
+the comparison page and index on the project site, example_output/general_index/) and opens the PubPeer page in a
+new tab, unless you answer s ("skip them") when asked; t at the prompt does the same for any pair.
 
 Usage: gi_review_cli.py [--gi 12,40] [--ai-type cross-author,data] [--ai-decision problem] [--include-reviewed] [--pdfs] [--no-open] [--pages-dir data/fulltext_pages_s16]
                         [--db data/gi.sqlite3]
@@ -92,7 +98,8 @@ REASONS = {
 SEVERITIES = {"l": "low", "m": "medium", "h": "high"}
 
 # the one-key verdict on the first menu: decision, type, severity, reason (skips the severity and reasons steps)
-QUICK = ("problem", "cross-author copying", "high", "most of the paper copied")
+QUICK = ("problem", "cross-author copying", "medium", "most of the paper copied")
+DEFAULT_SEVERITY = "medium"
 
 # --ai-type names -> the agent's type
 AI_TYPES = {"cross-author": "cross-author copying", "data": "data copying", "duplicate": "duplicate publication",
@@ -102,11 +109,13 @@ AI_TYPES = {"cross-author": "cross-author copying", "data": "data copying", "dup
 AI_DECISIONS = {"problem": "problem", "no-problem": "no problem", "unsure": "unsure", "none": None}
 
 # key -> flag stored in review_flags.flag
-FLAGS = {"m": ("paper mill", "both papers look like paper-mill output")}
+FLAGS = {"m": ("paper mill", "both papers look like paper-mill output"),
+         "e": ("not qualified", "outside my expertise, not qualified to judge it (e.g. higher-level math)")}
 
 FLAGS_DDL = """create table if not exists review_flags (   -- your extra judgements on a pair, beside the verdict
     pair_lo text, pair_hi text,
-    flag text,                    -- 'paper mill': you think both papers came from a paper mill
+    flag text,                    -- 'paper mill': you think both papers came from a paper mill;
+                                  -- 'not qualified': you can't judge the content (e.g. higher-level math)
     flagged_at text,
     primary key (pair_lo, pair_hi, flag)
 );"""
@@ -335,16 +344,15 @@ def edit_note(initial=""):
     return " ".join(text.split())
 
 
-def ask_severity_and_reasons(pair, decision, from_problem=False):
-    """from_problem: a problem verdict turned into unsure (same year), so the severity default is a problem's."""
+def ask_severity_and_reasons(pair, decision):
+    """Enter gives DEFAULT_SEVERITY, whatever the agent said: high also writes the emails to the victims and the
+    institution (gi_report_case.audiences()), so it has to be chosen."""
     severity = "none"
     if decision != "no problem":
-        as_problem = decision == "problem" or from_problem
-        default = pair["ai_severity"] if (pair["ai_decision"] == "problem" if as_problem else
-                                          decision == pair["ai_decision"]) and pair["ai_severity"] in \
-            SEVERITIES.values() else ("high" if as_problem else "low")
+        default = DEFAULT_SEVERITY
+        ai = f", AI: {pair['ai_severity']}" if pair["ai_severity"] in SEVERITIES.values() else ""
         while True:
-            ans = ask(f"Severity  l)ow  m)edium  h)igh  [Enter: {default}] ").lower()
+            ans = ask(f"Severity  l)ow  m)edium  h)igh  [Enter: {default}{ai}] ").lower()
             if not ans:
                 severity = default
                 break
@@ -365,8 +373,8 @@ def ask_severity_and_reasons(pair, decision, from_problem=False):
 
 
 def review_one(pair, choices, counts, saved_flags=()):
-    """Ask for one verdict. Returns (decision, type, severity, note, flags), or 'skip' / 'quit' / 'reopen' / 'pdfs' /
-    'pubpeer'."""
+    """Ask for one verdict. Returns (decision, type, severity, note, flags, agreed), agreed True when it was 'a'
+    (agree with the AI), or 'skip' / 'quit' / 'reopen' / 'pdfs' / 'pubpeer'."""
     ai = (pair["ai_decision"], pair["ai_type"]) if pair["ai_decision"] else None
     print("\nWhat do you think?")
     for k, (d, t, desc) in enumerate(choices, 1):
@@ -374,8 +382,8 @@ def review_one(pair, choices, counts, saved_flags=()):
         print(f"  {k:>2}  {d + ': ' + t:<34} {desc} [{counts.get((d, t), 0)}]{mark}")
     print(f"   c  {QUICK[0]}: {QUICK[1]}, {QUICK[2]}, {QUICK[3]} (skips severity and reasons)")
     keys = "   a  agree with the AI" if ai and ai[1] else ""
-    print(f"{keys}   o  reopen the page   p  open the PDFs   t  PubPeer page   s  skip   q  quit")
-    quick = False
+    print(f"{keys}   o  reopen the page   p  open the PDFs   t  report files   s  skip   q  quit")
+    quick = agreed = False
     while True:
         ans = ask("> ").lower()
         if ans == "c":
@@ -386,6 +394,7 @@ def review_one(pair, choices, counts, saved_flags=()):
             return {"q": "quit", "s": "skip", "o": "reopen", "p": "pdfs", "t": "pubpeer"}[ans]
         if ans == "a" and ai and ai[1]:
             decision, type_ = ai
+            agreed = True
             break
         if ans.isdigit() and 1 <= int(ans) <= len(choices):
             decision, type_ = choices[int(ans) - 1][:2]
@@ -402,7 +411,7 @@ def review_one(pair, choices, counts, saved_flags=()):
     if quick:
         reasons = reasons + ([same_year_reason(year)] if converted else [])
     else:
-        severity, reasons = ask_severity_and_reasons(pair, decision, from_problem=converted)
+        severity, reasons = ask_severity_and_reasons(pair, decision)
         if converted:
             reasons = [same_year_reason(year)] + reasons
 
@@ -425,21 +434,24 @@ def review_one(pair, choices, counts, saved_flags=()):
     text = ask("Note (optional; Enter to skip, 'e' for $EDITOR): ")
     if text.lower() == "e":
         text = edit_note()
-    return decision, type_, severity, build_note(reasons, text), flags
+    return decision, type_, severity, build_note(reasons, text), flags, agreed
 
 
-def pubpeer_page(db, pair, open_it=True):
-    """Write (and open) the pair's PubPeer page; a failure is printed, never fatal."""
-    import gi_pubpeer
-    print("  writing the PubPeer page ...")
+def pubpeer_page(db, pair, open_it=True, severity=None):
+    """Write the pair's report files (gi_report_case.py: the PubPeer page, the attachment and the draft emails in
+    data/dupe_publisher/GI-NN/, the page and index on the project site) and open the PubPeer page; a
+    failure is printed, never fatal. severity picks the emails (None: the saved review's, else medium)."""
+    import gi_report_case
+    print("  writing the report files ...")
     try:
-        path, _ = gi_pubpeer.write_page(db, pair)
+        paths = gi_report_case.write_report(db, pair, sender=gi_report_case.git_email(), severity=severity)
     except Exception as e:
-        print(f"  PubPeer page failed: {e}")
+        print(f"  report failed: {e}")
         return
-    print(f"  PubPeer page: {path}")
+    print(f"  report: {paths['pubpeer'].parent}/  (site page: {paths.get('site', 'none')})")
+    print("  emails: " + ", ".join(k.split(" ", 1)[1] for k in paths if k.startswith("email ")))
     if open_it:
-        open_files([path])
+        open_files([paths["pubpeer"]])
 
 
 def main():
@@ -503,7 +515,7 @@ def main():
             break
         if out == "skip":
             continue
-        decision, type_, severity, note, flags = out
+        decision, type_, severity, note, flags, agreed = out
         print(wrap("Save: ", f"{decision} / {type_} / {severity}" + (f" [{', '.join(flags)}]" if flags else "")
                    + (f" -- {note}" if note else "")))
         if ask("[Enter to save, n to discard (the pair stays unreviewed)] ").lower().startswith("n"):
@@ -512,8 +524,13 @@ def main():
         counts[(decision, type_)] = counts.get((decision, type_), 0) + 1
         saved += 1
         print(f"saved GI-{pair['page_number']:02d}")
-        if decision == "problem":
-            pubpeer_page(db, pair, not args.no_open)
+        # agreeing with the AI's problem call also counts when the same year turned it into unsure
+        if decision == "problem" or (agreed and pair["ai_decision"] == "problem"):
+            emails = "all four emails" if severity == "high" else "email to the journal"
+            if ask(f"[Enter for the report files (PubPeer page, {emails}, site page), s to skip them] ").lower().startswith("s"):
+                print("  report skipped (t on this pair later writes it)")
+            else:
+                pubpeer_page(db, pair, not args.no_open, severity=severity)
     print(f"\n{saved} review(s) saved")
     if saved:
         import gi_write_pages

@@ -237,6 +237,24 @@ class TestTitleRect(unittest.TestCase):
                                          [], self.page_rects))
         self.assertIsNone(wds.title_rect([], "Renal Outcomes", [], self.page_rects))
 
+    def test_run_together_title_still_clips_from_its_first_line(self):
+        # only "after Snakebite" matches (second line); the clip still starts at the title's first line
+        page, box, _ = wds.title_rect(self.toks, "RenalOutcomes after Snakebite", [], self.page_rects)
+        self.assertEqual((page, box[1]), (0, 120))
+
+    def test_title_markup_ignored(self):
+        _, box, _ = wds.title_rect(self.toks, "<i>Renal</i> Outcomes after Snakebite", [], self.page_rects)
+        self.assertEqual(box[1], 120)
+
+
+class TestTitleHtml(unittest.TestCase):
+    def test_markup(self):
+        from write_dupe_reports_html import title_html, title_text
+        self.assertEqual(title_html("Resistant <i>S. aureus</i> &amp; <b>x</b> a<b"),
+                         "Resistant <i>S. aureus</i> &amp; x a&lt;b")
+        self.assertEqual(title_html("<script>alert(1)</script>"), "alert(1)")
+        self.assertEqual(title_text("Resistant <i>S. aureus</i> &amp; milk"), "Resistant S. aureus & milk")
+
 
 class TestZoom(unittest.TestCase):
     """The zoom exists so both sides of an exhibit show text at the same size, whatever each
@@ -279,6 +297,36 @@ class TestPagesLabel(unittest.TestCase):
         self.assertEqual(wds._pages_label([2]), "PDF p. 3")
         self.assertEqual(wds._pages_label([4, 2, 3]), "PDF pp. 3&ndash;5")
         self.assertEqual(wds._pages_label([]), "")
+
+
+class TestComposeShot(unittest.TestCase):
+    """compose_shot(): each side's crops stacked, the two sides next to each other."""
+
+    @staticmethod
+    def jpeg(w, h):
+        import pymupdf
+        pix = pymupdf.Pixmap(pymupdf.csRGB, pymupdf.IRect(0, 0, w, h), False)
+        pix.clear_with(200)
+        return pix.tobytes("jpeg")
+
+    def test_layout(self):
+        import tempfile
+        kept = [("r01-a-1", self.jpeg(100, 40), 100, 40), ("r01-a-2", self.jpeg(80, 30), 80, 30),
+                ("r01-b-1", self.jpeg(120, 50), 120, 50)]
+        with tempfile.TemporaryDirectory() as d:
+            out = Path(d) / "x.jpg"
+            w, h = wds.compose_shot(kept, ("EARLIER", "LATER"), out, gap=10, pad=5, label_px=20)
+            self.assertTrue(out.read_bytes().startswith(b"\xff\xd8"))
+        self.assertEqual(w, 5 + 100 + 10 + 120 + 5)
+        self.assertEqual(h, 5 * 2 + 20 + 5 + (40 + 5 + 30))  # the taller (stacked) side
+
+    def test_one_side_and_none(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as d:
+            w, _ = wds.compose_shot([("r01-b-1", self.jpeg(60, 20), 60, 20)], ("A", "B"), Path(d) / "x.jpg",
+                                    gap=10, pad=5)
+            self.assertEqual(w, 5 + 60 + 5)
+            self.assertIsNone(wds.compose_shot([], ("A", "B"), Path(d) / "y.jpg"))
 
 
 if __name__ == "__main__":

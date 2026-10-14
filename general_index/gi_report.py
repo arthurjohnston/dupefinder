@@ -82,8 +82,8 @@ def _report_range(job):
         out_rows.append((p["pair_id"], a["doi"], b["doi"], *gi_db.pair_lo_hi(a["doi"], b["doi"]), reason, rel, bd))
         if want_tsv:
             tsv_rows.append([f"{p['containment']:.3f}", f"{p['pct_a']:.1f}", f"{p['pct_b']:.1f}", p["shared"], sa, sb,
-                             reason, rel, bd, a["doi"], (a["pub_date"] or "")[:4], a["title"], a["author"],
-                             b["doi"], (b["pub_date"] or "")[:4], b["title"], b["author"]])
+                             reason, rel, bd, a["doi"], gi_db.pub_year(a["pub_date"]) or "", a["title"], a["author"],
+                             b["doi"], gi_db.pub_year(b["pub_date"]) or "", b["title"], b["author"]])
     return out_rows, tsv_rows, reasons, kept_by
 
 

@@ -25,6 +25,8 @@ import os
 import re
 import unicodedata
 
+from gi_db import pub_year
+
 TITLE_MATCH = 0.82
 EQUAL_SIZE = 0.02
 SAME_ISSUE_BOTH = 50  # same venue and year, both sides' shares at least this: shared pages
@@ -203,7 +205,7 @@ def same_venue(a, b):
 
 
 def _year(m):
-    y = (m["pub_date"] or "")[:4]
+    y = pub_year(m["pub_date"]) or ""
     return int(y) if y.isdigit() else -99
 
 

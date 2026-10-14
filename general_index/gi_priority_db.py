@@ -87,8 +87,8 @@ def main():
 
     seen, n = set(), 0
     batch, classes = [], []
-    rows = src.execute("""select l.pair_id, l.pair_lo, l.pair_hi, l.doi_a, l.doi_b, l.tier, l.lead_rank, l.primary_pair,
-                                 substr(da.pub_date, 1, 4) year_a, substr(db.pub_date, 1, 4) year_b
+    rows = src.execute(f"""select l.pair_id, l.pair_lo, l.pair_hi, l.doi_a, l.doi_b, l.tier, l.lead_rank, l.primary_pair,
+                                 {gi_db.year_sql("da.pub_date")} year_a, {gi_db.year_sql("db.pub_date")} year_b
                           from leads l join pairs p using (pair_id)
                           left join documents da on da.dkey = p.dkey_a left join documents db on db.dkey = p.dkey_b
                           where l.tier is not null""")
