@@ -42,5 +42,27 @@
   "matched_words": 1053,
   "runs": 55,
   "longest": 50
+ },
+ "GI-493": {
+  "file": "GI-493.html",
+  "reported": "2026-10-15",
+  "earlier_known": true,
+  "later": {
+   "title": "Predictors of mental distress among undergraduate health science students of Hawassa University, College of Medicine and Health Sciences, Hawassa, SNNPR, Ethiopia: a cross-sectional study",
+   "year": 2020,
+   "doi": "10.1186/s12991-020-0258-y",
+   "pct": 27.0,
+   "journal": "Annals of General Psychiatry"
+  },
+  "earlier": {
+   "title": "Prevalence of Mental Distress and Associated Factors among Undergraduate Students of University of Gondar, Northwest Ethiopia: A Cross-Sectional Institutional Based Study",
+   "year": 2015,
+   "doi": "10.1371/journal.pone.0119464",
+   "pct": 21.0,
+   "journal": "PLOS ONE"
+  },
+  "matched_words": 748,
+  "runs": 46,
+  "longest": 107
  }
 }
