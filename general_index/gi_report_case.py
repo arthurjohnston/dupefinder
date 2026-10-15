@@ -34,13 +34,18 @@ Severity decides which emails are written: high (your review's severity in `revi
 all four; low, medium or no review (medium is the default) gets only the email to the later article's
 journal, alongside the PubPeer page. Drafts a case no longer gets (it was high, now isn't) are deleted.
 
-gi_review_cli.py runs this when you save (or agree with) a problem verdict, and on t at its prompt.
+gi_review_cli.py runs this when you save (or agree with) a problem verdict, and on t at its prompt, then
+opens the gi-cases agent and asks for the findings, the PubPeer link and whether to open the drafts.
 
 --open-drafts then opens the drafts written as Thunderbird compose windows (thunderbird -compose: subject, From,
 body from compose/GI-NN-email-*.txt, both attachments), so only the To line is left to fill in.
 
+The findings you ticked in data/dupe_publisher/GI-NN/findings.md (gi_case_findings.py; the gi-cases agent
+proposes them, gi_case_prep.py) go into the PubPeer Markdown and every email after the measured ones. Once
+your PubPeer post is up, --pubpeer-url URL saves it (pubpeer_url.txt) and the emails then link to it.
+
 Usage: gi_report_case.py GI_NUMBER [GI_NUMBER ...] [--problems] [--no-site] [--from ADDRESS] [--open-drafts]
-                         [--severity low|medium|high] [--db data/gi.sqlite3]
+                         [--severity low|medium|high] [--pubpeer-url URL] [--db data/gi.sqlite3]
        --problems: every pair you've reviewed as a problem
 """
 import argparse
@@ -55,6 +60,7 @@ import sys
 import time
 from pathlib import Path
 
+import gi_case_findings
 import gi_contact
 import gi_db
 import gi_pubpeer as pp
@@ -100,6 +106,8 @@ def write_report(db, f, report_dir=REPORT_DIR, site_dir=SITE_DIR, sender=None, s
     out = Path(report_dir) / case
     out.mkdir(parents=True, exist_ok=True)
     fd = pp.findings(db, f)
+    fd["extra"] = gi_case_findings.included(case, report_dir)   # your ticked findings.md items
+    fd["pubpeer_post"] = gi_case_findings.pubpeer_url(case, report_dir)
     contacts = gi_contact.load_contacts()
     for side in ("first", "second"):   # the journal names and contacts, for the emails and the index
         c = gi_contact.journal_contact(fd[side]["doi"], contacts)
@@ -295,8 +303,17 @@ def main():
     ap.add_argument("--severity", choices=("low", "medium", "high"),
                     help="which emails to write: high = all four, otherwise only the later journal's "
                          "(default: your review's severity, else medium)")
+    ap.add_argument("--pubpeer-url", help="your PubPeer post for the case (one GI number): saved to "
+                                          "pubpeer_url.txt, and the emails point to it")
     ap.add_argument("--db", default=str(gi_db.DB_PATH))
     args = ap.parse_args()
+    if args.pubpeer_url:
+        if len(args.gi) != 1 or args.problems:
+            ap.error("--pubpeer-url goes with exactly one GI number")
+        try:
+            gi_case_findings.save_pubpeer_url(f"GI-{args.gi[0]:02d}", args.pubpeer_url)
+        except ValueError as e:
+            ap.error(str(e))
     sender = args.sender or git_email()
     db = sqlite3.connect(f"file:{args.db}?mode=ro", uri=True, timeout=300)
     db.row_factory = sqlite3.Row

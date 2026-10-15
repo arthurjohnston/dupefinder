@@ -171,6 +171,7 @@ def email_parts(fd, attachment, shot_name=None, examples=EMAIL_PASSAGES, site_ur
         lines.append(f"- {which} article's reference list does not appear to cite {other}.")
     elif fd["later_cites_earlier"]:
         lines.append(f"- {which} article's reference list appears to cite {other}.")
+    lines += [f"- {t}" for t in fd.get("extra", ())]   # the findings you ticked (gi_case_findings.py)
     if whole_document(fd):
         what = "both articles end to end as one diff, the shared text highlighted and the differences marked"
     else:
@@ -190,6 +191,8 @@ def email_parts(fd, attachment, shot_name=None, examples=EMAIL_PASSAGES, site_ur
         lines += [f"{i}. {p['words']:,} words: \"{p['excerpt']}\"" for i, p in enumerate(shown, 1)]
     if site_url:
         lines += ["", f"The same comparison is online at {site_url}"]
+    if fd.get("pubpeer_post"):
+        lines += ["", f"I have also posted these findings on PubPeer: {fd['pubpeer_post']}"]
     lines += ["", request, "", "Thanks", name or git_config("user.name") or "[Your name]"]
     return subject, "\n".join(lines) + "\n"
 

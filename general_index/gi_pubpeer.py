@@ -152,6 +152,7 @@ def markdown(fd):
         lines.append(f"- This article's reference list does not appear to cite {other}.")
     elif fd["later_cites_earlier"]:
         lines.append(f"- This article's reference list appears to cite {other}.")
+    lines += [f"- {t}" for t in fd.get("extra", ())]   # the findings you ticked (gi_case_findings.py)
     if fd["passages"]:
         n = len(fd["passages"])
         lines.append("")

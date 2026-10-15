@@ -117,14 +117,30 @@ def stratified(db, args):
 
 
 def ranked(db, args):
+    """--band LO HI keeps leads whose larger side's index overlap is in [LO, HI), --shape one kind
+    (two-sided / one-sided), --no-shared-author only 'no shared author' pairs. For tier 4 these matter: in
+    the strat4_s16 sample its 70%+ two-sided pairs (the top of lead_rank) were nearly all index artifacts,
+    and real overlap came from the two-sided 15-50% band."""
     tiers = ",".join(str(int(t)) for t in args.tiers)
+    extra, params = "", []
+    if args.band:
+        extra += " and max(ld.pct_a, ld.pct_b) >= ? and max(ld.pct_a, ld.pct_b) < ?"
+        params += args.band
+    if args.shape:
+        extra += " and ld.shape = ?"
+        params.append(args.shape)
+    if args.no_shared_author:
+        extra += " and ld.authors = 'no shared author'"
+    # lead_rank is already in (tier, priority) order (gi_rank_leads.py sorts by both first), so --limit can
+    # stop the query early instead of reading every row of a big tier into memory
+    limit = f" limit {int(args.limit)}" if args.limit else ""
     rows = db.execute(f"""select ld.*, p.dkey_a, p.dkey_b from lead_details ld join pairs p using (pair_id)
-                          where ld.tier in ({tiers}) and ld.primary_pair = 1
+                          where ld.tier in ({tiers}) and ld.primary_pair = 1{extra}
                           and ld.abstracts not like 'partner unidentified%' and ld.abstracts != 'identical (artifact)'
                           and coalesce(ld.title_a, '') != '' and coalesce(ld.title_b, '') != ''
                           and not exists (select 1 from fulltext f where f.pair_lo = ld.pair_lo
                                           and f.pair_hi = ld.pair_hi)
-                          order by ld.lead_rank""").fetchall()
+                          order by ld.lead_rank{limit}""", params).fetchall()
     # Within a tier, by gi_preprints.pair_priority(): a later (copying) paper from a major publisher first (a
     # copy in a major journal is the most consequential finding), order unknown with one side major next; copying
     # BY a preprint/repository upload last, "possibly by" one just before -- those are most often the authors'
@@ -393,6 +409,10 @@ def main():
     ap.add_argument("--db", default=str(gi_db.DB_PATH))
     ap.add_argument("--tiers", nargs="+", type=int, default=[1, 2])
     ap.add_argument("--limit", type=int, default=0)
+    ap.add_argument("--band", nargs=2, type=float, metavar=("LO", "HI"),
+                    help="select (ranked): the larger side's index overlap in [LO, HI) %%")
+    ap.add_argument("--shape", choices=["two-sided", "one-sided"], help="select (ranked): only this lead shape")
+    ap.add_argument("--no-shared-author", action="store_true", help="select (ranked): only 'no shared author' leads")
     ap.add_argument("--per-band", type=int, default=0,
                     help="select: N random cross-author leads per index-overlap band instead of by rank")
     ap.add_argument("--strat-tiers", nargs="+", type=int,

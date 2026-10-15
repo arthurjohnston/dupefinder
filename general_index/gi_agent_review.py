@@ -76,6 +76,14 @@ TOP_RUNS = 6             # longest shared passages quoted
 RUN_WORDS = 120          # words quoted per passage
 CONTEXT_WORDS = 60       # words shown before each passage (third-party quotation check, item 11)
 PDF_PAGE1_CHARS = 3000   # first page of each PDF as pdftotext reads it (byline check, item 6)
+# --packet: the sizes above ("full", what Claude gets), or "slim" for a local model on the CPU, where every
+# prompt token costs ~25 ms (gpt-oss-20b, 2026-10-14): fewer and shorter passages, and a shorter opening
+# text, which mostly repeats pdf_page1 (the byline is read from pdf_page1 either way).
+PACKETS = {
+    "full": dict(opening=OPENING_WORDS, middle=150, runs=TOP_RUNS, run_words=RUN_WORDS, context=CONTEXT_WORDS,
+                 page1=PDF_PAGE1_CHARS),
+    "slim": dict(opening=150, middle=100, runs=4, run_words=80, context=40, page1=2500),
+}
 
 # The kind of overlap. The same vocabulary as reviews.type, the human column.
 TYPES = ["cross-author copying", "data copying", "duplicate publication", "text recycling", "same paper", "legitimate reuse",
@@ -336,7 +344,7 @@ def pdf_path(lib_path, lib, pid):
     return Path(path)
 
 
-def pdf_page1(lib_path, lib, pid):
+def pdf_page1(lib_path, lib, pid, chars=PDF_PAGE1_CHARS):
     """First page of the retrieved PDF itself, as pdftotext reads it: REVIEWING.md wants bylines read
     from the PDF, not from the database's author list."""
     path = pdf_path(lib_path, lib, pid)
@@ -347,7 +355,7 @@ def pdf_page1(lib_path, lib, pid):
                              text=True, timeout=60).stdout
     except (OSError, subprocess.TimeoutExpired):
         return None
-    return " ".join(out.split())[:PDF_PAGE1_CHARS]
+    return " ".join(out.split())[:chars]
 
 
 def citation_check(lib, cited_title, citing_pid):
@@ -369,12 +377,13 @@ def citation_check(lib, cited_title, citing_pid):
             "entries_dropped_as_running_header": len(header)}
 
 
-def packet(db, lib, f, lib_path=None):
+def packet(db, lib, f, lib_path=None, size="full"):
+    z = PACKETS[size]
     a, b = f["paper_a"], f["paper_b"]
     words_a, words_b = ctp.load_paper_words(lib, a), ctp.load_paper_words(lib, b)
     runs = ctp.find_shingle_matches(words_a, words_b, shingle_size=10, x_drop=3)
-    longest = sorted(runs, key=lambda r: -r.length)[:TOP_RUNS]
-    opening = lambda ws: " ".join(w for w, _ in ws[:OPENING_WORDS])
+    longest = sorted(runs, key=lambda r: -r.length)[:z["runs"]]
+    opening = lambda ws: " ".join(w for w, _ in ws[:z["opening"]])
     lead = db.execute("select tier, band, abstracts, abs_run, retraction_watch, doi_a, pct_a, pct_b, shared "
                       "from lead_details where pair_lo = ? and pair_hi = ? order by primary_pair desc limit 1",
                       (f["pair_lo"], f["pair_hi"])).fetchone()
@@ -388,14 +397,14 @@ def packet(db, lib, f, lib_path=None):
               "index_pct_of_A_sampled_5grams_in_B": pa, "index_pct_of_B_sampled_5grams_in_A": pb,
               "shared_sampled_5grams": lead["shared"]}
     ma, mb = paper_meta(lib, a), paper_meta(lib, b)
-    middle = lambda ws: " ".join(w for w, _ in ws[len(ws) * 2 // 5: len(ws) * 2 // 5 + 150])
-    before = lambda ws, i: " ".join(w for w, _ in ws[max(0, i - CONTEXT_WORDS):i])
+    middle = lambda ws: " ".join(w for w, _ in ws[len(ws) * 2 // 5: len(ws) * 2 // 5 + z["middle"]])
+    before = lambda ws, i: " ".join(w for w, _ in ws[max(0, i - z["context"]):i])
     quoted = lambda t: any(q in t for q in ('"', "\u201c", "\u201d"))
     return {
-        "paper_A": {**ma, "word_count": len(words_a), "pdf_page1": pdf_page1(lib_path, lib, a),
+        "paper_A": {**ma, "word_count": len(words_a), "pdf_page1": pdf_page1(lib_path, lib, a, z["page1"]),
                     "opening_text_extracted": opening(words_a), "middle_text_extracted": middle(words_a),
                     "citations_of_B": citation_check(lib, mb["title"], a)},
-        "paper_B": {**mb, "word_count": len(words_b), "pdf_page1": pdf_page1(lib_path, lib, b),
+        "paper_B": {**mb, "word_count": len(words_b), "pdf_page1": pdf_page1(lib_path, lib, b, z["page1"]),
                     "opening_text_extracted": opening(words_b), "middle_text_extracted": middle(words_b),
                     "citations_of_A": citation_check(lib, ma["title"], b)},
         "wrong_pdf_check": f["wrong_pdf"] or "none (rank_paper_pairs.wrong_pdf_side found no title swap)",
@@ -409,8 +418,8 @@ def packet(db, lib, f, lib_path=None):
         "general_index_evidence": gi,
         "longest_shared_passages": [
             {"passage": i, "words": r.length,
-             "text_in_A": " ".join(r.text_a.split()[:RUN_WORDS]),
-             "text_in_B": " ".join(r.text_b.split()[:RUN_WORDS]),
+             "text_in_A": " ".join(r.text_a.split()[:z["run_words"]]),
+             "text_in_B": " ".join(r.text_b.split()[:z["run_words"]]),
              "context_before_in_A": before(words_a, r.start_a), "context_before_in_B": before(words_b, r.start_b),
              "quotation_marks_in_passage_or_lead_in": quoted(before(words_a, r.start_a)[-80:] + r.text_a[:200]),
              "text_pattern": classify_dupes.classify_text(r.text_a),
@@ -448,6 +457,8 @@ def main():
     ap.add_argument("--backend", choices=["anthropic", "local"], default="anthropic",
                     help="local = a llama.cpp llama-server at --local-url (see run_local_model.sh); free")
     ap.add_argument("--local-url", default="http://127.0.0.1:8080")
+    ap.add_argument("--packet", choices=list(PACKETS), default="full",
+                    help="evidence packet size: full (default) or slim (a local model on the CPU; ~40%% fewer tokens)")
     ap.add_argument("--dry-run", action="store_true", help="build packets and count tokens only (no billable call)")
     ap.add_argument("--show-packet", action="store_true", help="print each evidence packet")
     ap.add_argument("--include-reviewed", action="store_true", help="also pairs a human has already reviewed")
@@ -624,7 +635,7 @@ def main():
             skipped_missing += 1
             print(f"  skipped, PDF not found ({missing[0]}): {f['doi_a']} | {f['doi_b']}")
             continue
-        pk = packet(db, lib, f, lib_path)
+        pk = packet(db, lib, f, lib_path, args.packet)
         req = request(args, pk)
         if args.show_packet:
             print(json.dumps(pk, indent=1, ensure_ascii=False))

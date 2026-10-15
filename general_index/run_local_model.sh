@@ -9,6 +9,12 @@
 #   Vulkan (GPU=1):   prompt 196 tok/s, generation 5.4 tok/s, and it pins the whole model (12 GB) in shared
 #                     memory, which pushed the machine into swap; expert weights on the CPU (-ncmoe) was worse.
 # A review packet is ~10k tokens in, ~1-3k out, so the CPU build is faster overall (~6 min a pair).
+# 2026-10-14 (llama-bench / llama-batched-bench, gpt-oss-20b, CPU, 6 threads):
+#   -fa on -ub 2048: prompt 48 tok/s vs 35 at the old defaults, generation unchanged (~12 tok/s idle).
+#   -np 2 (two pairs at once; run gi_agent_review.py with --workers 2): generation 13.8 tok/s in total vs 8.2
+#   for one stream (memory-bound, so the second stream is nearly free); a third adds nothing. NP=1 for one.
+#   Vulkan with -ngl 0 (prompt on the GPU, the rest on the CPU): prompt 104 tok/s but generation 0.1 tok/s.
+# Each slot gets -c / NP tokens: 24k each, room for the system prompt, a full packet and the reply.
 set -euo pipefail
 L=~/.local/llama.cpp
 case "${1:-gpt-oss-20b}" in
@@ -18,4 +24,5 @@ case "${1:-gpt-oss-20b}" in
 esac
 if [ "${GPU:-0}" = 1 ]; then BIN=$L/llama-b11541/llama-server; DEV="-ngl 99"; else BIN=$L/cpu/llama-b11541/llama-server; DEV="-t 6"; fi
 # -c: room for the system prompt + the largest packet (~15k tokens) + the reply
-exec $BIN -m "$M" --jinja -c 32768 -np 1 $DEV --host 127.0.0.1 --port 8080 ${EXTRA:-}
+NP=${NP:-2}
+exec $BIN -m "$M" --jinja -c $((24576 * NP)) -np $NP -fa on -ub 2048 -b 2048 $DEV --host 127.0.0.1 --port 8080 ${EXTRA:-}

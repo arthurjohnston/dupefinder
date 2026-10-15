@@ -101,3 +101,135 @@ class TestSave(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestReportFlow(unittest.TestCase):
+    """report_flow(): report files, agent, ticking, PubPeer link, drafts, all in the one tool."""
+
+    def setUp(self):
+        import tempfile
+        import gi_case_findings
+        self.tmp = tempfile.TemporaryDirectory()
+        self.dir = Path(self.tmp.name)
+        self.cf = gi_case_findings
+        self.saved = (gi_case_findings.REPORT_DIR, cli.ask, cli.pubpeer_page, cli.run_agent)
+        self.calls = []
+        for fn in ("findings_path", "pubpeer_url_path"):   # point the defaults at the temp dir
+            orig = getattr(gi_case_findings, fn)
+            setattr(self, "_" + fn, orig)
+            setattr(gi_case_findings, fn, lambda case, report_dir=None, o=orig: o(case, self.dir))
+        cli.pubpeer_page = lambda db, pair, open_it=True, severity=None: (
+            self.calls.append(("report", open_it)) or {"pubpeer": self.dir / "p.html",
+                                                       "email publisher": self.dir / "e.eml"})
+
+        def agent(case):
+            self.calls.append(("agent", case))
+            (self.dir / case).mkdir(exist_ok=True)
+            (self.dir / case / "findings.md").write_text("## Findings\n- [ ] One.\n- [ ] Two.\n")
+        cli.run_agent = agent
+
+    def tearDown(self):
+        gi_case_findings = self.cf
+        gi_case_findings.REPORT_DIR, cli.ask, cli.pubpeer_page, cli.run_agent = self.saved
+        gi_case_findings.findings_path = self._findings_path
+        gi_case_findings.pubpeer_url_path = self._pubpeer_url_path
+        self.tmp.cleanup()
+
+    def run_flow(self, answers):
+        it = iter(answers)
+        cli.ask = lambda prompt: next(it)
+        import gi_report_case
+        opened = []
+        orig = gi_report_case.open_drafts
+        gi_report_case.open_drafts = lambda emls: opened.append(emls)
+        try:
+            cli.report_flow(None, {"page_number": 7}, open_it=True)
+        finally:
+            gi_report_case.open_drafts = orig
+        return opened
+
+    def test_whole_flow(self):
+        opened = self.run_flow(["", "y", "n", "https://pubpeer.com/publications/X1", "o"])
+        self.assertEqual(self.calls, [("report", True), ("agent", "GI-07"), ("report", True), ("report", False)])
+        self.assertEqual(self.cf.included("GI-07", self.dir), ["One."])
+        self.assertEqual(self.cf.pubpeer_url("GI-07", self.dir), "https://pubpeer.com/publications/X1")
+        self.assertEqual(len(opened), 1)
+
+    def test_skip_everything(self):
+        opened = self.run_flow(["s", "", ""])
+        self.assertEqual(self.calls, [("report", True)])
+        self.assertEqual(opened, [])
+
+    def test_bad_url_not_saved(self):
+        self.run_flow(["s", "https://example.com/x", ""])
+        self.assertIsNone(self.cf.pubpeer_url("GI-07", self.dir))
+
+
+class TestAgentEnv(unittest.TestCase):
+    def test_api_keys_removed(self):
+        import os
+        os.environ["ANTHROPIC_API_KEY"] = "sk-test"
+        try:
+            self.assertNotIn("ANTHROPIC_API_KEY", cli.agent_env())
+        finally:
+            del os.environ["ANTHROPIC_API_KEY"]
+
+    def test_not_on_path(self):
+        self.assertIn("isn't on PATH", cli.subscription_problem("no-such-claude-binary"))
+
+
+class TestBackgroundPrep(unittest.TestCase):
+    """BackgroundPrep against a fake claude: started, finished with a result, or stopped."""
+
+    def setUp(self):
+        import tempfile
+        import gi_case_findings
+        self.tmp = tempfile.TemporaryDirectory()
+        self.dir = Path(self.tmp.name)
+        self.orig = gi_case_findings.case_dir
+        gi_case_findings.case_dir = lambda case, report_dir=None: self.dir / case
+        self.cf = gi_case_findings
+
+    def tearDown(self):
+        self.cf.case_dir = self.orig
+        self.tmp.cleanup()
+
+    def fake(self, body, method="claude.ai"):
+        p = self.dir / "claude"
+        p.write_text("#!/bin/sh\nif [ \"$1\" = auth ]; then echo '{\"loggedIn\": true, \"authMethod\": \"%s\"}'; "
+                     "exit 0; fi\n%s\n" % (method, body))
+        p.chmod(0o755)
+        return str(p)
+
+    def test_finishes(self):
+        prep = cli.BackgroundPrep("GI-07", claude=self.fake("echo '{\"type\": \"result\", \"result\": \"3 findings\", \"session_id\": \"s1\"}'"))
+        self.assertTrue(prep.start())
+        self.assertTrue(prep.wait())
+        self.assertEqual(prep.result()["session_id"], "s1")
+
+    def test_progress(self):
+        ev = ('{"type": "assistant", "message": {"content": [{"type": "tool_use", "name": "Read", '
+              '"input": {"file_path": "/x/a.pdf"}}]}}')
+        prep = cli.BackgroundPrep("GI-07", claude=self.fake("echo '%s'; sleep 30" % ev))
+        prep.start()
+        import time
+        for _ in range(50):
+            if prep.tool_calls():
+                break
+            time.sleep(0.1)
+        self.assertEqual(prep.tool_calls(), ["Read  /x/a.pdf"])
+        self.assertIn("working on GI-07", prep.status())
+        prep.stop()
+
+    def test_stop(self):
+        prep = cli.BackgroundPrep("GI-07", claude=self.fake("sleep 30"))
+        prep.start()
+        self.assertTrue(prep.running())
+        prep.stop()
+        self.assertFalse(prep.running())
+        self.assertEqual(prep.result(), {})
+
+    def test_api_login_refused(self):
+        prep = cli.BackgroundPrep("GI-07", claude=self.fake("echo ran", method="console"))
+        self.assertFalse(prep.start())
+        self.assertIsNone(prep.proc)

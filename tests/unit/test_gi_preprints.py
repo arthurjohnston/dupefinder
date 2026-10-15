@@ -242,7 +242,8 @@ class TestPairPriority(unittest.TestCase):
 
 class TestReviewQueueOrder(unittest.TestCase):
     """gi_review_cli.queue_key(): the agent's grouping leads; within a group major-publisher pairs first; any
-    preprint demotion goes last overall; overlap breaks ties."""
+    preprint demotion goes last overall; overlap breaks ties. order="overlap": overlap first in the
+    cross-author / data group, the publisher breaking ties."""
 
     def row(self, name, decision, typ, pct):
         return {"name": name, "ai_decision": decision, "ai_type": typ, "ft_pct_a": pct, "ft_pct_b": pct / 2}
@@ -253,6 +254,7 @@ class TestReviewQueueOrder(unittest.TestCase):
             (self.row("major no-problem", "no problem", "legitimate", 90), gp.PROMOTED),
             (self.row("ordinary cross-author", "problem", "cross-author copying", 40), gp.ORDINARY),
             (self.row("major cross-author", "problem", "cross-author copying", 30), gp.PROMOTED),
+            (self.row("ordinary cross-author tie", "problem", "cross-author copying", 30), gp.ORDINARY),
             (self.row("possibly-major cross-author", "problem", "data copying", 35), gp.POSSIBLY_PROMOTED),
             (self.row("ordinary other problem", "problem", "duplicate", 95), gp.ORDINARY),
             (self.row("major other problem", "problem", "recycling", 20), gp.PROMOTED),
@@ -263,6 +265,13 @@ class TestReviewQueueOrder(unittest.TestCase):
         ]
         got = [r["name"] for r, p in sorted(rows, key=lambda rp: cli.queue_key(*rp))]
         self.assertEqual(got, ["major cross-author", "possibly-major cross-author", "ordinary cross-author",
+                               "ordinary cross-author tie",
+                               "major other problem", "ordinary other problem",
+                               "major no-problem", "ordinary unreviewed big", "ordinary unreviewed small",
+                               "possibly preprint", "preprint cross-author"])
+        got = [r["name"] for r, p in sorted(rows, key=lambda rp: cli.queue_key(*rp, order="overlap"))]
+        self.assertEqual(got, ["ordinary cross-author", "possibly-major cross-author", "major cross-author",
+                               "ordinary cross-author tie",
                                "major other problem", "ordinary other problem",
                                "major no-problem", "ordinary unreviewed big", "ordinary unreviewed small",
                                "possibly preprint", "preprint cross-author"])

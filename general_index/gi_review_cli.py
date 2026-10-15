@@ -9,7 +9,14 @@ $GI_REVIEW_OPENER; --pdfs opens both PDFs too, or press p at the prompt), then a
   3. the common reasons for that decision (pick any, by number);
   4. for an unsure verdict, flags: m = you think both papers came from a paper mill, e = not qualified to
      judge it (higher-level math, say);
-  5. an optional note in your own words ('e' opens $EDITOR).
+  5. a note in your own words, only if you added ' n' to the verdict ('3 n', 'c n'; 'e' opens $EDITOR).
+f at step 1 (shown when there are any) goes through the gi-cases agent's proposed findings for any case
+(data/dupe_publisher/GI-NN/findings.md, gi_case_findings.py) and regenerates the report files of the cases
+you changed, so the findings you include are in the PubPeer Markdown and the emails.
+
+Three quick keys at step 1 skip 2-4: c = problem, cross-author copying, medium; e = unsure, flagged not
+qualified (outside your expertise, e.g. higher-level math); r = problem (the agent's type, else cross-author
+copying), flagged already retracted, and no report files.
 It saves to `reviews` in gi.sqlite3 exactly like REVIEW_COMMANDS.md's gi_review (same vocabulary, same
 verdict column, replaces your earlier review of the pair), the flags to `review_flags` (replacing the
 pair's earlier flags), and rewrites the pages' index.html on exit.
@@ -17,7 +24,8 @@ pair's earlier flags), and rewrites the pages' index.html on exit.
 Queue (default): pages you haven't reviewed, the agent's cross-author / data copying calls first, then the
 rest of its problem calls, then everything else; within each of those, pairs whose later (copying) paper is
 from a major publisher first (gi_preprints.pair_priority(), major_publisher_doi_prefixes.tsv; a known
-paper-mill venue inside one ranks ordinary), then larger overlap first. Pairs whose later (copying) paper is
+paper-mill venue inside one ranks ordinary), then larger overlap first. --order overlap puts larger overlap
+first within the first group instead, the publisher only breaking ties. Pairs whose later (copying) paper is
 a preprint or repository upload (gi_preprints.py, preprint_doi_prefixes.tsv) go after all of that, still
 in the queue, with a note: such uploads are most often the authors' own or an aggregator's copy, rarely a
 publishable finding. Pairs where the order is unknown and one side is a preprint go just before them. --gi 12,40 for specific pages
@@ -37,9 +45,24 @@ page, with the findings as Markdown and a Copy button, the attachment for the jo
 to the later article's journal; a high-severity verdict also gets the drafts to the later authors' institution,
 the earlier authors and the earlier publisher;
 the comparison page and index on the project site, example_output/general_index/) and opens the PubPeer page in a
-new tab, unless you answer s ("skip them") when asked; t at the prompt does the same for any pair.
+new tab, unless you answer s ("skip") when asked; t at the prompt does the same for any pair. Then, each step
+skippable (report_flow()):
+  - the site pages are pushed to main (gi_publish_site.py), so the emails' link works;
+  - the gi-cases agent's findings. The agent starts in the background (BackgroundPrep, headless claude -p)
+    as soon as a pair's page opens, unless --no-agent or the case already has a findings.md, so it reads
+    both PDFs while you do; it's stopped if you don't report the pair. It may only read, use read-only
+    sqlite3 / pdftotext and the web, and write in the case's folder and journal_contacts.json
+    (headless_tools()). Here the tool waits for it if it's still going (Ctrl-C skips it), prints its
+    summary, and d resumes its session in this terminal to talk it through (/exit comes back). Without a
+    background run, Enter opens the agent interactively instead. Either way it runs on your claude.ai
+    subscription only: nothing starts unless `claude auth status` says claude.ai, and API-key variables
+    are removed from its environment.
+  - you tick its findings (y include, n leave out, e edit, Enter pending, q stop) and the report files are
+    regenerated with the included ones in the PubPeer Markdown and the emails;
+  - you paste your PubPeer post's address once it's up, and the emails link to it;
+  - o opens the drafts as Thunderbird compose windows.
 
-Usage: gi_review_cli.py [--gi 12,40] [--ai-type cross-author,data] [--ai-decision problem] [--include-reviewed] [--pdfs] [--no-open] [--pages-dir data/fulltext_pages_s16]
+Usage: gi_review_cli.py [--gi 12,40] [--ai-type cross-author,data] [--ai-decision problem] [--include-reviewed] [--order publisher|overlap] [--pdfs] [--no-open] [--no-agent] [--pages-dir data/fulltext_pages_s16]
                         [--db data/gi.sqlite3]
 """
 import argparse
@@ -110,12 +133,14 @@ AI_DECISIONS = {"problem": "problem", "no-problem": "no problem", "unsure": "uns
 
 # key -> flag stored in review_flags.flag
 FLAGS = {"m": ("paper mill", "both papers look like paper-mill output"),
-         "e": ("not qualified", "outside my expertise, not qualified to judge it (e.g. higher-level math)")}
+         "e": ("not qualified", "outside my expertise, not qualified to judge it (e.g. higher-level math)"),
+         "r": ("already retracted", "the copying paper is already retracted, nothing to report")}
 
 FLAGS_DDL = """create table if not exists review_flags (   -- your extra judgements on a pair, beside the verdict
     pair_lo text, pair_hi text,
     flag text,                    -- 'paper mill': you think both papers came from a paper mill;
-                                  -- 'not qualified': you can't judge the content (e.g. higher-level math)
+                                  -- 'not qualified': you can't judge the content (e.g. higher-level math);
+                                  -- 'already retracted': real copying, but the copying paper is retracted
     flagged_at text,
     primary key (pair_lo, pair_hi, flag)
 );"""
@@ -206,7 +231,7 @@ order by case when r.ai_decision = 'problem' and r.ai_type in ('cross-author cop
 """
 
 
-def load_queue(db, gi=None, include_reviewed=False, ai_types=None, ai_decisions=None):
+def load_queue(db, gi=None, include_reviewed=False, ai_types=None, ai_decisions=None, order="publisher"):
     """ai_types / ai_decisions: lists of AI_TYPES / AI_DECISIONS names to keep ('none': the agent hasn't
     reviewed the pair). Ignored with gi."""
     rows = db.execute(QUEUE_SQL).fetchall()
@@ -224,7 +249,7 @@ def load_queue(db, gi=None, include_reviewed=False, ai_types=None, ai_decisions=
         rows = [r for r in rows if r["ai_decision"] in keep]
     rows = [r for r in rows if include_reviewed or r["human_decision"] is None]
     import gi_write_pages
-    return sorted(rows, key=lambda r: queue_key(r, gi_write_pages.priority_status(r)[0]))
+    return sorted(rows, key=lambda r: queue_key(r, gi_write_pages.priority_status(r)[0], order))
 
 
 def ai_group(r):
@@ -234,7 +259,7 @@ def ai_group(r):
     return 2
 
 
-def queue_key(r, priority):
+def queue_key(r, priority, order="publisher"):
     """The queue order. priority: gi_preprints.pair_priority()'s rank (< 0 promoted, > 0 demoted).
     1. demoted pairs (copying BY a preprint/repository upload, or possibly by one) go last overall, "possibly
        by" (1) before "later paper is a preprint" (2): such uploads are most often the authors' own or an
@@ -243,9 +268,14 @@ def queue_key(r, priority):
        problem" never jumps an ordinary pair it called cross-author copying;
     3. within an agent group, later paper from a major publisher (-2) first, order unknown with one side
        major (-1) next, then ordinary (0);
-    4. larger overlap first. Verdicts are untouched; only the order."""
+    4. larger overlap first.
+    order="overlap" swaps 3 and 4 in the first group (the agent's cross-author / data copying calls): larger
+    overlap first there, the publisher only breaking ties. Verdicts are untouched; only the order."""
     pct = max(r["ft_pct_a"] or 0, r["ft_pct_b"] or 0)
-    return (max(priority, 0), ai_group(r), min(priority, 0), -pct)
+    group = ai_group(r)
+    if order == "overlap" and group == 0:
+        return (max(priority, 0), group, -pct, min(priority, 0))
+    return (max(priority, 0), group, min(priority, 0), -pct)
 
 
 def paper_info(lib, pid):
@@ -372,26 +402,60 @@ def ask_severity_and_reasons(pair, decision):
     return severity, [reasons[i] for i in picked]
 
 
-def review_one(pair, choices, counts, saved_flags=()):
+def split_note_suffix(ans):
+    """'3 n' -> ('3', True), 'c' -> ('c', False): a trailing ' n' on a verdict asks for a note."""
+    head, sep, tail = ans.strip().rpartition(" ")
+    if sep and tail == "n":
+        return head.strip(), True
+    return ans.strip(), False
+
+
+def review_one(pair, choices, counts, saved_flags=(), prep=None):
     """Ask for one verdict. Returns (decision, type, severity, note, flags, agreed), agreed True when it was 'a'
-    (agree with the AI), or 'skip' / 'quit' / 'reopen' / 'pdfs' / 'pubpeer'."""
+    (agree with the AI), or 'skip' / 'quit' / 'reopen' / 'pdfs' / 'pubpeer' / 'findings'."""
     ai = (pair["ai_decision"], pair["ai_type"]) if pair["ai_decision"] else None
     print("\nWhat do you think?")
     for k, (d, t, desc) in enumerate(choices, 1):
         mark = "  <- AI" if ai == (d, t) else ""
         print(f"  {k:>2}  {d + ': ' + t:<34} {desc} [{counts.get((d, t), 0)}]{mark}")
     print(f"   c  {QUICK[0]}: {QUICK[1]}, {QUICK[2]}, {QUICK[3]} (skips severity and reasons)")
+    print(f"   e  unsure, flagged {FLAGS['e'][0]}: {FLAGS['e'][1]} (skips severity, reasons and flags)")
+    print(f"   r  problem, flagged {FLAGS['r'][0]}: {FLAGS['r'][1]} (skips severity, reasons, flags and report)")
     keys = "   a  agree with the AI" if ai and ai[1] else ""
-    print(f"{keys}   o  reopen the page   p  open the PDFs   t  report files   s  skip   q  quit")
+    print(f"{keys}   o  reopen the page   p  open the PDFs   t  report it   s  skip   q  quit")
+    import gi_case_findings
+    waiting = gi_case_findings.pending_cases()
+    if waiting:
+        print("   f  check the agent's findings: " + ", ".join(f"{c} ({n})" for c, n in waiting))
+    print("  add ' n' to a verdict to leave a note (e.g. '3 n', 'c n'); without it you aren't asked for one")
+    if prep and prep.status():
+        print("  " + prep.status())
     quick = agreed = False
+    preset = None  # the flag a quick key sets ('e' / 'r'); the flags step is then skipped
     while True:
-        ans = ask("> ").lower()
+        ans, want_note = split_note_suffix(ask("> ").lower())
+        if ans == "g" and prep:
+            calls = prep.tool_calls()
+            print("  " + prep.status())
+            for c in calls[-12:]:
+                print(f"    {c}")
+            continue
         if ans == "c":
             decision, type_, severity, reason = QUICK
             reasons, quick = [reason], True
             break
-        if ans in ("q", "s", "o", "p", "t"):
-            return {"q": "quit", "s": "skip", "o": "reopen", "p": "pdfs", "t": "pubpeer"}[ans]
+        if ans == "e":
+            decision, type_, severity, reasons = "unsure", "unsure", "none", []
+            quick, preset = True, FLAGS["e"][0]
+            break
+        if ans == "r":
+            # the agent's problem type if it has one: the copying is real, it's just already dealt with
+            type_ = ai[1] if ai and ai[0] == "problem" and ai[1] else QUICK[1]
+            decision, severity, reasons = "problem", DEFAULT_SEVERITY, []
+            quick, preset = True, FLAGS["r"][0]
+            break
+        if ans in ("q", "s", "o", "p", "t", "f"):
+            return {"q": "quit", "s": "skip", "o": "reopen", "p": "pdfs", "t": "pubpeer", "f": "findings"}[ans]
         if ans == "a" and ai and ai[1]:
             decision, type_ = ai
             agreed = True
@@ -399,11 +463,11 @@ def review_one(pair, choices, counts, saved_flags=()):
         if ans.isdigit() and 1 <= int(ans) <= len(choices):
             decision, type_ = choices[int(ans) - 1][:2]
             break
-        print("  a number from the list, or c / a / o / p / t / s / q")
+        print("  a number from the list, or c / e / r / a / o / p / t / g / s / q")
 
     converted = False
     year = same_year(pair)
-    if decision == "problem" and year:
+    if decision == "problem" and year and not preset:  # a retraction already settled who copied
         # same publication year: which paper copied can't be told from the dates, so it's recorded as unsure,
         # the type kept as the best guess
         print(f"  Both papers are from {year}: saving as unsure ({type_} as the best guess) for that reason.")
@@ -415,10 +479,10 @@ def review_one(pair, choices, counts, saved_flags=()):
         if converted:
             reasons = [same_year_reason(year)] + reasons
 
-    flags = list(saved_flags)
+    flags = sorted(set(saved_flags) | {preset}) if preset else list(saved_flags)
     keys = "  ".join(f"{k}) {desc}" for k, (_, desc) in FLAGS.items())
     now = f"; saved: {', '.join(saved_flags)}, '-' clears" if saved_flags else ""
-    while decision == "unsure":  # the paper-mill question only comes with an unsure verdict
+    while decision == "unsure" and not preset:  # the paper-mill question only comes with an unsure verdict
         ans = ask(f"Flags  {keys}  [Enter: {'keep' if saved_flags else 'none'}{now}] ")
         if not ans:
             flags = list(saved_flags)
@@ -431,7 +495,7 @@ def review_one(pair, choices, counts, saved_flags=()):
             break
         print(f"  one of: {', '.join(FLAGS)}")
 
-    text = ask("Note (optional; Enter to skip, 'e' for $EDITOR): ")
+    text = ask("Note ('e' for $EDITOR): ") if want_note else ""
     if text.lower() == "e":
         text = edit_note()
     return decision, type_, severity, build_note(reasons, text), flags, agreed
@@ -447,11 +511,247 @@ def pubpeer_page(db, pair, open_it=True, severity=None):
         paths = gi_report_case.write_report(db, pair, sender=gi_report_case.git_email(), severity=severity)
     except Exception as e:
         print(f"  report failed: {e}")
-        return
+        return None
     print(f"  report: {paths['pubpeer'].parent}/  (site page: {paths.get('site', 'none')})")
     print("  emails: " + ", ".join(k.split(" ", 1)[1] for k in paths if k.startswith("email ")))
     if open_it:
         open_files([paths["pubpeer"]])
+    return paths
+
+
+# environment variables that would make claude bill an API account instead of your claude.ai subscription
+API_ENV = ("ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN", "ANTHROPIC_BASE_URL", "CLAUDE_CODE_USE_BEDROCK",
+           "CLAUDE_CODE_USE_VERTEX", "CLAUDE_CODE_USE_FOUNDRY")
+AGENT_PROMPT = ("Prep {case}: follow \"Prep a case\" in your instructions. I'm running you from gi_review_cli.py: "
+                "when we're done talking it through I'll /exit, and the review tool then has me tick the findings "
+                "you wrote to findings.md.")
+
+
+def agent_env():
+    return {k: v for k, v in os.environ.items() if k not in API_ENV}
+
+
+def subscription_problem(claude="claude"):
+    """None when Claude Code is logged in with a claude.ai subscription, else why the agent won't start."""
+    import json
+    import shutil
+    if not shutil.which(claude):
+        return "claude (Claude Code) isn't on PATH"
+    try:
+        st = json.loads(subprocess.run([claude, "auth", "status"], capture_output=True, text=True,
+                                       env=agent_env(), timeout=60).stdout)
+    except (subprocess.TimeoutExpired, ValueError) as e:
+        return f"couldn't read `claude auth status`: {e}"
+    if not st.get("loggedIn"):
+        return "Claude Code isn't logged in"
+    if st.get("authMethod") != "claude.ai":
+        return f"Claude Code is using {st.get('authMethod')!r}, not your claude.ai subscription"
+    return None
+
+
+def run_agent(case, claude="claude"):
+    """The gi-cases agent as an ordinary interactive Claude Code session in this terminal, started on the case
+    (you approve its actions as usual; /exit returns here). Always your subscription, never an API key."""
+    why = subscription_problem(claude)
+    if why:
+        print(f"  agent not started: {why}")
+        return False
+    print(f"  opening the gi-cases agent on {case} (/exit comes back here) ...")
+    subprocess.run([claude, "--agent", "gi-cases", AGENT_PROMPT.format(case=case)],
+                   cwd=Path(__file__).resolve().parent, env=agent_env())
+    return True
+
+
+HEADLESS_PROMPT = ("Prep {case}: follow \"Prep a case\" in your instructions. This is a background run while the "
+                   "user looks at the comparison page: nobody can answer questions or approve anything, so put "
+                   "anything uncertain under ## Questions in findings.md. Afterwards the user may resume this "
+                   "session to talk it through. In this run only these tools work: Read, Glob, Grep, web search "
+                   "and fetch, `sqlite3 -readonly` (not python) for the databases, pdftotext and pdfinfo, and "
+                   "writing in the case's folder and journal_contacts.json. Don't run gi_report_case.py: the "
+                   "review tool writes the report files when the user confirms. End with one line saying what "
+                   "you concluded, e.g. '4 findings proposed, contacts found' or 'not a case: already "
+                   "retracted'.")
+
+
+def headless_tools(case):
+    """What the background agent may do; anything else is refused (--permission-mode dontAsk): read files,
+    read-only sqlite3, pdftotext / pdfinfo, web search and fetch, and write only in the case's folder and the
+    journal contacts file. Nothing that sends, posts, commits or writes to gi.sqlite3."""
+    import gi_case_findings
+    d = gi_case_findings.case_dir(case).resolve()
+    contacts = (gi_db.DATA / "journal_contacts.json").resolve()
+    return ["Read", "Glob", "Grep", "WebSearch", "WebFetch", "Bash(sqlite3 -readonly:*)", "Bash(pdftotext:*)",
+            "Bash(pdfinfo:*)", f"Edit(/{d}/**)", f"Write(/{d}/**)", f"Edit(/{contacts})"]
+
+
+class BackgroundPrep:
+    """The gi-cases agent analysing a case headless (claude -p) while you look at its comparison page, so its
+    findings are ready when you've decided. Your claude.ai subscription only (subscription_problem()). Output:
+    GI-NN/prep-stream.jsonl (claude's stream-json events as they happen: its tool calls, then the result with
+    the session id to resume) and GI-NN/prep.log (stderr)."""
+
+    def __init__(self, case, claude="claude"):
+        import gi_case_findings
+        self.case, self.claude, self.proc = case, claude, None
+        self.dir = gi_case_findings.case_dir(case)
+        self.out = self.dir / "prep-stream.jsonl"
+        self.started = None
+
+    def start(self):
+        why = subscription_problem(self.claude)
+        if why:
+            print(f"  agent prep not started: {why}")
+            return False
+        self.dir.mkdir(parents=True, exist_ok=True)
+        cmd = [self.claude, "-p", HEADLESS_PROMPT.format(case=self.case), "--agent", "gi-cases",
+               "--output-format", "stream-json", "--verbose", "--permission-mode", "dontAsk",
+               "--allowedTools", *headless_tools(self.case)]
+        with open(self.out, "w") as out, open(self.dir / "prep.log", "a") as log:
+            self.proc = subprocess.Popen(cmd, cwd=Path(__file__).resolve().parent, env=agent_env(),
+                                         stdin=subprocess.DEVNULL, stdout=out, stderr=log, start_new_session=True)
+        import time
+        self.started = time.time()
+        print(f"  agent prep started on {self.case} in the background (g at the menu shows what it's doing)")
+        return True
+
+    def running(self):
+        return self.proc is not None and self.proc.poll() is None
+
+    def stop(self):
+        """Stop it (a pair you didn't call a problem doesn't need it)."""
+        if self.running():
+            import signal
+            os.killpg(self.proc.pid, signal.SIGTERM)
+            self.proc.wait()
+
+    def wait(self):
+        """Wait for it to finish; Ctrl-C stops waiting (and the agent). True when it finished."""
+        if self.proc is None:
+            return False
+        if self.running():
+            print("  waiting for the agent's analysis to finish (Ctrl-C to skip it) ...")
+            try:
+                self.proc.wait()
+            except KeyboardInterrupt:
+                self.stop()
+                print("  agent stopped")
+                return False
+        return True
+
+    def events(self):
+        import json
+        try:
+            lines = self.out.read_text(encoding="utf-8", errors="replace").splitlines()
+        except OSError:
+            return []
+        out = []
+        for line in lines:
+            try:
+                out.append(json.loads(line))
+            except ValueError:
+                pass   # the line being written
+        return out
+
+    def result(self):
+        """claude's final result event ({} until there is one)."""
+        res = [e for e in self.events() if e.get("type") == "result"]
+        return res[-1] if res else {}
+
+    def tool_calls(self):
+        """['Read  .../a.pdf', 'WebSearch  ...', ...]: what it has done so far, in order."""
+        calls = []
+        for e in self.events():
+            if e.get("type") != "assistant":
+                continue
+            for c in (e.get("message") or {}).get("content") or []:
+                if c.get("type") == "tool_use":
+                    inp = c.get("input") or {}
+                    what = next((str(inp[k]) for k in ("file_path", "command", "query", "url", "pattern")
+                                 if inp.get(k)), "")
+                    calls.append(f"{c.get('name')}  {' '.join(what.split())[:100]}")
+        return calls
+
+    def status(self):
+        """One line for the menu."""
+        import time
+        if self.proc is None:
+            return ""
+        mins = int((time.time() - (self.started or time.time())) // 60)
+        n = len(self.tool_calls())
+        if self.running():
+            return f"agent: working on {self.case} ({mins} min, {n} step(s) so far; g shows them)"
+        res = self.result()
+        if res and not res.get("is_error"):
+            said = (res.get("result") or "").strip().splitlines()
+            took = round((res.get("duration_ms") or 0) / 60000, 1)
+            return f"agent: finished {self.case} in {took} min: {said[-1][:160] if said else 'no summary'}"
+        return f"agent: {self.case} stopped without a result (see {self.dir / 'prep.log'})"
+
+
+def publish_site(case):
+    """Push the site pages to main (gi_publish_site.py), printing what happened; never fatal."""
+    import gi_publish_site
+    try:
+        sha = gi_publish_site.publish([case])
+        print(f"  site: pushed {sha} to main" if sha else "  site: main already has it")
+    except Exception as e:
+        print(f"  site push failed: {getattr(e, 'stderr', '') or e}")
+
+
+def report_flow(db, pair, open_it=True, severity=None, prep=None):
+    """Everything for reporting the pair, in order: the report files (PubPeer page opened), the gi-cases agent
+    to prep it, ticking its findings (the files regenerated if you change any), your PubPeer post's address,
+    and the drafts opened in Thunderbird. Every step but the first can be skipped with Enter / s."""
+    import gi_case_findings
+    import gi_report_case
+    paths = pubpeer_page(db, pair, open_it, severity=severity)
+    if not paths:
+        return
+    case = f"GI-{pair['page_number']:02d}"
+    if paths.get("site"):
+        publish_site(case)
+    if prep and prep.wait():
+        res = prep.result()
+        if res.get("is_error") or not res:
+            print(f"  agent prep failed: {(res.get('result') or 'no result, see ' + str(prep.dir / 'prep.log'))[:300]}")
+        else:
+            print(wrap("  agent: ", " ".join((res.get("result") or "").split())[:600]))
+        sid = res.get("session_id")
+        if sid and not ask("[Enter: go to its findings, d: discuss them with the agent first] ").lower().startswith("d"):
+            sid = None
+        if sid:
+            print("  resuming the agent's session (/exit comes back here) ...")
+            subprocess.run([prep.claude, "--resume", sid, "--agent", "gi-cases"],
+                           cwd=Path(__file__).resolve().parent, env=agent_env())
+    elif not ask(f"[Enter: open the agent to prep {case} (findings, contacts), s: skip] ").lower().startswith("s"):
+        run_agent(case)
+    if gi_case_findings.counts(case)["pending"] and gi_case_findings.review(case, ask=ask):
+        paths = pubpeer_page(db, pair, open_it, severity=severity) or paths   # the Markdown now has them
+    have = gi_case_findings.pubpeer_url(case)
+    url = ask(f"PubPeer post's address once it's up [Enter: {'keep ' + have if have else 'later (t asks again)'}] ")
+    if url:
+        try:
+            gi_case_findings.save_pubpeer_url(case, url)
+            paths = pubpeer_page(db, pair, False, severity=severity) or paths   # the emails now link it
+        except ValueError as e:
+            print(f"  {e}: not saved")
+    emls = [p for k, p in paths.items() if k.startswith("email ")]
+    if emls and ask("[o: open the drafts in Thunderbird, Enter: not now] ").lower().startswith("o"):
+        try:
+            gi_report_case.open_drafts(emls)
+        except Exception as e:
+            print(f"  couldn't open the drafts: {e}")
+
+
+def check_findings(db, open_it=True):
+    """Go through every case's pending findings.md items (gi_case_findings.review()), regenerating the report
+    files of each case you changed."""
+    import gi_case_findings
+    for case, _ in gi_case_findings.pending_cases():
+        if gi_case_findings.review(case, ask=ask):
+            f = db.execute("select * from fulltext where page_number = ?", (int(case[3:]),)).fetchone()
+            if f is not None:
+                pubpeer_page(db, f, open_it)
 
 
 def main():
@@ -467,6 +767,11 @@ def main():
     ap.add_argument("--pdfs", action="store_true", help="also open both PDFs for every pair (p at the prompt "
                                                         "opens them for one pair)")
     ap.add_argument("--no-open", action="store_true", help="don't open anything automatically")
+    ap.add_argument("--order", choices=("publisher", "overlap"), default="publisher",
+                    help="within the agent's cross-author / data copying group: major publisher first, then "
+                         "overlap (default), or overlap first, then publisher")
+    ap.add_argument("--no-agent", action="store_true", help="don't start the agent's analysis in the background "
+                                                             "when a pair opens")
     args = ap.parse_args()
     pages_dir = Path(args.pages_dir)
 
@@ -478,7 +783,7 @@ def main():
         bad = [v for v in value if v not in known]
         if bad:
             ap.error(f"{name}: unknown {', '.join(bad)} (use: {', '.join(known)})")
-    queue = load_queue(db, args.gi, args.include_reviewed, args.ai_type, args.ai_decision)
+    queue = load_queue(db, args.gi, args.include_reviewed, args.ai_type, args.ai_decision, args.order)
     if not queue:
         print("nothing to review")
         return
@@ -502,15 +807,31 @@ def main():
             print(f"  PDF {side}: {pdf}")
         if not args.no_open:
             open_files(([page] if page else []) + (pdfs if args.pdfs else []))
+        import gi_case_findings
+        case = f"GI-{pair['page_number']:02d}"
+        prep = None
+        if not args.no_agent and not gi_case_findings.findings_path(case).exists():
+            prep = BackgroundPrep(case)
+            if not prep.start():
+                prep = None
         while True:
-            out = review_one(pair, choices, counts, saved_flags)
+            out = review_one(pair, choices, counts, saved_flags, prep)
             if out in ("reopen", "pdfs"):
                 open_files(pdfs if out == "pdfs" else [page] if page else [])
                 continue
             if out == "pubpeer":
-                pubpeer_page(db, pair, not args.no_open)
+                report_flow(db, pair, not args.no_open, prep=prep)
+                prep = None
+                continue
+            if out == "findings":
+                check_findings(db, not args.no_open)
                 continue
             break
+        reporting = out not in ("quit", "skip") and FLAGS["r"][0] not in out[4] and (
+            out[0] == "problem" or (out[5] and pair["ai_decision"] == "problem"))
+        if prep and not reporting:   # not going to be reported: the analysis isn't needed
+            prep.stop()
+            prep = None
         if out == "quit":
             break
         if out == "skip":
@@ -519,18 +840,25 @@ def main():
         print(wrap("Save: ", f"{decision} / {type_} / {severity}" + (f" [{', '.join(flags)}]" if flags else "")
                    + (f" -- {note}" if note else "")))
         if ask("[Enter to save, n to discard (the pair stays unreviewed)] ").lower().startswith("n"):
+            if prep:
+                prep.stop()
             continue
         save_review(db, pair, decision, type_, severity, note, flags)
         counts[(decision, type_)] = counts.get((decision, type_), 0) + 1
         saved += 1
         print(f"saved GI-{pair['page_number']:02d}")
         # agreeing with the AI's problem call also counts when the same year turned it into unsure
-        if decision == "problem" or (agreed and pair["ai_decision"] == "problem"):
+        if FLAGS["r"][0] in flags:
+            print("  already retracted: no report files (t on this pair still writes them)")
+        elif decision == "problem" or (agreed and pair["ai_decision"] == "problem"):
             emails = "all four emails" if severity == "high" else "email to the journal"
-            if ask(f"[Enter for the report files (PubPeer page, {emails}, site page), s to skip them] ").lower().startswith("s"):
-                print("  report skipped (t on this pair later writes it)")
+            if ask(f"[Enter to report it (PubPeer page, {emails}, site page pushed, then the agent's findings), "
+                   f"s to skip] ").lower().startswith("s"):
+                print("  report skipped (t on this pair later does it)")
+                if prep:
+                    prep.stop()
             else:
-                pubpeer_page(db, pair, not args.no_open, severity=severity)
+                report_flow(db, pair, not args.no_open, severity=severity, prep=prep)
     print(f"\n{saved} review(s) saved")
     if saved:
         import gi_write_pages
