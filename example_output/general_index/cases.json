@@ -87,5 +87,28 @@
   "matched_words": 984,
   "runs": 51,
   "longest": 85
+ },
+ "GI-701": {
+  "file": "GI-701.html",
+  "reported": null,
+  "published": "2026-10-16",
+  "earlier_known": true,
+  "later": {
+   "title": "Dextrocardia and asplenia in situs inversus totalis in a baby: a case report",
+   "year": 2014,
+   "doi": "10.1186/1752-1947-8-408",
+   "pct": 20.0,
+   "journal": "Journal of Medical Case Reports"
+  },
+  "earlier": {
+   "title": "Dextrocardia With Situs Inversus Totalis in an Adult Nigerian: a Case Report",
+   "year": 2012,
+   "doi": "10.5923/j.ajmms.20120203.06",
+   "pct": 20.0,
+   "journal": "American Journal of Medicine and Medical Sciences"
+  },
+  "matched_words": 304,
+  "runs": 13,
+  "longest": 45
  }
 }
