@@ -110,5 +110,28 @@
   "matched_words": 304,
   "runs": 13,
   "longest": 45
+ },
+ "GI-46": {
+  "file": "GI-46.html",
+  "reported": null,
+  "published": "2026-10-16",
+  "earlier_known": true,
+  "later": {
+   "title": "Successful balloon valvuloplasty of a subpulmonic membrane associated with cor triatriatum dexter: a case report",
+   "year": 2019,
+   "doi": "10.1186/s13256-019-2218-1",
+   "pct": 14.0,
+   "journal": "Journal of Medical Case Reports"
+  },
+  "earlier": {
+   "title": "Discrete subpulmonic membrane in association with isolated severe pulmonary valvar stenosis",
+   "year": 2013,
+   "doi": "10.1186/1471-2261-13-43",
+   "pct": 19.0,
+   "journal": "BMC Cardiovascular Disorders"
+  },
+  "matched_words": 334,
+  "runs": 19,
+  "longest": 43
  }
 }
