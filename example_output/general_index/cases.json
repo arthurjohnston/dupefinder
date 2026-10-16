@@ -65,27 +65,27 @@
   "runs": 46,
   "longest": 107
  },
- "GI-474": {
-  "file": "GI-474.html",
+ "GI-436": {
+  "file": "GI-436.html",
   "reported": null,
   "published": "2026-10-16",
   "earlier_known": true,
   "later": {
-   "title": "Ontology integration to identify protein complex in protein interaction networks",
-   "year": 2011,
-   "doi": "10.1186/1477-5956-9-s1-s7",
+   "title": "Validation of the Spanish Version of the ICECAP-O for Nursing Home Residents with Dementia",
+   "year": 2017,
+   "doi": "10.1371/journal.pone.0169354",
    "pct": 21.0,
-   "journal": "Proteome Science"
+   "journal": "PLOS ONE"
   },
   "earlier": {
-   "title": "Modifying the DPClus algorithm for identifying protein complexes based on new topological structures",
-   "year": 2008,
-   "doi": "10.1186/1471-2105-9-398",
-   "pct": 9.0,
-   "journal": "BMC Bioinformatics"
+   "title": "Quality of Life of Nursing Home Residents with Dementia: Validation of the German Version of the ICECAP-O",
+   "year": 2014,
+   "doi": "10.1371/journal.pone.0092016",
+   "pct": 17.0,
+   "journal": "PLoS ONE"
   },
-  "matched_words": 824,
-  "runs": 37,
-  "longest": 71
+  "matched_words": 984,
+  "runs": 51,
+  "longest": 85
  }
 }
