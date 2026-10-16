@@ -64,5 +64,28 @@
   "matched_words": 748,
   "runs": 46,
   "longest": 107
+ },
+ "GI-474": {
+  "file": "GI-474.html",
+  "reported": null,
+  "published": "2026-10-16",
+  "earlier_known": true,
+  "later": {
+   "title": "Ontology integration to identify protein complex in protein interaction networks",
+   "year": 2011,
+   "doi": "10.1186/1477-5956-9-s1-s7",
+   "pct": 21.0,
+   "journal": "Proteome Science"
+  },
+  "earlier": {
+   "title": "Modifying the DPClus algorithm for identifying protein complexes based on new topological structures",
+   "year": 2008,
+   "doi": "10.1186/1471-2105-9-398",
+   "pct": 9.0,
+   "journal": "BMC Bioinformatics"
+  },
+  "matched_words": 824,
+  "runs": 37,
+  "longest": 71
  }
 }
