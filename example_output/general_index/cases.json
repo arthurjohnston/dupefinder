@@ -340,5 +340,28 @@
   "matched_words": 2447,
   "runs": 47,
   "longest": 238
+ },
+ "GI-725": {
+  "file": "GI-725.html",
+  "reported": null,
+  "published": "2026-10-17",
+  "earlier_known": true,
+  "later": {
+   "title": "Inter-observer agreement according to malaria parasite density",
+   "year": 2013,
+   "doi": "10.1186/1475-2875-12-335",
+   "pct": 14.0,
+   "journal": "Malaria Journal"
+  },
+  "earlier": {
+   "title": "Inter-rater reliability of malaria parasite counts and comparison of methods",
+   "year": 2009,
+   "doi": "10.1186/1475-2875-8-267",
+   "pct": 7.0,
+   "journal": "Malaria Journal"
+  },
+  "matched_words": 416,
+  "runs": 21,
+  "longest": 38
  }
 }
