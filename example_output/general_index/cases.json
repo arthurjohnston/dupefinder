@@ -179,5 +179,28 @@
   "matched_words": 514,
   "runs": 24,
   "longest": 39
+ },
+ "GI-484": {
+  "file": "GI-484.html",
+  "reported": null,
+  "published": "2026-10-17",
+  "earlier_known": true,
+  "later": {
+   "title": "Ontology integration to identify protein complex in protein interaction networks",
+   "year": 2011,
+   "doi": "10.1186/1477-5956-9-s1-s7",
+   "pct": 18.0,
+   "journal": "Proteome Science"
+  },
+  "earlier": {
+   "title": "Semantic integration to identify overlapping functional modules in protein interaction networks",
+   "year": 2007,
+   "doi": "10.1186/1471-2105-8-265",
+   "pct": 9.0,
+   "journal": "BMC Bioinformatics"
+  },
+  "matched_words": 779,
+  "runs": 25,
+  "longest": 120
  }
 }
