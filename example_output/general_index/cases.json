@@ -317,5 +317,28 @@
   "matched_words": 2183,
   "runs": 13,
   "longest": 414
+ },
+ "GI-203": {
+  "file": "GI-203.html",
+  "reported": "2026-10-17",
+  "published": "2026-10-17",
+  "earlier_known": false,
+  "later": {
+   "title": "Management of neglected femur neck fractures treated with non vascularised fibular graft",
+   "year": 2018,
+   "doi": "10.18231/2395-1362.2018.0033",
+   "pct": 88.0,
+   "journal": "Indian Journal of Orthopaedics Surgery"
+  },
+  "earlier": {
+   "title": "Outcome analysis of neglected neck of femur treated with non vascularised fibular graft and cancellous screws",
+   "year": 2018,
+   "doi": "10.22271/ortho.2018.v4.i1e.41",
+   "pct": 86.0,
+   "journal": "International Journal of Orthopaedics Sciences"
+  },
+  "matched_words": 2447,
+  "runs": 47,
+  "longest": 238
  }
 }
