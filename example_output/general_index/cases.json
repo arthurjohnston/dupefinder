@@ -248,5 +248,28 @@
   "matched_words": 1709,
   "runs": 21,
   "longest": 240
+ },
+ "GI-177": {
+  "file": "GI-177.html",
+  "reported": "2026-10-17",
+  "published": "2026-10-17",
+  "earlier_known": true,
+  "later": {
+   "title": "Dynamic analysis of squat shear wall using nonlinear finite element method",
+   "year": 2014,
+   "doi": "10.9790/1684-11220620",
+   "pct": 91.0,
+   "journal": "IOSR Journal of Mechanical and Civil Engineering"
+  },
+  "earlier": {
+   "title": "Nonlinear finite element dynamic analysis of squat shear wall with openings",
+   "year": 2013,
+   "doi": "10.1186/2008-6695-5-27",
+   "pct": 86.0,
+   "journal": "International Journal of Advanced Structural Engineering"
+  },
+  "matched_words": 6729,
+  "runs": 101,
+  "longest": 617
  }
 }
