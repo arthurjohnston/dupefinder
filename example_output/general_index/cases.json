@@ -271,5 +271,28 @@
   "matched_words": 6729,
   "runs": 101,
   "longest": 617
+ },
+ "GI-184": {
+  "file": "GI-184.html",
+  "reported": "2026-10-17",
+  "published": "2026-10-17",
+  "earlier_known": true,
+  "later": {
+   "title": "A Processing Algorithm with some User-Defined Parameters",
+   "year": 2014,
+   "doi": "10.14257/ijca.2014.7.5.30",
+   "pct": 89.0,
+   "journal": "International Journal of Control and Automation"
+  },
+  "earlier": {
+   "title": "An Adaptive Image Quality Assessment Algorithm",
+   "year": 2012,
+   "doi": "10.7236/jasc2012.1.1.2",
+   "pct": 64.0,
+   "journal": "International journal of advanced smart convergence"
+  },
+  "matched_words": 3259,
+  "runs": 47,
+  "longest": 488
  }
 }
