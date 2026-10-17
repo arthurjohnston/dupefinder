@@ -294,5 +294,28 @@
   "matched_words": 3259,
   "runs": 47,
   "longest": 488
+ },
+ "GI-217": {
+  "file": "GI-217.html",
+  "reported": null,
+  "published": "2026-10-17",
+  "earlier_known": true,
+  "later": {
+   "title": "Independent English Learning through the Internet",
+   "year": 2011,
+   "doi": "10.4304/jltr.2.5.1080-1085",
+   "pct": 52.0,
+   "journal": "Journal of Language Teaching and Research"
+  },
+  "earlier": {
+   "title": "A Study of Autonomy English Learning on the Internet",
+   "year": 2008,
+   "doi": "10.5539/elt.v1n2p147",
+   "pct": 88.0,
+   "journal": "English Language Teaching"
+  },
+  "matched_words": 2183,
+  "runs": 13,
+  "longest": 414
  }
 }
