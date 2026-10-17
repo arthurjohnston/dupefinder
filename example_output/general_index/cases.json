@@ -202,5 +202,28 @@
   "matched_words": 779,
   "runs": 25,
   "longest": 120
+ },
+ "GI-618": {
+  "file": "GI-618.html",
+  "reported": null,
+  "published": "2026-10-17",
+  "earlier_known": true,
+  "later": {
+   "title": "A novel polyomavirus from the nasal cavity of a giant panda (Ailuropoda melanoleuca)",
+   "year": 2017,
+   "doi": "10.1186/s12985-017-0867-5",
+   "pct": 15.0,
+   "journal": "Virology Journal"
+  },
+  "earlier": {
+   "title": "Characterization of a Novel Polyomavirus Isolated from a Fibroma on the Trunk of an African Elephant (Loxodonta africana)",
+   "year": 2013,
+   "doi": "10.1371/journal.pone.0077884",
+   "pct": 12.0,
+   "journal": "PLoS ONE"
+  },
+  "matched_words": 460,
+  "runs": 17,
+  "longest": 80
  }
 }
