@@ -133,5 +133,28 @@
   "matched_words": 334,
   "runs": 19,
   "longest": 43
+ },
+ "GI-30": {
+  "file": "GI-30.html",
+  "reported": null,
+  "published": "2026-10-16",
+  "earlier_known": true,
+  "later": {
+   "title": "Transcriptome Sequencing and De Novo Analysis for Ma Bamboo (Dendrocalamus latiflorus Munro) Using the Illumina Platform",
+   "year": 2012,
+   "doi": "10.1371/journal.pone.0046766",
+   "pct": 11.0,
+   "journal": "PLoS ONE"
+  },
+  "earlier": {
+   "title": "Transcriptome Sequencing and De Novo Analysis for Yesso Scallop (Patinopecten yessoensis) Using 454 GS FLX",
+   "year": 2011,
+   "doi": "10.1371/journal.pone.0021560",
+   "pct": 19.0,
+   "journal": "PLoS ONE"
+  },
+  "matched_words": 770,
+  "runs": 35,
+  "longest": 57
  }
 }
