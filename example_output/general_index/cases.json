@@ -363,5 +363,28 @@
   "matched_words": 416,
   "runs": 21,
   "longest": 38
+ },
+ "GI-18": {
+  "file": "GI-18.html",
+  "reported": "2026-10-17",
+  "published": "2026-10-17",
+  "earlier_known": true,
+  "later": {
+   "title": "A Study on the Wastewater Treatment from Antibiotic Production",
+   "year": 2014,
+   "doi": "10.12944/cwe.9.1.33",
+   "pct": 75.0,
+   "journal": "Current World Environment Journal"
+  },
+  "earlier": {
+   "title": "Study on the Treatment Process of Wastewater from Cephalosporin Production",
+   "year": 2009,
+   "doi": "10.5539/jsd.v2n2p133",
+   "pct": 87.0,
+   "journal": "Journal of Sustainable Development"
+  },
+  "matched_words": 1069,
+  "runs": 23,
+  "longest": 235
  }
 }
