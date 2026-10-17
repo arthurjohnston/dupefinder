@@ -225,5 +225,28 @@
   "matched_words": 460,
   "runs": 17,
   "longest": 80
+ },
+ "GI-391": {
+  "file": "GI-391.html",
+  "reported": "2026-10-17",
+  "published": "2026-10-17",
+  "earlier_known": true,
+  "later": {
+   "title": "Role-Based-Access-Control: A Novel Approach",
+   "year": 2015,
+   "doi": "10.2991/icemct-15.2015.44",
+   "pct": 93.0,
+   "journal": "Advances in Social Science, Education and Humanities Research"
+  },
+  "earlier": {
+   "title": "Static Enforcement of Role-Based Access Control on Method Invocation",
+   "year": 2014,
+   "doi": "10.4204/eptcs.163.4",
+   "pct": 23.0,
+   "journal": "Electronic Proceedings in Theoretical Computer Science"
+  },
+  "matched_words": 1709,
+  "runs": 21,
+  "longest": 240
  }
 }
