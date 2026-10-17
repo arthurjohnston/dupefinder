@@ -156,5 +156,28 @@
   "matched_words": 770,
   "runs": 35,
   "longest": 57
+ },
+ "GI-587": {
+  "file": "GI-587.html",
+  "reported": null,
+  "published": "2026-10-17",
+  "earlier_known": true,
+  "later": {
+   "title": "Effect of active fraction isolated from the leaf extract ofDregea volubilis[Linn.] Benth. on plasma glucose concentration and lipid profile in streptozotocin-induced diabetic rats",
+   "year": 2013,
+   "doi": "10.1186/2193-1801-2-394",
+   "pct": 17.0,
+   "journal": "SpringerPlus"
+  },
+  "earlier": {
+   "title": "Effect of an isolated active compound (Cg-1) of Cassia glauca leaf on blood glucose, lipid profile, and atherogenic index in diabetic rats",
+   "year": 2009,
+   "doi": "10.4103/0253-7613.56076",
+   "pct": 18.0,
+   "journal": "Indian Journal of Pharmacology"
+  },
+  "matched_words": 514,
+  "runs": 24,
+  "longest": 39
  }
 }
