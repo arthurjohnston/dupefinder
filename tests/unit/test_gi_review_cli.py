@@ -60,6 +60,33 @@ class TestMenu(unittest.TestCase):
         self.assertIn(severity, cli.SEVERITIES.values())
         self.assertIn(reason, cli.REASONS[decision])
 
+    def test_type_reasons_are_valid(self):
+        for type_, reason in cli.TYPE_REASON.items():
+            self.assertIn(("no problem", type_), [c[:2] for c in cli.CHOICES])
+            self.assertIn(reason, cli.REASONS["no problem"])
+
+    def test_type_is_its_own_reason(self):
+        answers = iter(["9"])   # no problem: boilerplate; nothing else may be asked
+        saved = cli.ask
+        cli.ask = lambda prompt: next(answers)
+        try:
+            out = cli.review_one({"ai_decision": None, "year_a": 2016, "year_b": 2017}, cli.CHOICES, {})
+        finally:
+            cli.ask = saved
+        self.assertEqual(out, ("no problem", "boilerplate", "none",
+                               "the shared text is boilerplate or references", [], False))
+
+    def test_no_reasons_step(self):
+        answers = iter(["1", ""])   # problem: cross-author copying, Enter for medium; nothing else may be asked
+        saved = cli.ask
+        cli.ask = lambda prompt: next(answers)
+        try:
+            out = cli.review_one({"ai_decision": None, "ai_severity": None, "year_a": 2016, "year_b": 2017},
+                                 cli.CHOICES, {})
+        finally:
+            cli.ask = saved
+        self.assertEqual(out, ("problem", "cross-author copying", "medium", "", [], False))
+
     def test_note(self):
         self.assertEqual(cli.build_note(["the later paper doesn't cite the earlier one"], "  saw it  "),
                          "the later paper doesn't cite the earlier one; saw it")
@@ -150,7 +177,8 @@ class TestReportFlow(unittest.TestCase):
 
     def test_whole_flow(self):
         opened = self.run_flow(["", "y", "n", "https://pubpeer.com/publications/X1", "o"])
-        self.assertEqual(self.calls, [("report", True), ("agent", "GI-07"), ("report", True), ("report", False)])
+        self.assertEqual(self.calls, [("report", True), ("agent", "GI-07"), ("report", False), ("report", True),
+                                      ("report", False)])
         self.assertEqual(self.cf.included("GI-07", self.dir), ["One."])
         self.assertEqual(self.cf.pubpeer_url("GI-07", self.dir), "https://pubpeer.com/publications/X1")
         self.assertEqual(len(opened), 1)

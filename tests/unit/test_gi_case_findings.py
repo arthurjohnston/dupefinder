@@ -81,6 +81,13 @@ class TestFiles(unittest.TestCase):
             self.assertEqual(cf.review("GI-07", ask=lambda p: next(answers), report_dir=self.dir), 0)
         self.assertEqual(cf.findings_path("GI-07", self.dir).read_text(encoding="utf-8"), TEXT)
 
+    def test_case_contacts(self):
+        self.assertEqual(cf.case_contacts("GI-07", self.dir), {})
+        (self.dir / "GI-07" / "contacts.json").write_text('{"institution": {"to": "rio@u.example"}}')
+        self.assertEqual(cf.case_contacts("GI-07", self.dir)["institution"]["to"], "rio@u.example")
+        (self.dir / "GI-07" / "contacts.json").write_text("{not json")
+        self.assertEqual(cf.case_contacts("GI-07", self.dir), {})
+
     def test_pubpeer_url(self):
         self.assertIsNone(cf.pubpeer_url("GI-07", self.dir))
         cf.save_pubpeer_url("GI-07", "https://pubpeer.com/publications/ABC123", self.dir)

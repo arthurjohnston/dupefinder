@@ -7,7 +7,7 @@
 # Don't edit this while it runs.
 set -uo pipefail
 G=/home/arthur/Sites/dupefinder/general_index; P=$G/../.venv/bin/python3; D=$G/..
-RUN=band4_s16
+RUN=${1:-band4_s16}   # the run name: a new one selects the next 3,000 (pairs already in fulltext are skipped)
 cd $G
 echo "$(date +%T) == $RUN: select + retrieve"
 ./gi_verify.sh $RUN arthur.j.johnston@gmail.com --tiers 4 --band 15 50 --shape two-sided --no-shared-author \

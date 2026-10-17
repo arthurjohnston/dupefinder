@@ -21,12 +21,17 @@ Into data/dupe_publisher/GI-NN/:
 And on the project site (example_output/, which .github/workflows/pages.yml publishes from main to
 SITE_URL), unless --no-site:
   example_output/general_index/GI-NN.html   the same file as GI-NN-comparison.html
-  example_output/general_index/index.html   every reported pair, rebuilt from cases.json there (one entry per
+  example_output/general_index/index.html   every published pair, rebuilt from cases.json there (one entry per
                                             case; the date first reported is kept on a re-run)
 
 data/journal_contacts.json keeps each article's journal and publisher (asked of Crossref once per DOI) and, per
 journal, a "to"/"cc"/"notes" entry that is blank until you fill it in; every later case in that journal then
-gets those addresses in its drafts. Re-run the case after filling one in.
+gets those addresses in its drafts. Re-run the case after filling one in. The institution's and the authors'
+addresses are the case's own, in GI-NN/contacts.json (gi_case_findings.case_contacts()): with no institution
+or authors' address there, a high case gets no -institution / -authors draft at all (nobody to send it to).
+
+--publish-only writes just the site page and index entry, marked "not reported": for a pair you judged not
+worth reporting (low, say) whose comparison should still be public.
 
 Nothing is committed or pushed: the site page goes live once example_output/ is pushed to main.
 
@@ -80,6 +85,10 @@ DEFAULT_SEVERITY = "medium"
 ALL_EMAILS_SEVERITY = "high"
 
 
+# the emails whose address is the case's own (contacts.json): no address there, no draft
+CASE_AUDIENCES = {"institution": "research-integrity address", "authors": "address for the earlier authors"}
+
+
 def audiences(severity):
     """The emails a case of this severity gets: all of gi_contact.EMAIL_AUDIENCES when high (the earlier
     authors, their publisher and the later authors' institution too), else only the later article's journal."""
@@ -98,6 +107,40 @@ def review_severity(db, f):
     return row[0] if row and row[0] in ("low", "medium", "high") else DEFAULT_SEVERITY
 
 
+def case_findings(db, f, report_dir=REPORT_DIR):
+    """pp.findings() plus your ticked findings.md items, the PubPeer post and both journals' names/contacts."""
+    case = pp.case_name(f)
+    fd = pp.findings(db, f)
+    fd["extra"] = gi_case_findings.included(case, report_dir)   # your ticked findings.md items
+    fd["pubpeer_post"] = gi_case_findings.pubpeer_url(case, report_dir)
+    fd["case_contacts"] = gi_case_findings.case_contacts(case, report_dir)   # the institution's, the authors'
+    contacts = gi_contact.load_contacts()
+    for side in ("first", "second"):   # the journal names and contacts, for the emails and the index
+        c = gi_contact.journal_contact(fd[side]["doi"], contacts)
+        fd[side]["journal"] = c and c["journal"]
+        fd[side]["contact"] = c
+    gi_contact.save_contacts(contacts)
+    return fd
+
+
+def write_site(site_dir, case, page, fd, reported=True):
+    """The case's page on the project site, its cases.json entry and the index; returns {site, index}."""
+    site_dir = Path(site_dir)
+    site_dir.mkdir(parents=True, exist_ok=True)
+    site = site_dir / f"{case}.html"
+    site.write_text(page, encoding="utf-8")
+    record(site_dir, case, fd, reported=reported)
+    return {"site": site, "index": write_index(site_dir)}
+
+
+def publish_only(db, f, site_dir=SITE_DIR, report_dir=REPORT_DIR):
+    """Only the project-site page and index entry, marked not reported: for a pair you judged not worth
+    reporting (low, say) whose comparison should still be public. No PubPeer page, no emails."""
+    fd = case_findings(db, f, report_dir)
+    page, _ = pp.publisher_page(f, fd)
+    return write_site(site_dir, pp.case_name(f), page, fd, reported=False)
+
+
 def write_report(db, f, report_dir=REPORT_DIR, site_dir=SITE_DIR, sender=None, severity=None):
     """Write the case's files; returns {kind: path}. severity (default: the pair's review, see review_severity())
     picks the emails (audiences())."""
@@ -105,15 +148,7 @@ def write_report(db, f, report_dir=REPORT_DIR, site_dir=SITE_DIR, sender=None, s
     case = pp.case_name(f)
     out = Path(report_dir) / case
     out.mkdir(parents=True, exist_ok=True)
-    fd = pp.findings(db, f)
-    fd["extra"] = gi_case_findings.included(case, report_dir)   # your ticked findings.md items
-    fd["pubpeer_post"] = gi_case_findings.pubpeer_url(case, report_dir)
-    contacts = gi_contact.load_contacts()
-    for side in ("first", "second"):   # the journal names and contacts, for the emails and the index
-        c = gi_contact.journal_contact(fd[side]["doi"], contacts)
-        fd[side]["journal"] = c and c["journal"]
-        fd[side]["contact"] = c
-    gi_contact.save_contacts(contacts)
+    fd = case_findings(db, f, report_dir)
     paths = {}
     paths["pubpeer"], _ = pp.write_page(db, f, out, fd=dict(fd), name=f"{case}-pubpeer.html")
     page, shot = pp.publisher_page(f, fd)
@@ -124,12 +159,7 @@ def write_report(db, f, report_dir=REPORT_DIR, site_dir=SITE_DIR, sender=None, s
         paths["image"] = shot_path
     site_url = None
     if site_dir:
-        site_dir = Path(site_dir)
-        site_dir.mkdir(parents=True, exist_ok=True)
-        paths["site"] = site_dir / f"{case}.html"
-        paths["site"].write_text(page, encoding="utf-8")
-        record(site_dir, case, fd)
-        paths["index"] = write_index(site_dir)
+        paths.update(write_site(site_dir, case, page, fd))
         site_url = SITE_URL + paths["site"].name
     attachments = [paths["comparison"]] + ([shot_path] if shot else [])
     for old in out.glob(f"{case}-email-*.txt"):   # the plain-text drafts an earlier version wrote
@@ -137,6 +167,10 @@ def write_report(db, f, report_dir=REPORT_DIR, site_dir=SITE_DIR, sender=None, s
     wanted = audiences(severity)
     for audience in gi_contact.EMAIL_AUDIENCES:
         eml = out / f"{case}-email-{audience}.eml"
+        if audience in CASE_AUDIENCES and audience in wanted and not gi_contact.recipients(audience, fd)[0]:
+            # nobody to send it to: no address found (contacts.json), so no draft
+            paths[f"no email {audience}"] = f"no {CASE_AUDIENCES[audience]} in {out / 'contacts.json'}"
+            wanted = tuple(a for a in wanted if a != audience)
         if audience not in wanted:   # left from when the case was high: don't leave a draft to send by mistake
             eml.unlink(missing_ok=True)
             (out / "compose" / f"{eml.stem}.txt").unlink(missing_ok=True)
@@ -182,13 +216,16 @@ def open_drafts(emls, thunderbird="thunderbird"):
             time.sleep(8 if i == 0 else 2)
 
 
-def record(site_dir, case, fd):
-    """Add or update the case in site_dir/cases.json (keeping the date it was first reported)."""
+def record(site_dir, case, fd, reported=True):
+    """Add or update the case in site_dir/cases.json, keeping the date it was first reported (or published).
+    reported=False (publish_only()) leaves "reported" None, unless the case already was reported."""
     path = Path(site_dir) / "cases.json"
     cases = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
     keep = ("title", "year", "doi", "pct", "journal")
-    cases[case] = {"file": f"{case}.html", "reported": cases.get(case, {}).get("reported",
-                                                                             datetime.date.today().isoformat()),
+    today = datetime.date.today().isoformat()
+    old = cases.get(case, {})
+    cases[case] = {"file": f"{case}.html", "reported": old.get("reported") or (today if reported else None),
+                   "published": old.get("published") or old.get("reported") or today,
                    "earlier_known": fd["earlier_known"],
                    "later": {k: fd["second"].get(k) for k in keep}, "earlier": {k: fd["first"].get(k) for k in keep},
                    "matched_words": fd["matched_words"], "runs": fd["runs"],
@@ -254,22 +291,23 @@ def write_index(site_dir):
         rows.append(f"""<tr><td class="num"><a href="{html.escape(c['file'])}">{html.escape(case)}</a></td>
 <td class="art">{_article(later)}</td><td class="art">{_article(earlier)}</td>
 <td class="num">{pp.pct(later['pct'])} / {pp.pct(earlier['pct'])}</td>
-<td class="num">{c['longest'] or '?'} words</td><td class="num">{html.escape(c['reported'])}</td></tr>""")
+<td class="num">{c['longest'] or '?'} words</td><td class="num">{html.escape(c['reported'] or 'not reported')}</td></tr>""")
     path = site_dir / "index.html"
     path.write_text(f"""<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>General Index: reported pairs</title>
+<title>General Index: checked pairs</title>
 <style>{INDEX_STYLE}</style>
 </head>
 <body>
 <main>
-<h1>General Index: reported pairs</h1>
+<h1>General Index: checked pairs</h1>
 <p>Pairs of articles found by this project's scan of the
 <a href="https://archive.org/details/GeneralIndex">General Index</a> (word n-grams from over 100 million
-articles), checked against both articles' full text, and reported to the journal concerned. Each page shows
+articles), checked against both articles' full text, and reported to the journal concerned, except those marked
+"not reported" (judged not worth a report, but published so the comparison is public). Each page shows
 the measured overlap: the shared passages side by side with the differences marked, and the longest one as
 printed in both articles. "Shared text" is the share of each article's words that fall inside a run of 10 or
 more matching words (allowing substituted words within a run). A page shows measured text overlap; it does
@@ -305,8 +343,13 @@ def main():
                          "(default: your review's severity, else medium)")
     ap.add_argument("--pubpeer-url", help="your PubPeer post for the case (one GI number): saved to "
                                           "pubpeer_url.txt, and the emails point to it")
+    ap.add_argument("--publish-only", action="store_true",
+                    help="only the project-site page and index entry, marked not reported (no PubPeer page, "
+                         "no emails): for a pair not worth reporting whose comparison should still be public")
     ap.add_argument("--db", default=str(gi_db.DB_PATH))
     args = ap.parse_args()
+    if args.publish_only and args.no_site:
+        ap.error("--publish-only writes only the site page, so not with --no-site")
     if args.pubpeer_url:
         if len(args.gi) != 1 or args.problems:
             ap.error("--pubpeer-url goes with exactly one GI number")
@@ -329,8 +372,11 @@ def main():
             print(f"GI-{f}: no such page", file=sys.stderr)
             continue
         try:
-            paths = write_report(db, f, site_dir=None if args.no_site else SITE_DIR, sender=sender,
-                                 severity=args.severity)
+            if args.publish_only:
+                paths = publish_only(db, f)
+            else:
+                paths = write_report(db, f, site_dir=None if args.no_site else SITE_DIR, sender=sender,
+                                     severity=args.severity)
             for kind, path in paths.items():
                 print(f"{kind:>10}  {path}")
             if args.open_drafts:

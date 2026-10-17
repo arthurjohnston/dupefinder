@@ -21,6 +21,15 @@ count as findings; everything under another heading (Questions, say) is ignored.
 data/dupe_publisher/GI-NN/pubpeer_url.txt: the address of your PubPeer post once it's up
 (gi_report_case.py --pubpeer-url); the emails then point to it.
 
+data/dupe_publisher/GI-NN/contacts.json: the case's own addresses, found by the agent (the journals' are in
+journal_contacts.json, shared across cases):
+
+    {"institution": {"to": "rio@univ.example", "name": "Research Integrity Office, Univ. X",
+                     "source": "https://univ.example/integrity", "checked": "2026-10-17"},
+     "authors": {"to": "a@b.example", "source": "the earlier article, p. 1", "checked": "2026-10-17"}}
+
+"to" is the email's To (comma-separated for several). No "to", no draft to the institution / the authors.
+
 Usage: gi_case_findings.py GI_NUMBER      go through the case's findings (y / n / e / Enter / q), then
                                           regenerate its report files
 """
@@ -165,6 +174,20 @@ def review(case, ask=input, edit=prefilled_input, report_dir=REPORT_DIR, only_pe
     if changes:
         p.write_text(update(text, changes), encoding="utf-8")
     return len(changes)
+
+
+def case_contacts(case, report_dir=REPORT_DIR):
+    """contacts.json for the case, {} when there isn't one (or it isn't valid JSON: say so, don't fail)."""
+    import json
+    p = case_dir(case, report_dir) / "contacts.json"
+    if not p.exists():
+        return {}
+    try:
+        data = json.loads(p.read_text(encoding="utf-8"))
+    except ValueError as e:
+        print(f"  {p}: not valid JSON ({e}), ignored")
+        return {}
+    return data if isinstance(data, dict) else {}
 
 
 def pubpeer_url_path(case, report_dir=REPORT_DIR):

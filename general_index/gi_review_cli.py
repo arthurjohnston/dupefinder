@@ -6,10 +6,12 @@ $GI_REVIEW_OPENER; --pdfs opens both PDFs too, or press p at the prompt), then a
      your reviews and the agent's);
   2. severity (problem / unsure only; Enter gives medium, the agent's is shown; high also writes the emails
      to the earlier authors, their publisher and the later authors' institution, see below);
-  3. the common reasons for that decision (pick any, by number);
-  4. for an unsure verdict, flags: m = you think both papers came from a paper mill, e = not qualified to
+  3. for an unsure verdict, flags: m = you think both papers came from a paper mill, e = not qualified to
      judge it (higher-level math, say);
-  5. a note in your own words, only if you added ' n' to the verdict ('3 n', 'c n'; 'e' opens $EDITOR).
+  4. a note in your own words, only if you added ' n' to the verdict ('3 n', 'c n'; 'e' opens $EDITOR).
+The verdict is saved as soon as it's complete, with no confirmation step (--gi NN --include-reviewed to change
+one). No reasons are asked for: a no-problem type that is its own reason (same paper, boilerplate, shared
+citations, artifact: TYPE_REASON) saves that reason, and a quick key saves its own.
 f at step 1 (shown when there are any) goes through the gi-cases agent's proposed findings for any case
 (data/dupe_publisher/GI-NN/findings.md, gi_case_findings.py) and regenerates the report files of the cases
 you changed, so the findings you include are in the PubPeer Markdown and the emails.
@@ -45,7 +47,8 @@ page, with the findings as Markdown and a Copy button, the attachment for the jo
 to the later article's journal; a high-severity verdict also gets the drafts to the later authors' institution,
 the earlier authors and the earlier publisher;
 the comparison page and index on the project site, example_output/general_index/) and opens the PubPeer page in a
-new tab, unless you answer s ("skip") when asked; t at the prompt does the same for any pair. Then, each step
+new tab, unless you answer s ("skip") when asked, or p ("publish only": just the site page, marked
+not reported, pushed to main; for a pair not worth reporting, low say, whose comparison should be public); t at the prompt does the same for any pair. Then, each step
 skippable (report_flow()):
   - the site pages are pushed to main (gi_publish_site.py), so the emails' link works;
   - the gi-cases agent's findings. The agent starts in the background (BackgroundPrep, headless claude -p)
@@ -118,9 +121,15 @@ REASONS = {
     ],
 }
 
+# no-problem types that say their own reason: picking one saves that reason with it
+TYPE_REASON = {"same paper": "same work under two DOIs / records",
+               "boilerplate": "the shared text is boilerplate or references",
+               "shared citations": "the shared text is boilerplate or references",
+               "artifact": "wrong PDF or extraction error"}
+
 SEVERITIES = {"l": "low", "m": "medium", "h": "high"}
 
-# the one-key verdict on the first menu: decision, type, severity, reason (skips the severity and reasons steps)
+# the one-key verdict on the first menu: decision, type, severity, reason (skips the severity step)
 QUICK = ("problem", "cross-author copying", "medium", "most of the paper copied")
 DEFAULT_SEVERITY = "medium"
 
@@ -374,32 +383,18 @@ def edit_note(initial=""):
     return " ".join(text.split())
 
 
-def ask_severity_and_reasons(pair, decision):
+def ask_severity(pair, decision):
     """Enter gives DEFAULT_SEVERITY, whatever the agent said: high also writes the emails to the victims and the
-    institution (gi_report_case.audiences()), so it has to be chosen."""
-    severity = "none"
-    if decision != "no problem":
-        default = DEFAULT_SEVERITY
-        ai = f", AI: {pair['ai_severity']}" if pair["ai_severity"] in SEVERITIES.values() else ""
-        while True:
-            ans = ask(f"Severity  l)ow  m)edium  h)igh  [Enter: {default}{ai}] ").lower()
-            if not ans:
-                severity = default
-                break
-            if ans[:1] in SEVERITIES:
-                severity = SEVERITIES[ans[:1]]
-                break
-
-    reasons = REASONS[decision]
-    print("Reasons (numbers, e.g. '1 3'; Enter for none):")
-    for k, r in enumerate(reasons, 1):
-        print(f"  {k}  {r}")
+    institution (gi_report_case.audiences()), so it has to be chosen. "none" for a no-problem verdict."""
+    if decision == "no problem":
+        return "none"
+    ai = f", AI: {pair['ai_severity']}" if pair["ai_severity"] in SEVERITIES.values() else ""
     while True:
-        picked = parse_picks(ask("> "), len(reasons))
-        if picked is not None:
-            break
-        print(f"  numbers from 1 to {len(reasons)}")
-    return severity, [reasons[i] for i in picked]
+        ans = ask(f"Severity  l)ow  m)edium  h)igh  [Enter: {DEFAULT_SEVERITY}{ai}] ").lower()
+        if not ans:
+            return DEFAULT_SEVERITY
+        if ans[:1] in SEVERITIES:
+            return SEVERITIES[ans[:1]]
 
 
 def split_note_suffix(ans):
@@ -418,9 +413,9 @@ def review_one(pair, choices, counts, saved_flags=(), prep=None):
     for k, (d, t, desc) in enumerate(choices, 1):
         mark = "  <- AI" if ai == (d, t) else ""
         print(f"  {k:>2}  {d + ': ' + t:<34} {desc} [{counts.get((d, t), 0)}]{mark}")
-    print(f"   c  {QUICK[0]}: {QUICK[1]}, {QUICK[2]}, {QUICK[3]} (skips severity and reasons)")
-    print(f"   e  unsure, flagged {FLAGS['e'][0]}: {FLAGS['e'][1]} (skips severity, reasons and flags)")
-    print(f"   r  problem, flagged {FLAGS['r'][0]}: {FLAGS['r'][1]} (skips severity, reasons, flags and report)")
+    print(f"   c  {QUICK[0]}: {QUICK[1]}, {QUICK[2]}, {QUICK[3]} (skips severity)")
+    print(f"   e  unsure, flagged {FLAGS['e'][0]}: {FLAGS['e'][1]} (skips severity and flags)")
+    print(f"   r  problem, flagged {FLAGS['r'][0]}: {FLAGS['r'][1]} (skips severity, flags and report)")
     keys = "   a  agree with the AI" if ai and ai[1] else ""
     print(f"{keys}   o  reopen the page   p  open the PDFs   t  report it   s  skip   q  quit")
     import gi_case_findings
@@ -462,6 +457,8 @@ def review_one(pair, choices, counts, saved_flags=(), prep=None):
             break
         if ans.isdigit() and 1 <= int(ans) <= len(choices):
             decision, type_ = choices[int(ans) - 1][:2]
+            if decision == "no problem" and type_ in TYPE_REASON:
+                severity, reasons, quick = "none", [TYPE_REASON[type_]], True
             break
         print("  a number from the list, or c / e / r / a / o / p / t / g / s / q")
 
@@ -475,9 +472,8 @@ def review_one(pair, choices, counts, saved_flags=(), prep=None):
     if quick:
         reasons = reasons + ([same_year_reason(year)] if converted else [])
     else:
-        severity, reasons = ask_severity_and_reasons(pair, decision)
-        if converted:
-            reasons = [same_year_reason(year)] + reasons
+        severity = ask_severity(pair, decision)
+        reasons = [same_year_reason(year)] if converted else []
 
     flags = sorted(set(saved_flags) | {preset}) if preset else list(saved_flags)
     keys = "  ".join(f"{k}) {desc}" for k, (_, desc) in FLAGS.items())
@@ -514,6 +510,9 @@ def pubpeer_page(db, pair, open_it=True, severity=None):
         return None
     print(f"  report: {paths['pubpeer'].parent}/  (site page: {paths.get('site', 'none')})")
     print("  emails: " + ", ".join(k.split(" ", 1)[1] for k in paths if k.startswith("email ")))
+    for k in paths:
+        if k.startswith("no email "):
+            print(f"  no {k[9:]} email: {paths[k]}")
     if open_it:
         open_files([paths["pubpeer"]])
     return paths
@@ -568,7 +567,9 @@ HEADLESS_PROMPT = ("Prep {case}: follow \"Prep a case\" in your instructions. Th
                    "session to talk it through. In this run only these tools work: Read, Glob, Grep, web search "
                    "and fetch, `sqlite3 -readonly` (not python) for the databases, pdftotext and pdfinfo, and "
                    "writing in the case's folder and journal_contacts.json. Don't run gi_report_case.py: the "
-                   "review tool writes the report files when the user confirms. End with one line saying what "
+                   "review tool writes the report files when the user confirms. Do look up the later authors' "
+                   "institution's research integrity officer and write contacts.json (see Contacts): without "
+                   "an address there, no email to the institution is drafted. End with one line saying what "
                    "you concluded, e.g. '4 findings proposed, contacts found' or 'not a case: already "
                    "retracted'.")
 
@@ -698,6 +699,19 @@ def publish_site(case):
         print(f"  site push failed: {getattr(e, 'stderr', '') or e}")
 
 
+def publish_only(db, pair):
+    """Not reported, but public: the site page and index entry (gi_report_case.publish_only()), pushed."""
+    import gi_report_case
+    case = f"GI-{pair['page_number']:02d}"
+    try:
+        paths = gi_report_case.publish_only(db, pair)
+    except Exception as e:
+        print(f"  site page failed: {e}")
+        return
+    print(f"  site page (not reported): {paths['site']}")
+    publish_site(case)
+
+
 def report_flow(db, pair, open_it=True, severity=None, prep=None):
     """Everything for reporting the pair, in order: the report files (PubPeer page opened), the gi-cases agent
     to prep it, ticking its findings (the files regenerated if you change any), your PubPeer post's address,
@@ -710,7 +724,8 @@ def report_flow(db, pair, open_it=True, severity=None, prep=None):
     case = f"GI-{pair['page_number']:02d}"
     if paths.get("site"):
         publish_site(case)
-    if prep and prep.wait():
+    agent_ran = bool(prep and prep.wait())
+    if agent_ran:
         res = prep.result()
         if res.get("is_error") or not res:
             print(f"  agent prep failed: {(res.get('result') or 'no result, see ' + str(prep.dir / 'prep.log'))[:300]}")
@@ -725,6 +740,9 @@ def report_flow(db, pair, open_it=True, severity=None, prep=None):
                            cwd=Path(__file__).resolve().parent, env=agent_env())
     elif not ask(f"[Enter: open the agent to prep {case} (findings, contacts), s: skip] ").lower().startswith("s"):
         run_agent(case)
+        agent_ran = True
+    if agent_ran:   # it may have found contacts (journal_contacts.json, contacts.json): the drafts need them
+        paths = pubpeer_page(db, pair, False, severity=severity) or paths
     if gi_case_findings.counts(case)["pending"] and gi_case_findings.review(case, ask=ask):
         paths = pubpeer_page(db, pair, open_it, severity=severity) or paths   # the Markdown now has them
     have = gi_case_findings.pubpeer_url(case)
@@ -839,10 +857,6 @@ def main():
         decision, type_, severity, note, flags, agreed = out
         print(wrap("Save: ", f"{decision} / {type_} / {severity}" + (f" [{', '.join(flags)}]" if flags else "")
                    + (f" -- {note}" if note else "")))
-        if ask("[Enter to save, n to discard (the pair stays unreviewed)] ").lower().startswith("n"):
-            if prep:
-                prep.stop()
-            continue
         save_review(db, pair, decision, type_, severity, note, flags)
         counts[(decision, type_)] = counts.get((decision, type_), 0) + 1
         saved += 1
@@ -852,11 +866,15 @@ def main():
             print("  already retracted: no report files (t on this pair still writes them)")
         elif decision == "problem" or (agreed and pair["ai_decision"] == "problem"):
             emails = "all four emails" if severity == "high" else "email to the journal"
-            if ask(f"[Enter to report it (PubPeer page, {emails}, site page pushed, then the agent's findings), "
-                   f"s to skip] ").lower().startswith("s"):
-                print("  report skipped (t on this pair later does it)")
+            ans = ask(f"[Enter to report it (PubPeer page, {emails}, site page pushed, then the agent's findings), "
+                      f"p to only publish its site page (marked not reported), s to skip] ").lower()
+            if ans.startswith(("s", "p")):
                 if prep:
                     prep.stop()
+                if ans.startswith("p"):
+                    publish_only(db, pair)
+                else:
+                    print("  report skipped (t on this pair later does it)")
             else:
                 report_flow(db, pair, not args.no_open, severity=severity, prep=prep)
     print(f"\n{saved} review(s) saved")

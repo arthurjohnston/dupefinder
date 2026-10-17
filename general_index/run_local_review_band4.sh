@@ -6,12 +6,13 @@
 # otherwise idle. No API spend. Resumable. Don't edit while it runs.
 set -uo pipefail
 G=/home/arthur/Sites/dupefinder/general_index; P=$G/../.venv/bin/python3
+RUN=${1:-band4_s16}
 cd $G
-NP=2 ./run_local_model.sh gpt-oss-20b > data/local_model_server_review_band4.log 2>&1 &
+NP=2 ./run_local_model.sh gpt-oss-20b > data/local_model_server_review_$RUN.log 2>&1 &
 SRV=$!
-until curl -sf http://127.0.0.1:8080/health > /dev/null; do sleep 10; kill -0 $SRV 2>/dev/null || { echo "server died"; tail data/local_model_server_review_band4.log; exit 1; }; done
-echo "$(date +%T) == gpt-oss-20b on band4_s16"
-$P gi_agent_review.py --backend local --effort medium --workers 2 --runs band4_s16
+until curl -sf http://127.0.0.1:8080/health > /dev/null; do sleep 10; kill -0 $SRV 2>/dev/null || { echo "server died"; tail data/local_model_server_review_$RUN.log; exit 1; }; done
+echo "$(date +%T) == gpt-oss-20b on $RUN"
+$P gi_agent_review.py --backend local --effort medium --workers 2 --runs $RUN
 kill $SRV
 $P gi_write_pages.py data/fulltext_pages_s16 --sample-rate 8 --index-only
 $P gi_priority_db.py

@@ -110,6 +110,9 @@ class TestContacts(unittest.TestCase):
         self.assertEqual(gc.recipients("publisher", f), ("ed@new.example", "x@y"))
         self.assertEqual(gc.recipients("source-publisher", f), ("ed@old.example", ""))
         self.assertEqual(gc.recipients("institution", f), ("", ""))
+        f["case_contacts"] = {"institution": {"to": "rio@univ.example", "source": "https://univ.example"}}
+        self.assertEqual(gc.recipients("institution", f), ("rio@univ.example", ""))
+        self.assertEqual(gc.recipients("authors", f), ("", ""))
         self.assertEqual(gc.recipients("publisher", fd()), ("", ""))
         self.assertIn("Later article: New paper (2015), New Journal, https://doi.org/10.2/new", body(f)[1])
 

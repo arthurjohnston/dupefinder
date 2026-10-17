@@ -198,12 +198,15 @@ def email_parts(fd, attachment, shot_name=None, examples=EMAIL_PASSAGES, site_ur
 
 
 def recipients(audience, fd):
-    """(to, cc) for one email from the journals' contacts in fd (gi_report_case.py puts them there): the
-    later article's journal for "publisher", the earlier's for "source-publisher"; the institution and the
-    authors aren't kept anywhere, so theirs are empty."""
+    """(to, cc) for one email from the contacts in fd (gi_report_case.py puts them there): the later article's
+    journal for "publisher", the earlier's for "source-publisher", and the case's contacts.json
+    (fd["case_contacts"]) for the institution and the authors; empty when there's none."""
     side = {"publisher": "second", "source-publisher": "first"}.get(audience)
-    contact = (fd[side].get("contact") or {}) if side else {}
-    return contact.get("to", ""), contact.get("cc", "")
+    if side:
+        contact = fd[side].get("contact") or {}
+    else:
+        contact = (fd.get("case_contacts") or {}).get(audience) or {}
+    return contact.get("to", "") or "", contact.get("cc", "") or ""
 
 
 def email_message(fd, attachments, examples=EMAIL_PASSAGES, site_url=None, audience="publisher", sender=None,

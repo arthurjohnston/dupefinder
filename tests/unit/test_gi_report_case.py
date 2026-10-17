@@ -31,6 +31,18 @@ class TestIndex(unittest.TestCase):
             self.assertIn('New paper (2015)<br><a href="https://doi.org/10.2/new">doi:10.2/new</a>', page)
             self.assertIn("300 words", page)
 
+    def test_not_reported(self):
+        with tempfile.TemporaryDirectory() as d:
+            gi_report.record(d, "GI-474", fd(), reported=False)
+            cases = json.loads((Path(d) / "cases.json").read_text())
+            self.assertIsNone(cases["GI-474"]["reported"])
+            self.assertTrue(cases["GI-474"]["published"])
+            self.assertIn("not reported", gi_report.write_index(d).read_text())
+            gi_report.record(d, "GI-474", fd())   # reported later: it gets a date
+            self.assertTrue(json.loads((Path(d) / "cases.json").read_text())["GI-474"]["reported"])
+            gi_report.record(d, "GI-474", fd(), reported=False)   # publishing again doesn't undo that
+            self.assertTrue(json.loads((Path(d) / "cases.json").read_text())["GI-474"]["reported"])
+
 
 class TestSeverity(unittest.TestCase):
     def test_only_high_gets_every_email(self):
