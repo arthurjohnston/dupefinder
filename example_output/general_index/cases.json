@@ -409,5 +409,28 @@
   "matched_words": 1967,
   "runs": 58,
   "longest": 136
+ },
+ "GI-724": {
+  "file": "GI-724.html",
+  "reported": null,
+  "published": "2026-10-17",
+  "earlier_known": false,
+  "later": {
+   "title": "Imaging of cerebral aneurysms: a clinical perspective",
+   "year": 2016,
+   "doi": "10.1186/s40809-016-0016-3",
+   "pct": 18.0,
+   "journal": "Neurovascular Imaging"
+  },
+  "earlier": {
+   "title": "DIAGNOSTIC ACCURACY OF THREE DIMENTIONAL DIGITAL SUBSTRACTION ANGIOGRAPHY (3D DSA) IN CORRELATION WITH COMPUTED TOMOGRAPHIC ANGIOGRAPHY (CTA) AND MAGNETIC RESONANCE ANGIOGRAPHY (MRA) IN EVALUATION OF ANEURYSMAL SUBARACHNOID HAEMORRHAGE : A COMPARATIVE STUDY IN A TERTIARY CARE HOSPITAL",
+   "year": null,
+   "doi": "gi:0f3bba33fe00af4d632795dcf6f37dafa70e3f08",
+   "pct": 22.0,
+   "journal": null
+  },
+  "matched_words": 524,
+  "runs": 26,
+  "longest": 53
  }
 }
