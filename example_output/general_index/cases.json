@@ -386,5 +386,28 @@
   "matched_words": 1069,
   "runs": 23,
   "longest": 235
+ },
+ "GI-232": {
+  "file": "GI-232.html",
+  "reported": null,
+  "published": "2026-10-17",
+  "earlier_known": false,
+  "later": {
+   "title": "Haemorrhagic Fevers â Getting ready: viewpoints from Kenyan Public Health Practioners",
+   "year": 2015,
+   "doi": "10.7439/ijbr.v6i9.2455",
+   "pct": 62.0,
+   "journal": "International Journal of Biomedical Research"
+  },
+  "earlier": {
+   "title": "Preparing for Ebola Virus Disease in West African countries not yet affected: perspectives from Ghanaian health professionals",
+   "year": 2015,
+   "doi": "10.1186/s12992-015-0094-z",
+   "pct": 57.0,
+   "journal": "Globalization and Health"
+  },
+  "matched_words": 1967,
+  "runs": 58,
+  "longest": 136
  }
 }
