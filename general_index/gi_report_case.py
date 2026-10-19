@@ -157,10 +157,8 @@ def write_report(db, f, report_dir=REPORT_DIR, site_dir=SITE_DIR, sender=None, s
     shot_path = out / f"{case}-longest.jpg"
     if shot:
         paths["image"] = shot_path
-    site_url = None
-    if site_dir:
+    if site_dir:   # the emails don't link the site page: the comparison is attached
         paths.update(write_site(site_dir, case, page, fd))
-        site_url = SITE_URL + paths["site"].name
     attachments = [paths["comparison"]] + ([shot_path] if shot else [])
     for old in out.glob(f"{case}-email-*.txt"):   # the plain-text drafts an earlier version wrote
         old.unlink()
@@ -175,7 +173,7 @@ def write_report(db, f, report_dir=REPORT_DIR, site_dir=SITE_DIR, sender=None, s
             eml.unlink(missing_ok=True)
             (out / "compose" / f"{eml.stem}.txt").unlink(missing_ok=True)
             continue
-        msg = gi_contact.email_message(fd, attachments, site_url=site_url, audience=audience, sender=sender)
+        msg = gi_contact.email_message(fd, attachments, audience=audience, sender=sender)
         paths[f"email {audience}"] = out / f"{case}-email-{audience}.eml"
         paths[f"email {audience}"].write_bytes(bytes(msg))
     return paths

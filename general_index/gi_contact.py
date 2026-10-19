@@ -144,11 +144,11 @@ def _email_intro(audience, fd):
     raise ValueError(f"unknown audience {audience!r} (use: {', '.join(EMAIL_AUDIENCES)})")
 
 
-def email_parts(fd, attachment, shot_name=None, examples=EMAIL_PASSAGES, site_url=None, audience="publisher",
+def email_parts(fd, attachment, shot_name=None, examples=EMAIL_PASSAGES, audience="publisher",
                 name=None):
     """(subject, body) of a plain-text email about the pair to one of EMAIL_AUDIENCES. The body, in order:
     greeting, why I'm writing, the two articles, the same findings as the PubPeer Markdown, what's attached,
-    extracts of the `examples` longest passages, the page on the project site, the request, and the sign-off
+    extracts of the `examples` longest passages, the request, and the sign-off
     with `name` (default your git user.name)."""
     first, second = fd["first"], fd["second"]
     known = fd["earlier_known"]
@@ -189,8 +189,6 @@ def email_parts(fd, attachment, shot_name=None, examples=EMAIL_PASSAGES, site_ur
                       f" (as worded in {whose} article, with its word count; '…' marks words left out of the "
                       f"extract):", ""]
         lines += [f"{i}. {p['words']:,} words: \"{p['excerpt']}\"" for i, p in enumerate(shown, 1)]
-    if site_url:
-        lines += ["", f"The same comparison is online at {site_url}"]
     if fd.get("pubpeer_post"):
         lines += ["", f"I have also posted these findings on PubPeer: {fd['pubpeer_post']}"]
     lines += ["", request, "", "Thanks", name or git_config("user.name") or "[Your name]"]
@@ -209,7 +207,7 @@ def recipients(audience, fd):
     return contact.get("to", "") or "", contact.get("cc", "") or ""
 
 
-def email_message(fd, attachments, examples=EMAIL_PASSAGES, site_url=None, audience="publisher", sender=None,
+def email_message(fd, attachments, examples=EMAIL_PASSAGES, audience="publisher", sender=None,
                   name=None):
     """email_parts() as a draft .eml message: To and Cc from recipients() (empty when nobody has filled in
     the journal's contact yet, and always for the institution and the authors), From `sender` when given,
@@ -217,7 +215,7 @@ def email_message(fd, attachments, examples=EMAIL_PASSAGES, site_url=None, audie
     attachments[0] as the comparison page and attachments[1], if any, as the image."""
     attachments = [Path(a) for a in attachments]
     subject, body = email_parts(fd, attachments[0].name, attachments[1].name if len(attachments) > 1 else None,
-                                examples=examples, site_url=site_url, audience=audience, name=name)
+                                examples=examples, audience=audience, name=name)
     to, cc = recipients(audience, fd)
     msg = email.message.EmailMessage()
     msg["To"] = to

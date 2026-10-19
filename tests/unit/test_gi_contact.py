@@ -21,8 +21,7 @@ def body(f=None, **kw):
 
 class TestEmail(unittest.TestCase):
     def test_later_known(self):
-        subject, e = body(fd(passages=12), attachment="GI-1-x.html", shot_name="GI-1-longest.jpg",
-                          site_url="https://x/GI-1.html")
+        subject, e = body(fd(passages=12), attachment="GI-1-x.html", shot_name="GI-1-longest.jpg")
         self.assertEqual(subject, "Text overlap in New paper (doi:10.2/new)")
         self.assertTrue(e.startswith("Dear Editor,\n\nI am writing about an article in your journal"))
         self.assertIn("Later article: New paper (2015), https://doi.org/10.2/new", e)
@@ -35,12 +34,12 @@ class TestEmail(unittest.TestCase):
         self.assertIn("all 77 shared passages", body({**fd(), "runs": 77})[1])
         self.assertIn("both articles end to end as one diff", body(fd(pct_later=95.0))[1])
         self.assertIn("- GI-1-longest.jpg: passage 1 as printed in both articles (earlier article left", e)
-        self.assertIn("online at https://x/GI-1.html", e)
+        self.assertNotIn("online at", e)
         self.assertNotIn("**", e)
         self.assertNotIn("PubPeer", e)
         self.assertNotIn("made automatically", e)
-        # attachments, then extracts, then the site link, then the request and sign-off
-        order = [e.index(t) for t in ("Later article:", "I also attached:", "Extracts of", "online at",
+        # attachments, then extracts, then the request and sign-off
+        order = [e.index(t) for t in ("Later article:", "I also attached:", "Extracts of",
                                       "I would be grateful", "Thanks\nArthur\n")]
         self.assertEqual(order, sorted(order))
         self.assertTrue(e.endswith("let me know what you decide.\n\nThanks\nArthur\n"))

@@ -52,7 +52,7 @@ the comparison page and index on the project site, example_output/general_index/
 new tab, unless you answer s ("skip") when asked, or p ("publish only": just the site page, marked
 not reported, pushed to main; for a pair not worth reporting, low say, whose comparison should be public); t at the prompt does the same for any pair. Then, each step
 skippable (report_flow()):
-  - the site pages are pushed to main (gi_publish_site.py), so the emails' link works;
+  - the site pages are pushed to main (gi_publish_site.py) (the emails don't link it: the comparison is attached);
   - the gi-cases agent's findings. The agent starts in the background (BackgroundPrep, headless claude -p)
     as soon as a pair's page opens, unless --no-agent or the case already has a findings.md, so it reads
     both PDFs while you do; it's stopped if you don't report the pair. It may only read, use read-only
