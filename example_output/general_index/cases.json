@@ -478,5 +478,28 @@
   "matched_words": 1557,
   "runs": 58,
   "longest": 116
+ },
+ "GI-132": {
+  "file": "GI-132.html",
+  "reported": "2026-10-19",
+  "published": "2026-10-19",
+  "earlier_known": true,
+  "later": {
+   "title": "Clinical measurement of tooth wear: Tooth Wear Indices",
+   "year": 2012,
+   "doi": "10.4317/jced.50592",
+   "pct": 47.0,
+   "journal": "Journal of Clinical and Experimental Dentistry"
+  },
+  "earlier": {
+   "title": "The evolution of tooth wear indices",
+   "year": 2008,
+   "doi": "10.1007/s00784-007-0184-2",
+   "pct": 61.0,
+   "journal": "Clinical Oral Investigations"
+  },
+  "matched_words": 1645,
+  "runs": 35,
+  "longest": 151
  }
 }
