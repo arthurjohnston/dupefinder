@@ -87,6 +87,17 @@ class TestMenu(unittest.TestCase):
             cli.ask = saved
         self.assertEqual(out, ("problem", "cross-author copying", "medium", "", [], False))
 
+    def test_not_worth_reporting_key(self):
+        answers = iter(["w"])   # one key; nothing else may be asked
+        saved = cli.ask
+        cli.ask = lambda prompt: next(answers)
+        try:
+            out = cli.review_one({"ai_decision": None, "year_a": 2016, "year_b": 2017}, cli.CHOICES, {})
+        finally:
+            cli.ask = saved
+        self.assertEqual(out, ("problem", "cross-author copying", "low", "", ["not worth reporting"], False))
+        self.assertIn(cli.NOT_WORTH[1], cli.SEVERITIES.values())
+
     def test_note(self):
         self.assertEqual(cli.build_note(["the later paper doesn't cite the earlier one"], "  saw it  "),
                          "the later paper doesn't cite the earlier one; saw it")

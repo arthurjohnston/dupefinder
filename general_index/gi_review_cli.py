@@ -16,9 +16,11 @@ f at step 1 (shown when there are any) goes through the gi-cases agent's propose
 (data/dupe_publisher/GI-NN/findings.md, gi_case_findings.py) and regenerates the report files of the cases
 you changed, so the findings you include are in the PubPeer Markdown and the emails.
 
-Three quick keys at step 1 skip 2-4: c = problem, cross-author copying, medium; e = unsure, flagged not
+Four quick keys at step 1 skip 2-4: c = problem, cross-author copying, medium; e = unsure, flagged not
 qualified (outside your expertise, e.g. higher-level math); r = problem (the agent's type, else cross-author
-copying), flagged already retracted, and no report files.
+copying), flagged already retracted, and no report files; w = problem, cross-author copying, low, flagged
+not worth reporting: real copying too minor to complain about, so no report files, and the site page is
+published marked not reported (as p does at the report prompt).
 It saves to `reviews` in gi.sqlite3 exactly like REVIEW_COMMANDS.md's gi_review (same vocabulary, same
 verdict column, replaces your earlier review of the pair), the flags to `review_flags` (replacing the
 pair's earlier flags), and rewrites the pages' index.html on exit.
@@ -143,13 +145,18 @@ AI_DECISIONS = {"problem": "problem", "no-problem": "no problem", "unsure": "uns
 # key -> flag stored in review_flags.flag
 FLAGS = {"m": ("paper mill", "both papers look like paper-mill output"),
          "e": ("not qualified", "outside my expertise, not qualified to judge it (e.g. higher-level math)"),
-         "r": ("already retracted", "the copying paper is already retracted, nothing to report")}
+         "r": ("already retracted", "the copying paper is already retracted, nothing to report"),
+         "w": ("not worth reporting", "real cross-author copying, too minor to complain about")}
+
+# the w quick key: problem, this type, this severity; no report, the site page published as not reported
+NOT_WORTH = ("cross-author copying", "low")
 
 FLAGS_DDL = """create table if not exists review_flags (   -- your extra judgements on a pair, beside the verdict
     pair_lo text, pair_hi text,
     flag text,                    -- 'paper mill': you think both papers came from a paper mill;
                                   -- 'not qualified': you can't judge the content (e.g. higher-level math);
-                                  -- 'already retracted': real copying, but the copying paper is retracted
+                                  -- 'already retracted': real copying, but the copying paper is retracted;
+                                  -- 'not worth reporting': real copying, too minor to report
     flagged_at text,
     primary key (pair_lo, pair_hi, flag)
 );"""
@@ -416,6 +423,8 @@ def review_one(pair, choices, counts, saved_flags=(), prep=None):
     print(f"   c  {QUICK[0]}: {QUICK[1]}, {QUICK[2]}, {QUICK[3]} (skips severity)")
     print(f"   e  unsure, flagged {FLAGS['e'][0]}: {FLAGS['e'][1]} (skips severity and flags)")
     print(f"   r  problem, flagged {FLAGS['r'][0]}: {FLAGS['r'][1]} (skips severity, flags and report)")
+    print(f"   w  problem: {NOT_WORTH[0]}, {NOT_WORTH[1]}, flagged {FLAGS['w'][0]}: {FLAGS['w'][1]}"
+          " (no report; publishes the site page as not reported)")
     keys = "   a  agree with the AI" if ai and ai[1] else ""
     print(f"{keys}   o  reopen the page   p  open the PDFs   t  report it   s  skip   q  quit")
     import gi_case_findings
@@ -449,6 +458,10 @@ def review_one(pair, choices, counts, saved_flags=(), prep=None):
             decision, severity, reasons = "problem", DEFAULT_SEVERITY, []
             quick, preset = True, FLAGS["r"][0]
             break
+        if ans == "w":
+            decision, (type_, severity), reasons = "problem", NOT_WORTH, []
+            quick, preset = True, FLAGS["w"][0]
+            break
         if ans in ("q", "s", "o", "p", "t", "f"):
             return {"q": "quit", "s": "skip", "o": "reopen", "p": "pdfs", "t": "pubpeer", "f": "findings"}[ans]
         if ans == "a" and ai and ai[1]:
@@ -460,7 +473,7 @@ def review_one(pair, choices, counts, saved_flags=(), prep=None):
             if decision == "no problem" and type_ in TYPE_REASON:
                 severity, reasons, quick = "none", [TYPE_REASON[type_]], True
             break
-        print("  a number from the list, or c / e / r / a / o / p / t / g / s / q")
+        print("  a number from the list, or c / e / r / w / a / o / p / t / g / s / q")
 
     converted = False
     year = same_year(pair)
@@ -845,7 +858,7 @@ def main():
                 check_findings(db, not args.no_open)
                 continue
             break
-        reporting = out not in ("quit", "skip") and FLAGS["r"][0] not in out[4] and (
+        reporting = out not in ("quit", "skip") and not {FLAGS["r"][0], FLAGS["w"][0]} & set(out[4]) and (
             out[0] == "problem" or (out[5] and pair["ai_decision"] == "problem"))
         if prep and not reporting:   # not going to be reported: the analysis isn't needed
             prep.stop()
@@ -864,6 +877,9 @@ def main():
         # agreeing with the AI's problem call also counts when the same year turned it into unsure
         if FLAGS["r"][0] in flags:
             print("  already retracted: no report files (t on this pair still writes them)")
+        elif FLAGS["w"][0] in flags:
+            print("  not worth reporting: no report files; publishing the site page as not reported")
+            publish_only(db, pair)
         elif decision == "problem" or (agreed and pair["ai_decision"] == "problem"):
             emails = "all four emails" if severity == "high" else "email to the journal"
             ans = ask(f"[Enter to report it (PubPeer page, {emails}, site page pushed, then the agent's findings), "
