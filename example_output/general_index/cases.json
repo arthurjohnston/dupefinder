@@ -455,5 +455,28 @@
   "matched_words": 464,
   "runs": 14,
   "longest": 98
+ },
+ "GI-10": {
+  "file": "GI-10.html",
+  "reported": "2026-10-19",
+  "published": "2026-10-19",
+  "earlier_known": true,
+  "later": {
+   "title": "Hypothyroidism - A New View On An Old Disease",
+   "year": 2017,
+   "doi": "10.3329/kyamcj.v7i1.33764",
+   "pct": 66.0,
+   "journal": "KYAMC Journal"
+  },
+  "earlier": {
+   "title": "Hypothyroidism: an update",
+   "year": 2012,
+   "doi": "10.1080/20786204.2012.10874256",
+   "pct": 54.0,
+   "journal": "South African Family Practice"
+  },
+  "matched_words": 1557,
+  "runs": 58,
+  "longest": 116
  }
 }
