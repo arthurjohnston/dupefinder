@@ -294,5 +294,6 @@ is meant to move it. Twice in the pilot a rule that looked right hid a known pla
 | `gi_write_pages.py` | HTML comparison pages from `fulltext` (overlap-evidence block: full text, then index) |
 | `run_gi.sh` | chains steps 2-3 + recall into the database |
 | `gi_results_db.py` | retired; prints where its data went |
+| `gi_tortured.py` / `run_tortured.sh` | tortured phrases: count them in the 5-grams, undo them, look for new pairs (none found: TORTURED_PHRASES.md) |
 
 Disk: `general_index/data/` is about 64 GB (the slice samples are 4 x ~13 GB). 145 GB free.
