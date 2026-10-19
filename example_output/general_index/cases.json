@@ -432,5 +432,28 @@
   "matched_words": 524,
   "runs": 26,
   "longest": 53
+ },
+ "GI-369": {
+  "file": "GI-369.html",
+  "reported": "2026-10-19",
+  "published": "2026-10-19",
+  "earlier_known": false,
+  "later": {
+   "title": "A comparative study of parapharyngeal space tumors over a 7 year period experience in tertiary care hospital",
+   "year": 2018,
+   "doi": "10.18203/issn.2454-5929.ijohns20182958",
+   "pct": 16.0,
+   "journal": "International Journal of Otorhinolaryngology and Head and Neck Surgery"
+  },
+  "earlier": {
+   "title": "Tumors of the parapharyngeal space: the VU University Medical Center experience over a 20-year period",
+   "year": 2018,
+   "doi": "10.1007/s00405-018-4891-x",
+   "pct": 15.0,
+   "journal": "European Archives of Oto-Rhino-Laryngology"
+  },
+  "matched_words": 464,
+  "runs": 14,
+  "longest": 98
  }
 }
