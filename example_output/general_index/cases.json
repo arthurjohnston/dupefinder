@@ -547,5 +547,28 @@
   "matched_words": 888,
   "runs": 28,
   "longest": 86
+ },
+ "GI-427": {
+  "file": "GI-427.html",
+  "reported": "2026-10-20",
+  "published": "2026-10-20",
+  "earlier_known": true,
+  "later": {
+   "title": "Real Time Data Analysis of West Rapti River Basin of Nepal",
+   "year": 2014,
+   "doi": "10.4236/gep.2014.25001",
+   "pct": 49.0,
+   "journal": "Journal of Geoscience and Environment Protection"
+  },
+  "earlier": {
+   "title": "Journal of Integrated Disaster Risk Management Community Based Approach to Flood Early Warning in West Rapti River Basin of Nepal",
+   "year": 2013,
+   "doi": "10.5595/idrim.2013.0060",
+   "pct": 19.0,
+   "journal": "Journal of Integrated Disaster Risk Management"
+  },
+  "matched_words": 1078,
+  "runs": 32,
+  "longest": 117
  }
 }
