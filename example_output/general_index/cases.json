@@ -501,5 +501,51 @@
   "matched_words": 1645,
   "runs": 35,
   "longest": 151
+ },
+ "GI-137": {
+  "file": "GI-137.html",
+  "reported": "2026-10-20",
+  "published": "2026-10-20",
+  "earlier_known": true,
+  "later": {
+   "title": "POMPP Score: Evaluation of Mortality and Morbidity in Patients with Secondary Peritonitis",
+   "year": 2018,
+   "doi": "10.23958/ijirms/vol03-i04/01",
+   "pct": 87.0,
+   "journal": "International Journal of Innovative Research in Medical Science"
+  },
+  "earlier": {
+   "title": "Evaluation of mortality and morbidity in patients with secondary peritonitis using predictive score of mortality in perforated peptic ulcer",
+   "year": 2017,
+   "doi": "10.18203/2349-2902.isj20173160",
+   "pct": 85.0,
+   "journal": "International Surgery Journal"
+  },
+  "matched_words": 1544,
+  "runs": 157,
+  "longest": 216
+ },
+ "GI-332": {
+  "file": "GI-332.html",
+  "reported": "2026-10-20",
+  "published": "2026-10-20",
+  "earlier_known": true,
+  "later": {
+   "title": "Emergency Cesarean Delivery in a Guillain- Barre Syndrome Patient",
+   "year": 2016,
+   "doi": "10.3329/jbsa.v27i1.29001",
+   "pct": 51.0,
+   "journal": "Journal of the Bangladesh Society of Anaesthesiologists"
+  },
+  "earlier": {
+   "title": "Anesthetic management for cesarean delivery in a Guillain-Barré syndrome patient -A case report-",
+   "year": 2013,
+   "doi": "10.4097/kjae.2013.64.3.268",
+   "pct": 39.0,
+   "journal": "Korean Journal of Anesthesiology"
+  },
+  "matched_words": 888,
+  "runs": 28,
+  "longest": 86
  }
 }
