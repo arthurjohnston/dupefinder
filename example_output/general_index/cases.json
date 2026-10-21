@@ -547,5 +547,28 @@
   "matched_words": 1565,
   "runs": 42,
   "longest": 159
+ },
+ "GI-04": {
+  "file": "GI-04.html",
+  "reported": null,
+  "published": "2026-10-21",
+  "earlier_known": true,
+  "later": {
+   "title": "A NEUTROSOPHIC DESCRIPTION LOGIC",
+   "year": 2008,
+   "doi": "10.1142/S1793005708001100",
+   "pct": 41.0,
+   "journal": "New Mathematics and Natural Computation"
+  },
+  "earlier": {
+   "title": "Reasoning within Fuzzy Description Logics",
+   "year": 2001,
+   "doi": "10.1613/jair.813",
+   "pct": 21.0,
+   "journal": "Journal of Artificial Intelligence Research"
+  },
+  "matched_words": 2838,
+  "runs": 101,
+  "longest": 109
  }
 }
