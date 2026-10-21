@@ -524,5 +524,28 @@
   "matched_words": 888,
   "runs": 28,
   "longest": 86
+ },
+ "GI-395": {
+  "file": "GI-395.html",
+  "reported": "2026-10-20",
+  "published": "2026-10-20",
+  "earlier_known": true,
+  "later": {
+   "title": "Translators and Interpreters Certification in Australia, Canada, the Usа and Ukraine: Comparative Analysis",
+   "year": 2014,
+   "doi": "10.2478/rpp-2014-0036",
+   "pct": 49.0,
+   "journal": "Comparative Professional Pedagogy"
+  },
+  "earlier": {
+   "title": "A Cross-National Overview of Translator and Interpreter Certification Procedures",
+   "year": 2013,
+   "doi": "10.12807/ti.105201.2013.a02",
+   "pct": 11.0,
+   "journal": "The International Journal of Translation and Interpreting Research"
+  },
+  "matched_words": 1565,
+  "runs": 42,
+  "longest": 159
  }
 }
