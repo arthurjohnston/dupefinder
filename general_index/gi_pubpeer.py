@@ -98,7 +98,7 @@ def findings(db, f):
             m = paper_meta(lib, pid)
             doi = f[f"doi_{side[pid]}"]
             papers[pid] = {"title": clean_title(m["title"]), "year": m["year"] or f[f"year_{side[pid]}"],
-                           "doi": doi, "words": len(words[pid]),
+                           "doi": doi, "words": len(words[pid]), "authors": m["authors_metadata"],
                            "pct": f[f"ft_pct_{side[pid]}"]}
         cites = citation_check(lib, papers[first]["title"], second)["cites_other_by_title"] if earlier else None
     finally:

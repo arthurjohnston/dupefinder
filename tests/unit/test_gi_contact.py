@@ -56,6 +56,27 @@ class TestEmail(unittest.TestCase):
         with self.assertRaises(ValueError):
             body(audience="nobody")
 
+    def test_institution_names_its_authors(self):
+        inst = {"to": "rio@u.example", "name": "U", "authors": ["A. One", "B. Two", "C. Three"]}
+        f = {**fd(), "case_contacts": {"institution": [inst, {"to": "rio@v.example", "authors": ["D. Four"]}]}}
+        e = body(f, audience="institution", contact=inst)[1]
+        self.assertIn("an article by A. One, B. Two and C. Three, affiliated with your institution, which", e)
+        self.assertEqual(gc.recipients("institution", f, inst), ("rio@u.example", ""))
+        self.assertEqual(len(gc.institutions(f)), 2)
+        self.assertIn("by authors affiliated with your institution", body(audience="institution")[1])
+        self.assertEqual(gc.name_list(["A", "B"]), "A and B")
+
+    def test_one_victim_is_dear_professor_doctor(self):
+        one = {**fd(), "first": {**fd()["first"], "authors": ["Old Author"]}}
+        e = body(one, audience="authors")[1]
+        self.assertTrue(e.startswith("Dear Professor/Doctor,"))
+        self.assertIn("contact that journal yourself.", e)
+        two = {**fd(), "first": {**fd()["first"], "authors": ["X", "Y"]}}
+        self.assertTrue(body(two, audience="authors")[1].startswith("Dear authors,"))
+        # contacts.json's names (as printed) win over the index metadata
+        named = {**two, "case_contacts": {"authors": {"to": "x@e.example", "names": ["X"]}}}
+        self.assertTrue(body(named, audience="authors")[1].startswith("Dear Professor/Doctor,"))
+
     def test_order_unknown(self):
         for a in gc.EMAIL_AUDIENCES:
             e = "\n".join(body(fd(earlier_known=False), audience=a))

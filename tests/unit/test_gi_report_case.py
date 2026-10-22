@@ -51,6 +51,29 @@ class TestSeverity(unittest.TestCase):
         for sev in ("low", "medium", None):
             self.assertEqual(gi_report.audiences(sev), ("publisher",))
 
+    def test_one_institution_email_each(self):
+        import gi_pubpeer
+        insts = [{"to": "rio@u.example", "authors": ["A. One"]}, {"to": "", "authors": ["B. Two"]},
+                 {"to": "rio@w.example", "authors": ["C. Three"]}]
+        f = {**fd(), "case_contacts": {"institution": insts, "authors": {"to": "old@e.example"}}}
+        saved = gi_report.case_findings, gi_pubpeer.write_page, gi_pubpeer.publisher_page, gi_pubpeer.case_name
+        gi_report.case_findings = lambda db, row, report_dir: f
+        gi_pubpeer.write_page = lambda db, row, out, fd, name: (Path(out) / name, None)
+        gi_pubpeer.publisher_page = lambda row, fd: ("<p>page</p>", None)
+        gi_pubpeer.case_name = lambda row: "GI-99"
+        try:
+            d = Path(tempfile.mkdtemp())
+            (d / "GI-99").mkdir()
+            (d / "GI-99" / "GI-99-email-institution-4.eml").write_text("stale")
+            paths = gi_report.write_report(None, {}, report_dir=d, site_dir=None, severity="high")
+        finally:
+            gi_report.case_findings, gi_pubpeer.write_page, gi_pubpeer.publisher_page, gi_pubpeer.case_name = saved
+        self.assertEqual(sorted(k for k in paths if k.startswith("email institution")),
+                         ["email institution", "email institution 2"])
+        self.assertIn("To: rio@w.example", paths["email institution 2"].read_text())
+        self.assertIn("C. Three, affiliated", paths["email institution 2"].read_text())
+        self.assertFalse((d / "GI-99" / "GI-99-email-institution-4.eml").exists())
+
     def test_review_severity_defaults_to_medium(self):
         import sqlite3
         db = sqlite3.connect(":memory:")
