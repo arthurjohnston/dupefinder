@@ -2863,3 +2863,37 @@ pipeline keeps only 1 in 8 (gi_sample_5grams.py). For a chosen set of pairs (e.g
 - limits: lemmatized text can't show readable passages on a page, only how much is shared; test it
   first on one shard against the pairs that DO have full text (fulltext table) to see how well the
   index figure tracks the PDF figure.
+
+## General Index: field mix of the review queue, and a JSTOR full-text experiment (2026-10-19, waiting on the user)
+
+**Queue field mix.** Keyword-classifying titles/journals of the 714 unreviewed `gi_review_cli.py` pairs
+against a random 5,419-document General Index sample (classifiable titles only): clinical medicine
+54% of the queue vs ~37% of the index, pharma/biology/chemistry 25% vs 40%, computing/engineering 15%
+vs 12%, social science/business/education 3% vs 7%. The index itself is ~3/4 biomedical, but clinical
+medicine is over-represented beyond that (the "clinical study of X at our institute" re-write shape
+in small regional medical journals). Rough heuristic, but the gap is far larger than its error.
+
+**Social-science sources looked at.** No General-Index-like n-gram release exists for social science.
+JSTOR's n-gram datasets (Data for Research, then Constellate) ended with Constellate on 2025-07-01. The
+successor, JSTOR Text Analysis Support (jstor.org/ta-support, free personal account), gives full OCR
+text as one JSON file (`item_id`, `references`, `full_text`) for an uploaded item-ID list, up to 1.5M
+items per request; non-OA items need ITHAKA staff review; downloads expire after 60 days; terms bar
+training/enhancing AI models and building a product. Bulk PDF downloading from the site is not allowed.
+Unknown: what size they actually approve, and whether quoted excerpts may appear on public comparison
+pages/PubPeer. Other candidates not yet checked: CORE (bulk OA full text, repository-heavy, closest fit),
+SocArXiv/OSF, ERIC, EconStor/RePEc, OpenAlex abstracts as a first screen.
+
+**JSTOR coverage of the candidates.** `10.2307/` DOIs: ~7M of the 117M candidate pairs, ~263,000 in
+ranked tiers 1-5 (3,535 with both sides JSTOR); of the 784 real-overlap full-text pairs, none (one
+`10.1086/` self-reuse pair). Tier 2 has 36 such DOI pairs, none full-text checked; OpenAlex finds an OA
+copy for only 10 of their 72 DOIs, so JSTOR alone completes just 6 pairs (29 have the other side
+paywalled too). Best leads among the 6: garlic/organosulfur (Saudi Pharm J 2010 vs EHP 2001), symbolic
+interactionism textbooks (IES 2008 vs Teaching Sociology 2003), MIS Quarterly 2006 vs a 2011 MECS
+journal, chironomid biomass (J Freshwater Ecol 2006 vs Ecology 1998). Takeaway: JSTOR mostly supplies
+the earlier, copied-from side; the copying venues are rarely in JSTOR.
+
+**Next (user):** submit the 7-item test request: files and steps in
+`general_index/data/jstor_experiment/` (README.md, pairs.tsv, request_dois.txt / request_item_ids.txt;
+check the item-ID format against JSTOR's metadata file first), and ask about quoting excerpts and
+AI-agent use. Also check whether the EHP side (`10.2307/3454989`) is simply free on PubMed Central.
+Then measure OCR quality vs PDF extraction and run the 6 pairs through `compare_two_papers.py`.

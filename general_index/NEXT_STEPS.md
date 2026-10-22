@@ -244,6 +244,11 @@ HOW_LEADS_ARE_FLAGGED.md.
    landing-page `citation_pdf_url` fallback (`download_with_landing_page_fallback()`, which
    `retrieve_papers.py`'s plain path doesn't use); `rescue_via_europepmc.py` for biomedical papers.
    `list_manual_downloads.py` for the paywalled remainder, if the user wants to fetch any by hand.
+   **JSTOR experiment (2026-10-19, `data/jstor_experiment/README.md`):** JSTOR Text Analysis Support
+   (Constellate's successor; full-text OCR as JSON for an item-ID list, no n-grams any more) for the
+   `10.2307/` sides. Tier 2 has 36 such DOI pairs, none full-text checked; JSTOR alone completes only 6
+   (the other side is paywalled elsewhere in 29), so the test request is 7 items. Waiting on the user
+   to submit it; then find out what the terms allow quoting on the comparison pages before going larger.
 4. **Tier 4 (104,948, index evidence only)** is the biggest unexplored pool. Its top (sorted two-sided
    first) holds real-looking republications among artifacts. Options: an abstract check where
    abstracts exist (already done for all tier 4 pairs with DOIs; the rest lack abstracts), or
@@ -267,6 +272,13 @@ HOW_LEADS_ARE_FLAGGED.md.
 cd general_index
 ./run_gi.sh slice0 slice1 slice2 slice3      # pairs (~60 min, 12 GB RAM) -> report (~17 min) -> abstracts -> ranking -> recall
 ./gi_verify.sh tier12_batch2 arthur.j.johnston@gmail.com --tiers 1 2 --limit 500   # full text for a new batch
+./gi_verify.sh tier24_aff_batch arthur.j.johnston@gmail.com --tiers 2 4 --limit 500 --order affiliation   # the same, leads with a DOI and a year on both sides first, then authors still at a US/European university (gi_affiliations.py; picks from the top 5 x --limit, --pool to change)
+../.venv/bin/python3 gi_affiliations.py backfill --orcid   # refetch the whole OpenAlex/ORCID records (raw columns: affiliation history, ROR ids, raw affiliation strings, past ORCID jobs) for rows cached before they were kept; resumable, ~52k calls for the 2026-10-18 cache
+./run_top30_batch.sh top30_s16   # 2026-10-21: full-text check of the top-30-university shortlist (data/top30_pairs.txt, gitignored: 600 pair_ids with an active top-30 author on the copying side, ranked by a model trained on checked pairs; 509 not yet checked). gi_verify.py select --pairs FILE takes any such list
+#   then: 64 of its unchecked pairs need only PDFs a browser can usually get (publisher 403s, landing pages): data/verify_top30_s16/manual_downloads/_pending.md (+ .html, _manifest.json). Save them there, run ../../../.venv/bin/python3 ../../../import_manual_downloads.py in data/verify_top30_s16, then the paths/extract/load-text/measure/pages steps of run_top30_batch.sh (from "cd $W" on)
+#   2026-10-21 hand round: 14 pairs downloaded by the user; real top-30-linked copying: GI-809 (#258) and GI-813 (#119, eosinophilic colitis); real copying but name-merged "top-30" authors: GI-810, GI-811; the rest self-reuse/collaborators/no overlap. Every pair on the list with different authors has now been tried (paywalled.txt). Gotcha: PDFs saved from Wiley Online Library (incl. Hindawi) carry a per-page "Downloaded from ... Terms and Conditions" stamp that matches between two such PDFs (GI-812 inflated by it) -- not stripped yet
+./run_useu_batch.sh useu_s16   # 2026-10-22: more US/European cases: data/useu_pairs.txt = tier-4 leads whose copying paper prints a US/European university on its own byline (cached OpenAlex authorships, not name matching), no shared author id/surname, no co-authorship between the sides (one free OpenAlex call per pair), best model score first, 3,000. 82,604 such leads exist in all
+./run_useu_loop.sh 48   # 2026-10-22: after useu_s16, rounds useu2_s16, useu3_s16, ... for 48 hours or until a round finds no real cross-author overlap (log data/useu_loop.log). Scripts in affiliation_hunt/ (README there), data in data/affiliation_hunt/. Also scoring tier 4's other 823k no-shared-author leads (gi_affiliations.py leads --sets rest4, paid credit, log data/affiliations_rest4.log); the loop rebuilds the list when that finishes
 ../.venv/bin/python3 gi_write_pages.py      # pages for full-text-confirmed, unreviewed pairs
 ```
 
