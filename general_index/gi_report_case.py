@@ -293,6 +293,46 @@ def _article(p):
     return f'{title}{year}<br><a href="{html.escape(link)}">doi:{html.escape(doi)}</a>' if link else title + year
 
 
+def is_reported(case, site_dir=SITE_DIR):
+    """The date the case was reported on the site (cases.json), None when it wasn't or isn't there."""
+    path = Path(site_dir) / "cases.json"
+    cases = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+    return (cases.get(case) or {}).get("reported")
+
+
+def take_down(case, site_dir=SITE_DIR, report_dir=REPORT_DIR):
+    """Undo reporting a case you've changed your mind about: its site page and cases.json entry removed and the
+    index rewritten (not pushed: gi_publish_site.py does that), and its report files (PubPeer page,
+    comparison, image, email drafts) moved to GI-NN/withdrawn/, so nothing treats it as reported. The
+    agent's findings, contacts and notes stay. Emails already sent and a PubPeer post already up are not
+    undone. Returns the list of files moved."""
+    site_dir = Path(site_dir)
+    path = site_dir / "cases.json"
+    cases = json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+    if cases.pop(case, None) is not None:
+        path.write_text(json.dumps(cases, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
+    (site_dir / f"{case}.html").unlink(missing_ok=True)
+    if path.exists():
+        write_index(site_dir)
+    out = Path(report_dir) / case
+    gone = out / "withdrawn"
+    moved = []
+    for f in sorted(out.glob(f"{case}-*")):
+        if f.is_file():
+            gone.mkdir(exist_ok=True)
+            f.replace(gone / f.name)
+            moved.append(gone / f.name)
+    compose = out / "compose"
+    if compose.is_dir():
+        gone.mkdir(exist_ok=True)
+        if (gone / "compose").exists():   # taken down before: this one's drafts replace those
+            import shutil
+            shutil.rmtree(gone / "compose")
+        compose.replace(gone / "compose")
+        moved.append(gone / "compose")
+    return moved
+
+
 def write_index(site_dir):
     site_dir = Path(site_dir)
     cases = json.loads((site_dir / "cases.json").read_text(encoding="utf-8"))

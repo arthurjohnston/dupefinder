@@ -105,9 +105,9 @@ def counts(case, report_dir=REPORT_DIR):
 
 
 def pending_cases(report_dir=REPORT_DIR):
-    """[(case, n pending)] for every case with findings still to check, in case order."""
+    """[(case, n pending)] for every case with findings still to check, in case order (GI-80 before GI-235)."""
     out = []
-    for p in sorted(Path(report_dir).glob("*/findings.md")):
+    for p in sorted(Path(report_dir).glob("*/findings.md"), key=lambda p: (len(p.parent.name), p.parent.name)):
         n = counts(p.parent.name, report_dir)["pending"]
         if n:
             out.append((p.parent.name, n))

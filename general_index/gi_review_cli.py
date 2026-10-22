@@ -12,9 +12,11 @@ $GI_REVIEW_OPENER; --pdfs opens both PDFs too, or press p at the prompt), then a
 The verdict is saved as soon as it's complete, with no confirmation step (--gi NN --include-reviewed to change
 one). No reasons are asked for: a no-problem type that is its own reason (same paper, boilerplate, shared
 citations, artifact: TYPE_REASON) saves that reason, and a quick key saves its own.
-f at step 1 (shown when there are any) goes through the gi-cases agent's proposed findings for any case
-(data/dupe_publisher/GI-NN/findings.md, gi_case_findings.py) and regenerates the report files of the cases
-you changed, so the findings you include are in the PubPeer Markdown and the emails.
+f at step 1 goes through the gi-cases agent's proposed findings for the pair on screen
+(data/dupe_publisher/GI-NN/findings.md, gi_case_findings.py; all of them when none is still pending, so you
+can change one), then offers the other cases' pending ones. A case already reported gets its report files
+rewritten after a change, so the findings you include are in the PubPeer Markdown and the emails; one not
+reported yet is left alone until it is.
 
 Four quick keys at step 1 skip 2-4: c = problem, cross-author copying, medium; e = unsure, flagged not
 qualified (outside your expertise, e.g. higher-level math); r = problem (the agent's type, else cross-author
@@ -25,49 +27,76 @@ It saves to `reviews` in gi.sqlite3 exactly like REVIEW_COMMANDS.md's gi_review 
 verdict column, replaces your earlier review of the pair), the flags to `review_flags` (replacing the
 pair's earlier flags), and rewrites the pages' index.html on exit.
 
-Queue (default): pages you haven't reviewed, the agent's cross-author / data copying calls first, then the
+Queue (--order publisher): pages you haven't reviewed, the agent's cross-author / data copying calls first, then the
 rest of its problem calls, then everything else; within each of those, pairs whose later (copying) paper is
 from a major publisher first (gi_preprints.pair_priority(), major_publisher_doi_prefixes.tsv; a known
 paper-mill venue inside one ranks ordinary), then larger overlap first. --order overlap puts larger overlap
 first within the first group instead, the publisher only breaking ties. Pairs whose later (copying) paper is
 a preprint or repository upload (gi_preprints.py, preprint_doi_prefixes.tsv) go after all of that, still
 in the queue, with a note: such uploads are most often the authors' own or an aggregator's copy, rarely a
-publishable finding. Pairs where the order is unknown and one side is a preprint go just before them. --gi 12,40 for specific pages
+publishable finding. Pairs where the order is unknown and one side is a preprint go just before them.
+--order affiliation (the default since 2026-10-17; --order publisher for the order above alone) ranks by who
+the later paper's authors are now (gi_affiliations.py: an author still
+publishing, at a US or European university, first; then at a university elsewhere; then no data; then no author
+active in academia), within the agent's problem calls and within the rest separately; it fetches any missing
+OpenAlex/ORCID data first. --us-europe-only keeps only the first of those. --order professor ranks by the
+authors above everything else: a later paper with an author whose ORCID lists a current (not emeritus)
+professor/lecturer post at a US/European institution first, then the affiliation ranks, the agent's calls and
+the publisher order holding within each; only authors with an ORCID record can be found this way. Each pair
+shows its later paper's authors' line whenever the data is cached (gi_affiliations.py fetch). --gi 12,40 for specific pages
 (reviewed or not); --include-reviewed to go back over yours too. --ai-type cross-author,data (or duplicate,
 recycling, legitimate, same-paper, third-source, boilerplate, citations, artifact, unsure, none = not reviewed
 by the agent) and --ai-decision problem / no-problem / unsure / none keep only those pairs.
 
-A problem verdict on two papers from the same year is saved as unsure (the type kept as the best guess),
-with "can't tell which paper came first (both published YEAR)" as a reason.
+Which paper came first: y at step 1 sets it by hand (a / b, u = can't tell, - = back to the years), for two
+papers from the same year or when the years have it the wrong way round (a PDF date, a preprint's year). It is
+saved in the pair's verification library (earlier_overrides, write_dupe_reports_html.resolve_earlier_id()),
+so the comparison page (rewritten at once), the PubPeer page and the emails all follow it. A problem verdict
+when the order is unknown asks the same question first; Enter there (can't tell) saves a same-year pair as
+unsure (the type kept as the best guess), with "can't tell which paper came first (both published YEAR)" as
+a reason.
 
 On the first menu, c is one key for "problem: cross-author copying, medium, most of the paper copied".
 
 PubPeer: each pair shows the PubPeer link of its later (copying) paper (both papers' when the order is
 unknown). Saving a problem verdict, or agreeing (a) with the AI's problem verdict (even when the same year
-saves it as unsure), writes the pair's report files (gi_report_case.py: in data/dupe_publisher/GI-NN/ the PubPeer
+saves it as unsure), reports the pair (report_flow()) unless you answer s ("skip") when asked, or p
+("publish only": just the site page, marked not reported, pushed to main; for a pair not worth reporting,
+low say, whose comparison should be public); t at the prompt does the same for any pair. In order, each
+step but the report files skippable:
+  - the gi-cases agent's findings. The agent starts in the background (BackgroundPrep, headless claude -p)
+    as soon as a pair's page opens, unless --no-agent, so it reads both PDFs while you do; it also starts on
+    the next pair in the queue that hasn't been prepped (one run ahead at a time, --no-lookahead to turn
+    that off), so that one is usually ready when you get to it; quitting stops a run still going ahead, and it
+    starts again when you reach that pair. A case that
+    already has a findings.md isn't prepped again: the menu shows what the earlier run concluded and when
+    (BackgroundPrep.previous()), and d below resumes that session; it's stopped if you don't report the
+    pair. It may only read, use read-only sqlite3 / pdftotext and the web, and write in the case's folder
+    and journal_contacts.json (headless_tools()). Here the tool waits for it if it's still going (Ctrl-C
+    stops it and reports without it), prints its summary, and d resumes its session in this terminal to
+    talk it through (/exit comes back). Without a background run, Enter opens the agent interactively
+    instead. Either way it runs on your claude.ai subscription only: nothing starts unless `claude auth
+    status` says claude.ai, and API-key variables are removed from its environment.
+  - you tick its findings (y include, n leave out, e edit, Enter pending, q stop);
+  - the report files, written once the agent is done or skipped, so they have the findings you included
+    (PubPeer Markdown, emails) and the contacts it found, and the PubPeer page opened (gi_report_case.py: in data/dupe_publisher/GI-NN/ the PubPeer
 page, with the findings as Markdown and a Copy button, the attachment for the journal, and the draft email
 to the later article's journal; a high-severity verdict also gets the drafts to the later authors' institution,
 the earlier authors and the earlier publisher;
-the comparison page and index on the project site, example_output/general_index/) and opens the PubPeer page in a
-new tab, unless you answer s ("skip") when asked, or p ("publish only": just the site page, marked
-not reported, pushed to main; for a pair not worth reporting, low say, whose comparison should be public); t at the prompt does the same for any pair. Then, each step
-skippable (report_flow()):
-  - the site pages are pushed to main (gi_publish_site.py) (the emails don't link it: the comparison is attached);
-  - the gi-cases agent's findings. The agent starts in the background (BackgroundPrep, headless claude -p)
-    as soon as a pair's page opens, unless --no-agent or the case already has a findings.md, so it reads
-    both PDFs while you do; it's stopped if you don't report the pair. It may only read, use read-only
-    sqlite3 / pdftotext and the web, and write in the case's folder and journal_contacts.json
-    (headless_tools()). Here the tool waits for it if it's still going (Ctrl-C skips it), prints its
-    summary, and d resumes its session in this terminal to talk it through (/exit comes back). Without a
-    background run, Enter opens the agent interactively instead. Either way it runs on your claude.ai
-    subscription only: nothing starts unless `claude auth status` says claude.ai, and API-key variables
-    are removed from its environment.
-  - you tick its findings (y include, n leave out, e edit, Enter pending, q stop) and the report files are
-    regenerated with the included ones in the PubPeer Markdown and the emails;
+the comparison page and index on the project site, example_output/general_index/);
   - you paste your PubPeer post's address once it's up, and the emails link to it;
+  - the site pages are pushed to main (gi_publish_site.py), after the last rewrite (the emails don't link
+    it: the comparison is attached);
   - o opens the drafts as Thunderbird compose windows.
+After the agent's summary, and again after you talk it through with it (d), v changes your verdict (the
+menu again; the new one replaces the saved one) and s stops there, not reported: nothing has been written
+yet at that point. A pair reported with t before its verdict isn't taken through all that again when the
+verdict is saved: its emails are just rewritten for the severity you gave. Saving a verdict that isn't a
+problem on a pair already reported (--gi NN --include-reviewed) offers t to take it down: the site page and
+cases.json entry removed and pushed, the report files moved to GI-NN/withdrawn/ (gi_report_case.take_down());
+emails and a PubPeer post already sent are yours to withdraw.
 
-Usage: gi_review_cli.py [--gi 12,40] [--ai-type cross-author,data] [--ai-decision problem] [--include-reviewed] [--order publisher|overlap] [--pdfs] [--no-open] [--no-agent] [--pages-dir data/fulltext_pages_s16]
+Usage: gi_review_cli.py [--gi 12,40] [--ai-type cross-author,data] [--ai-decision problem] [--include-reviewed] [--order affiliation|professor|publisher|overlap] [--us-europe-only] [--pdfs] [--no-open] [--no-agent] [--no-lookahead] [--pages-dir data/fulltext_pages_s16] [--sample-rate 8]
                         [--db data/gi.sqlite3]
 """
 import argparse
@@ -247,9 +276,11 @@ order by case when r.ai_decision = 'problem' and r.ai_type in ('cross-author cop
 """
 
 
-def load_queue(db, gi=None, include_reviewed=False, ai_types=None, ai_decisions=None, order="publisher"):
+def load_queue(db, gi=None, include_reviewed=False, ai_types=None, ai_decisions=None, order="publisher",
+               us_europe_only=False):
     """ai_types / ai_decisions: lists of AI_TYPES / AI_DECISIONS names to keep ('none': the agent hasn't
-    reviewed the pair). Ignored with gi."""
+    reviewed the pair). us_europe_only: only pairs whose later paper has an author active at a US/European
+    university (gi_affiliations.py). Ignored with gi."""
     rows = db.execute(QUEUE_SQL).fetchall()
     if gi:
         by_n = {r["page_number"]: r for r in rows}
@@ -265,7 +296,40 @@ def load_queue(db, gi=None, include_reviewed=False, ai_types=None, ai_decisions=
         rows = [r for r in rows if r["ai_decision"] in keep]
     rows = [r for r in rows if include_reviewed or r["human_decision"] is None]
     import gi_write_pages
-    return sorted(rows, key=lambda r: queue_key(r, gi_write_pages.priority_status(r)[0], order))
+    aff = {}
+    profs = {}
+    if order in ("affiliation", "professor") or us_europe_only:
+        aff = affiliation_ranks(db, rows)
+        if us_europe_only:
+            import gi_affiliations
+            rows = [r for r in rows if aff[r["pair_lo"], r["pair_hi"]] == gi_affiliations.TARGET]
+    if order == "professor":
+        profs = professor_pairs(db, rows)
+    return sorted(rows, key=lambda r: queue_key(r, gi_write_pages.priority_status(r)[0], order,
+                                                aff.get((r["pair_lo"], r["pair_hi"])),
+                                                bool(profs.get((r["pair_lo"], r["pair_hi"])))))
+
+
+def affiliation_ranks(db, rows):
+    """{(pair_lo, pair_hi): gi_affiliations rank of the later paper's authors}, fetching what the cache lacks."""
+    import gi_affiliations
+    import gi_write_pages
+    dois = [d for r in rows for d in (r["doi_a"], r["doi_b"])]
+    print(gi_affiliations.Fetcher(db).ensure(dois))
+    scores = gi_affiliations.doi_scores(db, dois)
+    return {(r["pair_lo"], r["pair_hi"]): gi_affiliations.pair_rank(scores, r["doi_a"], r["doi_b"],
+                                                                    gi_write_pages.earlier_side(r))[0]
+            for r in rows}
+
+
+def professor_pairs(db, rows):
+    """{(pair_lo, pair_hi): the later paper's US/European professors (gi_affiliations.pair_professors)}."""
+    import gi_affiliations
+    import gi_write_pages
+    profs = gi_affiliations.doi_professors(db, [d for r in rows for d in (r["doi_a"], r["doi_b"])])
+    return {(r["pair_lo"], r["pair_hi"]): gi_affiliations.pair_professors(profs, r["doi_a"], r["doi_b"],
+                                                                         gi_write_pages.earlier_side(r))
+            for r in rows}
 
 
 def ai_group(r):
@@ -275,7 +339,7 @@ def ai_group(r):
     return 2
 
 
-def queue_key(r, priority, order="publisher"):
+def queue_key(r, priority, order="publisher", affiliation=None, professor=False):
     """The queue order. priority: gi_preprints.pair_priority()'s rank (< 0 promoted, > 0 demoted).
     1. demoted pairs (copying BY a preprint/repository upload, or possibly by one) go last overall, "possibly
        by" (1) before "later paper is a preprint" (2): such uploads are most often the authors' own or an
@@ -286,9 +350,21 @@ def queue_key(r, priority, order="publisher"):
        major (-1) next, then ordinary (0);
     4. larger overlap first.
     order="overlap" swaps 3 and 4 in the first group (the agent's cross-author / data copying calls): larger
-    overlap first there, the publisher only breaking ties. Verdicts are untouched; only the order."""
+    overlap first there, the publisher only breaking ties. order="affiliation" (affiliation: the
+    gi_affiliations rank of the later paper's authors) puts that rank right after 1, within the agent's problem
+    calls and within the rest separately (so a pair the agent cleared never jumps one it flagged), the
+    publisher order then holding within each rank. order="professor" puts who the authors are ahead of
+    everything: a later paper with an author whose ORCID lists a current professor/lecturer post at a
+    US/European institution (professor: gi_affiliations.professor_job) first, then by affiliation rank, then
+    the affiliation order within each (so the agent's calls and the publisher order still hold inside a rank,
+    and a preprint copy still goes after the rest of its rank). Verdicts are untouched; only the order."""
     pct = max(r["ft_pct_a"] or 0, r["ft_pct_b"] or 0)
     group = ai_group(r)
+    aff = 2 if affiliation is None else affiliation        # gi_affiliations.UNKNOWN
+    if order == "professor":
+        return (not professor, aff, max(priority, 0), group == 2, group, min(priority, 0), -pct)
+    if order == "affiliation":
+        return (max(priority, 0), group == 2, aff, group, min(priority, 0), -pct)
     if order == "overlap" and group == 0:
         return (max(priority, 0), group, -pct, min(priority, 0))
     return (max(priority, 0), group, min(priority, 0), -pct)
@@ -326,7 +402,7 @@ def wrap(label, text, width=100):
     return textwrap.fill(text or "", width=width, initial_indent=label, subsequent_indent=" " * len(label))
 
 
-def show_pair(pair, i, total, titles, flags=(), priority=(0, None)):
+def show_pair(pair, i, total, titles, flags=(), priority=(0, None), authors=None, professors=None):
     pct = lambda v: "?" if v is None else f"{v:.0f}%"
     print("\n" + "=" * 100)
     print(f"GI-{pair['page_number']:02d}   ({i} of {total})   A {pct(pair['ft_pct_a'])} / B {pct(pair['ft_pct_b'])} "
@@ -345,6 +421,10 @@ def show_pair(pair, i, total, titles, flags=(), priority=(0, None)):
               "most consequential finding")
     elif note:
         print(f"  NOTE: {note}")
+    if authors:
+        print(wrap("  Authors: ", authors))
+    if professors:
+        print(wrap("  Professors (ORCID): ", professors))
     import gi_pubpeer
     earlier = pair.get("earlier")
     if earlier in ("a", "b"):
@@ -371,6 +451,25 @@ def show_pair(pair, i, total, titles, flags=(), priority=(0, None)):
         print(wrap("      ", pair["human_note"]))
     if flags:
         print(f"  YOUR FLAGS (saved): {', '.join(flags)}")
+
+
+def affiliation_line(scores, shown):
+    """The later paper's authors as gi_affiliations ranks them (both papers' when the order is unknown), or
+    None when nothing is cached for either."""
+    import gi_affiliations as ga
+    if not any(scores.get((shown[f"doi_{s}"] or "").lower(), (0, []))[1] for s in "ab"):
+        return None
+    if shown.get("earlier") in ("a", "b"):
+        later = "b" if shown["earlier"] == "a" else "a"
+        return f"(later paper, {later.upper()}) " + ga.describe(scores, shown[f"doi_{later}"])
+    return " | ".join(f"{s.upper()}: " + ga.describe(scores, shown[f"doi_{s}"]) for s in "ab")
+
+
+def professor_line(profs, shown):
+    """The later paper's US/European professors (both papers' when the order is unknown), or None."""
+    import gi_affiliations as ga
+    found = ga.pair_professors(profs, shown["doi_a"], shown["doi_b"], shown.get("earlier"))
+    return "; ".join(f"{n} ({why})" for n, why in found) or None
 
 
 def ask(prompt):
@@ -412,9 +511,88 @@ def split_note_suffix(ans):
     return ans.strip(), False
 
 
-def review_one(pair, choices, counts, saved_flags=(), prep=None):
+def orient(pair):
+    """The pair as the page shows it: A / B swapped so A is the page's left paper (the earlier one when known),
+    shown["earlier"] = 'a' / 'b' / None, shown["swapped"] when that isn't fulltext's own order."""
+    import gi_write_pages
+    shown = gi_write_pages.oriented(pair, gi_write_pages.page_order(pair["library"], pair["paper_a"],
+                                                                   pair["paper_b"])[0])
+    shown["swapped"] = shown["paper_a"] != pair["paper_a"]
+    e = gi_write_pages.earlier_paper(pair["library"], shown["paper_a"], shown["paper_b"])
+    shown["earlier"] = "a" if e == shown["paper_a"] else "b" if e == shown["paper_b"] else None
+    return shown
+
+
+def ask_order(shown, enter="keep it"):
+    """Which paper came first, as you see it: 'a' / 'b' (A / B as shown), 'u' (can't tell), '-' (back to what
+    the years say), or '' (Enter: leave it)."""
+    now = {"a": "A", "b": "B"}.get(shown["earlier"], "unknown")
+    while True:
+        ans = ask(f"Which came first (A {shown['year_a'] or '?'}, B {shown['year_b'] or '?'}; now {now})?  "
+                  f"a) A  b) B  u) can't tell  -) as the years say  [Enter: {enter}] ").strip().lower()
+        if ans in ("", "a", "b", "u", "-"):
+            return ans
+        print("  a, b, u, - or Enter")
+
+
+def set_earlier(shown, ans):
+    """Save ask_order()'s answer in the pair's library (earlier_overrides): 'a' / 'b' that paper first, 'u' the
+    order unknown whatever the years say, '-' removes the override."""
+    import gi_write_pages
+    if str(gi_write_pages.ROOT) not in sys.path:
+        sys.path.insert(0, str(gi_write_pages.ROOT))
+    from write_dupe_reports_html import EARLIER_OVERRIDES_DDL
+    lo, hi = sorted((shown["paper_a"], shown["paper_b"]))
+    conn = sqlite3.connect(shown["library"], timeout=300)
+    try:
+        conn.executescript(EARLIER_OVERRIDES_DDL)
+        if ans == "-":
+            conn.execute("delete from earlier_overrides where paper_lo = ? and paper_hi = ?", (lo, hi))
+        else:
+            earlier = shown[f"paper_{ans}"] if ans in ("a", "b") else None
+            conn.execute("insert or replace into earlier_overrides values (?, ?, ?, ?, datetime('now'))",
+                         (lo, hi, earlier, "set by hand in gi_review_cli.py"))
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def titles_of(pair, shown):
+    return [paper_info(pair["library"], shown["paper_a"]), paper_info(pair["library"], shown["paper_b"])]
+
+
+def rewrite_page(pair, pages_dir, sample_rate):
+    """Rewrite the pair's comparison page (gi_write_pages.py --pages), so it shows the order just set; the
+    new page's path, or None if that failed (printed)."""
+    import gi_write_pages
+    p = subprocess.run([sys.executable, str(Path(__file__).with_name("gi_write_pages.py")), str(pages_dir),
+                        "--sample-rate", str(sample_rate), "--pages", str(pair["page_number"])],
+                       capture_output=True, text=True)
+    found = sorted(Path(pages_dir).glob(f"GI-{pair['page_number']:02d}-*.html"))
+    if p.returncode != 0 or not found:
+        print(f"  page not rewritten: {(p.stderr or p.stdout).strip()[-300:]}")
+        return None
+    return found[0]
+
+
+def findings_line(case, prep=None):
+    """What f at the menu would show for this pair's case."""
+    import gi_case_findings
+    if prep and prep.running():
+        return f"{case}'s findings: the agent is still writing them"
+    if not gi_case_findings.findings_path(case).exists():
+        return f"{case}'s findings: none yet"
+    c = gi_case_findings.counts(case)
+    total = sum(c.values())
+    return f"{case}'s findings: {total}, " + (f"{c['pending']} to check" if c["pending"] else "all decided")
+
+
+def review_one(pair, choices, counts, saved_flags=(), prep=None, shown=None, set_order=None, case=None):
     """Ask for one verdict. Returns (decision, type, severity, note, flags, agreed), agreed True when it was 'a'
-    (agree with the AI), or 'skip' / 'quit' / 'reopen' / 'pdfs' / 'pubpeer' / 'findings'."""
+    (agree with the AI), or 'skip' / 'quit' / 'reopen' / 'pdfs' / 'pubpeer' / 'findings' / 'order'.
+    shown: the pair as displayed (orient()); set_order(ans): saves an ask_order() answer and returns the
+    re-oriented pair. With both, a problem verdict while the order is unknown asks which came first. case
+    ('GI-NN'): the menu line for f says where its findings stand."""
     ai = (pair["ai_decision"], pair["ai_type"]) if pair["ai_decision"] else None
     print("\nWhat do you think?")
     for k, (d, t, desc) in enumerate(choices, 1):
@@ -426,11 +604,12 @@ def review_one(pair, choices, counts, saved_flags=(), prep=None):
     print(f"   w  problem: {NOT_WORTH[0]}, {NOT_WORTH[1]}, flagged {FLAGS['w'][0]}: {FLAGS['w'][1]}"
           " (no report; publishes the site page as not reported)")
     keys = "   a  agree with the AI" if ai and ai[1] else ""
-    print(f"{keys}   o  reopen the page   p  open the PDFs   t  report it   s  skip   q  quit")
-    import gi_case_findings
-    waiting = gi_case_findings.pending_cases()
-    if waiting:
-        print("   f  check the agent's findings: " + ", ".join(f"{c} ({n})" for c, n in waiting))
+    print(f"{keys}   o  reopen the page   p  open the PDFs   y  set which paper came first   t  report it   "
+          "s  skip   q  quit")
+    if case:
+        import gi_case_findings
+        others = sum(1 for c, _ in gi_case_findings.pending_cases() if c != case)
+        print(f"   f  {findings_line(case, prep)}" + (f"; {others} other case(s) have findings to check" if others else ""))
     print("  add ' n' to a verdict to leave a note (e.g. '3 n', 'c n'); without it you aren't asked for one")
     if prep and prep.status():
         print("  " + prep.status())
@@ -462,8 +641,9 @@ def review_one(pair, choices, counts, saved_flags=(), prep=None):
             decision, (type_, severity), reasons = "problem", NOT_WORTH, []
             quick, preset = True, FLAGS["w"][0]
             break
-        if ans in ("q", "s", "o", "p", "t", "f"):
-            return {"q": "quit", "s": "skip", "o": "reopen", "p": "pdfs", "t": "pubpeer", "f": "findings"}[ans]
+        if ans in ("q", "s", "o", "p", "t", "f", "y"):
+            return {"q": "quit", "s": "skip", "o": "reopen", "p": "pdfs", "t": "pubpeer", "f": "findings",
+                    "y": "order"}[ans]
         if ans == "a" and ai and ai[1]:
             decision, type_ = ai
             agreed = True
@@ -473,11 +653,16 @@ def review_one(pair, choices, counts, saved_flags=(), prep=None):
             if decision == "no problem" and type_ in TYPE_REASON:
                 severity, reasons, quick = "none", [TYPE_REASON[type_]], True
             break
-        print("  a number from the list, or c / e / r / w / a / o / p / t / g / s / q")
+        print("  a number from the list, or c / e / r / w / a / o / p / y / t / f / g / s / q")
 
     converted = False
     year = same_year(pair)
-    if decision == "problem" and year and not preset:  # a retraction already settled who copied
+    if decision == "problem" and not preset and shown is not None and set_order and shown["earlier"] is None:
+        ans = ask_order(shown, enter="can't tell" + (": saved as unsure" if year else ""))
+        if ans:
+            shown = set_order(ans)
+    known = shown is not None and shown["earlier"] is not None
+    if decision == "problem" and year and not preset and not known:  # a retraction already settled who copied
         # same publication year: which paper copied can't be told from the dates, so it's recorded as unsure,
         # the type kept as the best guess
         print(f"  Both papers are from {year}: saving as unsure ({type_} as the best guess) for that reason.")
@@ -581,8 +766,9 @@ HEADLESS_PROMPT = ("Prep {case}: follow \"Prep a case\" in your instructions. Th
                    "and fetch, `sqlite3 -readonly` (not python) for the databases, pdftotext and pdfinfo, and "
                    "writing in the case's folder and journal_contacts.json. Don't run gi_report_case.py: the "
                    "review tool writes the report files when the user confirms. Do look up the later authors' "
-                   "institution's research integrity officer and write contacts.json (see Contacts): without "
-                   "an address there, no email to the institution is drafted. End with one line saying what "
+                   "institutions' research integrity officers (one contacts.json entry per institution, with "
+                   "the later authors there) and the earlier article's byline names, and write contacts.json "
+                   "(see Contacts): an institution without an address there gets no email. End with one line saying what "
                    "you concluded, e.g. '4 findings proposed, contacts found' or 'not a case: already "
                    "retracted'.")
 
@@ -610,11 +796,25 @@ class BackgroundPrep:
         self.dir = gi_case_findings.case_dir(case)
         self.out = self.dir / "prep-stream.jsonl"
         self.started = None
+        self.earlier = False   # previous(): an earlier session's finished run, not one started here
 
-    def start(self):
+    @classmethod
+    def previous(cls, case, claude="claude"):
+        """The case's earlier background run (its prep-stream.jsonl) if it finished with a result, else None.
+        status(), result() and wait() work on it as on a live run, so the menu says what it concluded and
+        reporting offers to resume its session."""
+        prep = cls(case, claude)
+        if not prep.result():
+            return None
+        prep.earlier = True
+        prep.started = prep.out.stat().st_mtime
+        return prep
+
+    def start(self, ahead=False):
+        """ahead: started on the next pair in the queue, not the one on screen (only the message differs)."""
         why = subscription_problem(self.claude)
         if why:
-            print(f"  agent prep not started: {why}")
+            print(f"  agent prep not started{' on ' + self.case if ahead else ''}: {why}")
             return False
         self.dir.mkdir(parents=True, exist_ok=True)
         cmd = [self.claude, "-p", HEADLESS_PROMPT.format(case=self.case), "--agent", "gi-cases",
@@ -625,7 +825,10 @@ class BackgroundPrep:
                                          stdin=subprocess.DEVNULL, stdout=out, stderr=log, start_new_session=True)
         import time
         self.started = time.time()
-        print(f"  agent prep started on {self.case} in the background (g at the menu shows what it's doing)")
+        if ahead:
+            print(f"  agent prep also started on {self.case}, the next pair to prep, so it's ready when you get there")
+        else:
+            print(f"  agent prep started on {self.case} in the background (g at the menu shows what it's doing)")
         return True
 
     def running(self):
@@ -641,9 +844,9 @@ class BackgroundPrep:
     def wait(self):
         """Wait for it to finish; Ctrl-C stops waiting (and the agent). True when it finished."""
         if self.proc is None:
-            return False
+            return self.earlier
         if self.running():
-            print("  waiting for the agent's analysis to finish (Ctrl-C to skip it) ...")
+            print("  waiting for the agent's analysis to finish (Ctrl-C: stop it and report without it) ...")
             try:
                 self.proc.wait()
             except KeyboardInterrupt:
@@ -688,6 +891,11 @@ class BackgroundPrep:
     def status(self):
         """One line for the menu."""
         import time
+        if self.earlier:
+            import datetime
+            said = (self.result().get("result") or "").strip().splitlines()
+            when = datetime.date.fromtimestamp(self.started).isoformat()
+            return f"agent: prepped {self.case} on {when}: {said[-1][:160] if said else 'no summary'}"
         if self.proc is None:
             return ""
         mins = int((time.time() - (self.started or time.time())) // 60)
@@ -700,6 +908,17 @@ class BackgroundPrep:
             took = round((res.get("duration_ms") or 0) / 60000, 1)
             return f"agent: finished {self.case} in {took} min: {said[-1][:160] if said else 'no summary'}"
         return f"agent: {self.case} stopped without a result (see {self.dir / 'prep.log'})"
+
+
+def next_to_prep(rest):
+    """The first pair in rest (the queue after the one on screen) the agent hasn't prepped: no findings.md. None
+    when there isn't one."""
+    import gi_case_findings
+    for r in rest:
+        case = f"GI-{r['page_number']:02d}"
+        if not gi_case_findings.findings_path(case).exists():
+            return case
+    return None
 
 
 def publish_site(case):
@@ -725,18 +944,48 @@ def publish_only(db, pair):
     publish_site(case)
 
 
+CHANGE_MIND = "v: change your verdict, s: don't report it"
+
+
+def changed_mind(ans):
+    """'verdict' / 'stopped' for a CHANGE_MIND answer, else None (go on)."""
+    if ans.startswith("v"):
+        return "verdict"
+    if ans.startswith("s"):
+        return "stopped"
+    return None
+
+
+def take_down_flow(db, pair):
+    """Offered when a verdict that isn't a problem replaces one that was reported: take the site page down
+    (gi_report_case.take_down(), pushed) and move the report files aside. Emails and PubPeer posts already out
+    are yours to withdraw."""
+    import gi_report_case
+    case = f"GI-{pair['page_number']:02d}"
+    when = gi_report_case.is_reported(case)
+    if not when:
+        return
+    if not ask(f"[{case} was reported on {when}. t: take its site page down and set its report files aside, "
+               f"Enter: leave it] ").lower().startswith("t"):
+        return
+    moved = gi_report_case.take_down(case)
+    print(f"  {case}: site page removed; {len(moved)} report file(s) moved to "
+          f"{gi_report_case.REPORT_DIR / case / 'withdrawn'}")
+    publish_site(f"{case} taken down")
+    print("  any email or PubPeer post already sent isn't undone by this")
+
+
 def report_flow(db, pair, open_it=True, severity=None, prep=None):
-    """Everything for reporting the pair, in order: the report files (PubPeer page opened), the gi-cases agent
-    to prep it, ticking its findings (the files regenerated if you change any), your PubPeer post's address,
-    and the drafts opened in Thunderbird. Every step but the first can be skipped with Enter / s."""
+    """Everything for reporting the pair, in order: the gi-cases agent to prep it (waited for, or Ctrl-C to go
+    on without it), ticking its findings, then the report files written and the PubPeer page opened, once,
+    with what the agent found and what you ticked; your PubPeer post's address, the site page pushed (last,
+    so it has the final files), and the drafts opened in Thunderbird. Every step but writing the report
+    files can be skipped with Enter / s. After the agent's summary, and again after talking it through with
+    it, you can change your mind before anything is written: returns 'verdict' (ask the verdict again) or
+    'stopped' (not reported), else None."""
     import gi_case_findings
     import gi_report_case
-    paths = pubpeer_page(db, pair, open_it, severity=severity)
-    if not paths:
-        return
     case = f"GI-{pair['page_number']:02d}"
-    if paths.get("site"):
-        publish_site(case)
     agent_ran = bool(prep and prep.wait())
     if agent_ran:
         res = prep.result()
@@ -745,19 +994,26 @@ def report_flow(db, pair, open_it=True, severity=None, prep=None):
         else:
             print(wrap("  agent: ", " ".join((res.get("result") or "").split())[:600]))
         sid = res.get("session_id")
-        if sid and not ask("[Enter: go to its findings, d: discuss them with the agent first] ").lower().startswith("d"):
-            sid = None
-        if sid:
+        ans = ask("[Enter: go to its findings, " + ("d: discuss them with the agent first, " if sid else "")
+                  + CHANGE_MIND + "] ").lower()
+        if sid and ans.startswith("d"):
             print("  resuming the agent's session (/exit comes back here) ...")
             subprocess.run([prep.claude, "--resume", sid, "--agent", "gi-cases"],
                            cwd=Path(__file__).resolve().parent, env=agent_env())
+            ans = ask(f"[Enter: go on reporting it, {CHANGE_MIND}] ").lower()
+        if changed_mind(ans):
+            return changed_mind(ans)
+    elif prep:   # Ctrl-C while waiting: you've decided to report without it
+        print("  reporting without the agent's findings")
+    elif gi_case_findings.findings_path(case).exists():
+        print(f"  {case} already has findings (no agent run recorded); going to them")
     elif not ask(f"[Enter: open the agent to prep {case} (findings, contacts), s: skip] ").lower().startswith("s"):
         run_agent(case)
-        agent_ran = True
-    if agent_ran:   # it may have found contacts (journal_contacts.json, contacts.json): the drafts need them
-        paths = pubpeer_page(db, pair, False, severity=severity) or paths
-    if gi_case_findings.counts(case)["pending"] and gi_case_findings.review(case, ask=ask):
-        paths = pubpeer_page(db, pair, open_it, severity=severity) or paths   # the Markdown now has them
+    if gi_case_findings.counts(case)["pending"]:
+        gi_case_findings.review(case, ask=ask)
+    paths = pubpeer_page(db, pair, open_it, severity=severity)
+    if not paths:
+        return
     have = gi_case_findings.pubpeer_url(case)
     url = ask(f"PubPeer post's address once it's up [Enter: {'keep ' + have if have else 'later (t asks again)'}] ")
     if url:
@@ -766,6 +1022,8 @@ def report_flow(db, pair, open_it=True, severity=None, prep=None):
             paths = pubpeer_page(db, pair, False, severity=severity) or paths   # the emails now link it
         except ValueError as e:
             print(f"  {e}: not saved")
+    if paths.get("site"):
+        publish_site(case)
     emls = [p for k, p in paths.items() if k.startswith("email ")]
     if emls and ask("[o: open the drafts in Thunderbird, Enter: not now] ").lower().startswith("o"):
         try:
@@ -774,21 +1032,44 @@ def report_flow(db, pair, open_it=True, severity=None, prep=None):
             print(f"  couldn't open the drafts: {e}")
 
 
-def check_findings(db, open_it=True):
-    """Go through every case's pending findings.md items (gi_case_findings.review()), regenerating the report
-    files of each case you changed."""
+def refresh_report(db, case, open_it=True):
+    """Rewrite a case's report files after its findings changed, but only once it has been reported (its
+    PubPeer page exists): writing them also writes the site page and marks the case reported in cases.json,
+    which ticking a finding on a pair you haven't decided on must not do."""
     import gi_case_findings
-    for case, _ in gi_case_findings.pending_cases():
-        if gi_case_findings.review(case, ask=ask):
-            f = db.execute("select * from fulltext where page_number = ?", (int(case[3:]),)).fetchone()
-            if f is not None:
-                pubpeer_page(db, f, open_it)
+    if not (gi_case_findings.case_dir(case) / f"{case}-pubpeer.html").exists():
+        print(f"  {case}: not reported yet, so no report files written (reporting it picks these findings up)")
+        return
+    f = db.execute("select * from fulltext where page_number = ?", (int(case[3:]),)).fetchone()
+    if f is not None:
+        pubpeer_page(db, f, open_it)
+
+
+def check_findings(db, case, open_it=True, prep=None):
+    """f at the menu: the pair's own case first (every finding when none is pending, to change one), then,
+    if you want, every other case's pending ones (gi_case_findings.review()). Report files are rewritten only
+    for cases already reported (refresh_report())."""
+    import gi_case_findings
+    if prep and prep.running():
+        print(f"  {case}: the agent is still working, its findings aren't written yet ({prep.status()})")
+    elif not gi_case_findings.findings_path(case).exists():
+        print(f"  {case}: no findings yet" + ("" if prep else " (no agent run on it: t runs one)"))
+    elif gi_case_findings.review(case, ask=ask, only_pending=bool(gi_case_findings.counts(case)["pending"])):
+        refresh_report(db, case, open_it)
+    others = [(c, n) for c, n in gi_case_findings.pending_cases() if c != case]
+    if others and ask("[o: the other cases' findings too (" + ", ".join(f"{c} {n}" for c, n in others)
+                      + "), Enter: back] ").lower().startswith("o"):
+        for c, _ in others:
+            if gi_case_findings.review(c, ask=ask):
+                refresh_report(db, c, open_it)
 
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--db", default=str(gi_db.DB_PATH))
     ap.add_argument("--pages-dir", default=str(gi_db.DATA / "fulltext_pages_s16"))
+    ap.add_argument("--sample-rate", type=int, default=8,
+                    help="the pages' n-gram sampling rate, for a page rewritten after y (8 for the 16-slice pages)")
     ap.add_argument("--gi", type=lambda s: [int(x) for x in s.split(",")], help="page numbers, e.g. 12,40")
     ap.add_argument("--ai-type", type=lambda v: v.split(","), default=[],
                     help="only pairs the agent gave these types, comma-separated: " + ", ".join(AI_TYPES))
@@ -798,11 +1079,21 @@ def main():
     ap.add_argument("--pdfs", action="store_true", help="also open both PDFs for every pair (p at the prompt "
                                                         "opens them for one pair)")
     ap.add_argument("--no-open", action="store_true", help="don't open anything automatically")
-    ap.add_argument("--order", choices=("publisher", "overlap"), default="publisher",
-                    help="within the agent's cross-author / data copying group: major publisher first, then "
-                         "overlap (default), or overlap first, then publisher")
+    ap.add_argument("--order", choices=("affiliation", "professor", "publisher", "overlap"), default="affiliation",
+                    help="affiliation (default): pairs whose later paper has an author still at a US/European "
+                         "university first (gi_affiliations.py), then as publisher; professor: by the authors "
+                         "above all else -- an author whose ORCID lists a current professor/lecturer post at a "
+                         "US/European institution first, then US/European academics, then the rest; publisher: "
+                         "within the agent's "
+                         "cross-author / data copying group, major publisher first, then overlap; overlap: "
+                         "overlap first, then publisher")
+    ap.add_argument("--us-europe-only", action="store_true",
+                    help="only pairs whose later paper has an author still at a US/European university")
     ap.add_argument("--no-agent", action="store_true", help="don't start the agent's analysis in the background "
-                                                             "when a pair opens")
+                                                             "when a pair opens (nor on the next one)")
+    ap.add_argument("--no-lookahead", action="store_true",
+                    help="start the agent only on the pair on screen, not also on the next pair in the queue that "
+                         "hasn't been prepped")
     args = ap.parse_args()
     pages_dir = Path(args.pages_dir)
 
@@ -814,86 +1105,142 @@ def main():
         bad = [v for v in value if v not in known]
         if bad:
             ap.error(f"{name}: unknown {', '.join(bad)} (use: {', '.join(known)})")
-    queue = load_queue(db, args.gi, args.include_reviewed, args.ai_type, args.ai_decision, args.order)
+    queue = load_queue(db, args.gi, args.include_reviewed, args.ai_type, args.ai_decision, args.order,
+                       args.us_europe_only)
     if not queue:
         print("nothing to review")
         return
+    import gi_affiliations
+    aff_scores = gi_affiliations.doi_scores(db, [d for r in queue for d in (r["doi_a"], r["doi_b"])])
+    aff_profs = gi_affiliations.doi_professors(db, [d for r in queue for d in (r["doi_a"], r["doi_b"])])
     choices, counts = ordered_choices(db)
-    saved = 0
-    for i, pair in enumerate(queue, 1):
-        import gi_write_pages
-        # A / B as the page shows them (earlier paper on the left), not fulltext's own order
-        shown = gi_write_pages.oriented(pair, gi_write_pages.page_order(pair["library"], pair["paper_a"],
-                                                                       pair["paper_b"])[0])
-        shown["swapped"] = shown["paper_a"] != pair["paper_a"]
-        e = gi_write_pages.earlier_paper(pair["library"], shown["paper_a"], shown["paper_b"])
-        shown["earlier"] = "a" if e == shown["paper_a"] else "b" if e == shown["paper_b"] else None
-        titles = [paper_info(pair["library"], shown["paper_a"]), paper_info(pair["library"], shown["paper_b"])]
-        page = page_path(pages_dir, pair)
-        pdfs = [p for p in [titles[0][1], titles[1][1]] if p]
-        saved_flags = pair_flags(db, pair)
-        show_pair(shown, i, len(queue), titles, saved_flags, gi_write_pages.priority_status(pair))
-        print(f"  page: {page or '(no page in ' + str(pages_dir) + ')'}")
-        for side, pdf in zip("AB", pdfs):
-            print(f"  PDF {side}: {pdf}")
-        if not args.no_open:
-            open_files(([page] if page else []) + (pdfs if args.pdfs else []))
-        import gi_case_findings
-        case = f"GI-{pair['page_number']:02d}"
-        prep = None
-        if not args.no_agent and not gi_case_findings.findings_path(case).exists():
-            prep = BackgroundPrep(case)
-            if not prep.start():
-                prep = None
-        while True:
-            out = review_one(pair, choices, counts, saved_flags, prep)
-            if out in ("reopen", "pdfs"):
-                open_files(pdfs if out == "pdfs" else [page] if page else [])
-                continue
-            if out == "pubpeer":
-                report_flow(db, pair, not args.no_open, prep=prep)
-                prep = None
-                continue
-            if out == "findings":
-                check_findings(db, not args.no_open)
-                continue
-            break
-        reporting = out not in ("quit", "skip") and not {FLAGS["r"][0], FLAGS["w"][0]} & set(out[4]) and (
-            out[0] == "problem" or (out[5] and pair["ai_decision"] == "problem"))
-        if prep and not reporting:   # not going to be reported: the analysis isn't needed
-            prep.stop()
-            prep = None
-        if out == "quit":
-            break
-        if out == "skip":
-            continue
-        decision, type_, severity, note, flags, agreed = out
-        print(wrap("Save: ", f"{decision} / {type_} / {severity}" + (f" [{', '.join(flags)}]" if flags else "")
-                   + (f" -- {note}" if note else "")))
-        save_review(db, pair, decision, type_, severity, note, flags)
-        counts[(decision, type_)] = counts.get((decision, type_), 0) + 1
-        saved += 1
-        print(f"saved GI-{pair['page_number']:02d}")
-        # agreeing with the AI's problem call also counts when the same year turned it into unsure
-        if FLAGS["r"][0] in flags:
-            print("  already retracted: no report files (t on this pair still writes them)")
-        elif FLAGS["w"][0] in flags:
-            print("  not worth reporting: no report files; publishing the site page as not reported")
-            publish_only(db, pair)
-        elif decision == "problem" or (agreed and pair["ai_decision"] == "problem"):
-            emails = "all four emails" if severity == "high" else "email to the journal"
-            ans = ask(f"[Enter to report it (PubPeer page, {emails}, site page pushed, then the agent's findings), "
-                      f"p to only publish its site page (marked not reported), s to skip] ").lower()
-            if ans.startswith(("s", "p")):
-                if prep:
+    saved = set()   # page numbers: a verdict changed while reporting counts once
+    ahead = {}   # case: the BackgroundPrep started on a later pair (lookahead), None if it couldn't start
+    try:
+        for i, pair in enumerate(queue, 1):
+            import gi_write_pages
+            # A / B as the page shows them (earlier paper on the left), not fulltext's own order
+            shown = orient(pair)
+            titles = titles_of(pair, shown)
+            page = page_path(pages_dir, pair)
+            pdfs = [p for p in [titles[0][1], titles[1][1]] if p]
+            saved_flags = pair_flags(db, pair)
+            reported = False   # t at the menu ran report_flow() for this pair already
+            show_pair(shown, i, len(queue), titles, saved_flags, gi_write_pages.priority_status(pair),
+                      affiliation_line(aff_scores, shown), professor_line(aff_profs, shown))
+            print(f"  page: {page or '(no page in ' + str(pages_dir) + ')'}")
+            for side, pdf in zip("AB", pdfs):
+                print(f"  PDF {side}: {pdf}")
+            if not args.no_open:
+                open_files(([page] if page else []) + (pdfs if args.pdfs else []))
+            import gi_case_findings
+            case = f"GI-{pair['page_number']:02d}"
+            prep = ahead.pop(case, None)   # started while you were on an earlier pair
+            if prep:
+                print("  " + prep.status())
+            elif gi_case_findings.findings_path(case).exists():   # prepped already: say so rather than start again
+                prep = BackgroundPrep.previous(case)
+                print("  " + (prep.status() if prep else f"agent not started: {case} already has a findings.md"))
+            elif not args.no_agent:
+                prep = BackgroundPrep(case)
+                if not prep.start():
+                    prep = None
+            if not (args.no_agent or args.no_lookahead or ahead):   # one run ahead at a time
+                nxt = next_to_prep(queue[i:])
+                if nxt:
+                    ahead[nxt] = BackgroundPrep(nxt)
+                    if not ahead[nxt].start(ahead=True):
+                        ahead[nxt] = None   # not retried for this pair; its own turn tries again
+            def set_order(ans, pair=pair):
+                """Save the order, rewrite the comparison page to match, and return the pair re-oriented."""
+                nonlocal shown, page
+                set_earlier(shown, ans)
+                shown = orient(pair)
+                page = rewrite_page(pair, pages_dir, args.sample_rate) or page
+                now = {"a": "A", "b": "B"}.get(shown["earlier"])
+                print(f"  order saved: {'paper ' + now + ' first' if now else 'unknown'}"
+                      + (" (A / B relabelled to match the page: the earlier paper is A)" if now == "A" else ""))
+                return shown
+
+            while True:   # asked again when you change your verdict while reporting (report_flow())
+                while True:
+                    out = review_one(pair, choices, counts, saved_flags, prep, shown, set_order, case)
+                    if out == "order":
+                        ans = ask_order(shown)
+                        if ans:
+                            set_order(ans)
+                            show_pair(shown, i, len(queue), titles_of(pair, shown), saved_flags,
+                                      gi_write_pages.priority_status(pair), affiliation_line(aff_scores, shown),
+                                      professor_line(aff_profs, shown))
+                            if not args.no_open and page:
+                                open_files([page])
+                        continue
+                    if out in ("reopen", "pdfs"):
+                        open_files(pdfs if out == "pdfs" else [page] if page else [])
+                        continue
+                    if out == "pubpeer":
+                        if report_flow(db, pair, not args.no_open, prep=prep) is None:
+                            prep, reported = None, True
+                        else:   # changed your mind: back to this menu, nothing written
+                            print("  not reported")
+                        continue
+                    if out == "findings":
+                        check_findings(db, case, not args.no_open, prep)
+                        continue
+                    break
+                reporting = out not in ("quit", "skip") and not {FLAGS["r"][0], FLAGS["w"][0]} & set(out[4]) and (
+                    out[0] == "problem" or (out[5] and pair["ai_decision"] == "problem"))
+                if prep and not reporting:   # not going to be reported: the analysis isn't needed
                     prep.stop()
-                if ans.startswith("p"):
+                    prep = None
+                if out in ("quit", "skip"):
+                    break
+                decision, type_, severity, note, flags, agreed = out
+                print(wrap("Save: ", f"{decision} / {type_} / {severity}" + (f" [{', '.join(flags)}]" if flags else "")
+                           + (f" -- {note}" if note else "")))
+                save_review(db, pair, decision, type_, severity, note, flags)
+                counts[(decision, type_)] = counts.get((decision, type_), 0) + 1
+                saved.add(pair["page_number"])
+                print(f"saved GI-{pair['page_number']:02d}")
+                if decision != "problem" and not (agreed and pair["ai_decision"] == "problem"):
+                    take_down_flow(db, pair)   # only asks when the pair had been reported
+                # agreeing with the AI's problem call also counts when the same year turned it into unsure
+                if FLAGS["r"][0] in flags:
+                    print("  already retracted: no report files (t on this pair still writes them)")
+                elif FLAGS["w"][0] in flags:
+                    print("  not worth reporting: no report files; publishing the site page as not reported")
                     publish_only(db, pair)
-                else:
-                    print("  report skipped (t on this pair later does it)")
-            else:
-                report_flow(db, pair, not args.no_open, severity=severity, prep=prep)
-    print(f"\n{saved} review(s) saved")
+                elif reported and (decision == "problem" or (agreed and pair["ai_decision"] == "problem")):
+                    # the emails follow the severity just chosen; the rest of the flow already ran under t
+                    print(f"  already reported (t): emails rewritten for severity {severity}")
+                    pubpeer_page(db, pair, False, severity=severity)
+                elif decision == "problem" or (agreed and pair["ai_decision"] == "problem"):
+                    emails = "all four emails" if severity == "high" else "email to the journal"
+                    ans = ask(f"[Enter to report it (the agent's findings, then the PubPeer page and {emails}, site page pushed), "
+                              f"p to only publish its site page (marked not reported), s to skip] ").lower()
+                    if ans.startswith(("s", "p")):
+                        if prep:
+                            prep.stop()
+                        if ans.startswith("p"):
+                            publish_only(db, pair)
+                        else:
+                            print("  report skipped (t on this pair later does it)")
+                    else:
+                        again = report_flow(db, pair, not args.no_open, severity=severity, prep=prep)
+                        if again == "verdict":
+                            print("  your verdict again (it replaces the one just saved):")
+                            continue
+                        if again == "stopped":
+                            print("  not reported (t on this pair later does it)")
+                break
+            if out == "quit":
+                break
+    finally:   # quitting (or Ctrl-C) stops a run started ahead: it starts again when you reach that pair
+        for p_ in ahead.values():
+            if p_ and p_.running():
+                p_.stop()
+                print(f"  stopped the agent's run on {p_.case} (it starts again when you reach that pair)")
+    print(f"\n{len(saved)} review(s) saved")
     if saved:
         import gi_write_pages
         ro = sqlite3.connect(f"file:{args.db}?mode=ro", uri=True, timeout=300)
