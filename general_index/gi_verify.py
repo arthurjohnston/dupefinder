@@ -21,7 +21,8 @@
            from the index's metadata, often a PDF date) with OpenAlex's publication_year first.
 
 Usage:
-  gi_verify.py select --run NAME [--tiers 1 2] [--limit N] [--db data/gi.sqlite3]
+  gi_verify.py select --run NAME [--tiers 1 2] [--limit N] [--order affiliation [--pool N]] [--db data/gi.sqlite3]
+  gi_verify.py select --run NAME --pairs FILE   (a hand-made list of pair_ids)
   gi_verify.py select --run NAME --per-band N [--seed 1]   (stratified by index overlap, see stratified())
   gi_verify.py paths --run NAME --state WORKDIR/state.sqlite3
   gi_verify.py load-text --run NAME --library WORKDIR/library.sqlite3 --paragraphs-file WORKDIR/paragraphs.jsonl
@@ -61,9 +62,38 @@ def select(db, args):
     retrieval entry's state key to the document key(s) it stands for, for the paths step."""
     if args.per_band:
         rows = stratified(db, args)
+    elif args.pairs:
+        rows = listed(db, args)
     else:
         rows = ranked(db, args)
     write_selection(db, args, rows)
+
+
+def listed(db, args):
+    """--pairs FILE: the pair_ids in FILE (one per line, '#' comments allowed), in the file's order, for a
+    hand-made shortlist (2026-10-21: pairs with an active top-30-university author on the copying side).
+    Pairs already in fulltext, in a retraction tier (1, 3) or with a side lacking a title are skipped."""
+    ids = [int(t.split("#")[0]) for t in open(args.pairs) if t.split("#")[0].strip()]
+    found = {}
+    for i in range(0, len(ids), 500):
+        chunk = ids[i:i + 500]
+        for r in db.execute(f"""select ld.*, p.dkey_a, p.dkey_b from lead_details ld join pairs p using (pair_id)
+                                where ld.pair_id in ({','.join('?' * len(chunk))})
+                                and coalesce(ld.tier, 0) not in (1, 3)
+                                and coalesce(ld.title_a, '') != '' and coalesce(ld.title_b, '') != ''
+                                and not exists (select 1 from fulltext f where f.pair_lo = ld.pair_lo
+                                                and f.pair_hi = ld.pair_hi)""", chunk):
+            found.setdefault(r["pair_id"], r)
+    rows, seen = [], set()
+    for i in ids:
+        r = found.get(i)
+        if r is not None and (r["pair_lo"], r["pair_hi"]) not in seen:
+            seen.add((r["pair_lo"], r["pair_hi"]))
+            rows.append(r)
+    rows = rows[:args.limit] if args.limit else rows
+    print(f"--pairs: {len(rows)} of {len(ids)} listed pairs selected (the rest already checked, "
+          f"a retraction tier or untitled)")
+    return rows
 
 
 STRATA = [(5, 15), (15, 30), (30, 50), (50, 70), (70, 90), (90, 101)]
@@ -132,8 +162,12 @@ def ranked(db, args):
     if args.no_shared_author:
         extra += " and ld.authors = 'no shared author'"
     # lead_rank is already in (tier, priority) order (gi_rank_leads.py sorts by both first), so --limit can
-    # stop the query early instead of reading every row of a big tier into memory
-    limit = f" limit {int(args.limit)}" if args.limit else ""
+    # stop the query early instead of reading every row of a big tier into memory. --order affiliation reorders
+    # by the authors, which lead_rank knows nothing of, so it reads a pool (--pool, default 5 x --limit) of the
+    # best-ranked leads and picks --limit from that
+    affiliation = getattr(args, "order", "rank") == "affiliation"
+    pool = (args.pool or 5 * args.limit) if affiliation and args.limit else args.limit
+    limit = f" limit {int(pool)}" if pool else ""
     rows = db.execute(f"""select ld.*, p.dkey_a, p.dkey_b from lead_details ld join pairs p using (pair_id)
                           where ld.tier in ({tiers}) and ld.primary_pair = 1{extra}
                           and ld.abstracts not like 'partner unidentified%' and ld.abstracts != 'identical (artifact)'
@@ -146,10 +180,42 @@ def ranked(db, args):
     # BY a preprint/repository upload last, "possibly by" one just before -- those are most often the authors'
     # own or an aggregator's copy. So a --limit batch spends its retrievals on the promoted pairs first. Stable:
     # lead_rank order holds otherwise. (stratified() is a calibration sample and is deliberately left unsorted.)
+    # --order affiliation: within a tier, by who the later paper's authors are now (gi_affiliations.py: still
+    # publishing at a US/European university first), the publisher order then holding within each rank. Ahead of
+    # that, complete() leads: a real DOI and a year on both sides. Without them the author data, the shared-author
+    # check and which paper came first are all guesses, and most of the noise in a batch was those leads.
     import gi_preprints
-    rows.sort(key=lambda r: (r["tier"], gi_preprints.pair_priority(
-        r["doi_a"], r["doi_b"], gi_preprints.earlier_by_year(r["year_a"], r["year_b"]))[0]))
-    return rows[:args.limit] if args.limit else rows
+    aff = {}
+    if affiliation:
+        import gi_affiliations
+        # leads gi_affiliations.py leads already ranked (pair_affiliation) are taken as they are
+        aff = gi_affiliations.stored_ranks(db, [r["pair_id"] for r in rows])
+        rest = [r for r in rows if r["pair_id"] not in aff]
+        print(f"affiliations: {len(aff)} of {len(rows)} leads already ranked")
+        dois = [d for r in rest for d in (r["doi_a"], r["doi_b"])]
+        if rest:
+            print(gi_affiliations.Fetcher(db, args.max_calls).ensure(dois))
+        scores = gi_affiliations.doi_scores(db, dois)
+        aff.update({r["pair_id"]: gi_affiliations.pair_rank(scores, r["doi_a"], r["doi_b"],
+                    gi_preprints.earlier_by_year(r["year_a"], r["year_b"]))[0] for r in rest})
+    rows.sort(key=lambda r: (r["tier"], affiliation and not complete(r), aff.get(r["pair_id"], 0),
+                             gi_preprints.pair_priority(r["doi_a"], r["doi_b"], gi_preprints.earlier_by_year(
+                                 r["year_a"], r["year_b"]))[0]))
+    rows = rows[:args.limit] if args.limit else rows
+    if aff:
+        tally = {}
+        for r in rows:
+            tally[aff[r["pair_id"]]] = tally.get(aff[r["pair_id"]], 0) + 1
+        print("selected by the later paper's authors: " + ", ".join(
+            f"{gi_affiliations.LABELS[k]} {v}" for k, v in sorted(tally.items())))
+        print(f"with a DOI and a year on both sides: {sum(map(complete, rows))} of {len(rows)}")
+    return rows
+
+
+def complete(r):
+    """Both sides have a real DOI (not a 'gi:' key) and a year."""
+    import gi_affiliations
+    return all(gi_affiliations.queryable(r[f"doi_{s}"]) and str(r[f"year_{s}"] or "").isdigit() for s in "ab")
 
 
 def write_selection(db, args, rows):
@@ -413,6 +479,18 @@ def main():
                     help="select (ranked): the larger side's index overlap in [LO, HI) %%")
     ap.add_argument("--shape", choices=["two-sided", "one-sided"], help="select (ranked): only this lead shape")
     ap.add_argument("--no-shared-author", action="store_true", help="select (ranked): only 'no shared author' leads")
+    ap.add_argument("--order", choices=["rank", "affiliation"], default="rank",
+                    help="select (ranked): lead_rank and publisher (default), or affiliation: within a tier, "
+                         "leads with a DOI and a year on both sides first, then those whose later paper has an "
+                         "author still at a US/European university "
+                         "(fetches OpenAlex/ORCID author data, gi_affiliations.py)")
+    ap.add_argument("--pool", type=int, default=0,
+                    help="select --order affiliation: how many top-ranked leads to choose --limit from "
+                         "(default 5 x --limit; with no --limit, all of them). Once gi_affiliations.py leads has "
+                         "ranked them, a big pool (--pool 2000000: every lead) costs nothing")
+    ap.add_argument("--max-calls", type=int, default=3000,
+                    help="select --order affiliation: OpenAlex calls at most (free: 10,000/day)")
+    ap.add_argument("--pairs", help="select: the pair_ids listed in this file (one per line), in its order")
     ap.add_argument("--per-band", type=int, default=0,
                     help="select: N random cross-author leads per index-overlap band instead of by rank")
     ap.add_argument("--strat-tiers", nargs="+", type=int,

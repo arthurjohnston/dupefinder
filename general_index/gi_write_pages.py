@@ -91,14 +91,19 @@ def priority_status(f):
     years only when there is no library to ask (a library that says "same year" wins: its years were
     corrected from the publisher, fulltext's may be a PDF date)."""
     import gi_preprints
+    return gi_preprints.pair_priority(f["doi_a"], f["doi_b"], earlier_side(f))
+
+
+def earlier_side(f):
+    """'a' / 'b' for a fulltext row's earlier paper, or None: as priority_status() decides it."""
+    import gi_preprints
     try:
         if not (f["library"] and f["paper_a"] and f["paper_b"]):
             raise LookupError
         e = earlier_paper(f["library"], f["paper_a"], f["paper_b"])
-        earlier = "a" if e == f["paper_a"] else "b" if e == f["paper_b"] else None
+        return "a" if e == f["paper_a"] else "b" if e == f["paper_b"] else None
     except (LookupError, sqlite3.Error, TypeError):
-        earlier = gi_preprints.earlier_by_year(f["year_a"], f["year_b"])
-    return gi_preprints.pair_priority(f["doi_a"], f["doi_b"], earlier)
+        return gi_preprints.earlier_by_year(f["year_a"], f["year_b"])
 
 
 def oriented(res, left):
