@@ -760,12 +760,37 @@ def paper_authors(conn, paper_id):
     return [r[0] for r in rows]
 
 
+# A reviewer's call on which paper came first, for when the years can't tell (same year) or are wrong. Lives
+# in the library the pair's papers are in; general_index/gi_review_cli.py writes it. earlier_paper_id NULL:
+# the reviewer says the order can't be told, whatever the years say.
+EARLIER_OVERRIDES_DDL = """create table if not exists earlier_overrides (
+    paper_lo integer, paper_hi integer,   -- the pair's two papers.id, sorted
+    earlier_paper_id integer,             -- one of them, or NULL: order unknown
+    reason text, set_at text,
+    primary key (paper_lo, paper_hi)
+);"""
+
+
+def earlier_override(conn, paper_id_1, paper_id_2):
+    """The pair's earlier_overrides row as (earlier_paper_id or None,), or None when there is none (or no
+    table: a library nobody has set an order in)."""
+    lo, hi = sorted((paper_id_1, paper_id_2))
+    try:
+        return conn.execute("SELECT earlier_paper_id FROM earlier_overrides WHERE paper_lo=? AND paper_hi=?",
+                            (lo, hi)).fetchone()
+    except sqlite3.OperationalError:
+        return None
+
+
 def resolve_earlier_id(conn, paper_id_1, paper_id_2, dupe_rows):
-    """Which of the two papers is the earlier one, or None when that isn't known. Prefers the
-    rows' own earlier_paper_id (matches build_dupe_candidates.py's NULL-when-unknown convention);
-    falls back to raw year if every row leaves it NULL. Shared with
-    write_dupe_reports_screenshots.py, which has to orient its own title screenshots the same way
-    render_case() orients the paper cards."""
+    """Which of the two papers is the earlier one, or None when that isn't known. A reviewer's
+    earlier_overrides row wins over everything; then the rows' own earlier_paper_id (matches
+    build_dupe_candidates.py's NULL-when-unknown convention); then raw year if every row leaves it
+    NULL. Shared with write_dupe_reports_screenshots.py, which has to orient its own title
+    screenshots the same way render_case() orients the paper cards."""
+    override = earlier_override(conn, paper_id_1, paper_id_2)
+    if override:
+        return override[0] if override[0] in (paper_id_1, paper_id_2) else None
     earlier_id = next((r["earlier_paper_id"] for r in dupe_rows if r["earlier_paper_id"]), None)
     if earlier_id is None:
         year1 = conn.execute("SELECT year FROM papers WHERE id=?", (paper_id_1,)).fetchone()[0]
