@@ -196,6 +196,15 @@ class TestContacts(unittest.TestCase):
         self.assertEqual(gc.recipients("publisher", fd()), ("", ""))
         self.assertIn("Later article: New paper (2015), New Journal, https://doi.org/10.2/new", body(f)[1])
 
+    def test_report_page_only_without_an_email(self):
+        f = fd()
+        f["second"] = {**f["second"], "contact": {"to": "", "page": "https://new.example/complaints"}}
+        f["first"] = {**f["first"], "contact": {"to": "ed@old.example", "page": "https://old.example/contact"}}
+        self.assertEqual(gc.report_page("publisher", f), "https://new.example/complaints")
+        self.assertEqual(gc.report_page("source-publisher", f), "")   # it has an address
+        self.assertEqual(gc.report_page("institution", f), "")
+        self.assertEqual(gc.report_page("publisher", fd()), "")
+
 
 class TestEmailMessage(unittest.TestCase):
     def test_draft_with_attachments(self):

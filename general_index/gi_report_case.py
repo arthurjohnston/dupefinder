@@ -29,8 +29,11 @@ SITE_URL), unless --no-site:
                                             case; the date first reported is kept on a re-run)
 
 data/journal_contacts.json keeps each article's journal and publisher (asked of Crossref once per DOI) and, per
-journal, a "to"/"cc"/"notes" entry that is blank until you fill it in; every later case in that journal then
-gets those addresses in its drafts. Re-run the case after filling one in. The institution's and the authors'
+journal, a "to"/"cc"/"page"/"notes" entry that is blank until you fill it in; every later case in that journal then
+gets those addresses in its drafts. "page" is for a journal with no email: the web page to report it on
+instead (a complaints or contact form, or the page naming the editor), found by the gi-cases agent; the draft is
+still written, to paste from, and write_report() returns the page as "page publisher" / "page source-publisher".
+Re-run the case after filling one in. The institution's and the authors'
 addresses are the case's own, in GI-NN/contacts.json (gi_case_findings.case_contacts()): with no institution
 or authors' address there, a high case gets no -institution / -authors draft at all (nobody to send it to).
 
@@ -207,6 +210,9 @@ def write_report(db, f, report_dir=REPORT_DIR, site_dir=SITE_DIR, sender=None, s
         msg = gi_contact.email_message(fd, attachments, audience=audience, sender=sender, site_url=site_url)
         paths[f"email {audience}"] = out / f"{case}-email-{audience}.eml"
         paths[f"email {audience}"].write_bytes(bytes(msg))
+        page = gi_contact.report_page(audience, fd)
+        if page:   # no email for the journal: the draft is for pasting into its web page
+            paths[f"page {audience}"] = page
     return paths
 
 

@@ -64,7 +64,7 @@ def crossref_journal(doi, get=None):
 
 
 def journal_contact(doi, data, get=None):
-    """The journal entry for a DOI: {journal, publisher, issn, to, cc, notes}, the to/cc/notes as filled in
+    """The journal entry for a DOI: {journal, publisher, issn, to, cc, page, notes}, the to/cc/page/notes as filled in
     by hand in journal_contacts.json (empty until someone does). Crossref is asked once per DOI; the answer
     and a blank entry for a journal seen for the first time are added to `data` (save it afterwards)."""
     info = data["dois"].get(doi)
@@ -77,7 +77,7 @@ def journal_contact(doi, data, get=None):
     if not name:
         return None
     entry = data["journals"].setdefault(name, {"publisher": info["publisher"], "issn": info["issn"],
-                                               "to": "", "cc": "", "notes": ""})
+                                               "to": "", "cc": "", "page": "", "notes": ""})
     return {"journal": info["journal"], **entry}
 
 
@@ -324,6 +324,15 @@ def recipients(audience, fd, contact=None):
     else:
         contact = (fd.get("case_contacts") or {}).get(audience) or {}
     return contact.get("to", "") or "", contact.get("cc", "") or ""
+
+
+def report_page(audience, fd):
+    """The web page to report it on for a journal with no email (its "page" in journal_contacts.json: a
+    complaints or contact form, or the page naming the editor), for "publisher" / "source-publisher"; "" when
+    the journal has an address, or nobody has found a page."""
+    side = {"publisher": "second", "source-publisher": "first"}.get(audience)
+    contact = (fd[side].get("contact") or {}) if side else {}
+    return "" if contact.get("to") else (contact.get("page") or "")
 
 
 def email_message(fd, attachments, examples=EMAIL_PASSAGES, audience="publisher", sender=None,

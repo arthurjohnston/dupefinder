@@ -715,6 +715,8 @@ def pubpeer_page(db, pair, open_it=True, severity=None):
     for k in paths:
         if k.startswith("no email "):
             print(f"  no {k[9:]} email: {paths[k]}")
+        if k.startswith("page "):   # a journal with no email: its draft goes into this page instead
+            print(f"  {k[5:]}: the journal has no email; report it at {paths[k]} (paste from the draft)")
     if open_it:
         open_files([paths["pubpeer"]])
     return paths
