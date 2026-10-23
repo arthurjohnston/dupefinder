@@ -570,5 +570,28 @@
   "matched_words": 2838,
   "runs": 101,
   "longest": 109
+ },
+ "GI-362": {
+  "file": "GI-362.html",
+  "reported": null,
+  "published": "2026-10-22",
+  "earlier_known": true,
+  "later": {
+   "title": "CASE REPORT Rare Thoracolumbar Facet Synovial Cyst Presenting as Paraparesis",
+   "year": 2015,
+   "doi": "10.14245/kjs.2015.12.3.193",
+   "pct": 35.0,
+   "journal": "Korean Journal of Spine"
+  },
+  "earlier": {
+   "title": "Synovial cyst of the thoracic spine: case report",
+   "year": 2007,
+   "doi": "10.1590/s0004-282x2007000500021",
+   "pct": 37.0,
+   "journal": "Arquivos de Neuro-Psiquiatria"
+  },
+  "matched_words": 523,
+  "runs": 22,
+  "longest": 69
  }
 }
