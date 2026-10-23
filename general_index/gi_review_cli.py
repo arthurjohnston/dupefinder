@@ -76,7 +76,9 @@ step but the report files skippable:
     stops it and reports without it), prints its summary, and d resumes its session in this terminal to
     talk it through (/exit comes back). Without a background run, Enter opens the agent interactively
     instead. Either way it runs on your claude.ai subscription only: nothing starts unless `claude auth
-    status` says claude.ai, and API-key variables are removed from its environment.
+    status` says claude.ai, and API-key variables are removed from its environment. d at the menu talks the
+    case through with the agent at any point, verdict or not (discuss()): its session resumed when it has
+    one, else a new conversation started from the case's findings.md; /exit comes back to the menu.
   - you tick its findings (y include, n leave out, e edit, Enter pending, q stop);
   - the report files, written once the agent is done or skipped, so they have the findings you included
     (PubPeer Markdown, emails) and the contacts it found, and the PubPeer page opened (gi_report_case.py: in data/dupe_publisher/GI-NN/ the PubPeer
@@ -589,7 +591,7 @@ def findings_line(case, prep=None):
 
 def review_one(pair, choices, counts, saved_flags=(), prep=None, shown=None, set_order=None, case=None):
     """Ask for one verdict. Returns (decision, type, severity, note, flags, agreed), agreed True when it was 'a'
-    (agree with the AI), or 'skip' / 'quit' / 'reopen' / 'pdfs' / 'pubpeer' / 'findings' / 'order'.
+    (agree with the AI), or 'skip' / 'quit' / 'reopen' / 'pdfs' / 'pubpeer' / 'findings' / 'order' / 'discuss'.
     shown: the pair as displayed (orient()); set_order(ans): saves an ask_order() answer and returns the
     re-oriented pair. With both, a problem verdict while the order is unknown asks which came first. case
     ('GI-NN'): the menu line for f says where its findings stand."""
@@ -606,6 +608,8 @@ def review_one(pair, choices, counts, saved_flags=(), prep=None, shown=None, set
     keys = "   a  agree with the AI" if ai and ai[1] else ""
     print(f"{keys}   o  reopen the page   p  open the PDFs   y  set which paper came first   t  report it   "
           "s  skip   q  quit")
+    if case:
+        print("   d  talk the case through with the agent (its session resumed, or a new one from findings.md)")
     if case:
         import gi_case_findings
         others = sum(1 for c, _ in gi_case_findings.pending_cases() if c != case)
@@ -641,9 +645,9 @@ def review_one(pair, choices, counts, saved_flags=(), prep=None, shown=None, set
             decision, (type_, severity), reasons = "problem", NOT_WORTH, []
             quick, preset = True, FLAGS["w"][0]
             break
-        if ans in ("q", "s", "o", "p", "t", "f", "y"):
+        if ans in ("q", "s", "o", "p", "t", "f", "y") or (ans == "d" and case):
             return {"q": "quit", "s": "skip", "o": "reopen", "p": "pdfs", "t": "pubpeer", "f": "findings",
-                    "y": "order"}[ans]
+                    "y": "order", "d": "discuss"}[ans]
         if ans == "a" and ai and ai[1]:
             decision, type_ = ai
             agreed = True
@@ -653,7 +657,7 @@ def review_one(pair, choices, counts, saved_flags=(), prep=None, shown=None, set
             if decision == "no problem" and type_ in TYPE_REASON:
                 severity, reasons, quick = "none", [TYPE_REASON[type_]], True
             break
-        print("  a number from the list, or c / e / r / w / a / o / p / y / t / f / g / s / q")
+        print("  a number from the list, or c / e / r / w / a / o / p / y / t / f / d / g / s / q")
 
     converted = False
     year = same_year(pair)
@@ -756,6 +760,46 @@ def run_agent(case, claude="claude"):
     print(f"  opening the gi-cases agent on {case} (/exit comes back here) ...")
     subprocess.run([claude, "--agent", "gi-cases", AGENT_PROMPT.format(case=case)],
                    cwd=Path(__file__).resolve().parent, env=agent_env())
+    return True
+
+
+DISCUSS_PROMPT = ("Let's talk through {case}. Read its findings.md first (and notes.md if there is one): that's where "
+                  "an earlier run of yours left off; reread the PDFs only where we need to. I'm running you from "
+                  "gi_review_cli.py and haven't decided on the pair yet: when we're done I'll /exit, and the review "
+                  "tool then has me tick the findings in findings.md, so put anything new there.")
+
+
+def discuss(case, prep=None, claude="claude"):
+    """d at the menu: talk the case through with the gi-cases agent in this terminal (/exit comes back). Resumes
+    the background run's session when it finished with one (prep, or an earlier session's run); otherwise a new
+    conversation started from the case's findings.md (DISCUSS_PROMPT), or, with no findings.md either, the
+    agent opened to prep it (run_agent()). A run still going is asked about first: wait for it, or stop it and
+    talk from what it has written so far. Your claude.ai subscription only. False when nothing was opened."""
+    import gi_case_findings
+    if prep and prep.running():
+        ans = ask(f"[{prep.status()}. w: wait for it, then talk, x: stop it and talk from what it has written, "
+                  f"Enter: back] ").lower()
+        if ans.startswith("w"):
+            if not prep.wait():
+                return False
+        elif ans.startswith("x"):
+            prep.stop()
+        else:
+            return False
+    sid = prep.result().get("session_id") if prep else None
+    if not sid and not gi_case_findings.findings_path(case).exists():
+        return run_agent(case, claude)
+    why = subscription_problem(claude)
+    if why:
+        print(f"  agent not started: {why}")
+        return False
+    if sid:
+        print(f"  resuming the agent's session on {case} (/exit comes back here) ...")
+        cmd = [claude, "--resume", sid, "--agent", "gi-cases"]
+    else:
+        print(f"  opening the gi-cases agent on {case}'s findings.md (/exit comes back here) ...")
+        cmd = [claude, "--agent", "gi-cases", DISCUSS_PROMPT.format(case=case)]
+    subprocess.run(cmd, cwd=Path(__file__).resolve().parent, env=agent_env())
     return True
 
 
@@ -1186,6 +1230,9 @@ def main():
                         continue
                     if out == "findings":
                         check_findings(db, case, not args.no_open, prep)
+                        continue
+                    if out == "discuss":
+                        discuss(case, prep)
                         continue
                     break
                 reporting = out not in ("quit", "skip") and not {FLAGS["r"][0], FLAGS["w"][0]} & set(out[4]) and (

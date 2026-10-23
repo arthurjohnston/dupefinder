@@ -330,6 +330,75 @@ class TestReportFlow(unittest.TestCase):
         self.assertEqual(self.cf.included("GI-07", self.dir), ["One."])
 
 
+class TestDiscuss(unittest.TestCase):
+    """d at the menu: the agent's session resumed, or a new conversation from findings.md, or prepping it."""
+
+    def setUp(self):
+        TestReportFlow.setUp(self)   # the same temp case dir and patches
+        import subprocess
+        self.runs = []
+        self._run, self._sub = subprocess.run, cli.subscription_problem
+        subprocess.run = lambda cmd, **kw: self.runs.append(cmd)
+        cli.subscription_problem = lambda claude="claude": None
+
+    def tearDown(self):
+        import subprocess
+        subprocess.run, cli.subscription_problem = self._run, self._sub
+        TestReportFlow.tearDown(self)
+
+    def prep(self, running=False, sid="s1"):
+        class Prep:
+            stopped = False
+
+            def running(self):
+                return running and not self.stopped
+
+            def status(self):
+                return "agent: working on GI-07"
+
+            def wait(self):
+                return True
+
+            def stop(self):
+                self.stopped = True
+
+            def result(self):
+                return {"session_id": sid} if sid else {}
+        return Prep()
+
+    def test_resumes_the_session(self):
+        self.assertTrue(cli.discuss("GI-07", self.prep()))
+        self.assertEqual(self.runs[0][1:3], ["--resume", "s1"])
+
+    def test_new_conversation_from_findings(self):
+        (self.dir / "GI-07").mkdir()
+        (self.dir / "GI-07" / "findings.md").write_text("## Findings\n- [ ] One.\n")
+        self.assertTrue(cli.discuss("GI-07", None))
+        self.assertNotIn("--resume", self.runs[0])
+        self.assertIn("findings.md", self.runs[0][-1])
+
+    def test_nothing_yet_preps_it(self):
+        cli.run_agent = lambda case, claude="claude": self.calls.append(("agent", case)) or True
+        self.assertTrue(cli.discuss("GI-07", self.prep(sid=None)))
+        self.assertEqual(self.calls, [("agent", "GI-07")])
+        self.assertEqual(self.runs, [])
+
+    def test_running_asks_first(self):
+        cli.ask = lambda prompt: ""
+        self.assertFalse(cli.discuss("GI-07", self.prep(running=True)))   # Enter: back, nothing opened
+        self.assertEqual(self.runs, [])
+        prep = self.prep(running=True)
+        cli.ask = lambda prompt: "x"
+        self.assertTrue(cli.discuss("GI-07", prep))   # stopped, then its session resumed
+        self.assertTrue(prep.stopped)
+        self.assertIn("--resume", self.runs[0])
+
+    def test_menu_key(self):
+        cli.ask = lambda prompt: "d"
+        out = cli.review_one({"ai_decision": None, "year_a": 2016, "year_b": 2017}, cli.CHOICES, {}, case="GI-07")
+        self.assertEqual(out, "discuss")
+
+
 class TestAgentEnv(unittest.TestCase):
     def test_api_keys_removed(self):
         import os
