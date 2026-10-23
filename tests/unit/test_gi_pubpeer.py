@@ -57,9 +57,29 @@ class TestMarkdown(unittest.TestCase):
         self.assertNotIn("cite", md.split("passage")[0])
         self.assertIn("The longest shared passage", md)
 
-    def test_image_mentioned_only_when_there_is_one(self):
-        self.assertNotIn("attached image", pp.markdown(fd()))
-        self.assertIn("The attached image shows passage 1", pp.markdown({**fd(), "shot": True}))
+    def test_images_side_by_side(self):
+        imgs = [{"kind": "titles", "name": "GI-1-titles.jpg"},
+                {"kind": "passage", "n": 1, "name": "GI-1-passage-1.jpg", "words": 81, "file": "passage-1.jpg",
+                 "left": {"doi": "10.1/old", "pages": [3], "text": "old wording here"},
+                 "right": {"doi": "10.2/NEW", "pages": [4, 5], "text": "new wording here"}}]
+        md = pp.markdown({**fd(passages=5), "images": imgs, "site_url": "https://x.example/GI-1.html"})
+        self.assertIn("Titles and author lists as printed (earlier article left, this article right):\n\n"
+                      "[Image: GI-1-titles.jpg]", md)
+        self.assertIn("**Passage 1**, 81 words (earlier article PDF p. 3, this article PDF p. 4-5).", md)
+        self.assertIn('- Earlier article: "old wording here"\n\n- This article: "new wording here"\n\n'
+                      '[Image: GI-1-passage-1.jpg]', md)
+        self.assertNotIn("longest shared passages", md)   # the images replace the text extracts
+        self.assertTrue(md.endswith("[Image: GI-1-passage-1.jpg]"))   # no link to the project site
+        self.assertIn("The 5 longest shared passages", pp.markdown(fd(passages=5)))   # no images: extracts
+        self.assertIn("The 10 longest", pp.markdown(fd(passages=30)))
+        self.assertNotIn("[Image", pp.markdown(fd()))
+
+    def test_findings_strongest_first(self):
+        f = {**fd(pct_later=20.0), "data_extra": ["Table 1 has the same means."], "extra": ["A typo."]}
+        md = pp.markdown(f)
+        self.assertIn("appears to report the same results data as an earlier article", md)
+        order = [md.index(t) for t in ("Table 1 has", "A typo", "About **20%**", "share no names")]
+        self.assertEqual(order, sorted(order))
 
     def test_order_unknown_makes_no_direction_claim(self):
         md = pp.markdown(fd(earlier_known=False))
@@ -88,13 +108,13 @@ class TestPage(unittest.TestCase):
         self.assertGreater(out.index("BOX"), out.index("</header>"))
         self.assertNotIn("<img", box)
 
-    def test_box_with_image(self):
+    def test_box_with_images(self):
         jpg = b"\xff\xd8\xff\xd9"
-        box = pp.box_html(fd(), "md", jpg, "GI-1-longest.jpg")
-        self.assertIn('download="GI-1-longest.jpg" href="data:image/jpeg;base64,', box)
-        self.assertIn('<img class="pp-shot" src="data:image/jpeg;base64,', box)
-        self.assertIn("earlier article left", box)
-        self.assertIn("order unknown", pp.box_html(fd(earlier_known=False), "md", jpg))
+        box = pp.box_html(fd(), "md", [{"name": "GI-1-titles.jpg", "jpeg": jpg},
+                                       {"name": "GI-1-passage-1.jpg", "jpeg": jpg}])
+        self.assertIn('download="GI-1-titles.jpg" href="data:image/jpeg;base64,', box)
+        self.assertLess(box.index("GI-1-titles.jpg"), box.index("GI-1-passage-1.jpg"))
+        self.assertEqual(box.count('<img class="pp-shot"'), 2)
 
     def test_overlap_in_summary_bar(self):
         page = pp.add_overlap('<div class="summary-bar"><span>runs</span></div>', fd())

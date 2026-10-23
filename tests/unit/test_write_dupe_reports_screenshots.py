@@ -299,6 +299,28 @@ class TestPagesLabel(unittest.TestCase):
         self.assertEqual(wds._pages_label([]), "")
 
 
+class TestSelectPassages(unittest.TestCase):
+    def run_(self, text, a, b):
+        from compare_two_papers import find_shingle_matches  # noqa: F401  (ShingleRun lives there)
+        from types import SimpleNamespace
+        n = len(text.split())
+        return SimpleNamespace(text_a=text, text_b=text, length=n, start_a=a, end_a=a + n, start_b=b, end_b=b + n)
+
+    def test_longest_readable_no_repeats(self):
+        prose = "the milk was collected from farms in the area and taken to the laboratory for analysis"
+        table = "Mean 4.81 (1.00) 4.60 (1.03) 4.93 (0.97) balance 4.87 (0.93) 4.91 (0.89) 4.87 (0.95) x y"
+        runs = [self.run_(table, 0, 0),                                   # longest, but a table row
+                self.run_(prose + " today", 100, 100),
+                self.run_(prose + " today", 300, 400),                    # the same sentence printed again
+                self.run_("a different sentence about the results of the study", 500, 600),
+                self.run_("words overlapping the second run on side a only here", 105, 900)]
+        chosen = wds.select_passages(runs, 5)
+        self.assertEqual([(r.start_a, r.start_b) for r in chosen], [(100, 100), (500, 600)])
+        self.assertEqual(len(wds.select_passages(runs, 1)), 1)
+        self.assertFalse(wds.readable_run(table))
+        self.assertTrue(wds.readable_run("in 2010 the 28 samples were taken"))
+
+
 class TestComposeShot(unittest.TestCase):
     """compose_shot(): each side's crops stacked, the two sides next to each other."""
 

@@ -266,6 +266,18 @@ HOW_LEADS_ARE_FLAGGED.md.
    (todo.md, "Look up commonly known tortured phrases").
 7. **Tortured phrases** (todo.md entry): collect the known catalogues. The index's 2-4-gram rows can
    be matched against them while a slice streams.
+8. **PubPeer: images of the tables and figures behind a `[data]` finding.** PubPeer refused the GI-235
+   comment (text extracts only, one side). Its FAQ wants copy and source "side by side and marked up",
+   and tables and figures as screenshots with their captions. Since 2026-10-22 the comment has a
+   title/byline image and `gi_pubpeer.PASSAGE_IMAGES` (4) side-by-side passage images
+   (`write_dupe_reports_screenshots.py --passage-shots/--title-shot`), so text overlap is covered. Still
+   missing: the tables and figures a `[data]` finding is about, which the matcher can't place. Plan: the
+   gi-cases agent adds an evidence line under the finding, `- image: earlier p. 3 "Table 1" | later p. 3
+   "Table 1"`. Code finds that caption on that page and crops from it to the next large gap or caption,
+   writing one side-by-side `GI-NN-data-K.jpg` that the Markdown places under the finding. The agent
+   checks the crop, and can give a box in PDF points if the auto-crop is wrong. GI-235 has no `[data]`
+   finding, so it can be resubmitted with the new comment as it stands; whether it's accepted shows if
+   the passage images were the missing piece.
 
 ## How to rerun the pipeline (slices 0-3)
 

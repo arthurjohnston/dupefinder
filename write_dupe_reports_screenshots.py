@@ -448,6 +448,29 @@ def paper_pdf_path(conn, library_db, paper_id):
     return None
 
 
+BLOATED_BOX = 2.0   # word boxes this many times taller than the font size are the font's metrics, not the text
+
+
+def page_words(page):
+    """PyMuPDF's word tuples for one page. A word box is normally as tall as the font's ascender to
+    descender, but some fonts declare absurd ones -- GI-85's later PDF sets 8-9pt text in 50pt-tall boxes,
+    which made fit_scales() shrink that side fivefold and drew each highlight over five lines. On a page
+    whose boxes run over BLOATED_BOX times the font size, the boxes are taken from the font size instead."""
+    import pymupdf
+    words = page.get_text("words")
+    pymupdf.TOOLS.set_small_glyph_heights(True)
+    try:
+        small = page.get_text("words")
+    finally:
+        pymupdf.TOOLS.set_small_glyph_heights(False)
+    if not words or len(small) != len(words):
+        return words
+
+    def median_h(ws):
+        return sorted(w[3] - w[1] for w in ws)[len(ws) // 2]
+    return small if median_h(words) > BLOATED_BOX * max(0.1, median_h(small)) else words
+
+
 class PdfSide:
     """One paper's PDF, opened once per page: its token stream, k-gram index and block extents,
     plus `error` (why there's nothing to show) when the PDF is missing or has no text layer."""
@@ -461,7 +484,7 @@ class PdfSide:
         import pymupdf
         try:
             self.doc = pymupdf.open(path)
-            pages = [page.get_text("words") for page in self.doc]
+            pages = [page_words(page) for page in self.doc]
         except Exception as exc:  # a damaged PDF must not take the page down with it
             self.doc, self.error = None, f"PDF could not be read ({exc.__class__.__name__})"
             return
@@ -647,12 +670,14 @@ class ScreenshotExhibits:
 
     def __call__(self, conn, paper_id_1, paper_id_2, earlier_id, shingle_size, max_exhibits,
                  mismatch_penalty=1, x_drop=None, gap_open=None, gap_extend=DEFAULT_GAP_EXTEND,
-                 max_gap=DEFAULT_MAX_GAP, drop_furniture=False):
+                 max_gap=DEFAULT_MAX_GAP, drop_furniture=False, runs=None):
+        """`runs`: render these runs (already chosen, longest first) instead of scanning."""
         words_1 = load_paper_words(conn, paper_id_1)
         words_2 = load_paper_words(conn, paper_id_2)
-        runs = find_shingle_matches(words_1, words_2, shingle_size=shingle_size,
-                                     mismatch_penalty=mismatch_penalty, x_drop=x_drop,
-                                     gap_open=gap_open, gap_extend=gap_extend, max_gap=max_gap)
+        if runs is None:
+            runs = find_shingle_matches(words_1, words_2, shingle_size=shingle_size,
+                                         mismatch_penalty=mismatch_penalty, x_drop=x_drop,
+                                         gap_open=gap_open, gap_extend=gap_extend, max_gap=max_gap)
         furniture = []
         if drop_furniture:
             runs, furniture = drop_furniture_runs(runs, words_1, words_2, shingle_size)
@@ -690,11 +715,12 @@ class ScreenshotExhibits:
             scales, column_px, stacked = choose_layout(
                 [(pl.get("text_h"), max((c[2] - c[0] for _, c, _ in pl["crops"]), default=None)
                   if "crops" in pl else None) for pl in plans], target_px=self.text_px)
-            cells = []
+            cells, self.pages = [], []
             for tag, role, (side, (_, _, _, mw, _)), plan, scale in zip(
                     "ab", (earlier_label, later_label), sides, plans, scales):
                 body, pages = self._emit_side(side, plan, scale, f"r{i:02d}-{tag}", role, mw,
                                               column_px)
+                self.pages.append(pages)   # PDF page indexes, left side then right: for passage_shots()
                 cls = "earlier" if tag == "a" else "later"
                 cells.append(f'<div class="passage {cls}"><p class="label"><span>{role}</span>'
                              f'<span class="idx">{_pages_label(pages)}</span></p>{body}</div>')
@@ -836,6 +862,96 @@ def longest_shot(conn, sides, writer, case_key, pid1, pid2, earlier_id, args, ou
         writer.kept = None
 
 
+NUMERIC_SHARE = 0.5   # a run with more than this share of words containing digits is a table row
+
+
+def readable_run(text):
+    """False for a run that is mostly numbers (a table run together), which makes a poor exhibit."""
+    words = text.split()
+    return bool(words) and sum(any(c.isdigit() for c in w) for w in words) / len(words) <= NUMERIC_SHARE
+
+
+def _norm_text(text):
+    return " ".join(re.sub(r"[^\w\s]", "", text.lower()).split())
+
+
+def select_passages(runs, n):
+    """Up to n runs for PubPeer images: the longest first, skipping table rows (readable_run()), a run whose
+    text repeats one already chosen (a sentence a paper prints several times gives one run per repeat), and
+    a run overlapping a chosen one's span on either side."""
+    chosen = []
+    for r in sorted(runs, key=lambda r: -max(r.length, len(r.text_b.split()))):
+        if len(chosen) >= n:
+            break
+        if not readable_run(r.text_b):
+            continue
+        if any(_norm_text(r.text_b) == _norm_text(c.text_b)
+               or (r.start_a < c.end_a and c.start_a < r.end_a)
+               or (r.start_b < c.end_b and c.start_b < r.end_b) for c in chosen):
+            continue
+        chosen.append(r)
+    return chosen
+
+
+def _side_label(conn, role, pid, pages=()):
+    row = conn.execute("SELECT year, doi FROM papers WHERE id=?", (pid,)).fetchone()
+    facts = [str(x) for x in (row[0], row[1] and f"doi:{row[1]}") if x] if row else []
+    where = "" if not pages else f", PDF p. {pages[0]}" if len(pages) == 1 else f", PDF pp. {pages[0]}-{pages[-1]}"
+    return role + (f" ({', '.join(facts)})" if facts else "") + where   # pages 1-based
+
+
+def passage_shots(conn, sides, writer, case_key, pid1, pid2, earlier_id, args, out_dir, n):
+    """One side-by-side JPEG per select_passages() run (earlier/PAPER A left), out_dir/passage-K.jpg, and
+    out_dir/passages.json describing them: [{file, words, left: {doi, pages, text}, right: {...}}], pages
+    1-based. A run neither PDF could place is left out. Returns that list."""
+    import json
+    out_dir = Path(out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    words_1, words_2 = load_paper_words(conn, pid1), load_paper_words(conn, pid2)
+    runs = find_shingle_matches(words_1, words_2, shingle_size=args.shingle_size,
+                                mismatch_penalty=args.mismatch_penalty, x_drop=args.x_drop,
+                                gap_open=args.gap_open, gap_extend=args.gap_extend, max_gap=args.max_gap)
+    if args.drop_furniture:
+        runs, _ = drop_furniture_runs(runs, words_1, words_2, args.shingle_size)
+    exhibits = ScreenshotExhibits(sides, writer, case_key, context_pt=args.context_pt, text_px=args.text_px)
+    roles = ("EARLIER", "LATER") if earlier_id else ("PAPER A", "PAPER B")
+    swap = earlier_id == pid2
+    order = (pid2, pid1) if swap else (pid1, pid2)
+    doi = {pid: (conn.execute("SELECT doi FROM papers WHERE id=?", (pid,)).fetchone() or [None])[0]
+           for pid in order}
+    out = []
+    for run in select_passages(runs, n):
+        writer.kept = []
+        try:
+            exhibits(conn, pid1, pid2, earlier_id, args.shingle_size, 1, runs=[run])
+            pages = [[p + 1 for p in sorted(set(ps))] for ps in exhibits.pages]
+            name = f"passage-{len(out) + 1}.jpg"
+            labels = [_side_label(conn, role, pid, pg) for role, pid, pg in zip(roles, order, pages)]
+            if not compose_shot(writer.kept, labels, out_dir / name):
+                continue
+        finally:
+            writer.kept = None
+        texts = (run.text_b, run.text_a) if swap else (run.text_a, run.text_b)
+        out.append({"file": name, "words": max(run.length, len(run.text_b.split())),
+                    **{key: {"doi": doi[pid], "pages": pg, "text": t}
+                       for key, pid, pg, t in zip(("left", "right"), order, pages, texts)}})
+    (out_dir / "passages.json").write_text(json.dumps(out, indent=1), encoding="utf-8")
+    return out
+
+
+def title_shot(conn, sides, writer, pid1, pid2, earlier_id, args, out_path):
+    """Both papers' title and byline, as printed, side by side in one JPEG (earlier left). Returns its size,
+    or None."""
+    writer.kept = []
+    try:
+        render_title_shots(conn, sides, writer, pid1, pid2, earlier_id, text_px=args.text_px)
+        roles = ("EARLIER", "LATER") if earlier_id else ("PAPER A", "PAPER B")
+        order = (pid2, pid1) if earlier_id == pid2 else (pid1, pid2)
+        return compose_shot(writer.kept, [_side_label(conn, r, pid) for r, pid in zip(roles, order)], out_path)
+    finally:
+        writer.kept = None
+
+
 def parse_args():
     p = argparse.ArgumentParser(description="Write a two-paper overlap page with PDF screenshots "
                                             "as exhibits (see the module docstring).")
@@ -885,6 +1001,12 @@ def parse_args():
                         "(write_dupe_reports_html.py --whole-document) instead of one exhibit per run")
     p.add_argument("--no-title-shots", action="store_true",
                    help="leave out the title/byline images (gi_pubpeer.py --publisher: the publisher has the articles)")
+    p.add_argument("--passage-shots", type=Path,
+                   help="also write --passage-count passages (the longest of running text, no repeats) as "
+                        "side-by-side JPEGs, passage-K.jpg, plus passages.json, into this folder (for PubPeer)")
+    p.add_argument("--passage-count", type=int, default=4)
+    p.add_argument("--title-shot", type=Path,
+                   help="also write both papers' title and byline, side by side, as one JPEG to this path")
     p.add_argument("--longest-shot", type=Path,
                    help="also write the longest run's two PDF crops, side by side, as one JPEG to this path "
                         "(for attaching to a PubPeer comment)")
@@ -941,6 +1063,13 @@ def main():
         size = longest_shot(conn, sides, writer, case_key, pid1, pid2, earlier_id, args, args.longest_shot)
         print(f"wrote {args.longest_shot}: {size[0]}x{size[1]}" if size else
               "no longest-run image: neither PDF could be used")
+    if args.passage_shots:
+        shots = passage_shots(conn, sides, writer, case_key, pid1, pid2, earlier_id, args, args.passage_shots,
+                              args.passage_count)
+        print(f"wrote {len(shots)} passage image(s) to {args.passage_shots}")
+    if args.title_shot:
+        size = title_shot(conn, sides, writer, pid1, pid2, earlier_id, args, args.title_shot)
+        print(f"wrote {args.title_shot}" if size else "no title image: neither PDF could be used")
     if args.text_exhibits:
         print(f"wrote {out_path}: {total} runs as text; {writer.count} title images, "
               f"{writer.bytes_written / 1e6:.1f} MB")

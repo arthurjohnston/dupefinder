@@ -96,6 +96,17 @@ class TestFiles(unittest.TestCase):
             cf.save_pubpeer_url("GI-07", "https://example.com/x", self.dir)
 
 
+class TestDataTag(unittest.TestCase):
+    def test_data_items_split_out_untagged(self):
+        d = Path(tempfile.mkdtemp())
+        (d / "GI-07").mkdir()
+        (d / "GI-07" / "findings.md").write_text(
+            "## Findings\n- [x] [data] Table 1 has the same means.\n- [x] A typo.\n- [ ] [data] Not ticked.\n")
+        self.assertEqual(cf.included("GI-07", d), ["Table 1 has the same means.", "A typo."])
+        self.assertEqual(cf.included("GI-07", d, data=True), ["Table 1 has the same means."])
+        self.assertEqual(cf.included("GI-07", d, data=False), ["A typo."])
+
+
 class TestPublished(unittest.TestCase):
     def test_markdown_and_email(self):
         d = fd()

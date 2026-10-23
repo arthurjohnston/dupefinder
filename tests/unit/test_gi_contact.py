@@ -22,18 +22,18 @@ def body(f=None, **kw):
 class TestEmail(unittest.TestCase):
     def test_later_known(self):
         subject, e = body(fd(passages=12), attachment="GI-1-x.html", shot_name="GI-1-longest.jpg")
-        self.assertEqual(subject, "Text overlap in New paper (doi:10.2/new)")
-        self.assertTrue(e.startswith("Dear Editor,\n\nI am writing about an article in your journal"))
+        self.assertEqual(subject, 'Text overlap in "New paper" (doi:10.2/new)')
+        self.assertTrue(e.startswith("Dear Editor,\n\n" + gc.ABOUT_ME + " I am writing about an article in your journal"))
         self.assertIn("Later article: New paper (2015), https://doi.org/10.2/new", e)
         self.assertIn("Earlier article: Old [paper] (2011), https://doi.org/10.1/old", e)
         self.assertIn("About 62% of the later article's text", e)
-        self.assertIn("Extracts of the 10 longest shared passages", e)
-        self.assertIn('10. 291 words: "passage "9" text"', e)
-        self.assertNotIn('passage "10"', e)
+        self.assertIn("Extracts of the 3 longest shared passages", e)
+        self.assertIn('3. 298 words: "passage "2" text"', e)
+        self.assertNotIn('passage "3"', e)
         self.assertIn("I also attached:\n- GI-1-x.html: all 12 shared passages, the two texts", e)
         self.assertIn("all 77 shared passages", body({**fd(), "runs": 77})[1])
         self.assertIn("both articles end to end as one diff", body(fd(pct_later=95.0))[1])
-        self.assertIn("- GI-1-longest.jpg: passage 1 as printed in both articles (earlier article left", e)
+        self.assertIn("- GI-1-longest.jpg: the longest shared passage of running text, as printed in both articles (earlier article left", e)
         self.assertNotIn("online at", e)
         self.assertNotIn("**", e)
         self.assertNotIn("PubPeer", e)
@@ -48,11 +48,19 @@ class TestEmail(unittest.TestCase):
         mails = {a: body(audience=a) for a in gc.EMAIL_AUDIENCES}
         self.assertIn("affiliated with your institution", mails["institution"][1])
         self.assertIn("your article appears to have been reused", mails["authors"][1])
-        self.assertEqual(mails["authors"][0], "Text from your article Old [paper] in a 2015 article")
+        self.assertEqual(mails["authors"][0], 'Text from your article "Old [paper]" in a 2015 article')
         self.assertIn("an article you published appears to have been reused", mails["source-publisher"][1])
-        for _, m in mails.values():   # every one carries the same evidence
-            self.assertIn("Extracts of the 2 longest shared passages", m)
+        for a, (_, m) in mails.items():   # every one has the share and the attachment, only the journal extracts
+            self.assertIn("About 62% of the later article's text", m)
             self.assertIn("- p.html:", m)
+            self.assertEqual("Extracts of the 2 longest shared passages" in m, a == "publisher", a)
+            about = gc.ABOUT_ME_AUTHORS if a == "authors" else gc.ABOUT_ME   # no "no connection" to the authors
+            self.assertTrue(m.startswith(m.split("\n")[0] + "\n\n" + about + " I am writing"), a)
+        for a in ("authors", "source-publisher"):   # the earlier side: no citation/byline checks
+            self.assertNotIn("share no names", mails[a][1])
+            self.assertNotIn("reference list", mails[a][1])
+        self.assertIn("share no names", mails["institution"][1])
+        self.assertNotIn("Extracts", mails["institution"][1])
         with self.assertRaises(ValueError):
             body(audience="nobody")
 
@@ -66,16 +74,68 @@ class TestEmail(unittest.TestCase):
         self.assertIn("by authors affiliated with your institution", body(audience="institution")[1])
         self.assertEqual(gc.name_list(["A", "B"]), "A and B")
 
-    def test_one_victim_is_dear_professor_doctor(self):
+    def test_victims_greeted_by_name(self):
         one = {**fd(), "first": {**fd()["first"], "authors": ["Old Author"]}}
         e = body(one, audience="authors")[1]
-        self.assertTrue(e.startswith("Dear Professor/Doctor,"))
-        self.assertIn("contact that journal yourself.", e)
+        self.assertTrue(e.startswith("Dear Old Author,"))
+        self.assertIn("contact the journal that published the later article yourself.", e)
         two = {**fd(), "first": {**fd()["first"], "authors": ["X", "Y"]}}
-        self.assertTrue(body(two, audience="authors")[1].startswith("Dear authors,"))
+        self.assertTrue(body(two, audience="authors")[1].startswith("Dear X and Y,"))
+        three = {**fd(), "first": {**fd()["first"], "authors": ["X", "Y", "Z"]}}
+        self.assertTrue(body(three, audience="authors")[1].startswith("Dear authors,"))
         # contacts.json's names (as printed) win over the index metadata
-        named = {**two, "case_contacts": {"authors": {"to": "x@e.example", "names": ["X"]}}}
-        self.assertTrue(body(named, audience="authors")[1].startswith("Dear Professor/Doctor,"))
+        named = {**two, "case_contacts": {"authors": {"to": "x@e.example", "names": ["Xavier Ex"]}}}
+        self.assertTrue(body(named, audience="authors")[1].startswith("Dear Xavier Ex,"))
+
+    def test_journal_written_to_only_when_it_has_an_address(self):
+        for a in ("institution", "authors", "source-publisher"):
+            e = body(audience=a)[1]
+            self.assertNotIn("I have written to", e, a)
+            self.assertNotIn("I have reported this", e, a)
+        e = body(audience="source-publisher")[1]
+        self.assertIn("I couldn't find a research-integrity contact for the journal that published the later", e)
+        self.assertIn("grateful if you could raise it with the journal", e)
+        f = fd()
+        f["second"] = {**f["second"], "journal": "New Journal", "contact": {"to": "ed@new.example"}}
+        self.assertIn("I have written to the journal that published it as well.", body(f, audience="institution")[1])
+        self.assertIn("I have reported this to New Journal. I thought", body(f, audience="authors")[1])
+        e = body(f, audience="source-publisher")[1]
+        self.assertIn("I have reported this to New Journal.", e)
+        self.assertNotIn("couldn't find", e)
+
+    def test_data_findings_lead(self):
+        f = {**fd(pct_later=20.0), "case": "GI-535", "data_extra": ["Table 1 has the same means."],
+             "extra": ["A typo is carried over."]}
+        subject, e = body(f)
+        self.assertEqual(subject, 'Results data in "New paper" (doi:10.2/new) appear to match an earlier article')
+        self.assertIn("appears to report the same results data as an earlier article by other authors.", e)
+        order = [e.index(t) for t in ("Table 1 has the same", "A typo", "About 20%", "share no names")]
+        self.assertEqual(order, sorted(order))   # data, other findings (share under half), share, checks
+        _, a = body(f, audience="authors")
+        self.assertIn("the results data of your article appear to have been reused", a)
+        self.assertIn("- Table 1 has the same means.", a)
+        self.assertNotIn("A typo", a)   # the earlier side gets the data findings only
+        self.assertTrue(body(f, audience="authors")[0].startswith("Results data from your article"))
+        # without data, over half: the share before the other findings
+        g = {**fd(), "extra": ["A typo is carried over."]}
+        self.assertLess(body(g)[1].index("About 62%"), body(g)[1].index("A typo"))
+
+    def test_shared_authors(self):
+        f = fd(byline="byline overlap: A. One")
+        self.assertTrue(gc.shared_authors(f))
+        self.assertFalse(gc.shared_authors(fd()))
+        subject, e = body(f)
+        self.assertEqual(subject, 'Possible redundant publication: "New paper" (doi:10.2/new)')
+        self.assertIn("appears to be largely a republication of an earlier article that shares authors with it.", e)
+
+    def test_table_extracts_skipped_and_site_link(self):
+        f = fd(passages=4)
+        f["passages"][0] = {"words": 400, "excerpt": "Mean 4.81 (1.00) 4.60 (1.03) 4.93 (0.97) balance 4.87"}
+        e = body(f, site_url="https://x.example/GI-1.html")[1]
+        self.assertNotIn("4.81", e)
+        self.assertIn("Extracts of 3 of the longest shared passages", e)
+        self.assertIn("the same comparison is online at https://x.example/GI-1.html", e)
+        self.assertNotIn("online at", body()[1])
 
     def test_order_unknown(self):
         for a in gc.EMAIL_AUDIENCES:
@@ -149,7 +209,7 @@ class TestEmailMessage(unittest.TestCase):
         self.assertEqual(msg["To"], "")
         self.assertEqual(msg["From"], "me@example.org")
         self.assertEqual(msg["X-Unsent"], "1")
-        self.assertTrue(msg["Subject"].startswith("Text from your article Old [paper]"))
+        self.assertTrue(msg["Subject"].startswith('Text from your article "Old [paper]"'))
         text = msg.get_body(("plain",)).get_content()
         self.assertTrue(text.startswith("Dear authors,"))
         self.assertIn("- GI-1-comparison.html:", text)

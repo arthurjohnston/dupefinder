@@ -25,6 +25,7 @@ Usage: gi_pubpeer.py GI_NUMBER [GI_NUMBER ...] [--problems] [--out-dir data/pubp
 import argparse
 import base64
 import html
+import json
 import re
 import sqlite3
 import subprocess
@@ -40,7 +41,9 @@ import gi_write_pages
 ROOT = Path(__file__).resolve().parent.parent
 PY = sys.executable
 OUT_DIR = gi_db.DATA / "pubpeer_pages"
-TOP_PASSAGES = 30
+TOP_PASSAGES = 30   # passages findings() keeps (the emails quote a few)
+TEXT_PASSAGES = 10   # extracts in the comment when there are no passage images
+PASSAGE_IMAGES = 4   # passages shown side by side as images in the comment
 WHOLE_DOCUMENT_PCT = 90  # above this share of either article, the comparison page is one interleaved diff
 EXCERPT_HEAD, EXCERPT_TAIL = 30, 10   # words quoted from the start and end of a long passage
 
@@ -107,8 +110,16 @@ def findings(db, f):
     def text_of(r, pid):
         return r.text_a if pid == a else r.text_b
 
-    longest = sorted(runs, key=lambda r: -max(r.length, len(r.text_b.split())))[:TOP_PASSAGES]
-    passages = [{"words": len(text_of(r, second).split()), "excerpt": excerpt(text_of(r, second))} for r in longest]
+    passages, seen = [], set()
+    for r in sorted(runs, key=lambda r: -max(r.length, len(r.text_b.split()))):
+        text = text_of(r, second)
+        key = " ".join(re.sub(r"[^\w\s]", "", text.lower()).split())
+        if key in seen:   # a sentence the paper prints several times: one run per repeat
+            continue
+        seen.add(key)
+        passages.append({"words": len(text.split()), "excerpt": excerpt(text)})
+        if len(passages) == TOP_PASSAGES:
+            break
     return {"earlier_known": earlier is not None, "first": papers[first], "second": papers[second],
             "matched_words": f["ft_matched_words"], "runs": len(runs), "byline": f["byline"],
             "later_cites_earlier": cites, "passages": passages}
@@ -127,41 +138,76 @@ def pct(v):
     return "?" if v is None else f"{v:.0f}%"
 
 
+def _same_doi(a, b):
+    return bool(a and b) and a.lower() == b.lower()
+
+
 def markdown(fd):
+    """The PubPeer comment. The findings run strongest first, as in the emails: your [data] findings, then the
+    text share, then your other ticked findings (before the share when it is under half). Then, when there
+    are images (fd["images"], write_page()), the title/byline image and PASSAGE_IMAGES passages side by side,
+    each with a short excerpt of both articles and an [Image: name] line for where you upload it (PubPeer
+    wants copy and source side by side, marked up); without images, extracts of the longest passages."""
     first, second = fd["first"], fd["second"]
+    known = fd["earlier_known"]
     lines = []
-    if fd["earlier_known"]:
+    if known:
         share = second["pct"] or 0
         verb = "to be largely a duplicate of" if share >= 50 else "to reuse substantial text from"
+        if fd.get("data_extra"):
+            verb = "to report the same results data as"
         lines.append(f"This article appears {verb} an earlier article: {_cite(first)}.")
-        lines.append("")
-        lines.append(f"- About **{pct(second['pct'])}** of this article's text is also found in the earlier article "
-                     f"({fd['matched_words'] or 0:,} matched words in {fd['runs']} passages; this article has about "
-                     f"{second['words']:,} words). That is {pct(first['pct'])} of the earlier article's text.")
+        share_line = [f"- About **{pct(second['pct'])}** of this article's text is also found in the earlier "
+                      f"article ({fd['matched_words'] or 0:,} matched words in {fd['runs']} passages; this article "
+                      f"has about {second['words']:,} words). That is {pct(first['pct'])} of the earlier article's text."]
     else:
         lines.append(f"This article shares extensive text with another article published the same year: "
                      f"{_cite(first)}. Which one came first can't be told from the publication years.")
-        lines.append("")
-        lines.append(f"- About **{pct(second['pct'])}** of this article's text is also found in the other article, "
-                     f"and {pct(first['pct'])} of the other article's text in this one "
-                     f"({fd['matched_words'] or 0:,} matched words in {fd['runs']} passages).")
+        share_line = [f"- About **{pct(second['pct'])}** of this article's text is also found in the other article, "
+                      f"and {pct(first['pct'])} of the other article's text in this one "
+                      f"({fd['matched_words'] or 0:,} matched words in {fd['runs']} passages)."]
+    lines.append("")
+    checks = []
     if fd["byline"] == "no byline overlap":
-        lines.append("- The two author lists share no names.")
-    other = "the earlier article" if fd["earlier_known"] else "the other article"
+        checks.append("- The two author lists share no names.")
+    other = "the earlier article" if known else "the other article"
     if fd["later_cites_earlier"] is False:
-        lines.append(f"- This article's reference list does not appear to cite {other}.")
+        checks.append(f"- This article's reference list does not appear to cite {other}.")
     elif fd["later_cites_earlier"]:
-        lines.append(f"- This article's reference list appears to cite {other}.")
-    lines += [f"- {t}" for t in fd.get("extra", ())]   # the findings you ticked (gi_case_findings.py)
-    if fd["passages"]:
-        n = len(fd["passages"])
+        checks.append(f"- This article's reference list appears to cite {other}.")
+    data = [f"- {t}" for t in fd.get("data_extra", ())]   # the findings you ticked (gi_case_findings.py)
+    extra = [f"- {t}" for t in fd.get("extra", ())]
+    if (second["pct"] or 0) < 50:
+        lines += data + extra + share_line + checks
+    else:
+        lines += data + share_line + checks + extra
+    images = fd.get("images") or []
+    other_name = "Earlier article" if known else "Other article"
+    for im in images:
+        lines.append("")
+        if im["kind"] == "titles":
+            lines.append(f"Titles and author lists as printed ({'earlier article left, this article right' if known else 'the two articles side by side'}):")
+        else:
+            sides = {("this" if _same_doi(im[k]["doi"], second["doi"]) else "other"): im[k] for k in ("left", "right")}
+            where = ", ".join(f"{label} PDF p. {'-'.join(str(x) for x in sorted({min(s['pages']), max(s['pages'])}))}"
+                              for label, s in ((other_name.lower(), sides.get("other")), ("this article", sides.get("this")))
+                              if s and s["pages"])
+            lines.append(f"**Passage {im['n']}**, {im['words']:,} words ({where}). Shared words are highlighted "
+                         f"yellow, words that differ pink:")
+            lines.append("")
+            quotes = [f"- {label}: \"{excerpt(sides[k]['text'], 20, 8).replace(chr(34), chr(39))}\""
+                      for label, k in ((other_name, "other"), ("This article", "this")) if sides.get(k)]
+            lines.append("\n\n".join(quotes))   # a blank line between the two, so they don't run together
+        lines.append("")
+        lines.append(f"[Image: {im['name']}]")
+    if not any(im["kind"] == "passage" for im in images) and fd["passages"]:
+        shown = fd["passages"][:TEXT_PASSAGES]
+        n = len(shown)
         lines.append("")
         lines.append(f"The {'longest shared passage' if n == 1 else f'{n} longest shared passages'} "
-                     f"(word counts in this article)"
-                     + (". The attached image shows passage 1 as printed in both articles, the shared words "
-                        "highlighted:" if fd.get("shot") else ":"))
+                     f"(word counts in this article):")
         lines.append("")
-        for i, p in enumerate(fd["passages"], 1):
+        for i, p in enumerate(shown, 1):
             text = p["excerpt"].replace('"', "'")
             lines.append(f"{i}. **{p['words']:,} words**: \"{text}\"")
     return "\n".join(lines)
@@ -195,21 +241,22 @@ def jpeg_uri(data):
     return "data:image/jpeg;base64," + base64.b64encode(data).decode("ascii")
 
 
-def shot_html(shot, name, earlier_known=True):
-    """The longest passage's image (JPEG bytes) in the box, with a link that saves it (both data: URIs, so
-    the page stays one file)."""
-    if not shot:
+def images_html(images):
+    """The comment's images (write_page()'s fd["images"], each with its JPEG bytes) in the box, in order, each
+    with a link that saves it (data: URIs, so the page stays one file)."""
+    if not images:
         return ""
-    uri = jpeg_uri(shot)
-    name = html.escape(name, quote=True)
-    sides = "earlier article left, later right" if earlier_known else "the two articles, order unknown"
-    return (f'<p><b>Longest shared passage, as printed</b> ({sides}): '
-            f'<a download="{name}" href="{uri}">save the image</a> and attach it to the comment with '
-            f'PubPeer\'s image upload.</p>\n  <img class="pp-shot" src="{uri}" alt="The longest shared passage '
-            f'in both PDFs, the shared words highlighted">')
+    out = ['<p><b>Images</b>: save each one and upload it with PubPeer\'s image button where its '
+           '<code>[Image: …]</code> line is in the comment.</p>']
+    for im in images:
+        uri = jpeg_uri(im["jpeg"])
+        name = html.escape(im["name"], quote=True)
+        out.append(f'<p><a download="{name}" href="{uri}">save {name}</a></p>\n  '
+                   f'<img class="pp-shot" src="{uri}" alt="{name}">')
+    return "\n  ".join(out)
 
 
-def box_html(fd, md, shot=None, shot_name="longest.jpg"):
+def box_html(fd, md, images=()):
     first, second = fd["first"], fd["second"]
     links = []
     for p, label in ((second, "this article (the later one)" if fd["earlier_known"] else "this article"),
@@ -226,7 +273,7 @@ def box_html(fd, md, shot=None, shot_name="longest.jpg"):
   <p>{where} The text below is Markdown, which PubPeer comments accept; check it against the passages below before posting.</p>
   <textarea id="pp-md" readonly>{html.escape(md)}</textarea>
   <button type="button" onclick="ppCopy()">Copy Markdown</button><span id="pp-copied"></span>
-  {shot_html(shot, shot_name, fd["earlier_known"])}
+  {images_html(images)}
 </section>
 {COPY_JS}"""
 
@@ -247,17 +294,20 @@ def case_name(f):
 
 def render(f, case, title_shots=True, whole_document=False):
     """Run the page writer for one fulltext row in a scratch directory: every shared passage (the page writer's default), or with
-    `whole_document` both papers end to end as one interleaved diff. Returns (page, filename, shot): the
-    page with its images inlined, the writer's file name for it (GI-NN-<slug>.html), and the longest
-    passage's JPEG bytes (None when neither PDF could be used)."""
+    `whole_document` both papers end to end as one interleaved diff. Returns (page, filename, shots): the
+    page with its images inlined, the writer's file name for it (GI-NN-<slug>.html), and
+    {"passages": [(passages.json entry, JPEG bytes)], "titles": JPEG bytes or None} -- PASSAGE_IMAGES
+    passages side by side (the longest of running text, no repeats; [] when neither PDF could be used) and,
+    with title_shots, both titles and bylines."""
     with tempfile.TemporaryDirectory() as d:
         d = Path(d)
-        shot = d / "longest.jpg"
+        shots_dir, titles = d / "passages", d / "titles.jpg"
         p = subprocess.run([PY, str(ROOT / "write_dupe_reports_screenshots.py"), "--library-db", f["library"],
                             "--paper-ids", f"{f['paper_a']},{f['paper_b']}", "--out-dir", str(d), "--neutral",
                             "--shingle-size", "10", "--x-drop", "3", "--case-number", case,
                             "--min-shingle-matches", "0", "--found-by", "", "--text-exhibits", "--embed-images",
-                            "--longest-shot", str(shot),
+                            "--passage-shots", str(shots_dir), "--passage-count", str(PASSAGE_IMAGES),
+                            *(["--title-shot", str(titles)] if title_shots else []),
                             *([] if title_shots else ["--no-title-shots"]),
                             *(["--whole-document"] if whole_document else [])],
                            capture_output=True, text=True)
@@ -265,7 +315,10 @@ def render(f, case, title_shots=True, whole_document=False):
         if p.returncode != 0 or not pages:
             raise RuntimeError(f"{case}: page writer failed: {(p.stderr or p.stdout)[-300:]}")
         page, _ = gi_share_pages.shareable(pages[0].read_text(encoding="utf-8").replace("\x00", ""), d)
-        return page, pages[0].name, (shot.read_bytes() if shot.exists() else None)
+        meta = shots_dir / "passages.json"
+        passages = [(e, (shots_dir / e["file"]).read_bytes()) for e in json.loads(meta.read_text())] \
+            if meta.exists() else []
+        return page, pages[0].name, {"passages": passages, "titles": titles.read_bytes() if titles.exists() else None}
 
 
 def overlap_html(fd):
@@ -287,19 +340,28 @@ def add_overlap(page, fd):
 
 
 def write_page(db, f, out_dir=OUT_DIR, fd=None, name=None):
-    """Write the PubPeer page for one fulltext row (as `name`, default the writer's GI-NN-<slug>.html) and
-    the longest passage's image (GI-NN-longest.jpg) to out_dir; returns (path, markdown)."""
+    """Write the PubPeer page for one fulltext row (as `name`, default the writer's GI-NN-<slug>.html) and the
+    comment's images to out_dir: GI-NN-titles.jpg, GI-NN-passage-K.jpg (render()), and passage 1 again as
+    GI-NN-longest.jpg, which the emails attach. Returns (path, markdown)."""
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     case = case_name(f)
-    page, slug_name, shot = render(f, case)
+    page, slug_name, shots = render(f, case)
     fd = fd or findings(db, f)
-    fd["shot"] = shot is not None
+    for old in [*out_dir.glob(f"{case}-passage-*.jpg"), out_dir / f"{case}-titles.jpg", out_dir / f"{case}-longest.jpg"]:
+        old.unlink(missing_ok=True)   # a re-run may find fewer
+    images = []
+    if shots["titles"]:
+        images.append({"kind": "titles", "name": f"{case}-titles.jpg", "jpeg": shots["titles"]})
+    for n, (entry, jpeg) in enumerate(shots["passages"], 1):
+        images.append({**entry, "kind": "passage", "n": n, "name": f"{case}-passage-{n}.jpg", "jpeg": jpeg})
+    for im in images:
+        (out_dir / im["name"]).write_bytes(im["jpeg"])
+    if shots["passages"]:
+        (out_dir / f"{case}-longest.jpg").write_bytes(shots["passages"][0][1])
+    fd["images"] = [{k: v for k, v in im.items() if k != "jpeg"} for im in images]
     md = markdown(fd)
-    shot_path = out_dir / f"{case}-longest.jpg"
-    if shot:
-        shot_path.write_bytes(shot)
-    page = insert_box(add_overlap(page, fd), box_html(fd, md, shot, shot_path.name))
+    page = insert_box(add_overlap(page, fd), box_html(fd, md, images))
     if name is None:   # a re-run replaces the case's old page, whose slug may have changed
         for old in out_dir.glob(f"{case}-*shingle-matches.html"):
             old.unlink()
@@ -309,11 +371,11 @@ def write_page(db, f, out_dir=OUT_DIR, fd=None, name=None):
 
 
 def shot_section(shot, earlier_known=True):
-    """The longest passage's image (JPEG bytes) as an exhibit of its own, for the publisher's page."""
+    """Passage 1's image (JPEG bytes) as an exhibit of its own, for the publisher's page."""
     sides = "earlier article left, later right" if earlier_known else "order unknown"
     return f"""{BOX_STYLE}
 <section class="exhibit">
-  <div class="exhibit-head"><h3>Longest shared passage, as printed ({sides})</h3></div>
+  <div class="exhibit-head"><h3>Longest shared passage of running text, as printed ({sides})</h3></div>
   <img class="pp-shot" style="max-width:100%;height:auto" src="{jpeg_uri(shot)}" alt="The longest shared passage in both PDFs, the shared words highlighted">
 </section>"""
 
@@ -329,7 +391,8 @@ def publisher_page(f, fd):
     shared-text figures in the summary bar and the longest passage's image above the matches. Every shared
     passage, or (whole_document(fd)) both articles end to end as one diff. Returns (page html, longest
     passage JPEG bytes or None)."""
-    page, _, shot = render(f, case_name(f), title_shots=False, whole_document=whole_document(fd))
+    page, _, shots = render(f, case_name(f), title_shots=False, whole_document=whole_document(fd))
+    shot = shots["passages"][0][1] if shots["passages"] else None
     page = add_overlap(page, fd)
     if shot:
         # above the list of matches (its heading), after the papers and the summary figures

@@ -6,7 +6,10 @@ request at the end), email_parts() the body they share. email_message() makes a 
 comparison page and the longest passage's image attached; gi_report_case.py writes the four for a case.
 
 The findings come from gi_pubpeer.findings(), so an email states the same measurements as the PubPeer
-Markdown. When the publication years are the same, none of them says who copied whom.
+Markdown. When the publication years are the same, none of them says who copied whom. A ticked [data]
+finding leads (subject, first sentence, first bullet); the others only say I've written to the journal when it
+has an address in journal_contacts.json. ABOUT_ME is the one sentence about who I am (ABOUT_ME_AUTHORS to the
+earlier article's authors).
 """
 import email.message
 import json
@@ -20,7 +23,7 @@ from gi_pubpeer import doi_url, pct, whole_document
 ROOT = Path(__file__).resolve().parent.parent
 CONTACTS = gi_db.DATA / "journal_contacts.json"
 CROSSREF = "https://api.crossref.org/works/"
-EMAIL_PASSAGES = 10   # the longest passages quoted in an email (the attachment has more)
+EMAIL_PASSAGES = 3   # the longest passages quoted in the journal's email (the attachment has them all)
 
 
 def git_config(key):
@@ -106,119 +109,201 @@ def name_list(names):
     return " and ".join(names) if len(names) < 3 else ", ".join(names[:-1]) + " and " + names[-1]
 
 
-def victim_count(fd):
-    """How many authors the earlier article has: contacts.json's authors.names when given (as printed on the
-    article), else the index metadata's byline (fd["first"]["authors"]); 0 when neither says."""
+def victim_names(fd):
+    """The earlier article's authors: contacts.json's authors.names when given (as printed on the article),
+    else the index metadata's byline (fd["first"]["authors"]); [] when neither says."""
     names = ((fd.get("case_contacts") or {}).get("authors") or {}).get("names")
     if isinstance(names, list) and names:
-        return len(names)
-    return len(fd["first"].get("authors") or [])
+        return [n for n in names if n]
+    return [n for n in fd["first"].get("authors") or [] if n]
+
+
+def victim_count(fd):
+    """How many authors the earlier article has (victim_names()); 0 when nothing says."""
+    return len(victim_names(fd))
+
+
+def shared_authors(fd):
+    """True when the two articles' bylines share names (the index's byline check): self-reuse, not copying."""
+    return (fd.get("byline") or "").startswith("byline overlap")
+
+
+def journal_reported(fd):
+    """True when the later (first, if the order is unknown) article's journal has an address in
+    journal_contacts.json, so its email can go out: only then do the others say I've written to it."""
+    return bool((fd["second"].get("contact") or {}).get("to"))
+
+
+# who I am, at the top of every email: one sentence
+ABOUT_ME = ("I am an independent researcher, with no connection to either set of authors, screening published "
+            "articles for duplicated text; software flagged this pair and I checked it against both articles.")
+# the same for the earlier article's authors, who are one of the two sets
+ABOUT_ME_AUTHORS = ("I am an independent researcher, screening published articles for duplicated text; software "
+                    "flagged this pair and I checked it against both articles.")
 
 
 def _email_intro(audience, fd, contact=None):
     """(who it goes to, subject, greeting, opening lines, closing request) for one recipient. The journal that
     published the later article ("publisher"), the later authors' institution (contact: its institutions()
-    entry, whose authors are named), the earlier article's authors ("Dear Professor/Doctor" when there is only
-    one, victim_count()), and the earlier article's publisher. When the order is unknown, nothing says who
-    copied whom."""
+    entry, whose authors are named), the earlier article's authors (greeted by name when they're one or two,
+    victim_names()), and the earlier article's publisher. When the order is unknown, nothing says who
+    copied whom. A ticked [data] finding (fd["data_extra"]) leads: the results data, not only the text.
+    When the later article's journal has no address (journal_reported()), nobody is told I've written to it."""
     first, second = fd["first"], fd["second"]
     known = fd["earlier_known"]
-    later = (second["title"] or second["doi"] or "").replace("*", "")
-    earlier = (first["title"] or first["doi"] or "").replace("*", "")
+    later = '"' + (second["title"] or second["doi"] or "").replace("*", "") + '"'   # quoted, for the subjects
+    earlier = '"' + (first["title"] or first["doi"] or "").replace("*", "") + '"'
     doi = f" (doi:{second['doi']})" if doi_url(second["doi"]) else ""
     share = second["pct"] or 0
-    verb = "to be largely a duplicate of" if share >= 50 else "to reuse substantial text from"
+    data = bool(fd.get("data_extra"))
+    same = shared_authors(fd)
+    reported = journal_reported(fd)
+    journal = second.get("journal") or "the journal that published the " + ("later" if known else "first") + " article"
+    if data:
+        verb = "to report the same results data as"
+    elif same:
+        verb = "to be largely a republication of" if share >= 50 else "to reuse substantial text from"
+    else:
+        verb = "to be largely a duplicate of" if share >= 50 else "to reuse substantial text from"
     distinct = fd["byline"] == "no byline overlap"   # only then say "other authors"
-    by_others = " by other authors" if distinct else ""
-    pair = ("two articles, published the same year, that share extensive text. Which one came first can't "
-            "be told from the publication years.")
+    whose_earlier = " by other authors" if distinct else " that shares authors with it" if same else ""
+    pair = ("two articles, published the same year, that share extensive " + ("results data and text" if data
+            else "text") + ". Which one came first can't be told from the publication years.")
+    if data:
+        subject = (f"Results data in {later}{doi} appear to match an earlier article" if known
+                   else f"Results data in {later}{doi} appear to match another article")
+    elif same:
+        subject = f"Possible redundant publication: {later}{doi}"
+    else:
+        subject = f"Text overlap in {later}{doi}"
     if audience == "publisher":
         return ("[the journal's editor, or the publisher's research integrity contact]",
-                f"Text overlap in {later}{doi}", "Dear Editor,",
-                [f"I am writing about an article in your journal that appears {verb} an earlier article."
-                 if known else f"I am writing about {pair} The first is in your journal."],
+                subject, "Dear Editor,",
+                [f"I am writing about an article in your journal that appears {verb} an earlier article"
+                 f"{whose_earlier}." if known else f"I am writing about {pair} The first is in your journal."],
                 "I would be grateful if you could look into this and let me know what you decide.")
     if audience == "institution":
         names = name_list((contact or {}).get("authors") or [])
         whose = f"{names}, affiliated with your institution" if names else "authors affiliated with your institution"
-        return ("", f"Text overlap in {later}{doi}", "Dear Research Integrity Officer,",
+        return ("", subject, "Dear Research Integrity Officer,",
                 [f"I am writing about an article by {whose}, which appears "
-                 f"{verb} an earlier article{by_others}." if known else
-                 f"I am writing about {pair} The first is by {whose}.",
-                 "I have written to the journal that published it as well."],
+                 f"{verb} an earlier article{whose_earlier}." if known else
+                 f"I am writing about {pair} The first is by {whose}."]
+                + (["I have written to the journal that published it as well."] if reported else []),
                 "I would be grateful if you could look into this under your institution's research integrity "
-                "procedures.")
+                "procedures, and could you let me know that this has reached the right office?")
     if audience == "authors":
-        one = victim_count(fd) == 1
-        return ("", f"Text from your article {earlier} in a {second['year'] or 'later'} article" if known
-                else f"Text overlap between your article {earlier} and another article",
-                "Dear Professor/Doctor," if one else "Dear authors,",
-                [f"I am writing because your article appears to have been reused in a later article{by_others}."
-                 if known else
+        names = victim_names(fd)
+        one = len(names) == 1
+        what = "results data" if data else "text"
+        greeting = f"Dear {name_list(names)}," if 0 < len(names) <= 2 else "Dear authors,"
+        tell = "I thought you would want to know."
+        return ("", f"{what.capitalize()} from your article {earlier} in a {second['year'] or 'later'} article"
+                    if known else f"Text overlap between your article {earlier} and another article",
+                greeting,
+                [("I am writing because the results data of your article appear" if data else
+                  "I am writing because your article appears") + " to have been reused in a later article"
+                 f"{' by other authors' if distinct else ''}." if known else
                  f"I am writing about {pair} The second is yours, and the two author lists share no names."
                  if distinct else f"I am writing about {pair} The second is yours.",
-                 "I have reported this to the journal that published the "
-                 + ("later" if known else "first") + " article. I thought you would want to know."],
-                "If you weren't aware of it, you may want to contact that journal "
-                + ("yourself." if one else "yourselves."))
+                 (f"I have reported this to {journal}. " if reported else "") + tell],
+                "If you weren't aware of it, you may want to contact "
+                + ("that journal " if reported else f"{journal} ") + ("yourself." if one else "yourselves."))
     if audience == "source-publisher":
+        role = "original" if known else "other"
+        if reported:
+            lines = [f"I am writing because an article you published appears to have been reused in a later "
+                     f"article{whose_earlier}, in another journal." if known else
+                     f"I am writing about {pair} The second was published by you.",
+                     f"I have reported this to {journal}."]
+            request = f"You may wish to raise it with that journal as well, as the publisher of the {role} article."
+        else:
+            lines = [f"I am writing because an article you published appears to have been reused in a later "
+                     f"article{whose_earlier}, in another journal." if known else
+                     f"I am writing about {pair} The second was published by you.",
+                     f"I couldn't find a research-integrity contact for {journal}, so I am writing to you as the "
+                     f"publisher of the {role} article."]
+            request = (f"I would be grateful if you could raise it with {journal}, as you may be better placed "
+                       f"to reach them.")
         return ("", f"Text from {earlier} in an article in another journal" if known
-                else f"Text overlap between {earlier} and an article in another journal",
-                "Dear Editor,",
-                [f"I am writing because an article you published appears to have been reused in a later "
-                 f"article{by_others}, in another journal." if known else
-                 f"I am writing about {pair} The second was published by you.",
-                 "I have reported this to the journal that published the "
-                 + ("later" if known else "first") + " article."],
-                "You may wish to raise it with that journal as well, as the publisher of the "
-                + ("original" if known else "other") + " article.")
+                    else f"Text overlap between {earlier} and an article in another journal",
+                "Dear Editor,", lines, request)
     raise ValueError(f"unknown audience {audience!r} (use: {', '.join(EMAIL_AUDIENCES)})")
 
 
+# how much of each email: the journal decides, so it gets the findings and a few extracts; the institution
+# the findings; the earlier side only needs to know, so the share and any data finding
+FULL, FINDINGS, SHORT = "full", "findings", "short"
+AUDIENCE_LENGTH = {"publisher": FULL, "institution": FINDINGS, "authors": SHORT, "source-publisher": SHORT}
+NUMERIC_EXTRACT = 0.5   # an extract with more than this share of words containing digits is a table: not quoted
+
+
+def readable(passage):
+    """False for an extract that is mostly numbers (a table row run together), which reads as noise."""
+    words = passage["excerpt"].split()
+    return bool(words) and sum(any(c.isdigit() for c in w) for w in words) / len(words) <= NUMERIC_EXTRACT
+
+
 def email_parts(fd, attachment, shot_name=None, examples=EMAIL_PASSAGES, audience="publisher",
-                name=None, contact=None):
+                name=None, contact=None, site_url=None):
     """(subject, body) of a plain-text email about the pair to one of EMAIL_AUDIENCES. The body, in order:
-    greeting, why I'm writing, the two articles, the same findings as the PubPeer Markdown, what's attached,
-    extracts of the `examples` longest passages, the request, and the sign-off
-    with `name` (default your git user.name). contact: the institutions() entry an institution email is for."""
+    greeting, who I am (ABOUT_ME) and why I'm writing, the two articles, the findings, what's attached (and
+    site_url, the same comparison online, if given), extracts of the `examples` longest readable passages
+    (the journal's email only), the request, and the sign-off with `name` (default your git user.name).
+    The findings run strongest first: the [data] ones, then the text share, then your other ticked findings
+    (before the share when it is under half); the earlier side's emails (AUDIENCE_LENGTH) get only the share
+    and the [data] findings. contact: the institutions() entry an institution email is for."""
     first, second = fd["first"], fd["second"]
     known = fd["earlier_known"]
+    length = AUDIENCE_LENGTH.get(audience, FULL)
     _to, subject, greeting, opening, request = _email_intro(audience, fd, contact)
-    lines = [greeting, "", " ".join(opening), ""]
+    lines = [greeting, "", " ".join([ABOUT_ME_AUTHORS if audience == "authors" else ABOUT_ME] + opening), ""]
     if known:
-        lines += ["Later article: " + _plain_cite(second), "Earlier article: " + _plain_cite(first), "",
-                  f"- About {pct(second['pct'])} of the later article's text is also found in the earlier article "
-                  f"({fd['matched_words'] or 0:,} matched words in {fd['runs']} passages; the later article has "
-                  f"about {second['words']:,} words). That is {pct(first['pct'])} of the earlier article's text."]
+        lines += ["Later article: " + _plain_cite(second), "Earlier article: " + _plain_cite(first), ""]
+        share = [f"- About {pct(second['pct'])} of the later article's text is also found in the earlier article "
+                 f"({fd['matched_words'] or 0:,} matched words in {fd['runs']} passages; the later article has "
+                 f"about {second['words']:,} words). That is {pct(first['pct'])} of the earlier article's text."]
     else:
-        lines += ["First article: " + _plain_cite(second), "Second article: " + _plain_cite(first), "",
-                  f"- About {pct(second['pct'])} of the first article's text is also found in the second, "
-                  f"and {pct(first['pct'])} of the second article's text in the first "
-                  f"({fd['matched_words'] or 0:,} matched words in {fd['runs']} passages)."]
+        lines += ["First article: " + _plain_cite(second), "Second article: " + _plain_cite(first), ""]
+        share = [f"- About {pct(second['pct'])} of the first article's text is also found in the second, "
+                 f"and {pct(first['pct'])} of the second article's text in the first "
+                 f"({fd['matched_words'] or 0:,} matched words in {fd['runs']} passages)."]
+    data = [f"- {t}" for t in fd.get("data_extra", ())]   # the [data] findings you ticked (gi_case_findings.py)
+    extra = [f"- {t}" for t in fd.get("extra", ())]   # the other findings you ticked
+    checks = []
     if fd["byline"] == "no byline overlap":
-        lines.append("- The two author lists share no names.")
+        checks.append("- The two author lists share no names.")
     which, other = ("The later", "the earlier article") if known else ("The first", "the second")
     if fd["later_cites_earlier"] is False:
-        lines.append(f"- {which} article's reference list does not appear to cite {other}.")
+        checks.append(f"- {which} article's reference list does not appear to cite {other}.")
     elif fd["later_cites_earlier"]:
-        lines.append(f"- {which} article's reference list appears to cite {other}.")
-    lines += [f"- {t}" for t in fd.get("extra", ())]   # the findings you ticked (gi_case_findings.py)
+        checks.append(f"- {which} article's reference list appears to cite {other}.")
+    if length == SHORT:
+        lines += data + share
+    elif (second["pct"] or 0) < 50:
+        lines += data + extra + share + checks
+    else:
+        lines += data + share + checks + extra
     if whole_document(fd):
         what = "both articles end to end as one diff, the shared text highlighted and the differences marked"
     else:
         what = f"all {fd['runs']} shared passages, the two texts side by side with the differences marked"
     lines += ["", "I also attached:", f"- {attachment}: {what} (one HTML file; open it in a web browser)."]
     if shot_name:
-        lines.append(f"- {shot_name}: passage 1 as printed in both articles "
+        lines.append(f"- {shot_name}: the longest shared passage of running text, as printed in both articles "
                      f"({'earlier article left, later right' if known else 'order unknown'}), the shared words "
                      f"highlighted.")
-    shown = fd["passages"][:examples]
+    if site_url:
+        lines.append(f"If the HTML attachment was removed on the way, the same comparison is online at {site_url}")
+    shown = [p for p in fd["passages"] if readable(p)][:examples] if length == FULL else []
     if shown:
         n = len(shown)
         whose = "the later" if known else "the first"
-        lines += ["", f"Extracts of the {'longest shared passage' if n == 1 else f'{n} longest shared passages'}"
-                      f" (as worded in {whose} article, with its word count; '…' marks words left out of the "
-                      f"extract):", ""]
+        some = shown != fd["passages"][:n]   # a table-like extract was skipped: not simply the n longest
+        head = ("the longest shared passage" if n == 1 else f"{n} of the longest shared passages" if some
+                else f"the {n} longest shared passages")
+        lines += ["", f"Extracts of {head} (as worded in {whose} article, with its word count; '…' marks words "
+                      f"left out of the extract):", ""]
         lines += [f"{i}. {p['words']:,} words: \"{p['excerpt']}\"" for i, p in enumerate(shown, 1)]
     if fd.get("pubpeer_post"):
         lines += ["", f"I have also posted these findings on PubPeer: {fd['pubpeer_post']}"]
@@ -242,14 +327,15 @@ def recipients(audience, fd, contact=None):
 
 
 def email_message(fd, attachments, examples=EMAIL_PASSAGES, audience="publisher", sender=None,
-                  name=None, contact=None):
+                  name=None, contact=None, site_url=None):
     """email_parts() as a draft .eml message: To and Cc from recipients() (empty when nobody has filled in
     the journal's contact yet, and always for the institution and the authors), From `sender` when given,
     X-Unsent: 1 so a mail client opens it as a draft, and `attachments` (paths) attached. The body names
     attachments[0] as the comparison page and attachments[1], if any, as the image."""
     attachments = [Path(a) for a in attachments]
     subject, body = email_parts(fd, attachments[0].name, attachments[1].name if len(attachments) > 1 else None,
-                                examples=examples, audience=audience, name=name, contact=contact)
+                                examples=examples, audience=audience, name=name, contact=contact,
+                                site_url=site_url)
     to, cc = recipients(audience, fd, contact)
     msg = email.message.EmailMessage()
     msg["To"] = to

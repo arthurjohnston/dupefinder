@@ -3,19 +3,22 @@
 Into data/dupe_publisher/GI-NN/:
   GI-NN-pubpeer.html     the PubPeer page (gi_pubpeer.write_page(): the Markdown findings with a Copy button,
                          the title pages as images, the passages as text)
-  GI-NN-longest.jpg      the longest shared passage as printed in both PDFs, side by side; for the PubPeer
-                         comment and the email
+  GI-NN-titles.jpg, GI-NN-passage-K.jpg
+                         the images for the PubPeer comment: both titles and bylines, and gi_pubpeer.PASSAGE_IMAGES
+                         passages as printed in both PDFs, side by side (gi_pubpeer.write_page())
+  GI-NN-longest.jpg      passage 1 again, attached to the emails
   GI-NN-comparison.html  the attachment for the journal: the same comparison without the PubPeer box or the
                          title images, with the shared-text figures and the longest passage's image at the top
   GI-NN-email-*.eml      draft emails (all four for a high-severity case, only -publisher otherwise; see
                          audiences()) (RFC 822 .eml with X-Unsent: 1, From your git user.email or --from, To
                          and Cc from data/journal_contacts.json for the two journal emails, empty otherwise), each with the same findings as the PubPeer Markdown, extracts of the
-                         gi_contact.EMAIL_PASSAGES (10) longest passages, the comparison page and the image
-                         attached:
+                         the comparison page and the image attached, and how much else depends on who it's
+                         for (gi_contact.AUDIENCE_LENGTH; the journal's also quotes the EMAIL_PASSAGES (3)
+                         longest passages):
                            -publisher         the journal that published the later article
                            -institution       the later authors' institution; one per institution in
                                               contacts.json (-institution-2, -3, ...), each naming its authors
-                           -authors           the earlier article's authors
+                           -authors           the earlier article's authors (not when the bylines share names)
                            -source-publisher  the earlier article's publisher
                          When the publication years are the same, none of them says who copied whom.
 
@@ -38,7 +41,8 @@ Nothing is committed or pushed: the site page goes live once example_output/ is 
 
 Severity decides which emails are written: high (your review's severity in `reviews`, or --severity) gets
 all four; low, medium or no review (medium is the default) gets only the email to the later article's
-journal, alongside the PubPeer page. Drafts a case no longer gets (it was high, now isn't) are deleted.
+journal, alongside the PubPeer page. A ticked [data] finding in findings.md makes a case high. Drafts a case
+no longer gets (it was high, now isn't) are deleted.
 
 gi_review_cli.py runs this when you save (or agree with) a problem verdict, and on t at its prompt, then
 opens the gi-cases agent and asks for the findings, the PubPeer link and whether to open the drafts.
@@ -90,12 +94,16 @@ ALL_EMAILS_SEVERITY = "high"
 CASE_AUDIENCES = {"institution": "research-integrity address", "authors": "address for the earlier authors"}
 
 
-def audiences(severity):
+def audiences(severity, fd=None):
     """The emails a case of this severity gets: all of gi_contact.EMAIL_AUDIENCES when high (the earlier
-    authors, their publisher and the later authors' institution too), else only the later article's journal."""
-    if severity == ALL_EMAILS_SEVERITY:
-        return gi_contact.EMAIL_AUDIENCES
-    return ("publisher",)
+    authors, their publisher and the later authors' institution too), else only the later article's journal.
+    With fd: never the earlier authors when the two bylines share names (they'd be writing to the people who
+    reused it)."""
+    if severity != ALL_EMAILS_SEVERITY:
+        return ("publisher",)
+    if fd and gi_contact.shared_authors(fd):
+        return tuple(a for a in gi_contact.EMAIL_AUDIENCES if a != "authors")
+    return gi_contact.EMAIL_AUDIENCES
 
 
 def review_severity(db, f):
@@ -112,7 +120,9 @@ def case_findings(db, f, report_dir=REPORT_DIR):
     """pp.findings() plus your ticked findings.md items, the PubPeer post and both journals' names/contacts."""
     case = pp.case_name(f)
     fd = pp.findings(db, f)
-    fd["extra"] = gi_case_findings.included(case, report_dir)   # your ticked findings.md items
+    fd["case"] = case
+    fd["data_extra"] = gi_case_findings.included(case, report_dir, data=True)   # your ticked [data] items
+    fd["extra"] = gi_case_findings.included(case, report_dir, data=False)   # and the rest
     fd["pubpeer_post"] = gi_case_findings.pubpeer_url(case, report_dir)
     fd["case_contacts"] = gi_case_findings.case_contacts(case, report_dir)   # the institution's, the authors'
     contacts = gi_contact.load_contacts()
@@ -144,12 +154,16 @@ def publish_only(db, f, site_dir=SITE_DIR, report_dir=REPORT_DIR):
 
 def write_report(db, f, report_dir=REPORT_DIR, site_dir=SITE_DIR, sender=None, severity=None):
     """Write the case's files; returns {kind: path}. severity (default: the pair's review, see review_severity())
-    picks the emails (audiences())."""
+    picks the emails (audiences()); a ticked [data] finding makes it high whatever the review says."""
     severity = severity or review_severity(db, f)
     case = pp.case_name(f)
     out = Path(report_dir) / case
     out.mkdir(parents=True, exist_ok=True)
     fd = case_findings(db, f, report_dir)
+    if site_dir:   # the PubPeer comment and the emails link the full comparison there
+        fd["site_url"] = f"{SITE_URL}{case}.html"
+    if fd.get("data_extra"):   # copied results data: everyone hears of it
+        severity = ALL_EMAILS_SEVERITY
     paths = {}
     paths["pubpeer"], _ = pp.write_page(db, f, out, fd=dict(fd), name=f"{case}-pubpeer.html")
     page, shot = pp.publisher_page(f, fd)
@@ -158,15 +172,17 @@ def write_report(db, f, report_dir=REPORT_DIR, site_dir=SITE_DIR, sender=None, s
     shot_path = out / f"{case}-longest.jpg"
     if shot:
         paths["image"] = shot_path
-    if site_dir:   # the emails don't link the site page: the comparison is attached
+    site_url = None
+    if site_dir:   # the emails link the site page too, in case a mail filter strips the .html attachment
         paths.update(write_site(site_dir, case, page, fd))
+        site_url = f"{SITE_URL}{case}.html"
     attachments = [paths["comparison"]] + ([shot_path] if shot else [])
     for old in out.glob(f"{case}-email-*.txt"):   # the plain-text drafts an earlier version wrote
         old.unlink()
     for old in out.glob(f"{case}-email-institution-*.eml"):   # one per institution: the count may have changed
         old.unlink()
         (out / "compose" / f"{old.stem}.txt").unlink(missing_ok=True)
-    wanted = audiences(severity)
+    wanted = audiences(severity, fd)
     for audience in gi_contact.EMAIL_AUDIENCES:
         eml = out / f"{case}-email-{audience}.eml"
         has_to = (any(i.get("to") for i in gi_contact.institutions(fd)) if audience == "institution"
@@ -183,11 +199,12 @@ def write_report(db, f, report_dir=REPORT_DIR, site_dir=SITE_DIR, sender=None, s
             for k, inst in enumerate([i for i in gi_contact.institutions(fd) if i.get("to")], 1):
                 key, name = ("email institution", eml) if k == 1 else (
                     f"email institution {k}", out / f"{case}-email-institution-{k}.eml")
-                msg = gi_contact.email_message(fd, attachments, audience=audience, sender=sender, contact=inst)
+                msg = gi_contact.email_message(fd, attachments, audience=audience, sender=sender, contact=inst,
+                                                 site_url=site_url)
                 name.write_bytes(bytes(msg))
                 paths[key] = name
             continue
-        msg = gi_contact.email_message(fd, attachments, audience=audience, sender=sender)
+        msg = gi_contact.email_message(fd, attachments, audience=audience, sender=sender, site_url=site_url)
         paths[f"email {audience}"] = out / f"{case}-email-{audience}.eml"
         paths[f"email {audience}"].write_bytes(bytes(msg))
     return paths

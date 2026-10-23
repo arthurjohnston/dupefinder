@@ -11,6 +11,8 @@ background) and ticked by you. Only [x] items are published, in the PubPeer Mark
       - checked: both PDFs, tables compared row by row      <- indented "- " lines are evidence, for you only
     - [x] ...                                               <- include
     - [-] ...                                               <- leave out
+    - [x] [data] Table 1 of the later article (p. 3) ...    <- [data]: the results data, not only the text,
+                                                               appear copied; the emails lead with it
 
     ## Questions
     - anything the agent couldn't settle (never published)
@@ -43,6 +45,7 @@ import gi_db
 
 REPORT_DIR = gi_db.DATA / "dupe_publisher"
 ITEM = re.compile(r"^- \[([ xX-])\]\s?(.*)$")
+DATA_TAG = re.compile(r"^\[data\]\s*", re.I)   # a finding that the data were copied, not only the text
 MARKS = {" ": "pending", "x": "include", "X": "include", "-": "leave out"}
 
 
@@ -91,9 +94,11 @@ def load(case, report_dir=REPORT_DIR):
     return parse(p.read_text(encoding="utf-8")) if p.exists() else []
 
 
-def included(case, report_dir=REPORT_DIR):
-    """The texts of the [x] items, in file order: what gets published."""
-    return [it["text"] for it in load(case, report_dir) if it["state"] == "include"]
+def included(case, report_dir=REPORT_DIR, data=None):
+    """The texts of the [x] items, in file order, without their [data] tag: what gets published. data=True
+    gives only the [data] items, data=False only the others, None all of them."""
+    return [DATA_TAG.sub("", it["text"]) for it in load(case, report_dir) if it["state"] == "include"
+            and (data is None or bool(DATA_TAG.match(it["text"])) == data)]
 
 
 def counts(case, report_dir=REPORT_DIR):
