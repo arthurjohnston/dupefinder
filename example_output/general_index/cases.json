@@ -593,5 +593,28 @@
   "matched_words": 523,
   "runs": 22,
   "longest": 69
+ },
+ "GI-535": {
+  "file": "GI-535.html",
+  "reported": "2026-10-22",
+  "published": "2026-10-22",
+  "earlier_known": true,
+  "later": {
+   "title": "Factors Determining Pakistani Medical Students’ Career Preference for General Practice Residency Training",
+   "year": 2018,
+   "doi": "10.7759/cureus.3114",
+   "pct": 20.0,
+   "journal": "Cureus"
+  },
+  "earlier": {
+   "title": "What determines medical students’ career preference for general practice residency training?: a multicenter survey in Japan",
+   "year": 2018,
+   "doi": "10.1186/s12930-018-0039-9",
+   "pct": 18.0,
+   "journal": "Asia Pacific Family Medicine"
+  },
+  "matched_words": 658,
+  "runs": 35,
+  "longest": 137
  }
 }
