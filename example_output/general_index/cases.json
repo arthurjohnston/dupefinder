@@ -2,6 +2,7 @@
  "GI-235": {
   "file": "GI-235.html",
   "reported": "2026-10-13",
+  "published": "2026-10-13",
   "earlier_known": true,
   "later": {
    "title": "Antibiotic-resistanceStaphylococcus aureusisolated from cow’s milk in the Hawassa area, South Ethiopia",
@@ -616,5 +617,28 @@
   "matched_words": 658,
   "runs": 35,
   "longest": 137
+ },
+ "GI-699": {
+  "file": "GI-699.html",
+  "reported": null,
+  "published": "2026-10-23",
+  "earlier_known": false,
+  "later": {
+   "title": "Deep wound infection after a trochanteric fracture internal fixation presenting with hip dislocation: a case report",
+   "year": 2010,
+   "doi": "10.1186/1757-1626-3-19",
+   "pct": 18.0,
+   "journal": "Cases Journal"
+  },
+  "earlier": {
+   "title": "Press Infective Failure of Internal Fixation for Intertrochanteric Femoral Neck Fracture Presenting as Hip Joint Subluxation: A Case Report",
+   "year": 2010,
+   "doi": "10.4021/jmc31w",
+   "pct": 17.0,
+   "journal": "Journal of Medical Cases"
+  },
+  "matched_words": 308,
+  "runs": 12,
+  "longest": 55
  }
 }
