@@ -640,5 +640,28 @@
   "matched_words": 308,
   "runs": 12,
   "longest": 55
+ },
+ "GI-85": {
+  "file": "GI-85.html",
+  "reported": "2026-10-23",
+  "published": "2026-10-23",
+  "earlier_known": true,
+  "later": {
+   "title": "A Comparative Study of Benefits and Drawbacks of Dispensing the Exact Number of Pills",
+   "year": 2018,
+   "doi": "10.26717/bjstr.2018.02.000798",
+   "pct": 86.0,
+   "journal": "Biomedical Journal of Scientific & Technical Research"
+  },
+  "earlier": {
+   "title": "The expected and unexpected benefits of dispensing the exact number of pills",
+   "year": 2017,
+   "doi": "10.1371/journal.pone.0184420",
+   "pct": 60.0,
+   "journal": "PLOS ONE"
+  },
+  "matched_words": 2515,
+  "runs": 41,
+  "longest": 289
  }
 }
