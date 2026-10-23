@@ -3,7 +3,7 @@
 # (strat4_s16) found real overlap in the two-sided 15-50% band and index artifacts at 70%+, so this takes
 # the top 3,000 two-sided, no-shared-author tier-4 leads in 15-50% (major publishers first, by lead_rank).
 # Download -> rescue (no OpenAlex title search: the only paid call, and it found 6% in strat4) -> extract ->
-# measure -> pages. The local AI review runs separately (run_local_review_band4.sh). No paid spend.
+# measure -> pages. The local AI review ran separately (run_local_review_band4.sh, now in git history). No paid spend.
 # Don't edit this while it runs.
 set -uo pipefail
 G=/home/arthur/Sites/dupefinder/general_index; P=$G/../.venv/bin/python3; D=$G/..

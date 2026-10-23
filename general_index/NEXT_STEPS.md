@@ -305,6 +305,10 @@ is meant to move it. Twice in the pilot a rule that looked right hid a known pla
 | `gi_recall.py` | Retraction Watch recall from the `rw_recall` view |
 | `gi_write_pages.py` | HTML comparison pages from `fulltext` (overlap-evidence block: full text, then index) |
 | `run_gi.sh` | chains steps 2-3 + recall into the database |
-| `gi_tortured.py` / `run_tortured.sh` | tortured phrases: count them in the 5-grams, undo them, look for new pairs (none found: TORTURED_PHRASES.md) |
+| `gi_tortured.py` | tortured phrases: count them in the 5-grams, undo them, look for new pairs (none found: TORTURED_PHRASES.md) |
+
+The one-off launchers of finished batches (`run_full16.sh`, `run_tortured.sh`, the local-model and tier 4/5
+sample chains, ...) were removed 2026-10-22; their logs are in `data/`, the scripts in git history.
+`run_band4_batch.sh` stays as the template for new batches.
 
 Disk: `general_index/data/` is about 64 GB (the slice samples are 4 x ~13 GB). 145 GB free.
