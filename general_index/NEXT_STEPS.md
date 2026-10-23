@@ -149,7 +149,7 @@ from to_review join lead_details l using (pair_lo, pair_hi) where l.primary_pair
 
 The old TSVs (`report_s0123_alt.tsv`, `leads_ranked_s0123_alt.tsv`, `*.abstracts.tsv`, ...) are kept;
 `gi_report.py --tsv` / `gi_rank_leads.py --tsv` still write that format. `reviewed_pairs.tsv` and
-`gi_results.sqlite3` are retired (imported; `gi_results_db.py` now only points here).
+`gi_results.sqlite3` are retired (imported into gi.sqlite3; `gi_results_db.py`, which pointed here, removed 2026-10-22).
 
 ## Step 4.5: agent review (before the human)
 
@@ -257,7 +257,8 @@ HOW_LEADS_ARE_FLAGGED.md.
    documents with no metadata at all (10%). Title -> DOI lookup by `gi_resolve_titles.py` (Crossref,
    `retrieve_papers.resolve_doi()`) measured 96% precision / 80% recall on clean titles but **has not
    been run** on the 2022 update's text-extracted titles. Spot-check it on those first. (Keyword ->
-   title identification, `gi_identify.py`, failed: about 50% precision at best. Don't reuse it.)
+   title identification, `gi_identify.py`, failed: about 50% precision at best. Don't reuse it; it and
+   `gi_keywords.py` were removed 2026-10-22, see git history.)
 6. **Only then decide on more slices.** The user wants slices 0-3 worked through first. Lessons for
    any future streaming: run two or three slices in parallel (one stream is about 10-13 MB/s, two
    together about 24 MB/s); 1-in-8 sampling matches 1-in-4 at half the disk
@@ -299,13 +300,11 @@ is meant to move it. Twice in the pilot a rule that looked right hid a known pla
 | `gi_abstract_check.py` | OpenAlex abstracts for both sides, shared-run verdict |
 | `gi_rank_leads.py` | tiers 1-5, two-sided before one-sided |
 | `gi_verify.sh` / `gi_verify.py` | select -> retrieve -> extract -> embed -> measure, into `fulltext` |
-| `gi_keywords.py`, `gi_identify.py` | keyword streaming / keyword -> DOI (failed, see above) |
 | `gi_resolve_titles.py` | title -> DOI via Crossref (not yet run on text-extracted titles) |
 | `gi_db.py` | the database: schema, views, `import-documents`, `import-rw`, `migrate` (one-off from the TSV era) |
 | `gi_recall.py` | Retraction Watch recall from the `rw_recall` view |
 | `gi_write_pages.py` | HTML comparison pages from `fulltext` (overlap-evidence block: full text, then index) |
 | `run_gi.sh` | chains steps 2-3 + recall into the database |
-| `gi_results_db.py` | retired; prints where its data went |
 | `gi_tortured.py` / `run_tortured.sh` | tortured phrases: count them in the 5-grams, undo them, look for new pairs (none found: TORTURED_PHRASES.md) |
 
 Disk: `general_index/data/` is about 64 GB (the slice samples are 4 x ~13 GB). 145 GB free.
