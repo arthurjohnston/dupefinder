@@ -244,10 +244,9 @@ def readable(passage):
 
 
 def email_parts(fd, attachment, shot_name=None, examples=EMAIL_PASSAGES, audience="publisher",
-                name=None, contact=None, site_url=None):
+                name=None, contact=None):
     """(subject, body) of a plain-text email about the pair to one of EMAIL_AUDIENCES. The body, in order:
-    greeting, who I am (ABOUT_ME) and why I'm writing, the two articles, the findings, what's attached (and
-    site_url, the same comparison online, if given), extracts of the `examples` longest readable passages
+    greeting, who I am (ABOUT_ME) and why I'm writing, the two articles, the findings, what's attached, extracts of the `examples` longest readable passages
     (the journal's email only), the request, and the sign-off with `name` (default your git user.name).
     The findings run strongest first: the [data] ones, then the text share, then your other ticked findings
     (before the share when it is under half); the earlier side's emails (AUDIENCE_LENGTH) get only the share
@@ -292,8 +291,6 @@ def email_parts(fd, attachment, shot_name=None, examples=EMAIL_PASSAGES, audienc
         lines.append(f"- {shot_name}: the longest shared passage of running text, as printed in both articles "
                      f"({'earlier article left, later right' if known else 'order unknown'}), the shared words "
                      f"highlighted.")
-    if site_url:
-        lines.append(f"If the HTML attachment was removed on the way, the same comparison is online at {site_url}")
     shown = [p for p in fd["passages"] if readable(p)][:examples] if length == FULL else []
     if shown:
         n = len(shown)
@@ -335,15 +332,14 @@ def report_page(audience, fd):
 
 
 def email_message(fd, attachments, examples=EMAIL_PASSAGES, audience="publisher", sender=None,
-                  name=None, contact=None, site_url=None):
+                  name=None, contact=None):
     """email_parts() as a draft .eml message: To and Cc from recipients() (empty when nobody has filled in
     the journal's contact yet, and always for the institution and the authors), From `sender` when given,
     X-Unsent: 1 so a mail client opens it as a draft, and `attachments` (paths) attached. The body names
     attachments[0] as the comparison page and attachments[1], if any, as the image."""
     attachments = [Path(a) for a in attachments]
     subject, body = email_parts(fd, attachments[0].name, attachments[1].name if len(attachments) > 1 else None,
-                                examples=examples, audience=audience, name=name, contact=contact,
-                                site_url=site_url)
+                                examples=examples, audience=audience, name=name, contact=contact)
     to, cc = recipients(audience, fd, contact)
     msg = email.message.EmailMessage()
     msg["To"] = to

@@ -163,8 +163,6 @@ def write_report(db, f, report_dir=REPORT_DIR, site_dir=SITE_DIR, sender=None, s
     out = Path(report_dir) / case
     out.mkdir(parents=True, exist_ok=True)
     fd = case_findings(db, f, report_dir)
-    if site_dir:   # the PubPeer comment and the emails link the full comparison there
-        fd["site_url"] = f"{SITE_URL}{case}.html"
     if fd.get("data_extra"):   # copied results data: everyone hears of it
         severity = ALL_EMAILS_SEVERITY
     paths = {}
@@ -175,10 +173,8 @@ def write_report(db, f, report_dir=REPORT_DIR, site_dir=SITE_DIR, sender=None, s
     shot_path = out / f"{case}-longest.jpg"
     if shot:
         paths["image"] = shot_path
-    site_url = None
-    if site_dir:   # the emails link the site page too, in case a mail filter strips the .html attachment
+    if site_dir:
         paths.update(write_site(site_dir, case, page, fd))
-        site_url = f"{SITE_URL}{case}.html"
     attachments = [paths["comparison"]] + ([shot_path] if shot else [])
     for old in out.glob(f"{case}-email-*.txt"):   # the plain-text drafts an earlier version wrote
         old.unlink()
@@ -202,12 +198,11 @@ def write_report(db, f, report_dir=REPORT_DIR, site_dir=SITE_DIR, sender=None, s
             for k, inst in enumerate([i for i in gi_contact.institutions(fd) if i.get("to")], 1):
                 key, name = ("email institution", eml) if k == 1 else (
                     f"email institution {k}", out / f"{case}-email-institution-{k}.eml")
-                msg = gi_contact.email_message(fd, attachments, audience=audience, sender=sender, contact=inst,
-                                                 site_url=site_url)
+                msg = gi_contact.email_message(fd, attachments, audience=audience, sender=sender, contact=inst)
                 name.write_bytes(bytes(msg))
                 paths[key] = name
             continue
-        msg = gi_contact.email_message(fd, attachments, audience=audience, sender=sender, site_url=site_url)
+        msg = gi_contact.email_message(fd, attachments, audience=audience, sender=sender)
         paths[f"email {audience}"] = out / f"{case}-email-{audience}.eml"
         paths[f"email {audience}"].write_bytes(bytes(msg))
         page = gi_contact.report_page(audience, fd)

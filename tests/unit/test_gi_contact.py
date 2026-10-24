@@ -128,14 +128,13 @@ class TestEmail(unittest.TestCase):
         self.assertEqual(subject, 'Possible redundant publication: "New paper" (doi:10.2/new)')
         self.assertIn("appears to be largely a republication of an earlier article that shares authors with it.", e)
 
-    def test_table_extracts_skipped_and_site_link(self):
+    def test_table_extracts_skipped(self):
         f = fd(passages=4)
         f["passages"][0] = {"words": 400, "excerpt": "Mean 4.81 (1.00) 4.60 (1.03) 4.93 (0.97) balance 4.87"}
-        e = body(f, site_url="https://x.example/GI-1.html")[1]
+        e = body(f)[1]
         self.assertNotIn("4.81", e)
         self.assertIn("Extracts of 3 of the longest shared passages", e)
-        self.assertIn("the same comparison is online at https://x.example/GI-1.html", e)
-        self.assertNotIn("online at", body()[1])
+        self.assertNotIn("online at", e)   # no link to the project site
 
     def test_order_unknown(self):
         for a in gc.EMAIL_AUDIENCES:
