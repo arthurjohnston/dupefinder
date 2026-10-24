@@ -732,5 +732,28 @@
   "matched_words": 551,
   "runs": 25,
   "longest": 165
+ },
+ "GI-464": {
+  "file": "GI-464.html",
+  "reported": null,
+  "published": "2026-10-24",
+  "earlier_known": true,
+  "later": {
+   "title": "Weight Management for Athletes: Important Things to be Considered",
+   "year": 2017,
+   "doi": "10.18502/ajne.v1i3.1232",
+   "pct": 20.0,
+   "journal": "Arab Journal of Nutrition and Exercise (AJNE)"
+  },
+  "earlier": {
+   "title": "Weight Management for Athletes and Active Individuals: A Brief Review",
+   "year": 2015,
+   "doi": "10.1007/s40279-015-0401-0",
+   "pct": 14.0,
+   "journal": "Sports Medicine"
+  },
+  "matched_words": 867,
+  "runs": 41,
+  "longest": 47
  }
 }
