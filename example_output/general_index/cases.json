@@ -755,5 +755,28 @@
   "matched_words": 867,
   "runs": 41,
   "longest": 47
+ },
+ "GI-577": {
+  "file": "GI-577.html",
+  "reported": "2026-10-24",
+  "published": "2026-10-24",
+  "earlier_known": true,
+  "later": {
+   "title": "EDCAM: Early Detection Congestion Avoidance Mechanism for Wireless Sensor Network",
+   "year": 2010,
+   "doi": "10.5120/1139-1490",
+   "pct": 17.0,
+   "journal": "International Journal of Computer Applications"
+  },
+  "earlier": {
+   "title": "Traffic Analysis & Modeling in Wireless Sensor Networks and Their Applications on Network Optimization and Anomaly Detection",
+   "year": 2010,
+   "doi": "10.5296/npa.v2i1.328",
+   "pct": 7.0,
+   "journal": "Network Protocols and Algorithms"
+  },
+  "matched_words": 538,
+  "runs": 16,
+  "longest": 87
  }
 }
