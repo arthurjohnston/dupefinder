@@ -686,5 +686,28 @@
   "matched_words": 688,
   "runs": 13,
   "longest": 143
+ },
+ "GI-110": {
+  "file": "GI-110.html",
+  "reported": "2026-10-24",
+  "published": "2026-10-24",
+  "earlier_known": true,
+  "later": {
+   "title": "HOW ACCURATELY PHYSICIANS MEASURE BLOOD PRESSURE-AN OBSERVATIONAL STUDY IN ENAM MEDICAL COLLEGE AND HOSPITAL, SAVAR",
+   "year": 2013,
+   "doi": "10.3329/bjmed.v22i1.13594",
+   "pct": 78.0,
+   "journal": "Bangladesh Journal of Medicine"
+  },
+  "earlier": {
+   "title": "ACCURATE BLOOD PRESSURE RECORDING: IS IT DIFFICULT?",
+   "year": 2005,
+   "doi": "10.4103/0019-5359.18965",
+   "pct": 67.0,
+   "journal": "Indian Journal of Medical Sciences"
+  },
+  "matched_words": 2093,
+  "runs": 50,
+  "longest": 491
  }
 }
