@@ -663,5 +663,28 @@
   "matched_words": 2515,
   "runs": 41,
   "longest": 289
+ },
+ "GI-518": {
+  "file": "GI-518.html",
+  "reported": "2026-10-23",
+  "published": "2026-10-23",
+  "earlier_known": true,
+  "later": {
+   "title": "Effect of Toxic Metals on Human Health",
+   "year": 2010,
+   "doi": "10.2174/18763960010030100094",
+   "pct": 16.0,
+   "journal": "The Open Nutraceuticals Journal"
+  },
+  "earlier": {
+   "title": "Heavy metal ions in wines: meta-analysis of target hazard quotients reveal health risks",
+   "year": 2008,
+   "doi": "10.1186/1752-153x-2-22",
+   "pct": 22.0,
+   "journal": "Chemistry Central Journal"
+  },
+  "matched_words": 688,
+  "runs": 13,
+  "longest": 143
  }
 }
