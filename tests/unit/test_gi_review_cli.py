@@ -593,5 +593,40 @@ class TestTakeDown(unittest.TestCase):
                              ["contacts.json", "findings.md", "withdrawn"])
 
 
+class TestLaterPaperGroups(unittest.TestCase):
+    """later_paper_groups(): pages sharing a later (copying) paper are grouped, an order-unknown page joins
+    through either of its papers; keep_groups_together() pulls a group up to where its first member falls."""
+
+    @staticmethod
+    def row(n, a, b, earlier):
+        lo, hi = sorted((a.lower(), b.lower()))
+        return {"page_number": n, "doi_a": a, "doi_b": b, "pair_lo": lo, "pair_hi": hi, "earlier": earlier}
+
+    def groups(self, rows):
+        return cli.later_paper_groups(None, rows, earlier=lambda r: r["earlier"])
+
+    def test_shared_later_paper(self):
+        rows = [self.row(1, "10.1/E1", "10.1/L", "a"), self.row(2, "10.1/l", "10.1/E2", "b"),
+                self.row(3, "10.1/E1", "10.1/other", "a")]   # shares only the earlier paper: not grouped
+        g = self.groups(rows)
+        self.assertEqual(g[cli.pair_key(rows[0])], [1, 2])
+        self.assertNotIn(cli.pair_key(rows[2]), g)
+
+    def test_unknown_order_joins_and_merges(self):
+        rows = [self.row(1, "10.1/E1", "10.1/L1", "a"), self.row(2, "10.1/E2", "10.1/L1", "a"),
+                self.row(3, "10.1/E3", "10.1/L2", "a"), self.row(4, "10.1/E4", "10.1/L2", "a"),
+                self.row(5, "10.1/L1", "10.1/L2", None), self.row(6, "10.1/X", "10.1/Y", None)]
+        g = self.groups(rows)
+        self.assertEqual(g[cli.pair_key(rows[0])], [1, 2, 3, 4, 5])
+        self.assertNotIn(cli.pair_key(rows[5]), g)
+
+    def test_kept_together(self):
+        rows = [self.row(1, "10.1/E1", "10.1/L", "a"), self.row(2, "10.1/x", "10.1/y", "a"),
+                self.row(3, "10.1/E3", "10.1/z", "a"), self.row(4, "10.1/E2", "10.1/L", "a")]
+        queue = [rows[1], rows[3], rows[2], rows[0]]
+        got = [r["page_number"] for r in cli.keep_groups_together(queue, self.groups(rows))]
+        self.assertEqual(got, [2, 4, 1, 3])
+
+
 if __name__ == "__main__":
     unittest.main()

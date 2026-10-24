@@ -43,7 +43,10 @@ OpenAlex/ORCID data first. --us-europe-only keeps only the first of those. --ord
 authors above everything else: a later paper with an author whose ORCID lists a current (not emeritus)
 professor/lecturer post at a US/European institution first, then the affiliation ranks, the agent's calls and
 the publisher order holding within each; only authors with an ORCID record can be found this way. Each pair
-shows its later paper's authors' line whenever the data is cached (gi_affiliations.py fetch). --gi 12,40 for specific pages
+shows its later paper's authors' line whenever the data is cached (gi_affiliations.py fetch). Pages whose
+later paper is the later paper of another page too (one article copied from several earlier ones) are kept
+together in any order, where the first of them falls, and each says which others share it and what you
+decided on those (later_paper_groups()). --gi 12,40 for specific pages
 (reviewed or not); --include-reviewed to go back over yours too. --ai-type cross-author,data (or duplicate,
 recycling, legitimate, same-paper, third-source, boilerplate, citations, artifact, unsure, none = not reviewed
 by the agent) and --ai-decision problem / no-problem / unsure / none keep only those pairs.
@@ -279,10 +282,11 @@ order by case when r.ai_decision = 'problem' and r.ai_type in ('cross-author cop
 
 
 def load_queue(db, gi=None, include_reviewed=False, ai_types=None, ai_decisions=None, order="publisher",
-               us_europe_only=False):
+               us_europe_only=False, groups=None):
     """ai_types / ai_decisions: lists of AI_TYPES / AI_DECISIONS names to keep ('none': the agent hasn't
     reviewed the pair). us_europe_only: only pairs whose later paper has an author active at a US/European
-    university (gi_affiliations.py). Ignored with gi."""
+    university (gi_affiliations.py). Ignored with gi. Pages sharing a later paper (groups:
+    later_paper_groups(), computed when not given) are kept together, where the first of them falls."""
     rows = db.execute(QUEUE_SQL).fetchall()
     if gi:
         by_n = {r["page_number"]: r for r in rows}
@@ -307,9 +311,82 @@ def load_queue(db, gi=None, include_reviewed=False, ai_types=None, ai_decisions=
             rows = [r for r in rows if aff[r["pair_lo"], r["pair_hi"]] == gi_affiliations.TARGET]
     if order == "professor":
         profs = professor_pairs(db, rows)
-    return sorted(rows, key=lambda r: queue_key(r, gi_write_pages.priority_status(r)[0], order,
-                                                aff.get((r["pair_lo"], r["pair_hi"])),
-                                                bool(profs.get((r["pair_lo"], r["pair_hi"])))))
+    ranked = sorted(rows, key=lambda r: queue_key(r, gi_write_pages.priority_status(r)[0], order,
+                                                  aff.get((r["pair_lo"], r["pair_hi"])),
+                                                  bool(profs.get((r["pair_lo"], r["pair_hi"])))))
+    return keep_groups_together(ranked, groups if groups is not None else later_paper_groups(db))
+
+
+def pair_key(r):
+    return r["pair_lo"], r["pair_hi"]
+
+
+def later_paper_groups(db, rows=None, earlier=None):
+    """{pair key: [page numbers of every page in its group]}, for pages whose later (copying) paper is the
+    later paper of another page too -- one article built from several earlier ones, best reviewed together.
+    Only pages in a group of two or more are keys. A page whose order is unknown joins the group of either of
+    its papers that is another page's later paper (which can join two groups into one). Over every page in
+    the queue (QUEUE_SQL), reviewed or not, so a group still shows the members you've done. earlier: as
+    gi_write_pages.earlier_side() (the default), 'a' / 'b' / None for a row."""
+    if earlier is None:
+        import gi_write_pages
+        earlier = gi_write_pages.earlier_side
+    rows = db.execute(QUEUE_SQL).fetchall() if rows is None else rows
+    parent = {pair_key(r): pair_key(r) for r in rows}
+
+    def find(k):
+        while parent[k] != k:
+            parent[k] = parent[parent[k]]
+            k = parent[k]
+        return k
+
+    later_of, unknown = {}, []
+    for r in rows:
+        side = earlier(r)
+        if side in ("a", "b"):
+            doi = r["doi_b" if side == "a" else "doi_a"].lower()
+            if doi in later_of:
+                parent[find(pair_key(r))] = find(later_of[doi])
+            else:
+                later_of[doi] = pair_key(r)
+        else:
+            unknown.append(r)
+    for r in unknown:
+        for doi in (r["doi_a"].lower(), r["doi_b"].lower()):
+            if doi in later_of:
+                parent[find(pair_key(r))] = find(later_of[doi])
+    members = {}
+    for r in rows:
+        members.setdefault(find(pair_key(r)), []).append(r["page_number"])
+    return {pair_key(r): sorted(members[find(pair_key(r))]) for r in rows
+            if len(members[find(pair_key(r))]) > 1}
+
+
+def keep_groups_together(queue, groups):
+    """The queue with each later_paper_groups() group pulled together where its first member falls, the
+    others following in their own queue order."""
+    by_page = {}
+    for r in queue:
+        by_page.setdefault(tuple(groups.get(pair_key(r), ())), []).append(r)
+    out, placed = [], set()
+    for r in queue:
+        if pair_key(r) in placed:
+            continue
+        group = by_page[tuple(groups[pair_key(r)])] if pair_key(r) in groups else [r]
+        out += group
+        placed.update(pair_key(g) for g in group)
+    return out
+
+
+def group_line(db, pair, groups):
+    """'Same later paper as GI-144 (problem), GI-163' for a page in a later_paper_groups() group, else None."""
+    pages = [n for n in groups.get(pair_key(pair), ()) if n != pair["page_number"]]
+    if not pages:
+        return None
+    done = dict(db.execute(f"""select f.page_number, r.human_decision from fulltext f join results r
+                               using (pair_lo, pair_hi) where f.page_number in ({','.join('?' * len(pages))})""",
+                           pages).fetchall())
+    return ", ".join(f"GI-{n:02d}" + (f" ({done[n]})" if done.get(n) else "") for n in pages)
 
 
 def affiliation_ranks(db, rows):
@@ -404,7 +481,7 @@ def wrap(label, text, width=100):
     return textwrap.fill(text or "", width=width, initial_indent=label, subsequent_indent=" " * len(label))
 
 
-def show_pair(pair, i, total, titles, flags=(), priority=(0, None), authors=None, professors=None):
+def show_pair(pair, i, total, titles, flags=(), priority=(0, None), authors=None, professors=None, group=None):
     pct = lambda v: "?" if v is None else f"{v:.0f}%"
     print("\n" + "=" * 100)
     print(f"GI-{pair['page_number']:02d}   ({i} of {total})   A {pct(pair['ft_pct_a'])} / B {pct(pair['ft_pct_b'])} "
@@ -414,6 +491,8 @@ def show_pair(pair, i, total, titles, flags=(), priority=(0, None), authors=None
         print(wrap(f"  {side}: ", f"{title} ({year or '?'}) {doi}"))
         if not pdf:
             print("     (no local PDF)")
+    if group:
+        print(wrap("  SAME LATER PAPER as: ", group + " -- queued together"))
     rank, note = priority
     if note and rank > 0:
         print(f"  NOTE: {note} -- queued after the other pairs: a preprint/repository upload is most "
@@ -1151,8 +1230,9 @@ def main():
         bad = [v for v in value if v not in known]
         if bad:
             ap.error(f"{name}: unknown {', '.join(bad)} (use: {', '.join(known)})")
+    groups = later_paper_groups(db)
     queue = load_queue(db, args.gi, args.include_reviewed, args.ai_type, args.ai_decision, args.order,
-                       args.us_europe_only)
+                       args.us_europe_only, groups)
     if not queue:
         print("nothing to review")
         return
@@ -1173,7 +1253,8 @@ def main():
             saved_flags = pair_flags(db, pair)
             reported = False   # t at the menu ran report_flow() for this pair already
             show_pair(shown, i, len(queue), titles, saved_flags, gi_write_pages.priority_status(pair),
-                      affiliation_line(aff_scores, shown), professor_line(aff_profs, shown))
+                      affiliation_line(aff_scores, shown), professor_line(aff_profs, shown),
+                      group_line(db, pair, groups))
             print(f"  page: {page or '(no page in ' + str(pages_dir) + ')'}")
             for side, pdf in zip("AB", pdfs):
                 print(f"  PDF {side}: {pdf}")
@@ -1217,7 +1298,7 @@ def main():
                             set_order(ans)
                             show_pair(shown, i, len(queue), titles_of(pair, shown), saved_flags,
                                       gi_write_pages.priority_status(pair), affiliation_line(aff_scores, shown),
-                                      professor_line(aff_profs, shown))
+                                      professor_line(aff_profs, shown), group_line(db, pair, groups))
                             if not args.no_open and page:
                                 open_files([page])
                         continue
