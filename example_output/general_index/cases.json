@@ -709,5 +709,28 @@
   "matched_words": 2093,
   "runs": 50,
   "longest": 491
+ },
+ "GI-566": {
+  "file": "GI-566.html",
+  "reported": null,
+  "published": "2026-10-24",
+  "earlier_known": true,
+  "later": {
+   "title": "Correlation of Ultrasound Parameters with Serum Creatinine in Renal Parenchymal Disease",
+   "year": 2019,
+   "doi": "10.3126/jgmcn.v12i1.22619",
+   "pct": 15.0,
+   "journal": "Journal of Gandaki Medical College-Nepal"
+  },
+  "earlier": {
+   "title": "Correlation of Ultrasonographic Parameters with Serum Creatinine in Chronic Kidney Disease",
+   "year": 2013,
+   "doi": "10.4103/2156-7514.114809",
+   "pct": 20.0,
+   "journal": "Journal of Clinical Imaging Science"
+  },
+  "matched_words": 551,
+  "runs": 25,
+  "longest": 165
  }
 }
