@@ -342,6 +342,17 @@ class TestComposeShot(unittest.TestCase):
         self.assertEqual(w, 5 + 100 + 10 + 120 + 5)
         self.assertEqual(h, 5 * 2 + 20 + 5 + (40 + 5 + 30))  # the taller (stacked) side
 
+    def test_narrow_crop_widens_to_its_label(self):
+        # GI-110: a narrow left crop let its "EARLIER (..., PDF p. 3)" label run into the right one's.
+        import pymupdf
+        import tempfile
+        label = "EARLIER (2005, doi:10.4103/0019-5359.18965), PDF p. 3"
+        label_w = pymupdf.get_text_length(label, fontname="helv", fontsize=15)
+        kept = [("r01-a-1", self.jpeg(40, 40), 40, 40), ("r01-b-1", self.jpeg(120, 50), 120, 50)]
+        with tempfile.TemporaryDirectory() as d:
+            w, _ = wds.compose_shot(kept, (label, "LATER"), Path(d) / "x.jpg", gap=10, pad=5, label_px=20)
+        self.assertGreaterEqual(w, 5 + label_w + 10 + 120 + 5)
+
     def test_one_side_and_none(self):
         import tempfile
         with tempfile.TemporaryDirectory() as d:
@@ -349,6 +360,37 @@ class TestComposeShot(unittest.TestCase):
                                     gap=10, pad=5)
             self.assertEqual(w, 5 + 60 + 5)
             self.assertIsNone(wds.compose_shot([], ("A", "B"), Path(d) / "y.jpg"))
+
+
+class TestRotatedPage(unittest.TestCase):
+    """GI-110's earlier PDF is /Rotate 270: get_text() boxes come back unrotated, so every crop of
+    it was cut from the wrong place until page_words() moved them into the displayed page."""
+
+    def setUp(self):
+        import pymupdf
+        self.doc = pymupdf.open()
+        self.page = self.doc.new_page(width=595, height=842)
+        self.page.set_rotation(270)
+        # Reads left to right at (100, 100) on the page as displayed.
+        self.page.insert_text(pymupdf.Point(100, 100) * self.page.derotation_matrix,
+                              "hello wide world", fontsize=12, rotate=270)
+
+    def test_words_are_in_displayed_coordinates(self):
+        words = wds.page_words(self.page)
+        self.assertEqual([w[4] for w in words], ["hello", "wide", "world"])
+        x0, y0, x1, y1 = words[0][:4]
+        self.assertAlmostEqual(x0, 100, delta=1)
+        self.assertLess(y0, 100)
+        self.assertGreater(y1, 100)
+        self.assertGreater(x1 - x0, y1 - y0)          # horizontal, not sideways
+        self.assertLess(words[0][2], words[1][0])     # and in reading order along x
+
+    def test_highlight_lands_on_the_word(self):
+        import pymupdf
+        rect = pymupdf.Rect(wds.page_words(self.page)[0][:4])
+        a = self.page.add_highlight_annot(rect.quad * self.page.derotation_matrix)
+        shown = a.rect * self.page.rotation_matrix
+        self.assertGreater((shown & rect).get_area(), 0.8 * rect.get_area())
 
 
 if __name__ == "__main__":

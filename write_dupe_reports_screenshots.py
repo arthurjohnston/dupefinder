@@ -48,6 +48,7 @@ import argparse
 import base64
 import difflib
 import html
+import math
 import os
 import re
 import sqlite3
@@ -455,12 +456,20 @@ def page_words(page):
     """PyMuPDF's word tuples for one page. A word box is normally as tall as the font's ascender to
     descender, but some fonts declare absurd ones -- GI-85's later PDF sets 8-9pt text in 50pt-tall boxes,
     which made fit_scales() shrink that side fivefold and drew each highlight over five lines. On a page
-    whose boxes run over BLOATED_BOX times the font size, the boxes are taken from the font size instead."""
+    whose boxes run over BLOATED_BOX times the font size, the boxes are taken from the font size instead.
+
+    Boxes are returned in the page as displayed (`page.rect`, what get_pixmap()'s clip takes). get_text()
+    gives them unrotated, so on a /Rotate page (GI-110's earlier PDF: 270, landscape spreads) they'd be
+    sideways and every crop taken from the wrong place; ImageWriter.render() maps highlights back."""
     import pymupdf
-    words = page.get_text("words")
+    m = page.rotation_matrix
+
+    def displayed(ws):
+        return ws if not page.rotation else [tuple(pymupdf.Rect(w[:4]) * m) + tuple(w[4:]) for w in ws]
+    words = displayed(page.get_text("words"))
     pymupdf.TOOLS.set_small_glyph_heights(True)
     try:
-        small = page.get_text("words")
+        small = displayed(page.get_text("words"))
     finally:
         pymupdf.TOOLS.set_small_glyph_heights(False)
     if not words or len(small) != len(words):
@@ -525,7 +534,9 @@ class ImageWriter:
         page = side.doc[page_no]
         annots = []
         for h in highlights:
-            a = page.add_highlight_annot(pymupdf.Rect(h.rect).quad)
+            # Annotations take unrotated coordinates; derotating the quad (not the rect) keeps its
+            # corners in reading order, which is what the highlight's shape is drawn from.
+            a = page.add_highlight_annot(pymupdf.Rect(h.rect).quad * page.derotation_matrix)
             a.set_colors(stroke=DIFF_RGB if h.diff else MATCH_RGB)
             a.update()
             annots.append(a)
@@ -820,7 +831,10 @@ def compose_shot(kept, labels, out_path, gap=24, pad=12, label_px=22, quality=DE
     cols = [[k for k in kept if k[0].split("-")[1] == tag] for tag in "ab"]
     if not any(cols):
         return None
-    col_w = [max((w for _, _, w, _ in c), default=0) for c in cols]
+    # A column is at least as wide as its label, or a narrow crop's label runs into the other side's.
+    col_w = [max([w for _, _, w, _ in c] + [math.ceil(pymupdf.get_text_length(
+                 label, fontname="helv", fontsize=label_px * 0.75))]) if c else 0
+             for c, label in zip(cols, labels)]
     col_h = [sum(h for _, _, _, h in c) + pad * max(0, len(c) - 1) for c in cols]
     width = pad * 2 + col_w[0] + col_w[1] + (gap if all(col_w) else 0)
     height = pad * 2 + label_px + pad + max(col_h)
