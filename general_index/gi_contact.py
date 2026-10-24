@@ -136,10 +136,9 @@ def journal_reported(fd):
 
 # who I am, at the top of every email: one sentence
 ABOUT_ME = ("I am an independent researcher, with no connection to either set of authors, screening published "
-            "articles for duplicated text; software flagged this pair and I checked it against both articles.")
+            "articles for duplicated text.")
 # the same for the earlier article's authors, who are one of the two sets
-ABOUT_ME_AUTHORS = ("I am an independent researcher, screening published articles for duplicated text; software "
-                    "flagged this pair and I checked it against both articles.")
+ABOUT_ME_AUTHORS = "I am an independent researcher, screening published articles for duplicated text."
 
 
 def _email_intro(audience, fd, contact=None):
@@ -259,12 +258,12 @@ def email_parts(fd, attachment, shot_name=None, examples=EMAIL_PASSAGES, audienc
     _to, subject, greeting, opening, request = _email_intro(audience, fd, contact)
     lines = [greeting, "", " ".join([ABOUT_ME_AUTHORS if audience == "authors" else ABOUT_ME] + opening), ""]
     if known:
-        lines += ["Later article: " + _plain_cite(second), "Earlier article: " + _plain_cite(first), ""]
+        lines += ["Later article: " + _plain_cite(second), "", "Earlier article: " + _plain_cite(first), ""]
         share = [f"- About {pct(second['pct'])} of the later article's text is also found in the earlier article "
                  f"({fd['matched_words'] or 0:,} matched words in {fd['runs']} passages; the later article has "
                  f"about {second['words']:,} words). That is {pct(first['pct'])} of the earlier article's text."]
     else:
-        lines += ["First article: " + _plain_cite(second), "Second article: " + _plain_cite(first), ""]
+        lines += ["First article: " + _plain_cite(second), "", "Second article: " + _plain_cite(first), ""]
         share = [f"- About {pct(second['pct'])} of the first article's text is also found in the second, "
                  f"and {pct(first['pct'])} of the second article's text in the first "
                  f"({fd['matched_words'] or 0:,} matched words in {fd['runs']} passages)."]
