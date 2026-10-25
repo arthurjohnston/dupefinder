@@ -9,7 +9,9 @@ Into data/dupe_publisher/GI-NN/:
   GI-NN-images.jpg       all of those stacked into one image, the one the PubPeer comment asks you to upload
   GI-NN-longest.jpg      passage 1 again, attached to the emails
   GI-NN-comparison.html  the attachment for the journal: the same comparison without the PubPeer box or the
-                         title images, with the shared-text figures and the longest passage's image at the top
+                         title images, with the shared-text figures and the longest passage's image at the top;
+                         with a sources.json (the trace-other-sources skill), every other text source's passages too,
+                         under an overview of each one's share and the union (gi_sources.add_sources())
   GI-NN-email-*.eml      draft emails (all four for a high-severity case, only -publisher otherwise; see
                          audiences()) (RFC 822 .eml with X-Unsent: 1, From your git user.email or --from, To
                          and Cc from data/journal_contacts.json for the two journal emails, empty otherwise), each with the same findings as the PubPeer Markdown, extracts of the
@@ -83,6 +85,7 @@ import gi_case_findings
 import gi_contact
 import gi_db
 import gi_pubpeer as pp
+import gi_sources
 
 ROOT = Path(__file__).resolve().parent.parent
 REPORT_DIR = gi_db.DATA / "dupe_publisher"
@@ -158,6 +161,7 @@ def publish_only(db, f, site_dir=SITE_DIR, report_dir=REPORT_DIR):
     reporting (low, say) whose comparison should still be public. No PubPeer page, no emails."""
     fd = case_findings(db, f, report_dir)
     page, _ = pp.publisher_page(f, fd)
+    page, fd["sources"] = gi_sources.add_sources(page, f, fd, Path(report_dir) / pp.case_name(f))
     return write_site(site_dir, pp.case_name(f), page, fd, reported=False)
 
 
@@ -181,6 +185,7 @@ def write_report(db, f, report_dir=REPORT_DIR, site_dir=SITE_DIR, sender=None, s
     if not authors_only:
         paths["pubpeer"], _ = pp.write_page(db, f, out, fd=dict(fd), name=f"{case}-pubpeer.html")
     page, shot = pp.publisher_page(f, fd)
+    page, fd["sources"] = gi_sources.add_sources(page, f, fd, out)   # sources.json: every source on one page
     paths["comparison"] = out / f"{case}-comparison.html"
     paths["comparison"].write_text(page, encoding="utf-8")
     shot_path = out / f"{case}-longest.jpg"
@@ -279,6 +284,8 @@ def record(site_dir, case, fd, reported=True):
                    "later": {k: fd["second"].get(k) for k in keep}, "earlier": {k: fd["first"].get(k) for k in keep},
                    "matched_words": fd["matched_words"], "runs": fd["runs"],
                    "longest": fd["passages"][0]["words"] if fd["passages"] else None}
+    if fd.get("sources"):   # gi_sources.add_sources(): the paired article and the other sources together
+        cases[case].update(fd["sources"])
     path.write_text(json.dumps(cases, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
 
 
@@ -370,6 +377,13 @@ def take_down(case, site_dir=SITE_DIR, report_dir=REPORT_DIR):
     return moved
 
 
+def _union(c):
+    """The index's note for a case with other sources (gi_sources): the share found in all of them."""
+    if not c.get("union_pct"):
+        return ""
+    return f"<br><small>{c['union_pct']:.0f}% in {c['sources']} earlier works</small>"
+
+
 def write_index(site_dir):
     site_dir = Path(site_dir)
     cases = json.loads((site_dir / "cases.json").read_text(encoding="utf-8"))
@@ -379,7 +393,7 @@ def write_index(site_dir):
         later, earlier = c["later"], c["earlier"]
         rows.append(f"""<tr><td class="num"><a href="{html.escape(c['file'])}">{html.escape(case)}</a></td>
 <td class="art">{_article(later)}</td><td class="art">{_article(earlier)}</td>
-<td class="num">{pp.pct(later['pct'])} / {pp.pct(earlier['pct'])}</td>
+<td class="num">{pp.pct(later['pct'])} / {pp.pct(earlier['pct'])}{_union(c)}</td>
 <td class="num">{c['longest'] or '?'} words</td><td class="num">{html.escape(c['reported'] or 'not reported')}</td></tr>""")
     path = site_dir / "index.html"
     path.write_text(f"""<!DOCTYPE html>
