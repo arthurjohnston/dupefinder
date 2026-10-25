@@ -846,6 +846,9 @@
   },
   "matched_words": 1105,
   "runs": 46,
-  "longest": 53
+  "longest": 53,
+  "sources": 4,
+  "union_words": 1475,
+  "union_pct": 40.8
  }
 }
