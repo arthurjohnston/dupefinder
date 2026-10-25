@@ -801,5 +801,28 @@
   "matched_words": 1779,
   "runs": 28,
   "longest": 251
+ },
+ "GI-851": {
+  "file": "GI-851.html",
+  "reported": "2026-10-25",
+  "published": "2026-10-25",
+  "earlier_known": true,
+  "later": {
+   "title": "Pharmaco-economics analysis, as a strategy on facilitating choices between health and non-health programs in the establishment of the national health care system",
+   "year": 2013,
+   "doi": "10.1016/j.ajme.2013.06.001",
+   "pct": 57.0,
+   "journal": "Alexandria Journal of Medicine"
+  },
+  "earlier": {
+   "title": "Pharmacoeconomy: an indispensable tool for the rationalization of health costs",
+   "year": 2011,
+   "doi": "10.1590/S1984-82502011000200004",
+   "pct": 43.0,
+   "journal": "Brazilian Journal of Pharmaceutical Sciences"
+  },
+  "matched_words": 2002,
+  "runs": 55,
+  "longest": 119
  }
 }
