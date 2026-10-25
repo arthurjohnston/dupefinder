@@ -896,5 +896,28 @@
   "matched_words": 567,
   "runs": 25,
   "longest": 58
+ },
+ "GI-74": {
+  "file": "GI-74.html",
+  "reported": "2026-10-25",
+  "published": "2026-10-25",
+  "earlier_known": true,
+  "later": {
+   "title": "The Synergic Scheduling Optimization and Effectiveness Evaluation Model for Multi-types Generation Resources Considering Emission Constraints",
+   "year": 2016,
+   "doi": "10.2991/icmea-16.2016.10",
+   "pct": 74.0,
+   "journal": "Proceedings of the 3rd International Conference on Material Engineering and Application (ICMEA 2016)"
+  },
+  "earlier": {
+   "title": "Send Orders for Reprints to reprints@benthamscience.ae The Stochastic Optimization Scheduling Model for Wind Power, Thermal Power and Hydropower with Carbon Emissions Trading",
+   "year": 2015,
+   "doi": "10.2174/1874110x01509011074",
+   "pct": 74.0,
+   "journal": "The Open Cybernetics & Systemics Journal"
+  },
+  "matched_words": 2885,
+  "runs": 99,
+  "longest": 200
  }
 }
