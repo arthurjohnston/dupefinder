@@ -18,6 +18,7 @@ A paper still marked no_oa is not retried (in a 50-paper sample OpenAlex had a P
 PDFs go to the run's workdir papers/ (internal disk); gi_rescue.sh then runs the rest of the run.
 
 Usage: gi_rescue_pdfs.py RUN [--email ADDR] [--workers 8] [--max-tries 6] [--no-titles]
+                         [--no-archives | --archives-only]
 """
 import argparse
 import html
@@ -32,6 +33,7 @@ from concurrent.futures import ThreadPoolExecutor
 from difflib import SequenceMatcher
 from pathlib import Path
 
+import fitz  # PyMuPDF
 import requests
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -40,6 +42,15 @@ import retrieve_papers as rp  # noqa: E402
 import gi_db  # noqa: E402
 
 RETRY = ("error", "oa_url_not_pdf", "doi_unknown_to_unpaywall")
+WAYBACK_API = "https://archive.org/wayback/available"
+EPMC_SEARCH = "https://www.ebi.ac.uk/europepmc/webservices/rest/search"
+PMC_ARTICLE = "https://pmc.ncbi.nlm.nih.gov/articles/{}/"
+EPMC_BATCH = 25          # DOIs per Europe PMC query (DOI:"a" OR DOI:"b" ...)
+MIN_PMC_WORDS = 500      # less than this on a PMC page: an abstract or a scanned article, not the text
+# PMC's page furniture: search links under the byline, link labels after each reference
+PMC_CHROME = re.compile(r"\[ (?:DOI|PubMed|PMC free article|Google Scholar|CrossRef|Free full text) \]")
+PMC_CHROME_BLOCKS = {"Search in PMC", "Search in PubMed", "View in NLM Catalog", "Add to search",
+                     "Author information", "Article notes", "Copyright and License information"}
 
 
 def title_words(t):
@@ -109,6 +120,162 @@ def unpaywall_urls(session, limiter, args, log, doi):
     return [l["url_for_pdf"] for l in locs if l.get("url_for_pdf")], [l["url"] for l in locs if l.get("url")]
 
 
+def title_on_pages(path, title, pages=2):
+    """Most (80%) of the title's words on the PDF's first pages. A Wayback snapshot is of a URL, and a URL
+    can serve a different file than the one the index paired (a journal reusing paths, a cover sheet)."""
+    words = [w for w in title_words(title) if len(w) > 2]
+    if not words:
+        return True
+    try:
+        with fitz.open(path) as doc:
+            have = set(title_words(" ".join(doc[i].get_text() for i in range(min(pages, len(doc))))))
+    except Exception:
+        return False
+    return sum(w in have for w in words) / len(words) >= 0.8
+
+
+def wayback_copy(session, limiter, args, log, urls, dest, title):
+    """The raw archived file (the id_ form: no Wayback toolbar) of the first URL with a 200 snapshot that is a
+    PDF of this paper; that snapshot's URL, or None."""
+    for u in urls[:args.max_tries]:
+        try:
+            resp = rp.http_get(session, WAYBACK_API, {"url": u}, rate_limiter=limiter,
+                               max_retries=args.max_retries, timeout=args.timeout, logger=log)
+            snap = (resp.json().get("archived_snapshots") or {}).get("closest") or {}
+        except (rp.RetrievalError, ValueError) as e:
+            log.info("  wayback lookup %s: %s", u, e)
+            continue
+        if not snap.get("available") or snap.get("status") != "200":
+            continue
+        raw = f"https://web.archive.org/web/{snap['timestamp']}id_/{u}"
+        try:
+            ok = rp.download_pdf(session, raw, dest, limiter, args, log)
+        except rp.RetrievalError as e:
+            log.info("  %s: %s", raw, e)
+            continue
+        if ok and title_on_pages(dest, title):
+            return raw
+        if ok:
+            log.info("  %s: a PDF, but unreadable or not of %r", raw, title)
+        dest.unlink(missing_ok=True)
+    return None
+
+
+def pmc_ids(session, limiter, args, log, dois):
+    """doi -> PMCID, from Europe PMC's search (EPMC_BATCH DOIs a query)."""
+    out = {}
+    for batch in rp.chunked(dois, EPMC_BATCH):
+        params = {"query": " OR ".join(f'DOI:"{d}"' for d in batch), "format": "json", "resultType": "lite",
+                  "pageSize": 100}
+        try:
+            resp = rp.http_get(session, EPMC_SEARCH, params, rate_limiter=limiter, max_retries=args.max_retries,
+                               timeout=args.timeout, logger=log)
+            res = resp.json().get("resultList", {}).get("result", [])
+        except (rp.RetrievalError, ValueError) as e:
+            log.warning("Europe PMC batch failed: %s", e)
+            continue
+        for r in res:
+            if r.get("pmcid") and r.get("doi"):
+                out[r["doi"].lower()] = r["pmcid"]
+    return out
+
+
+def pmc_text(page):
+    """(title, [(tag, text)]) from a PMC article page: the h1, then every heading and paragraph of the
+    article body in order, references included (as a PDF's extracted text would have them)."""
+    m = re.search(r"<article\b.*?</article>", page, re.S)
+    body = m.group(0) if m else page
+    t = re.search(r"<h1[^>]*>(.*?)</h1>", body, re.S)
+    clean = lambda h: re.sub(r"\s+", " ", html.unescape(re.sub(r"<[^>]+>", " ", h))).strip()
+    blocks = [(tag, PMC_CHROME.sub("", clean(inner)).strip())
+              for tag, inner in re.findall(r"<(h[2-4]|p|li)\b[^>]*>(.*?)</\1>", body, re.S)]
+    return (clean(t.group(1)) if t else ""), [(tag, x) for tag, x in blocks if x and x not in PMC_CHROME_BLOCKS]
+
+
+def write_text_pdf(dest, title, blocks):
+    """A plain A4 PDF of title + blocks, laid out by PyMuPDF's Story."""
+    esc = html.escape
+    doc_html = f"<h1>{esc(title)}</h1>" + "".join(
+        f"<h3>{esc(x)}</h3>" if tag[0] == "h" else f"<p>{esc(x)}</p>" for tag, x in blocks)
+    story = fitz.Story(html=doc_html, user_css="body{font-size:10pt} h1{font-size:14pt}")
+    tmp = dest.with_suffix(".pdf.part")
+    writer = fitz.DocumentWriter(str(tmp))
+    page, more = fitz.paper_rect("a4"), 1
+    while more:
+        dev = writer.begin_page(page)
+        more, _ = story.place(page + (50, 50, -50, -50))
+        story.draw(dev)
+        writer.end_page()
+    writer.close()
+    tmp.rename(dest)
+
+
+def pmc_copy(session, limiter, args, log, pmcid, dest, title):
+    """PMC's article page as a text PDF, when it is this paper (title similarity >= --title-threshold) and
+    carries the full text (MIN_PMC_WORDS+); the page's URL, or None."""
+    url = PMC_ARTICLE.format(pmcid)
+    try:
+        resp = rp.http_get(session, url, None, rate_limiter=limiter, max_retries=args.max_retries,
+                           timeout=args.timeout, logger=log)
+    except rp.RetrievalError as e:
+        log.info("  %s: %s", url, e)
+        return None
+    if resp.status_code != 200:
+        log.info("  %s: HTTP %d", url, resp.status_code)
+        return None
+    got_title, blocks = pmc_text(resp.text)
+    sim = SequenceMatcher(None, " ".join(title_words(title)), " ".join(title_words(got_title))).ratio()
+    words = sum(len(x.split()) for _, x in blocks)
+    if sim < args.title_threshold or words < MIN_PMC_WORDS:
+        log.info("  %s: not used (title similarity %.2f, %d words)", url, sim, words)
+        return None
+    write_text_pdf(dest, got_title, blocks)
+    return url
+
+
+def archives(st, db_lock, session, limiter, args, log, papers_dir):
+    """Step 3: Wayback, then PMC, for every paper still missing (PMC alone for no_oa ones)."""
+    rows = st.execute(f"select key, title, doi, pdf_url, status from papers where doi is not null and status in "
+                      f"({','.join('?' * (len(RETRY) + 1))})", (*RETRY, "no_oa")).fetchall()
+    log.info("archives: %d papers (%d no_oa: PMC only)", len(rows), sum(r["status"] == "no_oa" for r in rows))
+    dois = sorted({r["doi"].lower() for r in rows})
+    oa = openalex_urls(session(), limiter, args, log, [d for r in rows if r["status"] != "no_oa"
+                                                       for d in [r["doi"].lower()]])
+    pmc = pmc_ids(session(), limiter, args, log, dois)
+    log.info("archives: %d of %d DOIs have a PMC copy", len(pmc), len(dois))
+
+    def one(r):
+        doi = r["doi"].lower()
+        base = f"{rp.slugify(r['title'] or doi, 100)}-{rp.slugify(doi, 60)}"
+        if r["status"] != "no_oa":
+            pdf, land = oa.get(doi, ([], []))
+            urls = list(dict.fromkeys(u for u in [r["pdf_url"], *pdf, *land] if u))
+            got = wayback_copy(session(), limiter, args, log, urls, papers_dir / f"{base}.pdf", r["title"] or "")
+            if got:
+                return r, "wayback", got, papers_dir / f"{base}.pdf"
+        if doi in pmc:
+            dest = papers_dir / f"{base}-pmc.pdf"
+            got = pmc_copy(session(), limiter, args, log, pmc[doi], dest, r["title"] or "")
+            if got:
+                return r, "pmc", got, dest
+        return r, None, None, None
+
+    got = {"wayback": 0, "pmc": 0}
+    with ThreadPoolExecutor(args.workers) as pool:
+        for i, (r, how, url, dest) in enumerate(pool.map(one, rows), 1):
+            if how:
+                got[how] += 1
+                with db_lock:
+                    st.execute("update papers set status = 'downloaded', pdf_url = ?, file_path = ?, error = null "
+                               "where key = ?", (url, f"papers/{dest.name}", r["key"]))
+                    st.commit()
+                log.info("rescued (%s) %r <- %s", how, r["title"], url)
+            if i % 100 == 0:
+                log.info("archives: %d/%d tried, %s", i, len(rows), got)
+    log.info("archives done: %d from the Wayback Machine, %d from PMC, of %d papers",
+             got["wayback"], got["pmc"], len(rows))
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("run")
@@ -117,6 +284,9 @@ def main():
     ap.add_argument("--max-tries", type=int, default=6)
     ap.add_argument("--title-threshold", type=float, default=0.82)
     ap.add_argument("--no-titles", action="store_true", help="skip the OpenAlex title search")
+    ap.add_argument("--no-archives", action="store_true", help="skip the Wayback Machine / PMC step")
+    ap.add_argument("--archives-only", action="store_true",
+                    help="only the Wayback Machine / PMC step (a run whose rescue already ran)")
     ap.add_argument("--max-retries", type=int, default=2)
     ap.add_argument("--timeout", type=float, default=60)
     ap.add_argument("--min-interval", type=float, default=1.0)
@@ -151,6 +321,10 @@ def main():
                 log.info("rescued %r <- %s", title, actual)
                 return actual, dest
         return None
+
+    if args.archives_only:
+        archives(st, db_lock, session, limiter, args, log, papers_dir)
+        return
 
     # 1. titles
     resolved = 0
@@ -238,6 +412,8 @@ def main():
                 log.info("%d/%d tried, %d rescued", i, len(rows), got)
     log.info("done: %d DOIs found by title; %d of %d papers rescued (%d had no other URL)",
              resolved, got, len(rows), no_urls)
+    if not args.no_archives:
+        archives(st, db_lock, session, limiter, args, log, papers_dir)
 
 
 if __name__ == "__main__":
