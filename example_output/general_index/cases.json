@@ -778,5 +778,28 @@
   "matched_words": 538,
   "runs": 16,
   "longest": 87
+ },
+ "GI-238": {
+  "file": "GI-238.html",
+  "reported": "2026-10-25",
+  "published": "2026-10-25",
+  "earlier_known": true,
+  "later": {
+   "title": "Hereditary Gastric Cancer: Review of Literature",
+   "year": 2013,
+   "doi": "10.2478/chilat-2013-0013",
+   "pct": 78.0,
+   "journal": "Acta Chirurgica Latviensis"
+  },
+  "earlier": {
+   "title": "Familial gastric cancer: detection of a hereditary cause helps to understand its etiology",
+   "year": 2012,
+   "doi": "10.1186/1897-4287-10-18",
+   "pct": 58.0,
+   "journal": "Hereditary Cancer in Clinical Practice"
+  },
+  "matched_words": 1779,
+  "runs": 28,
+  "longest": 251
  }
 }
