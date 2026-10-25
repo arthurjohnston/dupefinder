@@ -824,5 +824,28 @@
   "matched_words": 2002,
   "runs": 55,
   "longest": 119
+ },
+ "GI-874": {
+  "file": "GI-874.html",
+  "reported": null,
+  "published": "2026-10-25",
+  "earlier_known": true,
+  "later": {
+   "title": "[IEEE 2017 11th International Conference on Software, Knowledge, Information Management and Applications (SKIMA) - Malabe, Sri Lanka (2017.12.6-2017.12.8)] 2017 11th International Conference on Software, Knowledge, Information Management and Applications (SKIMA) - A review of CPS 5 components architecture for manufacturing based on standards",
+   "year": 2017,
+   "doi": "10.1109/SKIMA.2017.8294091",
+   "pct": 31.0,
+   "journal": "2017 11th International Conference on Software, Knowledge, Information Management and Applications (SKIMA)"
+  },
+  "earlier": {
+   "title": "A Review of Technology Standards and Patent Portfolios for Enabling Cyber-Physical Systems (CPS) in Advanced Manufacturing",
+   "year": 2016,
+   "doi": "10.1109/ACCESS.2016.2619360",
+   "pct": 10.0,
+   "journal": "IEEE Access"
+  },
+  "matched_words": 1105,
+  "runs": 46,
+  "longest": 53
  }
 }
