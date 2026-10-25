@@ -6,6 +6,7 @@ Into data/dupe_publisher/GI-NN/:
   GI-NN-titles.jpg, GI-NN-passage-K.jpg
                          the images for the PubPeer comment: both titles and bylines, and gi_pubpeer.PASSAGE_IMAGES
                          passages as printed in both PDFs, side by side (gi_pubpeer.write_page())
+  GI-NN-images.jpg       all of those stacked into one image, the one the PubPeer comment asks you to upload
   GI-NN-longest.jpg      passage 1 again, attached to the emails
   GI-NN-comparison.html  the attachment for the journal: the same comparison without the PubPeer box or the
                          title images, with the shared-text figures and the longest passage's image at the top
@@ -40,6 +41,10 @@ or authors' address there, a high case gets no -institution / -authors draft at 
 --publish-only writes just the site page and index entry, marked "not reported": for a pair you judged not
 worth reporting (low, say) whose comparison should still be public.
 
+--authors-only publishes the finding and lets the victims know, nothing else: the site page (marked reported)
+and the email to the earlier article's authors, which then doesn't say the journal was told. No PubPeer page,
+no other drafts (any left from an earlier run are deleted). No email when the two bylines share names.
+
 Nothing is committed or pushed: the site page goes live once example_output/ is pushed to main.
 
 Severity decides which emails are written: high (your review's severity in `reviews`, or --severity) gets
@@ -58,7 +63,8 @@ proposes them, gi_case_prep.py) go into the PubPeer Markdown and every email aft
 your PubPeer post is up, --pubpeer-url URL saves it (pubpeer_url.txt) and the emails then link to it.
 
 Usage: gi_report_case.py GI_NUMBER [GI_NUMBER ...] [--problems] [--no-site] [--from ADDRESS] [--open-drafts]
-                         [--severity low|medium|high] [--pubpeer-url URL] [--db data/gi.sqlite3]
+                         [--severity low|medium|high] [--pubpeer-url URL] [--publish-only | --authors-only]
+                         [--db data/gi.sqlite3]
        --problems: every pair you've reviewed as a problem
 """
 import argparse
@@ -155,9 +161,13 @@ def publish_only(db, f, site_dir=SITE_DIR, report_dir=REPORT_DIR):
     return write_site(site_dir, pp.case_name(f), page, fd, reported=False)
 
 
-def write_report(db, f, report_dir=REPORT_DIR, site_dir=SITE_DIR, sender=None, severity=None):
+def write_report(db, f, report_dir=REPORT_DIR, site_dir=SITE_DIR, sender=None, severity=None,
+                 authors_only=False):
     """Write the case's files; returns {kind: path}. severity (default: the pair's review, see review_severity())
-    picks the emails (audiences()); a ticked [data] finding makes it high whatever the review says."""
+    picks the emails (audiences()); a ticked [data] finding makes it high whatever the review says.
+    authors_only: publish the finding and tell the earlier authors, nothing else -- the site page and the
+    authors' email (which then doesn't say the journal was told), no PubPeer page and no other drafts (any
+    left from before are deleted)."""
     severity = severity or review_severity(db, f)
     case = pp.case_name(f)
     out = Path(report_dir) / case
@@ -165,13 +175,18 @@ def write_report(db, f, report_dir=REPORT_DIR, site_dir=SITE_DIR, sender=None, s
     fd = case_findings(db, f, report_dir)
     if fd.get("data_extra"):   # copied results data: everyone hears of it
         severity = ALL_EMAILS_SEVERITY
+    if authors_only:
+        fd["journal_told"] = False
     paths = {}
-    paths["pubpeer"], _ = pp.write_page(db, f, out, fd=dict(fd), name=f"{case}-pubpeer.html")
+    if not authors_only:
+        paths["pubpeer"], _ = pp.write_page(db, f, out, fd=dict(fd), name=f"{case}-pubpeer.html")
     page, shot = pp.publisher_page(f, fd)
     paths["comparison"] = out / f"{case}-comparison.html"
     paths["comparison"].write_text(page, encoding="utf-8")
     shot_path = out / f"{case}-longest.jpg"
     if shot:
+        if authors_only:   # write_page() writes it otherwise
+            shot_path.write_bytes(shot)
         paths["image"] = shot_path
     if site_dir:
         paths.update(write_site(site_dir, case, page, fd))
@@ -182,6 +197,10 @@ def write_report(db, f, report_dir=REPORT_DIR, site_dir=SITE_DIR, sender=None, s
         old.unlink()
         (out / "compose" / f"{old.stem}.txt").unlink(missing_ok=True)
     wanted = audiences(severity, fd)
+    if authors_only:
+        wanted = () if gi_contact.shared_authors(fd) else ("authors",)
+        if not wanted:
+            paths["no email authors"] = "the two bylines share names, so there's no one else to tell"
     for audience in gi_contact.EMAIL_AUDIENCES:
         eml = out / f"{case}-email-{audience}.eml"
         has_to = (any(i.get("to") for i in gi_contact.institutions(fd)) if audience == "institution"
@@ -416,10 +435,15 @@ def main():
     ap.add_argument("--publish-only", action="store_true",
                     help="only the project-site page and index entry, marked not reported (no PubPeer page, "
                          "no emails): for a pair not worth reporting whose comparison should still be public")
+    ap.add_argument("--authors-only", action="store_true",
+                    help="publish the finding and tell the earlier authors, nothing else: the site page and the "
+                         "authors' email only (no PubPeer page, no journal or institution emails)")
     ap.add_argument("--db", default=str(gi_db.DB_PATH))
     args = ap.parse_args()
     if args.publish_only and args.no_site:
         ap.error("--publish-only writes only the site page, so not with --no-site")
+    if args.publish_only and args.authors_only:
+        ap.error("--publish-only and --authors-only: pick one")
     if args.pubpeer_url:
         if len(args.gi) != 1 or args.problems:
             ap.error("--pubpeer-url goes with exactly one GI number")
@@ -446,7 +470,7 @@ def main():
                 paths = publish_only(db, f)
             else:
                 paths = write_report(db, f, site_dir=None if args.no_site else SITE_DIR, sender=sender,
-                                     severity=args.severity)
+                                     severity=args.severity, authors_only=args.authors_only)
             for kind, path in paths.items():
                 print(f"{kind:>10}  {path}")
             if args.open_drafts:

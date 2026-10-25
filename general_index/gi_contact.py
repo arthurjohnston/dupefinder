@@ -130,8 +130,9 @@ def shared_authors(fd):
 
 def journal_reported(fd):
     """True when the later (first, if the order is unknown) article's journal has an address in
-    journal_contacts.json, so its email can go out: only then do the others say I've written to it."""
-    return bool((fd["second"].get("contact") or {}).get("to"))
+    journal_contacts.json, so its email can go out: only then do the others say I've written to it. Never when
+    fd["journal_told"] is False (gi_report_case.py --authors-only: no email goes to the journal)."""
+    return fd.get("journal_told", True) and bool((fd["second"].get("contact") or {}).get("to"))
 
 
 # who I am, at the top of every email: one sentence

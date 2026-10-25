@@ -97,6 +97,41 @@ class TestSeverity(unittest.TestCase):
         self.assertTrue({"email publisher", "email institution", "email authors", "email source-publisher"}
                         <= set(paths))
 
+    def test_authors_only(self):
+        import email
+        import email.policy
+        import gi_pubpeer
+        base = fd()
+        f = {**base, "data_extra": ["Table 1 has the same means."],
+             "second": {**base["second"], "journal": "J New", "contact": {"journal": "J New", "to": "ed@new.example"}},
+             "case_contacts": {"institution": [{"to": "rio@u.example"}], "authors": {"to": "old@e.example"}}}
+        saved = gi_report.case_findings, gi_pubpeer.write_page, gi_pubpeer.publisher_page, gi_pubpeer.case_name
+        gi_report.case_findings = lambda db, row, report_dir: dict(f)
+        gi_pubpeer.write_page = lambda *a, **k: self.fail("authors only: no PubPeer page")
+        gi_pubpeer.publisher_page = lambda row, fd: ("<p>page</p>", b"\xff\xd8\xff\xd9")
+        gi_pubpeer.case_name = lambda row: "GI-99"
+        try:
+            d = Path(tempfile.mkdtemp())
+            (d / "GI-99").mkdir()
+            (d / "GI-99" / "GI-99-email-publisher.eml").write_text("from a full report before")
+            paths = gi_report.write_report(None, {}, report_dir=d, site_dir=None, severity="low", authors_only=True)
+            same = {**f, "byline": "byline overlap: A. One"}
+            gi_report.case_findings = lambda db, row, report_dir: dict(same)
+            none = gi_report.write_report(None, {}, report_dir=Path(tempfile.mkdtemp()), site_dir=None,
+                                          severity="low", authors_only=True)
+        finally:
+            gi_report.case_findings, gi_pubpeer.write_page, gi_pubpeer.publisher_page, gi_pubpeer.case_name = saved
+        self.assertEqual(sorted(k for k in paths if k.startswith("email ")), ["email authors"])
+        self.assertNotIn("pubpeer", paths)
+        self.assertTrue(paths["image"].exists())
+        self.assertFalse((d / "GI-99" / "GI-99-email-publisher.eml").exists())   # no stale draft left to send
+        msg = email.message_from_bytes(paths["email authors"].read_bytes(), policy=email.policy.default)
+        text = " ".join(msg.get_body(("plain",)).get_content().split())
+        self.assertNotIn("I have reported this", text)   # the journal hasn't been told
+        self.assertIn("you may want to contact J New yourselves", text)
+        self.assertFalse(any(k.startswith("email ") for k in none))   # shared bylines: nobody else to tell
+        self.assertIn("no email authors", none)
+
     def test_review_severity_defaults_to_medium(self):
         import sqlite3
         db = sqlite3.connect(":memory:")

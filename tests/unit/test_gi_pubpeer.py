@@ -74,6 +74,17 @@ class TestMarkdown(unittest.TestCase):
         self.assertIn("The 10 longest", pp.markdown(fd(passages=30)))
         self.assertNotIn("[Image", pp.markdown(fd()))
 
+    def test_stitched_image_is_the_one_upload(self):
+        imgs = [{"kind": "titles", "name": "GI-1-titles.jpg"},
+                {"kind": "passage", "n": 1, "name": "GI-1-passage-1.jpg", "words": 81,
+                 "left": {"doi": "10.1/old", "pages": [3], "text": "old wording here"},
+                 "right": {"doi": "10.2/NEW", "pages": [4], "text": "new wording here"}}]
+        md = pp.markdown({**fd(), "images": imgs, "stitched": "GI-1-images.jpg"})
+        self.assertEqual(md.count("[Image:"), 1)
+        self.assertTrue(md.endswith("The titles and the passages, in the order above, top to bottom:\n\n"
+                                    "[Image: GI-1-images.jpg]"))
+        self.assertIn("**Passage 1**, 81 words", md)
+
     def test_findings_strongest_first(self):
         f = {**fd(pct_later=20.0), "data_extra": ["Table 1 has the same means."], "extra": ["A typo."]}
         md = pp.markdown(f)
@@ -115,6 +126,15 @@ class TestPage(unittest.TestCase):
         self.assertIn('download="GI-1-titles.jpg" href="data:image/jpeg;base64,', box)
         self.assertLess(box.index("GI-1-titles.jpg"), box.index("GI-1-passage-1.jpg"))
         self.assertEqual(box.count('<img class="pp-shot"'), 2)
+
+    def test_stitch(self):
+        import pymupdf
+        def jpeg(w, h):
+            return pymupdf.Pixmap(pymupdf.csRGB, pymupdf.IRect(0, 0, w, h), 0).tobytes("jpeg")
+        out = pymupdf.Pixmap(pp.stitch([{"kind": "titles", "jpeg": jpeg(300, 50)},
+                                        {"kind": "passage", "n": 1, "words": 81, "jpeg": jpeg(500, 200)}]))
+        self.assertEqual(out.width, 500 + 2 * pp.STITCH_GAP)   # as wide as the widest, nothing scaled
+        self.assertEqual(out.height, 250 + 2 * pp.STITCH_LABEL + 3 * pp.STITCH_GAP)
 
     def test_overlap_in_summary_bar(self):
         page = pp.add_overlap('<div class="summary-bar"><span>runs</span></div>', fd())

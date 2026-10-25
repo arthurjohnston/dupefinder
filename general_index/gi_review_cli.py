@@ -23,6 +23,9 @@ qualified (outside your expertise, e.g. higher-level math); r = problem (the age
 copying), flagged already retracted, and no report files; w = problem, cross-author copying, low, flagged
 not worth reporting: real copying too minor to complain about, so no report files, and the site page is
 published marked not reported (as p does at the report prompt).
+Self-author copying (a problem verdict of type text recycling or duplicate publication, SELF_TYPES) defaults
+to low at the severity step and isn't reported or published: no report prompt and no site page, and the
+agent isn't started on a pair the AI gave one of those types. t on the pair still reports it.
 It saves to `reviews` in gi.sqlite3 exactly like REVIEW_COMMANDS.md's gi_review (same vocabulary, same
 verdict column, replaces your earlier review of the pair), the flags to `review_flags` (replacing the
 pair's earlier flags), and rewrites the pages' index.html on exit.
@@ -39,7 +42,9 @@ publishable finding. Pairs where the order is unknown and one side is a preprint
 the later paper's authors are now (gi_affiliations.py: an author still
 publishing, at a US or European university, first; then at a university elsewhere; then no data; then no author
 active in academia), within the agent's problem calls and within the rest separately; it fetches any missing
-OpenAlex/ORCID data first. --us-europe-only keeps only the first of those. --order professor ranks by the
+OpenAlex/ORCID data first. --us-europe-only keeps only the first of those. --no-medical drops pairs where
+either paper's OpenAlex primary topic is in the Health Sciences domain (medicine, nursing, dentistry, health
+professions); a paper with no cached OpenAlex record (gi_metadata.py fetch) doesn't count. --order professor ranks by the
 authors above everything else: a later paper with an author whose ORCID lists a current (not emeritus)
 professor/lecturer post at a US/European institution first, then the affiliation ranks, the agent's calls and
 the publisher order holding within each; only authors with an ORCID record can be found this way. Each pair
@@ -65,7 +70,9 @@ PubPeer: each pair shows the PubPeer link of its later (copying) paper (both pap
 unknown). Saving a problem verdict, or agreeing (a) with the AI's problem verdict (even when the same year
 saves it as unsure), reports the pair (report_flow()) unless you answer s ("skip") when asked, or p
 ("publish only": just the site page, marked not reported, pushed to main; for a pair not worth reporting,
-low say, whose comparison should be public); t at the prompt does the same for any pair. In order, each
+low say, whose comparison should be public), or a ("authors only": the finding published and the earlier
+authors told, nothing else -- the site page and their email, no PubPeer page and no journal emails, which
+then don't claim the journal was told); t at the prompt does the same for any pair. In order, each
 step but the report files skippable:
   - the gi-cases agent's findings. The agent starts in the background (BackgroundPrep, headless claude -p)
     as soon as a pair's page opens, unless --no-agent, so it reads both PDFs while you do; it also starts on
@@ -101,10 +108,11 @@ problem on a pair already reported (--gi NN --include-reviewed) offers t to take
 cases.json entry removed and pushed, the report files moved to GI-NN/withdrawn/ (gi_report_case.take_down());
 emails and a PubPeer post already sent are yours to withdraw.
 
-Usage: gi_review_cli.py [--gi 12,40] [--ai-type cross-author,data] [--ai-decision problem] [--include-reviewed] [--order affiliation|professor|publisher|overlap] [--us-europe-only] [--pdfs] [--no-open] [--no-agent] [--no-lookahead] [--pages-dir data/fulltext_pages_s16] [--sample-rate 8]
+Usage: gi_review_cli.py [--gi 12,40] [--ai-type cross-author,data] [--ai-decision problem] [--include-reviewed] [--order affiliation|professor|publisher|overlap] [--us-europe-only] [--no-medical] [--pdfs] [--no-open] [--no-agent] [--no-lookahead] [--pages-dir data/fulltext_pages_s16] [--sample-rate 8]
                         [--db data/gi.sqlite3]
 """
 import argparse
+import json
 import os
 import shlex
 import sqlite3
@@ -168,6 +176,12 @@ SEVERITIES = {"l": "low", "m": "medium", "h": "high"}
 # the one-key verdict on the first menu: decision, type, severity, reason (skips the severity step)
 QUICK = ("problem", "cross-author copying", "medium", "most of the paper copied")
 DEFAULT_SEVERITY = "medium"
+
+# the same authors reusing their own text: a problem verdict of these types is low by default (Enter at the
+# severity step) and isn't reported or published -- no report prompt, no site page, and the agent isn't
+# started on a pair the AI gave one of these types. t on the pair still reports it.
+SELF_TYPES = ("text recycling", "duplicate publication")
+SELF_SEVERITY = "low"
 
 # --ai-type names -> the agent's type
 AI_TYPES = {"cross-author": "cross-author copying", "data": "data copying", "duplicate": "duplicate publication",
@@ -282,10 +296,11 @@ order by case when r.ai_decision = 'problem' and r.ai_type in ('cross-author cop
 
 
 def load_queue(db, gi=None, include_reviewed=False, ai_types=None, ai_decisions=None, order="publisher",
-               us_europe_only=False, groups=None):
+               us_europe_only=False, groups=None, no_medical=False):
     """ai_types / ai_decisions: lists of AI_TYPES / AI_DECISIONS names to keep ('none': the agent hasn't
     reviewed the pair). us_europe_only: only pairs whose later paper has an author active at a US/European
-    university (gi_affiliations.py). Ignored with gi. Pages sharing a later paper (groups:
+    university (gi_affiliations.py). no_medical: drop pairs with a Health Sciences paper (medical_pairs()).
+    Ignored with gi. Pages sharing a later paper (groups:
     later_paper_groups(), computed when not given) are kept together, where the first of them falls."""
     rows = db.execute(QUEUE_SQL).fetchall()
     if gi:
@@ -301,6 +316,9 @@ def load_queue(db, gi=None, include_reviewed=False, ai_types=None, ai_decisions=
         keep = {AI_DECISIONS[d] for d in ai_decisions}
         rows = [r for r in rows if r["ai_decision"] in keep]
     rows = [r for r in rows if include_reviewed or r["human_decision"] is None]
+    if no_medical:
+        medical = medical_pairs(db, rows)
+        rows = [r for r in rows if pair_key(r) not in medical]
     import gi_write_pages
     aff = {}
     profs = {}
@@ -315,6 +333,24 @@ def load_queue(db, gi=None, include_reviewed=False, ai_types=None, ai_decisions=
                                                   aff.get((r["pair_lo"], r["pair_hi"])),
                                                   bool(profs.get((r["pair_lo"], r["pair_hi"])))))
     return keep_groups_together(ranked, groups if groups is not None else later_paper_groups(db))
+
+
+MEDICAL_DOMAIN = "Health Sciences"
+
+
+def medical_pairs(db, rows):
+    """The pair keys of rows where either paper's OpenAlex primary topic is in the Health Sciences domain,
+    from the records gi_metadata.py caches in oa_work_records. A paper without a cached record isn't medical."""
+    if not db.execute("select 1 from sqlite_master where name = 'oa_work_records'").fetchone():
+        return set()
+    domain = {}
+    for r in rows:
+        for doi in (r["doi_a"], r["doi_b"]):
+            if doi and doi not in domain:
+                rec = db.execute("select raw from oa_work_records where doi = ?", (doi,)).fetchone()
+                topic = ((json.loads(rec[0]) if rec and rec[0] else None) or {}).get("primary_topic") or {}
+                domain[doi] = (topic.get("domain") or {}).get("display_name")
+    return {pair_key(r) for r in rows if MEDICAL_DOMAIN in (domain.get(r["doi_a"]), domain.get(r["doi_b"]))}
 
 
 def pair_key(r):
@@ -570,16 +606,18 @@ def edit_note(initial=""):
     return " ".join(text.split())
 
 
-def ask_severity(pair, decision):
-    """Enter gives DEFAULT_SEVERITY, whatever the agent said: high also writes the emails to the victims and the
-    institution (gi_report_case.audiences()), so it has to be chosen. "none" for a no-problem verdict."""
+def ask_severity(pair, decision, type_=None):
+    """Enter gives DEFAULT_SEVERITY (SELF_SEVERITY for a SELF_TYPES type), whatever the agent said: high also
+    writes the emails to the victims and the institution (gi_report_case.audiences()), so it has to be chosen.
+    "none" for a no-problem verdict."""
     if decision == "no problem":
         return "none"
+    default = SELF_SEVERITY if type_ in SELF_TYPES else DEFAULT_SEVERITY
     ai = f", AI: {pair['ai_severity']}" if pair["ai_severity"] in SEVERITIES.values() else ""
     while True:
-        ans = ask(f"Severity  l)ow  m)edium  h)igh  [Enter: {DEFAULT_SEVERITY}{ai}] ").lower()
+        ans = ask(f"Severity  l)ow  m)edium  h)igh  [Enter: {default}{ai}] ").lower()
         if not ans:
-            return DEFAULT_SEVERITY
+            return default
         if ans[:1] in SEVERITIES:
             return SEVERITIES[ans[:1]]
 
@@ -753,7 +791,7 @@ def review_one(pair, choices, counts, saved_flags=(), prep=None, shown=None, set
     if quick:
         reasons = reasons + ([same_year_reason(year)] if converted else [])
     else:
-        severity = ask_severity(pair, decision)
+        severity = ask_severity(pair, decision, type_)
         reasons = [same_year_reason(year)] if converted else []
 
     flags = sorted(set(saved_flags) | {preset}) if preset else list(saved_flags)
@@ -778,25 +816,27 @@ def review_one(pair, choices, counts, saved_flags=(), prep=None, shown=None, set
     return decision, type_, severity, build_note(reasons, text), flags, agreed
 
 
-def pubpeer_page(db, pair, open_it=True, severity=None):
+def pubpeer_page(db, pair, open_it=True, severity=None, authors_only=False):
     """Write the pair's report files (gi_report_case.py: the PubPeer page, the attachment and the draft emails in
     data/dupe_publisher/GI-NN/, the page and index on the project site) and open the PubPeer page; a
-    failure is printed, never fatal. severity picks the emails (None: the saved review's, else medium)."""
+    failure is printed, never fatal. severity picks the emails (None: the saved review's, else medium).
+    authors_only: the site page and the earlier authors' email only (write_report(authors_only=True))."""
     import gi_report_case
     print("  writing the report files ...")
     try:
-        paths = gi_report_case.write_report(db, pair, sender=gi_report_case.git_email(), severity=severity)
+        paths = gi_report_case.write_report(db, pair, sender=gi_report_case.git_email(), severity=severity,
+                                            authors_only=authors_only)
     except Exception as e:
         print(f"  report failed: {e}")
         return None
-    print(f"  report: {paths['pubpeer'].parent}/  (site page: {paths.get('site', 'none')})")
+    print(f"  report: {paths['comparison'].parent}/  (site page: {paths.get('site', 'none')})")
     print("  emails: " + ", ".join(k.split(" ", 1)[1] for k in paths if k.startswith("email ")))
     for k in paths:
         if k.startswith("no email "):
             print(f"  no {k[9:]} email: {paths[k]}")
         if k.startswith("page "):   # a journal with no email: its draft goes into this page instead
             print(f"  {k[5:]}: the journal has no email; report it at {paths[k]} (paste from the draft)")
-    if open_it:
+    if open_it and paths.get("pubpeer"):
         open_files([paths["pubpeer"]])
     return paths
 
@@ -1036,12 +1076,12 @@ class BackgroundPrep:
 
 
 def next_to_prep(rest):
-    """The first pair in rest (the queue after the one on screen) the agent hasn't prepped: no findings.md. None
-    when there isn't one."""
+    """The first pair in rest (the queue after the one on screen) the agent hasn't prepped (no findings.md) and
+    the AI didn't call self-author copying (SELF_TYPES: not reported by default). None when there isn't one."""
     import gi_case_findings
     for r in rest:
         case = f"GI-{r['page_number']:02d}"
-        if not gi_case_findings.findings_path(case).exists():
+        if r["ai_type"] not in SELF_TYPES and not gi_case_findings.findings_path(case).exists():
             return case
     return None
 
@@ -1100,14 +1140,15 @@ def take_down_flow(db, pair):
     print("  any email or PubPeer post already sent isn't undone by this")
 
 
-def report_flow(db, pair, open_it=True, severity=None, prep=None):
+def report_flow(db, pair, open_it=True, severity=None, prep=None, authors_only=False):
     """Everything for reporting the pair, in order: the gi-cases agent to prep it (waited for, or Ctrl-C to go
     on without it), ticking its findings, then the report files written and the PubPeer page opened, once,
     with what the agent found and what you ticked; your PubPeer post's address, the site page pushed (last,
     so it has the final files), and the drafts opened in Thunderbird. Every step but writing the report
     files can be skipped with Enter / s. After the agent's summary, and again after talking it through with
     it, you can change your mind before anything is written: returns 'verdict' (ask the verdict again) or
-    'stopped' (not reported), else None."""
+    'stopped' (not reported), else None. authors_only (a at the report prompt): the finding published and the
+    earlier authors told, nothing else -- no PubPeer page or post, no journal emails."""
     import gi_case_findings
     import gi_report_case
     case = f"GI-{pair['page_number']:02d}"
@@ -1136,11 +1177,11 @@ def report_flow(db, pair, open_it=True, severity=None, prep=None):
         run_agent(case)
     if gi_case_findings.counts(case)["pending"]:
         gi_case_findings.review(case, ask=ask)
-    paths = pubpeer_page(db, pair, open_it, severity=severity)
+    paths = pubpeer_page(db, pair, open_it, severity=severity, authors_only=authors_only)
     if not paths:
         return
     have = gi_case_findings.pubpeer_url(case)
-    url = ask(f"PubPeer post's address once it's up [Enter: {'keep ' + have if have else 'later (t asks again)'}] ")
+    url = "" if authors_only else ask(f"PubPeer post's address once it's up [Enter: {'keep ' + have if have else 'later (t asks again)'}] ")
     if url:
         try:
             gi_case_findings.save_pubpeer_url(case, url)
@@ -1214,6 +1255,9 @@ def main():
                          "overlap first, then publisher")
     ap.add_argument("--us-europe-only", action="store_true",
                     help="only pairs whose later paper has an author still at a US/European university")
+    ap.add_argument("--no-medical", action="store_true",
+                    help="skip pairs where either paper's OpenAlex primary topic is in Health Sciences (medicine, "
+                         "nursing, dentistry, ...); papers with no cached OpenAlex record are kept")
     ap.add_argument("--no-agent", action="store_true", help="don't start the agent's analysis in the background "
                                                              "when a pair opens (nor on the next one)")
     ap.add_argument("--no-lookahead", action="store_true",
@@ -1232,7 +1276,7 @@ def main():
             ap.error(f"{name}: unknown {', '.join(bad)} (use: {', '.join(known)})")
     groups = later_paper_groups(db)
     queue = load_queue(db, args.gi, args.include_reviewed, args.ai_type, args.ai_decision, args.order,
-                       args.us_europe_only, groups)
+                       args.us_europe_only, groups, args.no_medical)
     if not queue:
         print("nothing to review")
         return
@@ -1268,7 +1312,7 @@ def main():
             elif gi_case_findings.findings_path(case).exists():   # prepped already: say so rather than start again
                 prep = BackgroundPrep.previous(case)
                 print("  " + (prep.status() if prep else f"agent not started: {case} already has a findings.md"))
-            elif not args.no_agent:
+            elif not args.no_agent and pair["ai_type"] not in SELF_TYPES:   # those aren't reported by default
                 prep = BackgroundPrep(case)
                 if not prep.start():
                     prep = None
@@ -1319,7 +1363,7 @@ def main():
                         continue
                     break
                 reporting = out not in ("quit", "skip") and not {FLAGS["r"][0], FLAGS["w"][0]} & set(out[4]) and (
-                    out[0] == "problem" or (out[5] and pair["ai_decision"] == "problem"))
+                    out[1] not in SELF_TYPES) and (out[0] == "problem" or (out[5] and pair["ai_decision"] == "problem"))
                 if prep and not reporting:   # not going to be reported: the analysis isn't needed
                     prep.stop()
                     prep = None
@@ -1344,9 +1388,12 @@ def main():
                     # the emails follow the severity just chosen; the rest of the flow already ran under t
                     print(f"  already reported (t): emails rewritten for severity {severity}")
                     pubpeer_page(db, pair, False, severity=severity)
+                elif type_ in SELF_TYPES and (decision == "problem" or (agreed and pair["ai_decision"] == "problem")):
+                    print(f"  {type_} (self-author copying): not reported or published (t on this pair does it)")
                 elif decision == "problem" or (agreed and pair["ai_decision"] == "problem"):
                     emails = "all four emails" if severity == "high" else "email to the journal"
                     ans = ask(f"[Enter to report it (the agent's findings, then the PubPeer page and {emails}, site page pushed), "
+                              f"a to publish it and tell only the earlier authors (no PubPeer, no journal), "
                               f"p to only publish its site page (marked not reported), s to skip] ").lower()
                     if ans.startswith(("s", "p")):
                         if prep:
@@ -1356,7 +1403,8 @@ def main():
                         else:
                             print("  report skipped (t on this pair later does it)")
                     else:
-                        again = report_flow(db, pair, not args.no_open, severity=severity, prep=prep)
+                        again = report_flow(db, pair, not args.no_open, severity=severity, prep=prep,
+                                            authors_only=ans.startswith("a"))
                         if again == "verdict":
                             print("  your verdict again (it replaces the one just saved):")
                             continue

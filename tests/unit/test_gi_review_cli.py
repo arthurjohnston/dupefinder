@@ -1,4 +1,5 @@
 """general_index/gi_review_cli.py: the menu, the note, and what gets saved to `reviews`."""
+import json
 import sqlite3
 import sys
 import unittest
@@ -124,6 +125,19 @@ def order_library(year_1, year_2):
             "year_a": year_1, "year_b": year_2, "ft_pct_a": 50.0, "ft_pct_b": 40.0}
 
 
+class TestSelfSeverity(unittest.TestCase):
+    def test_enter_defaults_to_low_for_self_types(self):
+        saved = cli.ask
+        cli.ask = lambda prompt: ""
+        try:
+            pair = {"ai_severity": None}
+            self.assertEqual(cli.ask_severity(pair, "problem", "text recycling"), "low")
+            self.assertEqual(cli.ask_severity(pair, "problem", "duplicate publication"), "low")
+            self.assertEqual(cli.ask_severity(pair, "problem", "cross-author copying"), cli.DEFAULT_SEVERITY)
+        finally:
+            cli.ask = saved
+
+
 class TestOrder(unittest.TestCase):
     def test_same_year_set_by_hand_then_cleared(self):
         pair = order_library(2017, 2017)
@@ -219,9 +233,10 @@ class TestReportFlow(unittest.TestCase):
             orig = getattr(gi_case_findings, fn)
             setattr(self, "_" + fn, orig)
             setattr(gi_case_findings, fn, lambda case, report_dir=None, o=orig: o(case, self.dir))
-        cli.pubpeer_page = lambda db, pair, open_it=True, severity=None: (
-            self.calls.append(("report", open_it)) or {"pubpeer": self.dir / "p.html",
-                                                       "email publisher": self.dir / "e.eml"})
+        cli.pubpeer_page = lambda db, pair, open_it=True, severity=None, authors_only=False: (
+            self.calls.append(("report", open_it) + (("authors only",) if authors_only else ())) or
+            ({"email authors": self.dir / "a.eml"} if authors_only else
+             {"pubpeer": self.dir / "p.html", "email publisher": self.dir / "e.eml"}))
 
         def agent(case):
             self.calls.append(("agent", case))
@@ -262,6 +277,20 @@ class TestReportFlow(unittest.TestCase):
         opened = self.run_flow(["s", "", ""])
         self.assertEqual(self.calls, [("report", True)])
         self.assertEqual(opened, [])
+
+    def test_authors_only_asks_no_pubpeer_post(self):
+        it = iter(["", "y", "n", "o"])   # agent, the two findings, then open the drafts: no PubPeer address asked
+        cli.ask = lambda prompt: next(it)
+        import gi_report_case
+        opened, orig = [], gi_report_case.open_drafts
+        gi_report_case.open_drafts = lambda emls: opened.append(emls)
+        try:
+            cli.report_flow(None, {"page_number": 7}, open_it=True, authors_only=True)
+        finally:
+            gi_report_case.open_drafts = orig
+        self.assertEqual(self.calls, [("agent", "GI-07"), ("report", True, "authors only")])
+        self.assertEqual(opened, [[self.dir / "a.eml"]])
+        self.assertIsNone(self.cf.pubpeer_url("GI-07", self.dir))
 
     def test_agent_stopped_reports_without_it(self):
         class Stopped:   # Ctrl-C while waiting
@@ -482,8 +511,10 @@ class TestBackgroundPrep(unittest.TestCase):
         try:
             (self.dir / "GI-08").mkdir()
             (self.dir / "GI-08" / "findings.md").write_text("")
-            rest = [{"page_number": 8}, {"page_number": 9}, {"page_number": 10}]
+            rest = [{"page_number": n, "ai_type": "cross-author copying"} for n in (8, 9, 10)]
             self.assertEqual(cli.next_to_prep(rest), "GI-09")   # GI-08 is prepped already
+            rest[1]["ai_type"] = "text recycling"   # self-author copying isn't reported by default
+            self.assertEqual(cli.next_to_prep(rest), "GI-10")
             self.assertIsNone(cli.next_to_prep(rest[:1]))
             self.assertIsNone(cli.next_to_prep([]))
         finally:
@@ -512,7 +543,8 @@ class TestCheckFindings(unittest.TestCase):
         gi_case_findings.case_dir = lambda case, report_dir=None: case_dir(case, self.dir)
         gi_case_findings.findings_path = lambda case, report_dir=None: findings_path(case, self.dir)
         self.reports = []
-        cli.pubpeer_page = lambda db, f, open_it=True, severity=None: self.reports.append(f["page_number"])
+        cli.pubpeer_page = lambda db, f, open_it=True, severity=None, authors_only=False: \
+            self.reports.append(f["page_number"])
         for case, text in (("GI-07", "- [ ] Seven."), ("GI-100", "- [ ] Hundred."), ("GI-12", "- [x] Done.")):
             (self.dir / case).mkdir()
             (self.dir / case / "findings.md").write_text(f"## Findings\n{text}\n")
@@ -626,6 +658,25 @@ class TestLaterPaperGroups(unittest.TestCase):
         queue = [rows[1], rows[3], rows[2], rows[0]]
         got = [r["page_number"] for r in cli.keep_groups_together(queue, self.groups(rows))]
         self.assertEqual(got, [2, 4, 1, 3])
+
+
+class TestMedicalPairs(unittest.TestCase):
+    """medical_pairs(): a pair is medical when either paper's OpenAlex primary topic is in Health Sciences;
+    a paper with no cached record, or no topic, doesn't make it one."""
+
+    def test_either_side(self):
+        db = sqlite3.connect(":memory:")
+        db.execute("create table oa_work_records (doi text primary key, raw text, fetched_at text)")
+        topic = lambda d: json.dumps({"primary_topic": {"domain": {"display_name": d}}})
+        db.executemany("insert into oa_work_records values (?, ?, '')",
+                       [("10.1/med", topic("Health Sciences")), ("10.1/cs", topic("Physical Sciences")),
+                        ("10.1/none", json.dumps({"primary_topic": None}))])
+        rows = [{"doi_a": a, "doi_b": b, "pair_lo": a, "pair_hi": b} for a, b in
+                [("10.1/cs", "10.1/med"), ("10.1/cs", "10.1/none"), ("10.1/cs", "10.1/uncached")]]
+        self.assertEqual(cli.medical_pairs(db, rows), {("10.1/cs", "10.1/med")})
+
+    def test_no_table(self):
+        self.assertEqual(cli.medical_pairs(sqlite3.connect(":memory:"), [PAIR]), set())
 
 
 if __name__ == "__main__":

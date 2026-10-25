@@ -147,7 +147,8 @@ def markdown(fd):
     text share, then your other ticked findings (before the share when it is under half). Then, when there
     are images (fd["images"], write_page()), the title/byline image and PASSAGE_IMAGES passages side by side,
     each with a short excerpt of both articles and an [Image: name] line for where you upload it (PubPeer
-    wants copy and source side by side, marked up); without images, extracts of the longest passages."""
+    wants copy and source side by side, marked up); without images, extracts of the longest passages. With
+    fd["stitched"] (stitch()'s file name) the per-image lines give way to one at the end, for that image."""
     first, second = fd["first"], fd["second"]
     known = fd["earlier_known"]
     lines = []
@@ -198,8 +199,15 @@ def markdown(fd):
             quotes = [f"- {label}: \"{excerpt(sides[k]['text'], 20, 8).replace(chr(34), chr(39))}\""
                       for label, k in ((other_name, "other"), ("This article", "this")) if sides.get(k)]
             lines.append("\n\n".join(quotes))   # a blank line between the two, so they don't run together
+        if not fd.get("stitched"):
+            lines.append("")
+            lines.append(f"[Image: {im['name']}]")
+    if images and fd.get("stitched"):
         lines.append("")
-        lines.append(f"[Image: {im['name']}]")
+        lines.append(f"The {'titles and the passages' if images[0]['kind'] == 'titles' else 'passages'}, "
+                     f"in the order above, top to bottom:")
+        lines.append("")
+        lines.append(f"[Image: {fd['stitched']}]")
     if not any(im["kind"] == "passage" for im in images) and fd["passages"]:
         shown = fd["passages"][:TEXT_PASSAGES]
         n = len(shown)
@@ -241,12 +249,40 @@ def jpeg_uri(data):
     return "data:image/jpeg;base64," + base64.b64encode(data).decode("ascii")
 
 
+STITCH_GAP, STITCH_LABEL, STITCH_FONT = 28, 48, 26   # pixels between images, label band height, label size
+
+
+def stitch(images):
+    """The comment's images as one JPEG, top to bottom, each under a label ("Titles and author lists",
+    "Passage 1, 81 words"), at their own resolution (none is scaled, so PubPeer's zoom still reads), left
+    aligned on a white sheet as wide as the widest. images: write_page()'s list, with JPEG bytes."""
+    import pymupdf
+    pix = [pymupdf.Pixmap(im["jpeg"]) for im in images]
+    width = max(p.width for p in pix) + 2 * STITCH_GAP
+    height = sum(p.height + STITCH_LABEL for p in pix) + (len(pix) + 1) * STITCH_GAP
+    doc = pymupdf.open()
+    page = doc.new_page(width=width, height=height)   # one point per pixel at 72 dpi
+    page.draw_rect(page.rect, color=None, fill=(1, 1, 1))
+    y = STITCH_GAP
+    for im, p in zip(images, pix):
+        label = ("Titles and author lists" if im["kind"] == "titles"
+                 else f"Passage {im['n']}" + (f", {im['words']:,} words" if im.get("words") else ""))
+        page.insert_text((STITCH_GAP, y + STITCH_LABEL - 14), label, fontsize=STITCH_FONT, fontname="hebo")
+        y += STITCH_LABEL
+        page.insert_image(pymupdf.Rect(STITCH_GAP, y, STITCH_GAP + p.width, y + p.height), pixmap=p)
+        y += p.height + STITCH_GAP
+    return page.get_pixmap(dpi=72).tobytes("jpeg", jpg_quality=88)
+
+
 def images_html(images):
     """The comment's images (write_page()'s fd["images"], each with its JPEG bytes) in the box, in order, each
-    with a link that saves it (data: URIs, so the page stays one file)."""
+    with a link that saves it (data: URIs, so the page stays one file). One image (stitch()) is uploaded at
+    the comment's one [Image: …] line."""
     if not images:
         return ""
-    out = ['<p><b>Images</b>: save each one and upload it with PubPeer\'s image button where its '
+    out = ['<p><b>Image</b>: save it and upload it with PubPeer\'s image button where the '
+           '<code>[Image: …]</code> line is in the comment.</p>' if len(images) == 1 else
+           '<p><b>Images</b>: save each one and upload it with PubPeer\'s image button where its '
            '<code>[Image: …]</code> line is in the comment.</p>']
     for im in images:
         uri = jpeg_uri(im["jpeg"])
@@ -341,14 +377,16 @@ def add_overlap(page, fd):
 
 def write_page(db, f, out_dir=OUT_DIR, fd=None, name=None):
     """Write the PubPeer page for one fulltext row (as `name`, default the writer's GI-NN-<slug>.html) and the
-    comment's images to out_dir: GI-NN-titles.jpg, GI-NN-passage-K.jpg (render()), and passage 1 again as
-    GI-NN-longest.jpg, which the emails attach. Returns (path, markdown)."""
+    comment's images to out_dir: GI-NN-titles.jpg, GI-NN-passage-K.jpg (render()), all of them as one
+    GI-NN-images.jpg (stitch(): the one the comment and the box use, so a post is one paste and one upload),
+    and passage 1 again as GI-NN-longest.jpg, which the emails attach. Returns (path, markdown)."""
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     case = case_name(f)
     page, slug_name, shots = render(f, case)
     fd = fd or findings(db, f)
-    for old in [*out_dir.glob(f"{case}-passage-*.jpg"), out_dir / f"{case}-titles.jpg", out_dir / f"{case}-longest.jpg"]:
+    for old in [*out_dir.glob(f"{case}-passage-*.jpg"), out_dir / f"{case}-titles.jpg",
+                out_dir / f"{case}-longest.jpg", out_dir / f"{case}-images.jpg"]:
         old.unlink(missing_ok=True)   # a re-run may find fewer
     images = []
     if shots["titles"]:
@@ -360,8 +398,13 @@ def write_page(db, f, out_dir=OUT_DIR, fd=None, name=None):
     if shots["passages"]:
         (out_dir / f"{case}-longest.jpg").write_bytes(shots["passages"][0][1])
     fd["images"] = [{k: v for k, v in im.items() if k != "jpeg"} for im in images]
+    shown = images
+    if len(images) > 1:
+        fd["stitched"] = f"{case}-images.jpg"
+        shown = [{"name": fd["stitched"], "jpeg": stitch(images)}]
+        (out_dir / fd["stitched"]).write_bytes(shown[0]["jpeg"])
     md = markdown(fd)
-    page = insert_box(add_overlap(page, fd), box_html(fd, md, images))
+    page = insert_box(add_overlap(page, fd), box_html(fd, md, shown))
     if name is None:   # a re-run replaces the case's old page, whose slug may have changed
         for old in out_dir.glob(f"{case}-*shingle-matches.html"):
             old.unlink()
