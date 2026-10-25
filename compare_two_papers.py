@@ -557,6 +557,73 @@ def find_shingle_matches(words_a, words_b, shingle_size=6, mismatch_penalty=1, x
     return runs
 
 
+# A run whose shingles mostly recur this many times within ONE document is a running header/footer
+# (masthead, page footer with the received/accepted dates) -- printed once per page, so 4+ on any
+# paper of more than a few pages. Real reused body text almost never repeats itself that often.
+FURNITURE_REPEAT_MIN = 4
+FURNITURE_REPEAT_SHARE = 0.5
+# How far into a document to look for the "Abstract" heading that ends the front matter.
+FURNITURE_FRONT_MATTER_MAX_WORDS = 400
+
+
+def _front_matter_end(lower_tokens):
+    """Word index of the first "abstract" token within FURNITURE_FRONT_MATTER_MAX_WORDS, or 0 if
+    there isn't one -- in which case nothing in that document is treated as front matter."""
+    for i, w in enumerate(lower_tokens[:FURNITURE_FRONT_MATTER_MAX_WORDS]):
+        if w.strip(".:—–-").startswith("abstract"):
+            return i
+    return 0
+
+
+def drop_furniture_runs(runs, words_a, words_b, shingle_size):
+    """Split find_shingle_matches() runs into (kept, dropped), where dropped are page furniture
+    two papers share only because of WHERE they were published, not what they say.
+
+    Each word of each document is marked furniture if it is either
+    - repeated: inside a shingle that occurs FURNITURE_REPEAT_MIN+ times in that document -- a
+      running header or footer. Two papers in the same journal match it on every page against
+      every page; one pair in the GIFT set (CE-38) had 56 such "runs", each ~36 words of journal
+      name, ISSN and volume; or
+    - front matter: before the "Abstract" heading -- masthead, title, byline, affiliation. Two
+      students at one college share "Department of Computer Science and Engineering GIFT
+      Autonomous, Bhubaneswar" without either copying anything.
+    A run is dropped when at least FURNITURE_REPEAT_SHARE of its words are furniture on BOTH
+    sides. Judged per word rather than per rule because the matcher happily joins a byline to the
+    first page's header into one run that neither rule covers alone. A long body run that merely
+    crosses a footer is kept: the body dominates its word count.
+
+    The cost is that a same-title republication loses its title match from the exhibits; the body
+    carries that finding anyway. Opt-in for that reason -- callers decide whether to apply it."""
+
+    def furniture_mask(words):
+        lower = [w.lower() for w, _ in words]
+        counts = {}
+        for i in range(len(lower) - shingle_size + 1):
+            s = tuple(lower[i:i + shingle_size])
+            counts[s] = counts.get(s, 0) + 1
+        mask = [False] * len(lower)
+        for i in range(_front_matter_end(lower)):
+            mask[i] = True
+        for i in range(len(lower) - shingle_size + 1):
+            if counts[tuple(lower[i:i + shingle_size])] >= FURNITURE_REPEAT_MIN:
+                for j in range(i, i + shingle_size):
+                    mask[j] = True
+        return mask
+
+    mask_a, mask_b = furniture_mask(words_a), furniture_mask(words_b)
+
+    def mostly_furniture(mask, start, end):
+        return end > start and sum(mask[start:end]) / (end - start) >= FURNITURE_REPEAT_SHARE
+
+    kept, dropped = [], []
+    for r in runs:
+        if mostly_furniture(mask_a, r.start_a, r.end_a) and mostly_furniture(mask_b, r.start_b, r.end_b):
+            dropped.append(r)
+        else:
+            kept.append(r)
+    return kept, dropped
+
+
 def load_model(model_name, logger_print=print):
     from sentence_transformers import SentenceTransformer
     try:

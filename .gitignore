@@ -51,6 +51,7 @@ computer-ethics/
 !/manual_examples/
 !/example_output/
 !/.github/
+!/general_index/
 
 # Scratch working files: ad-hoc compare_two_papers.py/--out report dumps and a
 # copy-paste command scratchpad. Regenerated on demand from the databases, never
@@ -65,3 +66,8 @@ FLAGGED_CASES_INDEX.txt
 RETRACTION_WATCH_EMAIL.txt
 WITHDRAWN_CASES.txt
 REPORT_CLEANUP_*.txt
+email.txt
+
+# Private working notes: case index, email drafts, tweet drafts, screenshots,
+# triage CSVs. Names real people -- kept on disk, never committed.
+/private/

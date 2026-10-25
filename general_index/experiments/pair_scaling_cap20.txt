@@ -1,0 +1,27 @@
+
+1/32: 96,022 docs, 15,617,213 records, cap 20: 1,489,274 pair-increments, 1,393,899 distinct pairs   (x1,247,158 to full corpus)
+   shared >=  1:    1,393,899 pairs   -> full corpus est. 1,738,411,638,032
+   shared >=  2:       49,011 pairs   -> full corpus est. 61,124,437,848
+   shared >=  3:       11,307 pairs   -> full corpus est. 14,101,610,225
+   shared >=  5:        2,828 pairs   -> full corpus est. 3,526,961,503
+   shared >= 10:          680 pairs   -> full corpus est. 848,067,122
+   shared >= 20:          180 pairs   -> full corpus est. 224,488,356
+   shared >= 50:           69 pairs   -> full corpus est. 86,053,870
+
+1/16: 192,226 docs, 31,306,100 records, cap 20: 4,042,939 pair-increments, 3,798,893 distinct pairs   (x311,199 to full corpus)
+   shared >=  1:    3,798,893 pairs   -> full corpus est. 1,182,212,678,981
+   shared >=  2:      112,994 pairs   -> full corpus est. 35,163,648,844
+   shared >=  3:       23,619 pairs   -> full corpus est. 7,350,215,251
+   shared >=  5:        6,520 pairs   -> full corpus est. 2,029,019,156
+   shared >= 10:        1,924 pairs   -> full corpus est. 598,747,370
+   shared >= 20:          573 pairs   -> full corpus est. 178,317,174
+   shared >= 50:          257 pairs   -> full corpus est. 79,978,209
+
+1/8: 384,880 docs, 62,579,208 records, cap 20: 10,744,461 pair-increments, 10,065,055 distinct pairs   (x77,627 to full corpus)
+   shared >=  1:   10,065,055 pairs   -> full corpus est. 781,318,798,922
+   shared >=  2:      264,875 pairs   -> full corpus est. 20,561,419,373
+   shared >=  3:       56,553 pairs   -> full corpus est. 4,390,032,845
+   shared >=  5:       16,393 pairs   -> full corpus est. 1,272,537,415
+   shared >= 10:        5,016 pairs   -> full corpus est. 389,376,421
+   shared >= 20:        2,186 pairs   -> full corpus est. 169,692,356
+   shared >= 50:          998 pairs   -> full corpus est. 77,471,624

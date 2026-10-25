@@ -259,9 +259,9 @@ recurring boilerplate/citation pattern you noticed that isn't already in `classi
 that's a single shared list better consolidated in one pass than edited concurrently by
 several agents.
 
-**Three steps that are not optional before an agent calls `d`/`agent_decided_dupe` on a candidate**
-(mistakes an agent made on exactly these three points, unnoticed until a human caught them by hand, are
-why these are spelled out here rather than left implicit in "apply the judgment framework above"):
+**Four steps that are not optional before an agent calls `d`/`agent_decided_dupe` on a candidate**
+(mistakes made on exactly these points, unnoticed until a human caught them by hand, are why these are
+spelled out here rather than left implicit in "apply the judgment framework above"):
 
 1. **Check the source PDF, not just the database, for authorship.** `same_author`/`paper_authors` come
    from Crossref metadata and can be wrong — see checklist item 6 above. Before calling a candidate
@@ -276,8 +276,18 @@ why these are spelled out here rather than left implicit in "apply the judgment 
    candidate in a batch) — see "Writing up a confirmed case" below for the exact command. Base the
    verdict, and any writeup, on what the whole-document comparison shows, not only the single paragraph
    pair that originally surfaced the candidate.
-
-**Auditing agent verdicts** (human side): `review_dupes.py --agent-reviewed` browses exactly
+4. **Check the database's author list against each PDF's first-page byline.** Read page 1 of the PDF
+   itself (`pdftotext -l 1 <path> -`), not the extracted paragraphs: text extraction can drop the
+   title-and-byline block entirely, so a byline search over extracted text can find nothing for either
+   paper. Then confirm the metadata's author names actually appear in that byline. If they don't, the
+   metadata is wrong for that paper. Common shapes: a proceedings volume's *editor* lifted from a running
+   header ("A. N. Editor et al. (Eds)"), a journal or publisher name, an affiliation, a truncated list,
+   or nothing at all. Base the authorship comparison on the two page-1 bylines only, and handle
+   multi-word surnames ("Le Moal", "van der Berg", "De Souza") as one name, not as the last word alone.
+   Found for real (General Index pilot GI-13, 2026-10-07): a journal paper and its own proceedings
+   version share all seven authors on page 1, but one side's metadata "author" was the volume editor and
+   neither paper's extracted text kept its byline, so the pair passed as cross-author until a human read
+   the PDFs. A second pair from the same proceedings series had the same fault. (human side): `review_dupes.py --agent-reviewed` browses exactly
 the `agent_decided_*` rows instead of the default `unreviewed` ones — combine with the usual
 filters (`--paper`, `--min-similarity`, etc.) same as any other session. Each one is shown
 with a clear banner (`🤖 AGENT VERDICT (...)`) so it's obvious you're auditing, not reviewing

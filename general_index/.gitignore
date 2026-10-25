@@ -1,0 +1,14 @@
+# General Index pilot: code and notes are tracked; the data is not (gi.sqlite3 alone is 80+ GB, and the
+# lead lists, review rows and PDFs name real authors).
+/data/
+__pycache__/
+# untracked by request: personal review notes
+/REVIEW_COMMANDS.md
+# experiments: scripts and summary results only
+/experiments/.venv/
+/experiments/nltk_data/
+/experiments/*.zip
+/experiments/*.pkl
+/experiments/*.jsonl
+# lists real pairs by DOI and title
+/experiments/twins_results.txt

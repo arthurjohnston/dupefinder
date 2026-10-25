@@ -446,7 +446,7 @@ which cuts the seed count fast on a repetitive pair) and write nothing.
 Two interactions to know when sweeping with it. `--min-shingle-matches` and `rank_paper_pairs.py`'s
 own ranking both count *runs*, and gapped scanning reports FEWER, longer runs for the same text, so a
 threshold tuned against lockstep counts filters harder than it used to — judge on coverage, not run
-count. And a backsweep of the 143-paper GIFT set (see FLAGGED_CASES_INDEX.txt's CE-38) found gapped
+count. And a backsweep of the 143-paper GIFT set (see private/FLAGGED_CASES_INDEX.txt's CE-38) found gapped
 scanning promotes pairs lockstep ranked as ordinary noise: two more pairs cleared "50% of both
 documents" (45%/40% -> 61%/57% and 31%/34% -> 53%/55%), none dropped out, and the AI-Doctor/
 Real-Estate pair went from 63%/61% to 88%/92%. Those pairs are the template-with-nouns-swapped shape,
@@ -508,6 +508,21 @@ found on 2026-09-26 were repaired this way (141,252 -> 141,247 downloaded).
 
 Not automated as a bulk pass, and deliberately: the only reliable signal is pairwise, so there is no
 corpus-wide sweep to run that wouldn't either miss most of them or delete real papers.
+
+### `write_dupe_reports_screenshots.py` — the same page, with PDF images instead of text diffs
+
+Same top section as `write_dupe_reports_html.py` (it calls that module's `render_case()` with its own
+exhibit renderer), then the title/byline area of both papers' page 1 side by side, then one exhibit per
+shingle run: a crop of each PDF around the passage, side by side, matched words highlighted yellow and
+words substituted or inserted inside the run pink. The run is a span of word positions in the extracted
+text, which doesn't map onto the PDF 1:1 (headers dropped, dehyphenation, ligatures), so each side is
+located by content in PyMuPDF's own word list (`locate_sequence()`: k-gram votes, then a `difflib`
+alignment). A side that can't be placed (no text layer, missing PDF) falls back to the text excerpt with
+a note. Each crop is zoomed from its own measured text size (`--text-px`), so both sides read at the same
+size whatever the fonts; an exhibit too wide for side by side stacks. Images are separate JPEGs in
+`OUT_DIR/img/<case>/` (`--embed-images` inlines them). Located 276 of 276 displayed runs on both sides
+across six General Index pairs (2026-10-10). It is the default for `general_index/gi_write_pages.py`
+(`--text-pages` there gives the text version).
 
 ### `text_overlap.py` — accurate-but-unscalable textual overlap checks
 
@@ -603,6 +618,15 @@ source" and "Later / flagged", no "this was copied" phrasing, and no `--classifi
 card labels leaked through `--neutral` on every pair with different years; printed years are not
 reliable enough to label a side anyway -- CE-36's "2023" paper cites 2025 work.)
 
+**`--drop-furniture`** (off by default): drops runs that are page furniture before anything is
+rendered or counted — `compare_two_papers.drop_furniture_runs()`, which marks a word as furniture if it
+sits before the "Abstract" heading or inside a shingle repeated 4+ times in its own document (a running
+header/footer), and drops a run that is at least half furniture on both sides. Two papers in one journal
+otherwise match the masthead on every page against every page: a CE-38 pair had 56 of its 83 runs be
+the journal header, and its coverage fell from 42%/41% to 36%/34% once they were removed. The footer
+states how many runs were removed. Surrounding context paragraphs are not filtered, so a header can
+still appear unhighlighted next to a match.
+
 **Labels follow the extension mode**, in three tiers, because the mode changes what a "run" is and a
 page that will be sent to a publisher must not claim more than the scan established: no `--x-drop` is
 "exact" (N consecutive *identical* words); `--x-drop` alone is "near-exact" (substituted words allowed
@@ -632,7 +656,7 @@ view cannot place. `tests/unit/test_compare_two_papers.py`'s `TestOrderIndepende
 The one thing this view cannot do is show reordered material: the walk is monotone, so a run that
 sits at a different *position* in each paper can't be placed, and `_wdd_spine()` picks the
 heaviest forward-moving chain. The page's headline overlap figure is always the **scan's** coverage
-(the number `FLAGGED_CASES_INDEX.txt`, the case WRITEUPs and `rank_paper_pairs.py` all report), and
+(the number `private/FLAGGED_CASES_INDEX.txt`, the case WRITEUPs and `rank_paper_pairs.py` all report), and
 where the ordered diff places materially less than that — 100+ matched words, `WDD_UNPLACED_NOTE_WORDS`
 — a caveat says so, gives both figures, and points at the exhibit view. Note that a run falling
 outside the spine is *not* the same as lost coverage: `find_shingle_matches()` reports one run per

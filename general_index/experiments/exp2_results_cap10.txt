@@ -1,0 +1,45 @@
+vector table: 20000 rows; clustered into 500/2000/8000 classes
+excluding 52 real-overlap corpus pairs (>=15 shared exact 5-grams) from background
+exact 5-gram                   keys/doc   1063  keys>cap  0.0%  bg pairs>0  12,558  bg p99.99   8  bg max   14 | verbatim:40/40(med 67) edit:18/40(med 14) spin30_wn:39/40(med 29) spin60_wn:10/40(med 10) spin50_vec:5/40(med 7) doc_spin50:40/40(med 237)
+exact 5-gram, mod-8 sample     keys/doc    133  keys>cap  0.0%  bg pairs>0   2,021  bg p99.99   1  bg max    4 | verbatim:37/40(med 8) edit:4/40(med 2) spin30_wn:17/40(med 4) spin60_wn:4/40(med 1) spin50_vec:1/40(med 1) doc_spin50:40/40(med 29)
+exact 3-gram rows              keys/doc   1273  keys>cap  0.2%  bg pairs>0 183,841  bg p99.99  24  bg max   99 | verbatim:12/40(med 84) edit:1/40(med 36) spin30_wn:0/40(med 49) spin60_wn:2/40(med 24) spin50_vec:1/40(med 21) doc_spin50:40/40(med 485)
+exact 4-gram rows              keys/doc   1243  keys>cap  0.0%  bg pairs>0  61,778  bg p99.99  14  bg max   35 | verbatim:40/40(med 79) edit:4/40(med 23) spin30_wn:28/40(med 41) spin60_wn:2/40(med 16) spin50_vec:1/40(med 13) doc_spin50:40/40(med 380)
+WordNet first-synset 5-gram    keys/doc   1062  keys>cap  0.0%  bg pairs>0  13,745  bg p99.99   8  bg max   14 | verbatim:40/40(med 67) edit:19/40(med 14) spin30_wn:39/40(med 36) spin60_wn:23/40(med 15) spin50_vec:5/40(med 7) doc_spin50:40/40(med 349)
+WordNet min-lemma 5-gram       keys/doc   1062  keys>cap  0.0%  bg pairs>0  14,168  bg p99.99   8  bg max   14 | verbatim:40/40(med 67) edit:18/40(med 14) spin30_wn:40/40(med 39) spin60_wn:32/40(med 21) spin50_vec:5/40(med 8) doc_spin50:40/40(med 415)
+word-class k=8000 5-gram       keys/doc   1047  keys>cap  0.0%  bg pairs>0  23,375  bg p99.99   9  bg max   36 | verbatim:39/40(med 67) edit:1/40(med 14) spin30_wn:14/40(med 31) spin60_wn:2/40(med 10) spin50_vec:4/40(med 26) doc_spin50:40/40(med 260)
+word-class k=2000 5-gram       keys/doc   1046  keys>cap  0.0%  bg pairs>0  33,233  bg p99.99   9  bg max   34 | verbatim:39/40(med 67) edit:1/40(med 14) spin30_wn:18/40(med 33) spin60_wn:2/40(med 11) spin50_vec:6/40(med 27) doc_spin50:40/40(med 266)
+word-class k=500 5-gram        keys/doc   1041  keys>cap  0.0%  bg pairs>0  67,385  bg p99.99  13  bg max  125 | verbatim:4/40(med 67) edit:0/40(med 14) spin30_wn:0/40(med 34) spin60_wn:2/40(med 12) spin50_vec:1/40(med 28) doc_spin50:36/40(med 273)
+SimHash-24 of 5-gram vector    keys/doc    883  keys>cap  4.5%  bg pairs>0 319,002  bg p99.99  61  bg max  259 | verbatim:0/40(med 28) edit:0/40(med 8) spin30_wn:0/40(med 15) spin60_wn:0/40(med 7) spin50_vec:0/40(med 14) doc_spin50:7/40(med 128)
+SimHash-16 of 5-gram vector    keys/doc    603  keys>cap 17.5%  bg pairs>0 125,872  bg p99.99  19  bg max   87 | verbatim:0/40(med 4) edit:0/40(med 1) spin30_wn:0/40(med 3) spin60_wn:2/40(med 1) spin50_vec:0/40(med 1) doc_spin50:5/40(med 24)
+
+=== chaining: within-document overlap graph on the bag of 5-grams (no positions) ===
+  k=4 outdeg0                                      0.729
+  k=4 outdeg1                                      0.265
+  k=4 outdeg2+                                     0.006
+  k=3 outdeg0                                      0.734
+  k=3 outdeg1                                      0.241
+  k=3 outdeg2+                                     0.025
+  k=2 outdeg0                                      0.709
+  k=2 outdeg1                                      0.194
+  k=2 outdeg2+                                     0.097
+  gap=1                                            0.274
+  gap=2                                            0.143
+  gap=3                                            0.095
+  gap=4                                            0.098
+  gap>=5                                           0.390
+  5-grams per 100 tokens                           18.782
+  true run len (5-grams) chaining k>=4 median      1.100
+  true run len (5-grams) chaining k>=4 p90         2.434
+  true run len (5-grams) chaining k>=3 median      1.192
+  true run len (5-grams) chaining k>=3 p90         3.247
+  true run len (5-grams) chaining k>=2 median      1.327
+  true run len (5-grams) chaining k>=2 p90         4.261
+
+=== chaining across documents: largest chained cluster of SHARED 5-grams ===
+  background pairs with >=2 shared 5-grams: 2252; largest chained cluster max 13, p99 8; shared-count max 14
+  verbatim    shared med    68  chained-cluster med    11  chain>13: 14/40   shared>14: 40/40
+  edit        shared med    14  chained-cluster med     3  chain>13: 0/40   shared>14: 18/40
+  spin30_wn   shared med    30  chained-cluster med     4  chain>13: 3/40   shared>14: 39/40
+  spin60_wn   shared med    10  chained-cluster med     2  chain>13: 2/40   shared>14: 10/40
+  spin50_vec  shared med     7  chained-cluster med     2  chain>13: 1/40   shared>14: 5/40
+  doc_spin50  shared med   238  chained-cluster med    17  chain>13: 24/40   shared>14: 40/40
