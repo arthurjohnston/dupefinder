@@ -873,5 +873,28 @@
   "matched_words": 557,
   "runs": 16,
   "longest": 74
+ },
+ "GI-883": {
+  "file": "GI-883.html",
+  "reported": null,
+  "published": "2026-10-25",
+  "earlier_known": true,
+  "later": {
+   "title": "Smart Textiles and Nano-Technology: A General Overview",
+   "year": 2015,
+   "doi": "10.4172/2165-8064.1000181",
+   "pct": 10.0,
+   "journal": "Journal of Textile Science &amp; Engineering"
+  },
+  "earlier": {
+   "title": "Reference Module in Materials Science and Materials Engineering || Smart Nanotextiles: Materials and Their Application",
+   "year": 2015,
+   "doi": "10.1016/B978-0-12-803581-8.03345-2",
+   "pct": 20.0,
+   "journal": "Reference Module in Materials Science and Materials Engineering"
+  },
+  "matched_words": 567,
+  "runs": 25,
+  "longest": 58
  }
 }
