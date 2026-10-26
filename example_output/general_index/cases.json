@@ -919,5 +919,28 @@
   "matched_words": 2885,
   "runs": 99,
   "longest": 200
+ },
+ "GI-929": {
+  "file": "GI-929.html",
+  "reported": null,
+  "published": "2026-10-26",
+  "earlier_known": true,
+  "later": {
+   "title": "Correlation Between Orthodontic Forces and Root Resorption – a Systematic Review of the Literature",
+   "year": 2016,
+   "doi": "10.1515/jim-2016-0033",
+   "pct": 46.0,
+   "journal": "Journal of Interdisciplinary Medicine"
+  },
+  "earlier": {
+   "title": "The Effect of Orthodontic Therapy on Periodontal Health: A Review of the Literature",
+   "year": 2014,
+   "doi": "10.1155/2014/585048",
+   "pct": 20.0,
+   "journal": "International Journal of Dentistry"
+  },
+  "matched_words": 664,
+  "runs": 28,
+  "longest": 72
  }
 }
