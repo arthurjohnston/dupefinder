@@ -942,5 +942,28 @@
   "matched_words": 664,
   "runs": 28,
   "longest": 72
+ },
+ "GI-912": {
+  "file": "GI-912.html",
+  "reported": null,
+  "published": "2026-10-26",
+  "earlier_known": true,
+  "later": {
+   "title": "Axillary lymphadenectomy for breast cancer in elderly patients and fibrin glue",
+   "year": 2013,
+   "doi": "10.1186/1471-2482-13-S2-S8",
+   "pct": 35.0,
+   "journal": "BMC Surgery"
+  },
+  "earlier": {
+   "title": "Efficacy of Fibrin Glue on Seroma Formation after Breast Surgery",
+   "year": 2012,
+   "doi": "10.1155/2012/643132",
+   "pct": 22.0,
+   "journal": "International Journal of Breast Cancer"
+  },
+  "matched_words": 835,
+  "runs": 27,
+  "longest": 113
  }
 }
