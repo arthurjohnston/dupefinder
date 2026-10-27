@@ -551,7 +551,7 @@
  },
  "GI-04": {
   "file": "GI-04.html",
-  "reported": null,
+  "reported": "2026-10-27",
   "published": "2026-10-21",
   "earlier_known": true,
   "later": {
@@ -1060,5 +1060,28 @@
   "sources": 2,
   "union_words": 584,
   "union_pct": 26.8
+ },
+ "GI-941": {
+  "file": "GI-941.html",
+  "reported": "2026-10-27",
+  "published": "2026-10-27",
+  "earlier_known": true,
+  "later": {
+   "title": "Can early introduction of specialized palliative care limit intensive care, emergency and hospital admissions in patients with severe and very severe COPD? a randomized study",
+   "year": 2014,
+   "doi": "10.1186/1472-684X-13-47",
+   "pct": 16.0,
+   "journal": "BMC Palliative Care"
+  },
+  "earlier": {
+   "title": "Palliative and end-of-life care for patients with severe COPD",
+   "year": 2007,
+   "doi": "10.1183/09031936.00126107",
+   "pct": 12.0,
+   "journal": "European Respiratory Journal"
+  },
+  "matched_words": 564,
+  "runs": 21,
+  "longest": 69
  }
 }
