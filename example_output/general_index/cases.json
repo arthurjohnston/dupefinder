@@ -988,5 +988,28 @@
   "matched_words": 1919,
   "runs": 85,
   "longest": 81
+ },
+ "GI-859": {
+  "file": "GI-859.html",
+  "reported": "2026-10-26",
+  "published": "2026-10-26",
+  "earlier_known": true,
+  "later": {
+   "title": "Effect of broth from meat of linseed‐fed cattle on glucose‐stimulated insulin release in healthy male volunteers",
+   "year": 2019,
+   "doi": "10.1111/asj.13193",
+   "pct": 25.0,
+   "journal": "Animal Science Journal"
+  },
+  "earlier": {
+   "title": "Manipulating the fatty acid composition of muscle and adipose tissue in beef cattle",
+   "year": 2001,
+   "doi": "10.1079/bjn2000223",
+   "pct": 12.0,
+   "journal": "British Journal of Nutrition"
+  },
+  "matched_words": 661,
+  "runs": 29,
+  "longest": 56
  }
 }
