@@ -1083,5 +1083,28 @@
   "matched_words": 564,
   "runs": 21,
   "longest": 69
+ },
+ "GI-830": {
+  "file": "GI-830.html",
+  "reported": null,
+  "published": "2026-10-27",
+  "earlier_known": true,
+  "later": {
+   "title": "Color stability of esthetic restorative materials: a spectrophotometric analysis",
+   "year": 2016,
+   "doi": "10.1080/23337931.2016.1217416",
+   "pct": 11.0,
+   "journal": "Acta Biomaterialia Odontologica Scandinavica"
+  },
+  "earlier": {
+   "title": "Effect of staining solutions and repolishing on color stability of direct composites",
+   "year": 2010,
+   "doi": "10.1590/S1678-77572010000300009",
+   "pct": 13.0,
+   "journal": "Journal of Applied Oral Science"
+  },
+  "matched_words": 370,
+  "runs": 15,
+  "longest": 61
  }
 }
