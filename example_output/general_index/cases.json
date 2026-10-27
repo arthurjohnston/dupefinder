@@ -1034,5 +1034,31 @@
   "matched_words": 306,
   "runs": 13,
   "longest": 95
+ },
+ "GI-881": {
+  "file": "GI-881.html",
+  "reported": null,
+  "published": "2026-10-27",
+  "earlier_known": true,
+  "later": {
+   "title": "Laparoscopic distal pancreatectomy in elderly patients: is it safe?",
+   "year": 2016,
+   "doi": "10.1007/s40520-016-0677-4",
+   "pct": 20.0,
+   "journal": "Aging Clinical and Experimental Research"
+  },
+  "earlier": {
+   "title": "Laparoscopic versus open distal pancreatectomy: a single-institution comparative study",
+   "year": 2014,
+   "doi": "10.1186/1477-7819-12-327",
+   "pct": 17.0,
+   "journal": "World Journal of Surgical Oncology"
+  },
+  "matched_words": 433,
+  "runs": 15,
+  "longest": 56,
+  "sources": 2,
+  "union_words": 584,
+  "union_pct": 26.8
  }
 }
