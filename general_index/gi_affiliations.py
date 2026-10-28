@@ -35,7 +35,8 @@ Usage:
   gi_affiliations.py show GI-12 [GI-40 ...]                  (each side's authors and why they rank as they do)
   gi_affiliations.py summary                                 (unreviewed result pages by rank)
   gi_affiliations.py raw-strings [--all]                     (oa_authorships.raw_university, offline: see below)
-  gi_affiliations.py titles [--max-calls 400000] [--workers 4] [--limit N]   (no-DOI papers: see below)
+  gi_affiliations.py titles [--max-calls 1000] [--workers 4] [--limit N]   (no-DOI papers: see below)
+  gi_affiliations.py coverage                                (how many leads' papers have a university, offline)
 
 raw_university: ~9% of the leads' later papers print an affiliation OpenAlex never matched to an institution
 (raw_affiliation_strings only). For an authorship with no institution typed 'education', it holds the first raw
@@ -51,9 +52,13 @@ an author surname in common AND a close title (similarity >= TITLE_MATCH, or Ope
 inside ours). A match's authorships are stored under the gi: key itself (oa_works / oa_authorships), so doi_scores()
 and everything downstream read it like any DOI; oa_title_matches keeps what matched (and the work's DOI, when it
 has one). The leads touched are then rescored. Spot-check (PILOT_FINDINGS.md, 2026-10-26): 30 of 100 found, none
-wrong at this rule; ~11 of 100 carry a university. One OpenAlex call per title, and a search call costs 10x a filter call: $0.001
-(10 credits; the free 10,000 credits a day are 1,000 searches), so 300K titles is ~$300, not ~$30. The 2026-10-26/27
+wrong at this rule; ~11 of 100 carry a university. One OpenAlex call per title, and a search call costs 10x a
+filter call: 10 credits, $0.001, so the free 10,000 credits a day are 1,000 searches -- the default --max-calls, so
+a run past it is always asked for. Documents already in oa_title_matches are never searched again. The 2026-10-26/27
 runs did the best-ranked 160K (36.4K matched, ~25%; ~$155) and left ~141K, lower-ranked, unsearched.
+
+coverage: for the scored leads (pair_affiliation) and the full-text-checked pairs, which papers have a university:
+on the byline, only in a raw affiliation string, only as an author's last known institution, or none.
 gi_review_cli.py --order affiliation / --us-europe-only and gi_verify.py select --order affiliation use it.
 """
 import argparse
@@ -843,7 +848,9 @@ def store_title_matches(db, rows, found):
 def cmd_titles(db, args):
     """Look up the no-DOI ranked sides of scored leads by title, store what matches, rescore the leads they're on."""
     ensure_tables(db)
-    cands = title_candidates(db)[:args.limit or None]
+    cands = title_candidates(db)
+    if args.limit is not None:
+        cands = cands[:args.limit]
     log.info("%d no-DOI documents to look up by title", len(cands))
     search, t0, matched, done = TitleSearch(args.max_calls, args.workers), time.time(), [], 0
     for i in range(0, len(cands), args.chunk_pairs):
@@ -901,6 +908,52 @@ def _update_raw_university(db, rows):
     db.commit()
 
 
+COVERAGE = ["uni on paper", "uni raw string only", "uni last-known only", "non-uni inst only", "no institution",
+            "no record"]
+
+
+def coverage_classes(db):
+    """Each cached key's COVERAGE class (lowercased key -> class); a key not in the dict has no record."""
+    found = {d for d, f in db.execute("select lower(doi), found from oa_works") if f}
+    on_paper, raw, last, any_inst = set(), set(), set(), set()
+    for key, inst, last_inst, ru in db.execute("""select lower(s.doi), s.institutions, a.institutions, s.raw_university
+                                                  from oa_authorships s left join oa_authors a using (author_id)"""):
+        inst = json.loads(inst or "[]")
+        if inst:
+            any_inst.add(key)
+        if any(i.get("type") in ACADEMIC_TYPES for i in inst):
+            on_paper.add(key)
+        elif ru:
+            raw.add(key)
+        if any(i.get("type") in ACADEMIC_TYPES for i in json.loads(last_inst or "[]")):
+            last.add(key)
+    sets = list(zip(COVERAGE, (on_paper, raw, last, any_inst)))
+    return {k: next((c for c, keys in sets if k in keys), "no institution") for k in found}
+
+
+def cmd_coverage(db, args):
+    classes = coverage_classes(db)
+    cls = lambda k: classes.get((k or "").lower(), "no record")
+    for name, sql in (("scored leads (pair_affiliation)", """select l.doi_a, l.doi_b, pa.side from pair_affiliation pa
+                                                              join leads l using (pair_id)"""),
+                      ("full-text-checked pairs (fulltext)", "select doi_a, doi_b, null from fulltext")):
+        either, later, n = {}, {}, 0
+        for a, b, side in db.execute(sql):
+            n += 1
+            ca, cb = cls(a), cls(b)
+            best = min(ca, cb, key=COVERAGE.index)
+            either[best] = either.get(best, 0) + 1
+            if side:
+                c = ca if side == "a" else cb
+                later[c] = later.get(c, 0) + 1
+        print(f"\n{name}: {n:,} pairs")
+        for label, tally in (("either side", either), ("later (ranked) side", later)):
+            if tally:
+                print(f"  {label}:")
+                for c in COVERAGE:
+                    print(f"    {c:22} {tally.get(c, 0):>10,}  {100 * tally.get(c, 0) / max(n, 1):5.1f}%")
+
+
 def cmd_backfill(db, args):
     fetcher = Fetcher(db, args.max_calls, args.orcid)
     got = fetcher.backfill(args.orcid)
@@ -910,12 +963,14 @@ def cmd_backfill(db, args):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    ap.add_argument("command", choices=["fetch", "leads", "backfill", "show", "summary", "raw-strings", "titles"])
+    ap.add_argument("command", choices=["fetch", "leads", "backfill", "show", "summary", "raw-strings", "titles",
+                                        "coverage"])
     ap.add_argument("cases", nargs="*", help="show: GI-NN ...")
     ap.add_argument("--db", default=str(gi_db.DB_PATH))
     ap.add_argument("--max-calls", type=int, default=3000,
-                    help="fetch / leads / backfill: OpenAlex calls at most (free: 10,000/day; leads and backfill "
-                         "default to 400,000)")
+                    help="fetch / leads / backfill / titles: OpenAlex calls at most (free: 10,000 credits a day; "
+                         "leads and backfill default to 400,000 filter calls, titles to 1,000 searches -- a search "
+                         "is 10 credits, $0.001)")
     ap.add_argument("--no-orcid", action="store_true", help="fetch: skip the ORCID employment lookups")
     ap.add_argument("--sets", nargs="+", choices=list(LEAD_SETS), default=list(LEAD_SETS),
                     help="leads: which leads to score (default both)")
@@ -931,10 +986,13 @@ def main():
     logging.basicConfig(level=logging.INFO, format="%(message)s")
     db = sqlite3.connect(args.db, timeout=300)
     db.row_factory = sqlite3.Row
-    if args.command in ("leads", "backfill", "titles") and args.max_calls == 3000:
+    if args.command in ("leads", "backfill") and args.max_calls == 3000:
         args.max_calls = 400_000      # about $40 past the free 10,000/day
+    if args.command == "titles" and args.max_calls == 3000:
+        args.max_calls = 1000         # the free day; each search is $0.001 past it
     {"fetch": cmd_fetch, "leads": cmd_leads, "backfill": cmd_backfill, "show": cmd_show,
-     "summary": cmd_summary, "raw-strings": cmd_raw_strings, "titles": cmd_titles}[args.command](db, args)
+     "summary": cmd_summary, "raw-strings": cmd_raw_strings, "titles": cmd_titles,
+     "coverage": cmd_coverage}[args.command](db, args)
 
 
 if __name__ == "__main__":

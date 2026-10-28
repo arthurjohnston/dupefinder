@@ -4,6 +4,38 @@ Handoff for the next session, written 2026-10-06 ~05:30 after the overnight run.
 (every measurement, each filter rule and why it exists, dead ends) is in `PILOT_FINDINGS.md`; this
 file is the short version.
 
+## Affiliation coverage: state and how to continue (2026-10-28)
+
+Goal: know which leads' papers have a university behind them. `../.venv/bin/python3 gi_affiliations.py coverage`
+(offline, ~6 min) prints the current table. As of 2026-10-28 the later (ranked) paper of the 1.85M scored leads
+has a university for 67.0%: 54.1% on its OpenAlex byline, 2.4% only in a raw affiliation string, 10.5% only as an
+author's last known institution; 26.8% have no OpenAlex record at all. Either side of the pair: 74.6%. Write-up
+and spot-checks: PILOT_FINDINGS.md, after the gi_resolve_titles note. Everything is in data/gi.sqlite3.
+
+What was done, all in gi_affiliations.py (its docstring has the details):
+- `raw-strings`: oa_authorships.raw_university, a raw affiliation string naming a university where OpenAlex
+  matched no education institution. Offline; already run on every row, and filled automatically for new rows.
+  Rerun with `--all` only after changing UNIVERSITY_NAME. It is where the paper was written, so the rank ignores it.
+- `titles`: no-DOI ('gi:') later papers looked up by OpenAlex title search; a hit is accepted only with a shared
+  author surname and a close title, and stored under the gi: key so ranking reads it like a DOI. 160,481 searched
+  (best-ranked first), 36,407 matched, their 92,014 leads rescored. ~141K lower-ranked papers are unsearched.
+  Every search, matched or not, is in oa_title_matches and is never repeated; log in data/affiliations_titles.log.
+
+**Cost -- read before any OpenAlex run.** A title search is 10 credits, $0.001; a filter call (DOIs, authors) is
+1 credit. The free 10,000 credits a day are 1,000 searches, which is `titles`' default --max-calls, so nothing paid
+happens unless asked for. The prepaid balance was $8.57 on 2026-10-28 (header X-RateLimit-Prepaid-Remaining-USD on
+any response). Before proposing a paid run, make one call, read X-RateLimit-Cost-USD, and quote calls x cost; get
+the user's OK on the dollar figure. The first run here was quoted at $30 from filter-call pricing and cost ~$155.
+
+To continue:
+- More titles: `gi_affiliations.py titles --max-calls N` resumes where it stopped (N searches, $N/1000). The rest
+  would be ~$141 for roughly 2 more points of coverage, at ~20-25% matched. A 429 or 5xx burst stops it; rerun.
+- If a run stops before its rescore finishes: `gi_affiliations.py titles --limit 0` searches nothing and rescores
+  every match so far (author lookups are filter calls, cheap).
+- Not tried yet, each a possible next step: Crossref title search for the titles OpenAlex missed (catches titles
+  wrapped in extraction junk; ~10 more of 100 in the spot-check; free); Crossref's affiliation field for later
+  papers that have a DOI but no OpenAlex institution; showing raw_university in `gi_affiliations.py show`.
+
 ## Rules carried over from the user
 
 - **Do not start any more n-gram slice downloads** until the user says so. Slices 0-3 are the working

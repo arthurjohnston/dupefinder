@@ -468,5 +468,27 @@ class TestTitles(unittest.TestCase):
         self.assertEqual(s.many(["a b c"] * 3), [[], [], None])
 
 
+class TestCoverage(unittest.TestCase):
+    def test_classes(self):
+        db = make_db()
+        add_work(db, "10.1/paper", [("A1", 2024, [])])
+        db.execute("update oa_authorships set institutions = ? where doi = '10.1/paper'",
+                   (json.dumps([inst("MIT", "US")]),))
+        add_work(db, "10.1/raw", [("A2", 2024, [])])
+        db.execute("update oa_authorships set raw_university = 'Dept of X, Univ of Y' where doi = '10.1/raw'")
+        add_work(db, "10.1/last", [("A3", 2024, [inst("Oxford", "GB")])])
+        add_work(db, "10.1/company", [("A4", 2024, [])])
+        db.execute("update oa_authorships set institutions = ? where doi = '10.1/company'",
+                   (json.dumps([inst("Acme", "US", "company")]),))
+        add_work(db, "10.1/none", [("A5", 2024, [])])
+        db.execute("insert into oa_works values ('10.1/notfound', 0, 'x')")
+        classes = ga.coverage_classes(db)
+        self.assertEqual({k: classes.get(k, "no record") for k in
+                          ["10.1/paper", "10.1/raw", "10.1/last", "10.1/company", "10.1/none", "10.1/notfound"]},
+                         {"10.1/paper": "uni on paper", "10.1/raw": "uni raw string only",
+                          "10.1/last": "uni last-known only", "10.1/company": "non-uni inst only",
+                          "10.1/none": "no institution", "10.1/notfound": "no record"})
+
+
 if __name__ == "__main__":
     unittest.main()
