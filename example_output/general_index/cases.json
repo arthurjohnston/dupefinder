@@ -1106,5 +1106,28 @@
   "matched_words": 370,
   "runs": 15,
   "longest": 61
+ },
+ "GI-959": {
+  "file": "GI-959.html",
+  "reported": null,
+  "published": "2026-10-28",
+  "earlier_known": true,
+  "later": {
+   "title": "Sepsis Biomarkers in Neonates and Children: C-Reactive Protein and Procalcitonin",
+   "year": 2017,
+   "doi": "10.1055/s-0037-1603895",
+   "pct": 12.0,
+   "journal": "Journal of Child Science"
+  },
+  "earlier": {
+   "title": "Biomarkers for pediatric sepsis and septic shock",
+   "year": 2010,
+   "doi": "10.1586/eri.10.154",
+   "pct": 8.0,
+   "journal": "Expert Review of Anti-infective Therapy"
+  },
+  "matched_words": 456,
+  "runs": 20,
+  "longest": 58
  }
 }
