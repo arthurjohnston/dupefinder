@@ -307,6 +307,28 @@ treat one-sided containment as its own lower-priority list.
 Title -> DOI lookup (gi_resolve_titles.py, retrieve_papers.resolve_doi(), Crossref, similarity
 >= 0.82): 96% precision / 80% recall on 150 named controls with clean titles. Not yet run on
 meta_alt's text-extracted titles, which will do worse; spot-check before trusting it.
+Spot-checked 2026-10-26 on 100 random no-DOI later papers of scored leads (pair_affiliation): 9
+accepted, 8 right by hand (the miss: a generic "Mouth Dissolving Tablet" title, 0.88, other authors).
+About 10 more were right but scored under 0.82 because the extracted title carries junk around the
+real one ("Title: What Ends Recessions? What Ends Recessions?", "Polyclonal and Monoclonal
+Antibodies 23 23 Polyclonal ...", a "Spécialité : Mathématique" thesis suffix); each had the
+Crossref title inside the extracted one plus a shared author surname. The rest are titles that
+aren't titles (journal mastheads, "Special Issue 01", "liked novels") or grey literature with no DOI.
+So ~9% recall as is, ~18% with a containment + surname rule.
+OpenAlex title search (`filter=title.search:`) on the same 100 does better: 26 right, and at
+similarity >= 0.82 with a shared author surname, 21 accepted with none wrong (without the surname
+check, 2 more wrong: "Special Issue 01", a different intrusion-detection chapter). Most of its hits
+have no DOI at all (repository/grey-literature records), which is why Crossref can't see them. It misses
+the junk-wrapped titles Crossref's fuzzy search caught (the phrase has to appear), so the two are
+complementary: ~35 of 100 between them. Only ~10 of OpenAlex's 26 carry a university, though
+(8 typed 'education', 2 by raw string); many no-DOI records have no institutions at all.
+Run 2026-10-26/27 (`gi_affiliations.py titles`, the OpenAlex rule above): 160,481 of ~301K no-DOI
+later papers searched, best-ranked first; 36,407 matched (~30% at the top of the list, ~20-25% further
+down). The 92,014 leads on them, nearly all "unknown" before, rescored to 22,778 US/Europe academic,
+28,441 academic elsewhere, 33,507 unknown, 7,288 not active. Later-side university coverage over the
+1.85M scored leads: 64.6% -> 67.0% (byline 53.2 -> 54.1%, raw string 2.4%, last-known only 10.5%; no
+record 29.8 -> 26.8%); either side 74.6%. Cost ~$155 at $0.001 a search. The ~141K left are lower-ranked
+and would cost ~$141 for roughly another 2 points.
 
 ### Ordering and the last filter round (2026-10-05 ~21:30)
 

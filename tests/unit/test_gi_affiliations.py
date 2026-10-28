@@ -368,5 +368,105 @@ class TestReviewQueueProfessorOrder(unittest.TestCase):
                                "cross-author, unknown"])
 
 
+class TestRawUniversity(unittest.TestCase):
+    def test_universities_in(self):
+        for s in ["Kongu Engineering College, Tamilnadu", "Harvard University", "Faculty of Sciences, Rabat",
+                  "Assistant Professor, Lendi Institute of Engineering and Technology"]:
+            self.assertEqual(ga.raw_university([], [s]), s)
+
+    def test_research_institutes_and_streets_out(self):
+        for s in ["Schering-Plough Research Institute, NJ", "Selby Biolab, 5/43-51 College St., Gladesville",
+                  "Royal College of Physicians, London", "Institut für Kernphysik, Forschungszentrum Karlsruhe"]:
+            self.assertEqual(ga.raw_university([], [s]), "")
+
+    def test_only_when_no_institution_is_a_university(self):
+        self.assertEqual(ga.raw_university([inst("Univ Oslo", "NO")], ["University of Oslo"]), "")
+        self.assertEqual(ga.raw_university([inst("NIH", "US", "government")], ["x", "Univ. d'Evry"]),
+                         "Univ. d'Evry")
+
+
+class TestCleanTitle(unittest.TestCase):
+    def test_junk_off(self):
+        cases = {
+            "Title: What Ends Recessions? What Ends Recessions?": "What Ends Recessions?",
+            "Polyclonal and Monoclonal Antibodies 23 23 Polyclonal and Monoclonal Antibodies":
+                "Polyclonal and Monoclonal Antibodies",
+            "Volume 5 Issue 4, April 2016 www.ijsr.net Licensed Under Creative Commons Attribution CC BY Surgical "
+            "Management of Necrosis": "Surgical Management of Necrosis",
+            "06+ MILLION TOP 1% MOST CITED SCIENTIST 12.2% AUTHORS AND EDITORS FROM TOP 500 UNIVERSITIES 14 "
+            "Real-time Mouth Tracking": "Real-time Mouth Tracking",
+            "DISSERTATION HYPEROVALS AND HEMISYSTEMS Submitted by": "HYPEROVALS AND HEMISYSTEMS",
+            "Ada in Real-time Embedded System 1": "Ada in Real-time Embedded System",
+            "The demand for Swiss banknotes: some new evidence": "The demand for Swiss banknotes: some new evidence",
+        }
+        for raw, want in cases.items():
+            self.assertEqual(ga.clean_title(raw), want)
+
+    def test_query_has_no_filter_breaking_punctuation(self):
+        self.assertEqual(ga.title_query("AHL9, AHL11 | gene: (over)expression*"), "AHL9 AHL11 gene over expression")
+
+
+def work(title, *names, wid="W1", doi=None):
+    return {"id": f"https://openalex.org/{wid}", "doi": doi, "display_name": title,
+            "authorships": [{"author": {"id": f"https://openalex.org/A{n}", "display_name": name},
+                             "institutions": [{"display_name": "Univ Oslo", "country_code": "NO",
+                                               "type": "education"}]} for n, name in enumerate(names)]}
+
+
+class TestBestTitleMatch(unittest.TestCase):
+    def test_needs_a_shared_surname(self):
+        self.assertFalse(ga.best_title_match("Special Issue 01", ["G Sumana"], [work("special issue 01", "X Y")])[2])
+        w, sim, ok = ga.best_title_match("Production of hydrogen from chemical hydrides", ["Michael A Matthews"],
+                                         [work("Production of Hydrogen from Chemical Hydrides", "M. Matthews")])
+        self.assertTrue(ok)
+
+    def test_needs_a_close_title(self):
+        self.assertFalse(ga.best_title_match("Hearing Aid Device Development", ["Andrew Brughera"],
+                                             [work("Development of Cell Free Hearing Aid Device", "A Brughera")])[2])
+
+    def test_title_inside_the_other(self):
+        self.assertTrue(ga.best_title_match(
+            "An exact approach for relating recovering surgical patient workload Vanberkel Boucherie",
+            ["P T Vanberkel"], [work("An exact approach for relating recovering surgical patient workload",
+                                     "Peter T. Vanberkel")])[2])
+
+    def test_not_our_short_title_inside_a_longer_one(self):
+        self.assertFalse(ga.best_title_match("MOUTH DISSOLVING TABLET: AN OVERVIEW", ["Pawar"], [work(
+            "Recent trends in formulation technology for mouth dissolving tablet: an overview", "S Pawar")])[2])
+
+    def test_picks_the_accepted_result(self):
+        w, _, ok = ga.best_title_match("Gesturing in the Wild", ["Adam Fourney"],
+                                       [work("Gesturing in the Wild", "Someone Else", wid="W1"),
+                                        work("Gesturing in the wild", "Adam Fourney", wid="W2")])
+        self.assertTrue(ok)
+        self.assertEqual(w["id"], "https://openalex.org/W2")
+
+
+class TestTitles(unittest.TestCase):
+    def test_match_stored_under_the_gi_key_and_scored(self):
+        db = make_db()
+        rows = [("gi:aa", "Gesturing in the Wild", "Adam Fourney; Michael Terry", "Gesturing in the Wild"),
+                ("gi:bb", "Some Unfound Paper Title", "Jo Bloggs", "Some Unfound Paper Title"),
+                ("gi:cc", "Sung", "Jae Lee", ""),                    # too short: not searched
+                ("gi:dd", "Asked But Failed Title", "Jo Bloggs", "Asked But Failed Title")]
+        found = [[work("Gesturing in the Wild", "Adam Fourney", doi="https://doi.org/10.1/g")], [], [], None]
+        self.assertEqual(ga.store_title_matches(db, rows, found), ["gi:aa"])
+        got = {r["key"]: (r["matched"], r["oa_doi"]) for r in db.execute("select * from oa_title_matches")}
+        self.assertEqual(got, {"gi:aa": (1, "10.1/g"), "gi:bb": (0, None), "gi:cc": (0, None)})   # gi:dd: next run
+        self.assertEqual(db.execute("select count(*) from oa_authorships where doi = 'gi:aa'").fetchone()[0], 1)
+        db.execute("insert into oa_authors values ('A0', 'Adam Fourney', null, 9, ?, ?, 'x', null)",
+                   (NOW, json.dumps([inst("Univ Oslo", "NO")])))
+        self.assertEqual(ga.doi_scores(db, ["gi:aa"])["gi:aa"][0], ga.TARGET)
+
+    def test_search_stops_on_429_and_budget(self):
+        s = ga.TitleSearch(max_calls=10, workers=2, session_factory=lambda: FakeSession(
+            lambda url, params: FakeResp(429, {})), interval=0)
+        self.assertEqual(s.many(["a b c"] * 5), [None] * 5)
+        self.assertIn("429", s.stopped)
+        s = ga.TitleSearch(max_calls=2, workers=1, session_factory=lambda: FakeSession(
+            lambda url, params: FakeResp(200, {"results": []})), interval=0)
+        self.assertEqual(s.many(["a b c"] * 3), [[], [], None])
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -34,17 +34,41 @@ Usage:
   gi_affiliations.py backfill [--max-calls 400000] [--orcid]  (refetch rows cached before `raw` was kept)
   gi_affiliations.py show GI-12 [GI-40 ...]                  (each side's authors and why they rank as they do)
   gi_affiliations.py summary                                 (unreviewed result pages by rank)
+  gi_affiliations.py raw-strings [--all]                     (oa_authorships.raw_university, offline: see below)
+  gi_affiliations.py titles [--max-calls 400000] [--workers 4] [--limit N]   (no-DOI papers: see below)
+
+raw_university: ~9% of the leads' later papers print an affiliation OpenAlex never matched to an institution
+(raw_affiliation_strings only). For an authorship with no institution typed 'education', it holds the first raw
+string naming a university or degree-granting college (UNIVERSITY_NAME: stricter than ACADEMIC_NAME, which takes
+any "Institut"/"Academy" and so research institutes and companies), '' when none does, NULL when not yet checked.
+Filled as authorships are stored, and for rows stored before by `raw-strings`. It says where the paper was written,
+not where the author is now, so the ranking does not read it.
+
+titles: ~300K scored leads' ranked (later) side is a 'gi:' document, with a title (often text-extracted) and no
+DOI, so OpenAlex was never asked about it. `titles` looks each one up with OpenAlex title search
+(clean_title(): mastheads, doubled titles and "Title:" prefixes off) and accepts the best of the top 5 only with
+an author surname in common AND a close title (similarity >= TITLE_MATCH, or OpenAlex's title, 4+ words,
+inside ours). A match's authorships are stored under the gi: key itself (oa_works / oa_authorships), so doi_scores()
+and everything downstream read it like any DOI; oa_title_matches keeps what matched (and the work's DOI, when it
+has one). The leads touched are then rescored. Spot-check (PILOT_FINDINGS.md, 2026-10-26): 30 of 100 found, none
+wrong at this rule; ~11 of 100 carry a university. One OpenAlex call per title, and a search call costs 10x a filter call: $0.001
+(10 credits; the free 10,000 credits a day are 1,000 searches), so 300K titles is ~$300, not ~$30. The 2026-10-26/27
+runs did the best-ranked 160K (36.4K matched, ~25%; ~$155) and left ~141K, lower-ranked, unsearched.
 gi_review_cli.py --order affiliation / --us-europe-only and gi_verify.py select --order affiliation use it.
 """
 import argparse
+import html
 import json
 import logging
 import os
 import re
 import sqlite3
 import sys
+import threading
 import time
+from concurrent.futures import ThreadPoolExecutor
 from datetime import date, datetime
+from difflib import SequenceMatcher
 from pathlib import Path
 
 import requests
@@ -60,6 +84,7 @@ create table if not exists oa_authorships (   -- one row per author of a work, i
     doi text, position integer, author_id text, name text,
     institutions text,          -- json [{name, country, type, id, ror}] as printed on that paper
     raw text,                   -- json: OpenAlex's whole authorship (raw affiliation strings, lineage, ...)
+    raw_university text,        -- a raw affiliation string naming a university, when no institution is one ('' none)
     primary key (doi, position));
 create index if not exists idx_oa_authorships_author on oa_authorships(author_id);
 create table if not exists oa_authors (
@@ -74,6 +99,11 @@ create table if not exists pair_affiliation (   -- `leads`: a lead's rank, from 
     rank integer,               -- TARGET 0 / ACADEMIC 1 / UNKNOWN 2 / OTHER 3
     side text,                  -- 'a' / 'b': the side the rank is from (the later paper, or the better side)
     scored_at text);
+create table if not exists oa_title_matches (   -- `titles`: an OpenAlex work found for a no-DOI document
+    key text primary key,       -- the 'gi:' key, as in leads.doi_a / doi_b
+    query text, n_results integer,
+    matched integer,            -- 1: accepted (its authorships are in oa_authorships under `key`), 0: not
+    oa_id text, oa_doi text, oa_title text, similarity real, fetched_at text);
 create table if not exists orcid_employments (
     orcid text primary key,
     current text,               -- json [{name, country}]: employments with no end date
@@ -82,7 +112,7 @@ create table if not exists orcid_employments (
 """
 
 # columns added after the tables first held data (`backfill` fills them in for rows fetched before)
-MIGRATIONS = {"oa_authorships": ["raw"], "oa_authors": ["raw"], "orcid_employments": ["raw"]}
+MIGRATIONS = {"oa_authorships": ["raw", "raw_university"], "oa_authors": ["raw"], "orcid_employments": ["raw"]}
 
 TARGET, ACADEMIC, UNKNOWN, OTHER = 0, 1, 2, 3
 LABELS = {TARGET: "US/Europe academic", ACADEMIC: "academic elsewhere", UNKNOWN: "unknown",
@@ -103,6 +133,22 @@ ACADEMIC_NAME = re.compile(r"univ|college|hochschule|polytechn|politecnic|école
 # emeritus / retired / former one is no longer working
 PROFESSOR_ROLE = re.compile(r"\bprof|lecturer|\breader\b|dozent|docent|catedr|ma[iî]tre de conf", re.I)
 NOT_WORKING = re.compile(r"emerit|retired|former|honorary|visiting", re.I)
+# a university or degree-granting college in a raw affiliation string (raw_university). Checked by hand on samples
+# of the unmatched strings: research institutes, academies of sciences, learned colleges ("College of Physicians")
+# and street names ("College St") stay out; Indian engineering/pharmacy institutes and a professor's or student's
+# title come in.
+UNIVERSITY_NAME = re.compile(
+    r"univ|universit|universidad|uniwersytet|egyetem|yliopisto|högskola|hogskol|hochschule|polytechn|politecnic|"
+    r"politécnic|escuela|\bcolleg(e|io)\b(?! (st|street|rd|road|ave|avenue)\b)(?! of (physicians|surgeons|"
+    r"general practitioners|american pathologists|cardiology|obstetricians|psychiatrists|anaesthetists|"
+    r"radiologists)\b)|\bfaculty\b|facult[ée] de|fakult|medical school|graduate school|"
+    r"\bschool of (medicine|engineering|dentistry|pharmacy|law|nursing|public health|business|management|economics|"
+    r"education|sciences?|computing|computer|informatics|arts|social|graduate|medical|veterinary|mathematics|physics|"
+    r"chemistry|biological|life|natural|electrical|mechanical|civil|architecture)|"
+    r"institute of (technology|higher education|engineering|pharmac|medical sciences|management|science and tech)|"
+    r"technological institute|\b[ée]cole (normale|polytechnique|centrale|des mines|nationale sup|sup[ée]rieure|"
+    r"pratique des hautes)|\b(eth|epfl|kth|mit|ucla|ucl|lse|ntnu|dtu|kaist|iit|nit)\b|"
+    r"\b(assistant |associate )?professor\b|\blecturer\b|research scholar|\bph\.? ?d\.? (student|candidate)", re.I)
 
 AUTHORS_API = "https://api.openalex.org/authors"
 ORCID_API = "https://pub.orcid.org/v3.0/{}/employments"
@@ -136,6 +182,65 @@ def _insts(raw):
     return [{"name": i.get("display_name"), "country": i.get("country_code"), "type": i.get("type"),
              "id": _short(i.get("id")), "ror": _short(i.get("ror"))}
             for i in raw or [] if i.get("display_name") or i.get("country_code")]
+
+
+def raw_university(institutions, raw_strings):
+    """raw_university for one authorship: '' when an institution is typed 'education' or no raw string names a
+    university, else the first one that does."""
+    if any(i.get("type") in ACADEMIC_TYPES for i in institutions):
+        return ""
+    return next((s for s in raw_strings or [] if s and UNIVERSITY_NAME.search(s)), "")
+
+
+# `titles`: accepting an OpenAlex title-search hit for a no-DOI document (module docstring)
+TITLE_MATCH = 0.82          # retrieve_papers.py's Crossref title bar
+TITLE_RESULTS = 5
+MASTHEAD = re.compile(r"^(title|titre)\s*:\s*|^.*\bcc[ -]by(-[a-z]{2})*\b\s*|"
+                      r"^.*\bauthors and editors from top 500 universities\s*\d*\s*|"
+                      r"^(dissertation|thesis|research article|original article|review article)\s*:?\s+", re.I)
+TITLE_TAIL = re.compile(r"\s*(submitted by|a dissertation|a thesis)\b.*$|[\s*\d†‡]+$", re.I)
+
+
+def clean_title(title):
+    """A text-extracted title without the commonest junk: masthead or licence text before it, a "Title:" prefix,
+    the title printed twice at the end ("X X", "X 23 23 X", "Author X X"), and footnote marks or a "Submitted by"
+    tail after it."""
+    t = html.unescape(title or "").strip()
+    t = MASTHEAD.sub("", t, count=1)
+    words = t.split()
+    low = [w.lower() for w in words]
+    # the title printed twice: its last L words (L >= 3) also just before them, maybe with a page number between
+    n = len(low)
+    cut = next((n - L - g for L in range(n // 2, 2, -1) for g in range(3) if 2 * L + g <= n
+                and low[n - L:] == low[n - 2 * L - g:n - L - g]), n)
+    words = words[:cut]
+    return TITLE_TAIL.sub("", " ".join(words)).strip()
+
+
+def title_query(title):
+    """clean_title() as OpenAlex filter text: punctuation (',' '|' ':' break a filter) to spaces."""
+    return re.sub(r"\s+", " ", re.sub(r"[^\w\s-]|_", " ", clean_title(title))).strip()[:250]
+
+
+def _surnames(names):
+    return {w.lower() for n in names for w in re.findall(r"[^\W\d_]{3,}", n or "")}
+
+
+def best_title_match(title, authors, results):
+    """(work, similarity, accepted) for the best of OpenAlex's title-search results, or (None, 0, False)."""
+    t, mine = clean_title(title).lower().rstrip("."), _surnames(authors)
+    best = (None, 0.0, False)
+    for w in results:
+        ot = (w.get("display_name") or "").lower().rstrip(".")
+        sim = SequenceMatcher(None, t, ot).ratio()
+        # OpenAlex's title inside ours (junk around ours); not ours inside a longer one: a short generic title
+        # ("Mouth Dissolving Tablet: An Overview") sits inside many
+        inside = len(ot.split()) >= 4 and ot in t
+        theirs = _surnames((a.get("author") or {}).get("display_name") for a in w.get("authorships") or [])
+        ok = bool(mine & theirs) and (sim >= TITLE_MATCH or inside)
+        if (ok, sim) > (best[2], best[1]):
+            best = (w, sim, ok)
+    return best
 
 
 def _json(obj):
@@ -201,12 +306,7 @@ class Fetcher:
         for d in batch:
             self.db.execute("insert or replace into oa_works values (?, ?, ?)", (d, int(d in got), now))
             self.db.execute("delete from oa_authorships where doi = ?", (d,))
-            self.db.executemany("insert into oa_authorships (doi, position, author_id, name, institutions, raw) "
-                                "values (?, ?, ?, ?, ?, ?)", [
-                (d, n, _short((a.get("author") or {}).get("id")), (a.get("author") or {}).get("display_name")
-                 or a.get("raw_author_name"), json.dumps(_insts(a.get("institutions")), ensure_ascii=False),
-                 _json(a))
-                for n, a in enumerate(got.get(d, []))])
+            _insert_authorships(self.db, d, got.get(d, []))
         self.db.commit()
 
     def _works_batch(self, batch):
@@ -345,6 +445,18 @@ class Fetcher:
                 break
         msg = f"affiliations: fetched {w} works, {a} authors, {o} ORCID records ({self.calls} OpenAlex calls)"
         return msg + (f"; stopped early: {self.stopped}" if self.stopped else "")
+
+
+def _insert_authorships(db, key, authorships):
+    """oa_authorships rows for one work (key: its DOI, or the gi: key `titles` matched it to)."""
+    rows = []
+    for n, a in enumerate(authorships):
+        insts = _insts(a.get("institutions"))
+        rows.append((key, n, _short((a.get("author") or {}).get("id")), (a.get("author") or {}).get("display_name")
+                     or a.get("raw_author_name"), json.dumps(insts, ensure_ascii=False), _json(a),
+                     raw_university(insts, a.get("raw_affiliation_strings"))))
+    db.executemany("insert into oa_authorships (doi, position, author_id, name, institutions, raw, raw_university) "
+                   "values (?, ?, ?, ?, ?, ?, ?)", rows)
 
 
 def _qs(items):
@@ -653,6 +765,142 @@ def cmd_summary(db, args):
             print(f"  tier {tier}: " + ", ".join(f"{LABELS[r[1]]} {r[2]:,}" for r in leads if r[0] == tier))
 
 
+def title_candidates(db):
+    """[(key, title, author)]: the gi: keys on the ranked side of scored leads not yet looked up by title, best
+    lead first."""
+    return db.execute("""select k, d.title, d.author from (
+                             select case pa.side when 'a' then l.doi_a else l.doi_b end k, min(l.lead_rank) r
+                             from pair_affiliation pa join leads l using (pair_id) where k like 'gi:%' group by k) c
+                         join documents d on d.dkey = substr(c.k, 4)
+                         where not exists (select 1 from oa_title_matches m where m.key = c.k)
+                         order by c.r""").fetchall()
+
+
+class TitleSearch:
+    """OpenAlex title searches from a few threads, one shared rate limit and call budget; a 429 stops the run."""
+
+    def __init__(self, max_calls, workers, session_factory=requests.Session, interval=0.11):
+        self.max_calls, self.workers, self.session_factory = max_calls, workers, session_factory
+        self.limiter, self.local = rp.RateLimiter(interval), threading.local()
+        self.calls, self.stopped, self.lock = 0, None, threading.Lock()
+
+    def one(self, query):
+        """OpenAlex's top results for a title, or None when not asked / failed (left for the next run)."""
+        with self.lock:
+            if self.stopped or self.calls >= self.max_calls:
+                self.stopped = self.stopped or f"--max-calls {self.max_calls} reached"
+                return None
+            self.calls += 1
+        if not hasattr(self.local, "session"):
+            self.local.session = self.session_factory()
+        params = {"filter": f"title.search:{query}", "per-page": TITLE_RESULTS,
+                  "select": "id,doi,display_name,publication_year,type,authorships"}
+        key = os.environ.get(rp.OPENALEX_API_KEY_ENV_VAR)
+        if key:
+            params["api_key"] = key
+        try:
+            resp = rp.http_get(self.local.session, rp.OPENALEX_API, params, rate_limiter=self.limiter,
+                               max_retries=0, timeout=60, logger=log)
+        except rp.RateLimited:
+            self.stopped = "OpenAlex rate limit (429)"
+            return None
+        except rp.RetrievalError as exc:
+            log.warning("OpenAlex title search failed: %s", exc)
+            return None
+        if resp.status_code == 429:
+            self.stopped = "OpenAlex rate limit (429)"
+            return None
+        if resp.status_code != 200:
+            log.warning("OpenAlex HTTP %d for title %r", resp.status_code, query[:60])
+            return [] if resp.status_code == 400 else None     # a query OpenAlex rejects: recorded as no match
+        return resp.json().get("results", [])
+
+    def many(self, queries):
+        with ThreadPoolExecutor(self.workers) as pool:
+            return list(pool.map(self.one, queries))
+
+
+def store_title_matches(db, rows, found):
+    """rows: [(key, title, author, query)]; found: OpenAlex results per row (None: not asked). Returns the keys
+    matched."""
+    now, out, matched = _now(), [], []
+    for (key, title, author, query), res in zip(rows, found):
+        if res is None and query:
+            continue
+        w, sim, ok = best_title_match(title, (author or "").split(";"), res or [])
+        out.append((key, query, None if res is None else len(res), int(ok), w and _short(w.get("id")),
+                    w and rp.normalize_doi(w.get("doi")), w and w.get("display_name"), round(sim, 3), now))
+        if ok:
+            matched.append(key)
+            db.execute("insert or replace into oa_works values (?, 1, ?)", (key, now))
+            db.execute("delete from oa_authorships where doi = ?", (key,))
+            _insert_authorships(db, key, w.get("authorships") or [])
+    db.executemany("insert or replace into oa_title_matches values (?, ?, ?, ?, ?, ?, ?, ?, ?)", out)
+    db.commit()
+    return matched
+
+
+def cmd_titles(db, args):
+    """Look up the no-DOI ranked sides of scored leads by title, store what matches, rescore the leads they're on."""
+    ensure_tables(db)
+    cands = title_candidates(db)[:args.limit or None]
+    log.info("%d no-DOI documents to look up by title", len(cands))
+    search, t0, matched, done = TitleSearch(args.max_calls, args.workers), time.time(), [], 0
+    for i in range(0, len(cands), args.chunk_pairs):
+        rows = [(k, t, a, title_query(t)) for k, t, a in cands[i:i + args.chunk_pairs]]
+        rows = [(k, t, a, q if len(q.split()) >= 3 else "") for k, t, a, q in rows]   # too short to search on
+        found = search.many([q for *_, q in rows if q])
+        it = iter(found)
+        found = [next(it) if q else [] for *_, q in rows]
+        matched += _retry_locked(db, store_title_matches, db, rows, found)
+        done += sum(1 for (*_, q), f in zip(rows, found) if f is not None or not q)
+        log.info("%d/%d looked up, %d matched, %d calls, %.0f min", done, len(cands), len(matched), search.calls,
+                 (time.time() - t0) / 60)
+        if search.stopped:
+            log.info("stopped early: %s (run it again to go on)", search.stopped)
+            break
+    # every match so far, not just this run's: a run stopped before its rescore is caught up by the next one
+    rescore_keys(db, {r[0] for r in db.execute("select key from oa_title_matches where matched = 1")}, args)
+
+
+def rescore_keys(db, keys, args):
+    """Rescore the scored leads with one of these keys on either side (fetching their authors' records)."""
+    if not keys:
+        return
+    rows = [r for r in _retry_locked(db, lead_rows, db, list(LEAD_SETS)) if r[3] in keys or r[4] in keys]
+    log.info("rescoring %d leads on %d newly matched documents", len(rows), len(keys))
+    fetcher, tally = Fetcher(db, args.max_calls, orcid=False), {}
+    for i in range(0, len(rows), 2000):
+        out = _retry_locked(db, score_pairs, db, fetcher, rows[i:i + 2000])
+        if out is None:
+            log.info("rescoring stopped: %s (run `leads --rescore` to finish)", fetcher.stopped)
+            break
+        for r in out:
+            tally[r[5]] = tally.get(r[5], 0) + 1
+    log.info("rescored: %s", ", ".join(f"{LABELS[k]} {v:,}" for k, v in sorted(tally.items())))
+
+
+def cmd_raw_strings(db, args):
+    """Fill oa_authorships.raw_university for rows stored before it existed (--all: every row, after changing
+    UNIVERSITY_NAME). Offline."""
+    ensure_tables(db)
+    cond = "" if args.all else "and raw_university is null"
+    top = db.execute("select max(rowid) from oa_authorships").fetchone()[0] or 0
+    checked = found = 0
+    for lo in range(0, top + 1, 100_000):      # in rowid ranges: `raw` is a whole OpenAlex record per row
+        out = [(raw_university(json.loads(i or "[]"), (json.loads(r) if r else {}).get("raw_affiliation_strings")),
+                rowid) for rowid, i, r in db.execute(f"""select rowid, institutions, raw from oa_authorships
+                                                         where rowid > ? and rowid <= ? {cond}""", (lo, lo + 100_000))]
+        _retry_locked(db, _update_raw_university, db, out)
+        checked, found = checked + len(out), found + sum(1 for u, _ in out if u)
+    log.info("raw-strings: %d authorships checked, %d name a university OpenAlex did not match", checked, found)
+
+
+def _update_raw_university(db, rows):
+    db.executemany("update oa_authorships set raw_university = ? where rowid = ?", rows)
+    db.commit()
+
+
 def cmd_backfill(db, args):
     fetcher = Fetcher(db, args.max_calls, args.orcid)
     got = fetcher.backfill(args.orcid)
@@ -662,7 +910,7 @@ def cmd_backfill(db, args):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
-    ap.add_argument("command", choices=["fetch", "leads", "backfill", "show", "summary"])
+    ap.add_argument("command", choices=["fetch", "leads", "backfill", "show", "summary", "raw-strings", "titles"])
     ap.add_argument("cases", nargs="*", help="show: GI-NN ...")
     ap.add_argument("--db", default=str(gi_db.DB_PATH))
     ap.add_argument("--max-calls", type=int, default=3000,
@@ -671,19 +919,22 @@ def main():
     ap.add_argument("--no-orcid", action="store_true", help="fetch: skip the ORCID employment lookups")
     ap.add_argument("--sets", nargs="+", choices=list(LEAD_SETS), default=list(LEAD_SETS),
                     help="leads: which leads to score (default both)")
-    ap.add_argument("--chunk-pairs", type=int, default=2000, help="leads: pairs per fetch-and-store step")
+    ap.add_argument("--chunk-pairs", type=int, default=2000, help="leads: pairs per fetch-and-store step; titles: documents per step")
     ap.add_argument("--orcid", action="store_true",
                     help="leads: also look up ORCID employments (off: ~1 request per author, days at this size); "
                          "backfill: also refetch stored ORCID records for the full employment history")
     ap.add_argument("--rescore", action="store_true", help="leads: re-rank already scored leads from the cache")
+    ap.add_argument("--workers", type=int, default=4, help="titles: parallel OpenAlex searches")
+    ap.add_argument("--limit", type=int, help="titles: look up at most this many documents")
+    ap.add_argument("--all", action="store_true", help="raw-strings: recheck every row, not just unchecked ones")
     args = ap.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(message)s")
     db = sqlite3.connect(args.db, timeout=300)
     db.row_factory = sqlite3.Row
-    if args.command in ("leads", "backfill") and args.max_calls == 3000:
+    if args.command in ("leads", "backfill", "titles") and args.max_calls == 3000:
         args.max_calls = 400_000      # about $40 past the free 10,000/day
     {"fetch": cmd_fetch, "leads": cmd_leads, "backfill": cmd_backfill, "show": cmd_show,
-     "summary": cmd_summary}[args.command](db, args)
+     "summary": cmd_summary, "raw-strings": cmd_raw_strings, "titles": cmd_titles}[args.command](db, args)
 
 
 if __name__ == "__main__":
