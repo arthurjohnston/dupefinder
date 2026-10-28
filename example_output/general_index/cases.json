@@ -1129,5 +1129,28 @@
   "matched_words": 456,
   "runs": 20,
   "longest": 58
+ },
+ "GI-977": {
+  "file": "GI-977.html",
+  "reported": null,
+  "published": "2026-10-28",
+  "earlier_known": true,
+  "later": {
+   "title": "Pain management after total knee arthroplasty: A prospective randomized study",
+   "year": 2018,
+   "doi": "10.1016/j.jcot.2018.12.005",
+   "pct": 12.0,
+   "journal": "Journal of Clinical Orthopaedics and Trauma"
+  },
+  "earlier": {
+   "title": "Local infiltration of analgesia and sciatic nerve block provide similar pain relief after total knee arthroplasty",
+   "year": 2017,
+   "doi": "10.1186/s13018-017-0616-x",
+   "pct": 11.0,
+   "journal": "Journal of Orthopaedic Surgery and Research"
+  },
+  "matched_words": 382,
+  "runs": 16,
+  "longest": 83
  }
 }
