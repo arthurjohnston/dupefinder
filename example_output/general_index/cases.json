@@ -1152,5 +1152,28 @@
   "matched_words": 382,
   "runs": 16,
   "longest": 83
+ },
+ "GI-891": {
+  "file": "GI-891.html",
+  "reported": "2026-10-28",
+  "published": "2026-10-28",
+  "earlier_known": true,
+  "later": {
+   "title": "Free Radicals Cardiovascular Diseases: An Update",
+   "year": 2011,
+   "doi": "10.5530/ax.2011.1.4",
+   "pct": 47.0,
+   "journal": "Free Radicals and Antioxidants"
+  },
+  "earlier": {
+   "title": "Oxidative Stress as a Mediator of Cardiovascular Disease",
+   "year": 2009,
+   "doi": "10.4161/oxim.2.5.9441",
+   "pct": 26.0,
+   "journal": "Oxidative Medicine and Cellular Longevity"
+  },
+  "matched_words": 1549,
+  "runs": 70,
+  "longest": 44
  }
 }
