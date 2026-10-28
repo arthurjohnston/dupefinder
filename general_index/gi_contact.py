@@ -12,8 +12,10 @@ has an address in journal_contacts.json. ABOUT_ME is the one sentence about who 
 earlier article's authors).
 """
 import email.message
+import html
 import json
 import mimetypes
+import re
 import subprocess
 from pathlib import Path
 
@@ -83,9 +85,9 @@ def journal_contact(doi, data, get=None):
 
 def _plain_cite(p):
     """Title (Year), Journal, https://doi.org/... for a plain-text email (the journal when it's known)."""
-    title = (p["title"] or p["doi"] or "").replace("*", "")
+    title = html.unescape(p["title"] or p["doi"] or "").replace("*", "")   # metadata can carry &amp; etc.
     year = f" ({p['year']})" if p["year"] else ""
-    journal = f", {p['journal']}" if p.get("journal") else ""
+    journal = f", {html.unescape(p['journal'])}" if p.get("journal") else ""
     link = doi_url(p["doi"])
     return f"{title}{year}{journal}" + (f", {link}" if link else "")
 
@@ -96,11 +98,30 @@ EMAIL_AUDIENCES = ("publisher", "institution", "authors", "source-publisher")
 def institutions(fd):
     """The later authors' institutions from the case's contacts.json (fd["case_contacts"]["institution"]): one
     entry, or a list of them (one email each), each {to, cc, name, authors: [the later article's authors at that
-    institution, as printed], source, checked, notes}. [] when there's none."""
+    institution, as printed], source, checked, notes}. An entry with "current": true is where those authors are
+    now rather than on the byline, with "published_at" the byline institution; its email says so. [] when
+    there's none."""
     inst = (fd.get("case_contacts") or {}).get("institution")
     if isinstance(inst, dict):
         return [inst]
     return [i for i in inst if isinstance(i, dict)] if isinstance(inst, list) else []
+
+
+# integrity / ethics offices in the languages the cases have met (intégrité, etica, etika, ombudsperson for good
+# research practice, bones pràctiques ...); a research office or vice-rector for research is a fallback
+INTEGRITY_WORDS = re.compile(r"int[eé]gri[td]|misconduct|\bethic|\betic|\betik|ombuds|good (?:scientific|research) "
+                             r"practice|gute[rn]? wissenschaftliche|bones ?pr[aà]ctiques|buenas pr[aá]cticas|"
+                             r"research governance|\brio\b", re.I)
+
+
+def integrity_office(contact):
+    """Whether an institutions() entry's address is a research integrity or ethics office, so the email can
+    simply ask it to look into this; anything else (a registrar, a dean, an IRB, a general info@) is a
+    fallback and its email asks to be forwarded. The entry's "integrity": true / false decides when given,
+    else its name and address do (INTEGRITY_WORDS)."""
+    if isinstance(contact.get("integrity"), bool):
+        return contact["integrity"]
+    return bool(INTEGRITY_WORDS.search(f"{contact.get('name') or ''} {contact.get('to') or ''}"))
 
 
 def name_list(names):
@@ -151,14 +172,12 @@ def _email_intro(audience, fd, contact=None):
     When the later article's journal has no address (journal_reported()), nobody is told I've written to it."""
     first, second = fd["first"], fd["second"]
     known = fd["earlier_known"]
-    later = '"' + (second["title"] or second["doi"] or "").replace("*", "") + '"'   # quoted, for the subjects
-    earlier = '"' + (first["title"] or first["doi"] or "").replace("*", "") + '"'
-    doi = f" (doi:{second['doi']})" if doi_url(second["doi"]) else ""
+    earlier = '"' + html.unescape(first["title"] or first["doi"] or "").replace("*", "") + '"'   # quoted, for the authors' subject
     share = second["pct"] or 0
     data = bool(fd.get("data_extra"))
     same = shared_authors(fd)
     reported = journal_reported(fd)
-    journal = second.get("journal") or "the journal that published the " + ("later" if known else "first") + " article"
+    journal = html.unescape(second.get("journal") or "") or "the journal that published the " + ("later" if known else "first") + " article"
     if data:
         verb = "to report the same results data as"
     elif same:
@@ -169,13 +188,13 @@ def _email_intro(audience, fd, contact=None):
     whose_earlier = " by other authors" if distinct else " that shares authors with it" if same else ""
     pair = ("two articles, published the same year, that share extensive " + ("results data and text" if data
             else "text") + ". Which one came first can't be told from the publication years.")
-    if data:
-        subject = (f"Results data in {later}{doi} appear to match an earlier article" if known
-                   else f"Results data in {later}{doi} appear to match another article")
-    elif same:
-        subject = f"Possible redundant publication: {later}{doi}"
-    else:
-        subject = f"Text overlap in {later}{doi}"
+    def subject_for(paper):
+        """The subject for the later article's journal and the institutions: short, naming the recipient's
+        connection rather than the title (the body has the title and DOI)."""
+        if data:
+            return f"Research integrity concern: results data in {paper}"
+        return f"Possible redundant publication: {paper}" if same else f"Research integrity concern: {paper}"
+    subject = subject_for("a paper you published")
     if audience == "publisher":
         return ("[the journal's editor, or the publisher's research integrity contact]",
                 subject, "Dear Editor,",
@@ -183,13 +202,37 @@ def _email_intro(audience, fd, contact=None):
                  f"{whose_earlier}." if known else f"I am writing about {pair} The first is in your journal."],
                 "I would be grateful if you could look into this and let me know what you decide.")
     if audience == "institution":
-        names = name_list((contact or {}).get("authors") or [])
-        whose = f"{names}, affiliated with your institution" if names else "authors affiliated with your institution"
-        return ("", subject, "Dear Research Integrity Officer,",
-                [f"I am writing about an article by {whose}, which appears "
-                 f"{verb} an earlier article{whose_earlier}." if known else
-                 f"I am writing about {pair} The first is by {whose}."]
-                + (["I have written to the journal that published it as well."] if reported else []),
+        contact = contact or {}
+        authors = contact.get("authors") or []
+        names = name_list(authors)
+        if contact.get("current"):   # where the author is now, not where the article was written
+            plural = len(authors) != 1
+            whose = (f"{names}, who {'are' if plural else 'is'} now affiliated with your institution" if names
+                     else "authors now affiliated with your institution")
+            then = contact.get("published_at")
+            when = (f" It was published while they were at {then}"
+                    if then else " It was published before they joined your institution")
+            told = [i.get("name") for i in institutions(fd)
+                    if i.get("to") and not i.get("current") and i.get("name")]
+            opening = ([f"I am writing about an article by {whose}.{when}, and appears {verb} an earlier "
+                        f"article{whose_earlier}." if known else
+                        f"I am writing about {pair} The first is by {whose}.{when}."]
+                       + ([f"I have also written to {name_list(told)}."] if told else []))
+        else:
+            whose = (f"{names}, affiliated with your institution" if names
+                     else "authors affiliated with your institution")
+            opening = [f"I am writing about an article by {whose}, which appears "
+                       f"{verb} an earlier article{whose_earlier}." if known else
+                       f"I am writing about {pair} The first is by {whose}."]
+        opening += ["I have written to the journal that published it as well."] if reported else []
+        subject = subject_for("a paper by someone associated with your institution")
+        if not integrity_office(contact):   # a fallback address: ask for it to go to the right people
+            return ("", subject, "Dear Sir or Madam,",
+                    opening + ["I couldn't find a research integrity contact for your institution, so I am "
+                               "writing to this address instead."],
+                    "Could you please forward this to the people at your institution who handle research "
+                    "integrity or research misconduct allegations, and let me know who it has gone to?")
+        return ("", subject, "Dear Research Integrity Officer,", opening,
                 "I would be grateful if you could look into this under your institution's research integrity "
                 "procedures, and could you let me know that this has reached the right office?")
     if audience == "authors":
@@ -225,8 +268,8 @@ def _email_intro(audience, fd, contact=None):
                      f"publisher of the {role} article."]
             request = (f"I would be grateful if you could raise it with {journal}, as you may be better placed "
                        f"to reach them.")
-        return ("", f"Text from {earlier} in an article in another journal" if known
-                    else f"Text overlap between {earlier} and an article in another journal",
+        return ("", "Text from a paper you published, reused in another journal" if known
+                    else "Text overlap between a paper you published and one in another journal",
                 "Dear Editor,", lines, request)
     raise ValueError(f"unknown audience {audience!r} (use: {', '.join(EMAIL_AUDIENCES)})")
 

@@ -4,6 +4,19 @@ Handoff for the next session, written 2026-10-06 ~05:30 after the overnight run.
 (every measurement, each filter rule and why it exists, dead ends) is in `PILOT_FINDINGS.md`; this
 file is the short version.
 
+## Done: emails to the later authors' current institutions (2026-10-26 to 2026-10-28)
+
+Institution emails now go to both the institution on the copying article's byline and each later author's
+current institution where it differs (the gi-cases agent's Contacts section; `"current": true` entries in
+contacts.json, only on evidence tied to that person). An institution with no integrity-office address gets a
+fallback address, and its email asks to be forwarded (gi_contact.integrity_office()). Medium cases email the
+institutions only when 50%+ of the later article is shared (gi_report_case.MEDIUM_INSTITUTION_PCT); high
+cases email everyone. Subjects read "Research integrity concern: a paper you published / a paper by someone
+associated with your institution". The 71 older cases were backfilled with gi_backfill_current.py, and on
+2026-10-28 the user reported every draft sent; each case's notes.md `## Sent` lists them. For later cases
+this happens during normal prep; `gi_backfill_current.py --review` rebuilds the checking list and the
+links page if they're needed again.
+
 ## Affiliation coverage: state and how to continue (2026-10-28)
 
 Goal: know which leads' papers have a university behind them. `../.venv/bin/python3 gi_affiliations.py coverage`

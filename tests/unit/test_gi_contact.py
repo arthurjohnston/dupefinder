@@ -22,7 +22,7 @@ def body(f=None, **kw):
 class TestEmail(unittest.TestCase):
     def test_later_known(self):
         subject, e = body(fd(passages=12), attachment="GI-1-x.html", shot_name="GI-1-longest.jpg")
-        self.assertEqual(subject, 'Text overlap in "New paper" (doi:10.2/new)')
+        self.assertEqual(subject, "Research integrity concern: a paper you published")
         self.assertTrue(e.startswith("Dear Editor,\n\n" + gc.ABOUT_ME + " I am writing about an article in your journal"))
         self.assertIn("Later article: New paper (2015), https://doi.org/10.2/new", e)
         self.assertIn("Earlier article: Old [paper] (2011), https://doi.org/10.1/old", e)
@@ -72,6 +72,55 @@ class TestEmail(unittest.TestCase):
         self.assertEqual(gc.recipients("institution", f, inst), ("rio@u.example", ""))
         self.assertEqual(len(gc.institutions(f)), 2)
         self.assertIn("by authors affiliated with your institution", body(audience="institution")[1])
+
+    def test_html_entities_in_metadata_are_decoded(self):
+        f = fd()
+        f["second"] = {**f["second"], "title": "Data &amp; models", "journal": "Computer Science &amp; IT"}
+        e = body(f)[1]
+        self.assertIn("Data & models", e)
+        self.assertIn("Computer Science & IT", e)
+        self.assertNotIn("&amp;", e)
+
+    def test_fallback_address_asks_to_forward(self):
+        rio = {"to": "integrity@u.example", "name": "Research Integrity Office, University U", "authors": ["A. One"]}
+        dean = {"to": "dean@v.example", "name": "Office of the Dean, Faculty of Medicine", "authors": ["A. One"]}
+        self.assertTrue(gc.integrity_office(rio))
+        self.assertFalse(gc.integrity_office(dean))
+        self.assertTrue(gc.integrity_office({**dean, "integrity": True}))
+        self.assertFalse(gc.integrity_office({"to": "irb@cshs.org", "name": "Institutional Review Board"}))
+        for name, to in (("Université Paris Cité, Comité d'intégrité scientifique", "ris@u-paris.fr"),
+                         ("Università Politecnica delle Marche, Commissione Etica", "commissione.etica@sm.univpm.it"),
+                         ("Riga Stradins University", "etikaskomisija@rsu.lv"),
+                         ("Universität Wien, Ombudsstelle zur Sicherung guter wissenschaftlicher Praxis", "o@univie.ac.at"),
+                         ("Lund University (Deviations from Good Research Practice Review Board)", "a@rektor.lu.se")):
+            self.assertTrue(gc.integrity_office({"name": name, "to": to}), name)
+        for name, to in (("University of Pavia, Rector", "rettore@unipv.it"),
+                         ("Tangail Medical College", "tangailmc@ac.dghs.gov.bd"),
+                         ("University of Nicosia, Research & Innovation Office", "research@unic.ac.cy")):
+            self.assertFalse(gc.integrity_office({"name": name, "to": to}), name)
+        e = body({**fd(), "case_contacts": {"institution": [dean]}}, audience="institution", contact=dean)[1]
+        self.assertIn("Dear Sir or Madam,", e)
+        self.assertIn("Could you please forward this to the people at your institution who handle research "
+                      "integrity", e)
+        e = body({**fd(), "case_contacts": {"institution": [rio]}}, audience="institution", contact=rio)[1]
+        self.assertIn("Dear Research Integrity Officer,", e)
+        self.assertNotIn("forward", e)
+
+    def test_current_institution_says_where_it_was_written(self):
+        byline = {"to": "rio@u.example", "name": "University U", "authors": ["A. One"]}
+        now = {"to": "rio@v.example", "name": "University V", "authors": ["A. One"], "current": True,
+               "published_at": "University U"}
+        f = {**fd(), "case_contacts": {"institution": [byline, now]}}
+        e = body(f, audience="institution", contact=now)[1]
+        self.assertIn("an article by A. One, who is now affiliated with your institution. It was published "
+                      "while they were at University U, and appears", e)
+        self.assertIn("I have also written to University U.", e)
+        self.assertEqual(body(f, audience="institution", contact=now)[0],
+                         "Research integrity concern: a paper by someone associated with your institution")
+        self.assertEqual(body(f, audience="institution", contact=byline)[0],
+                         "Research integrity concern: a paper by someone associated with your institution")
+        self.assertEqual(gc.recipients("institution", f, now), ("rio@v.example", ""))
+        self.assertNotIn("now affiliated", body(f, audience="institution", contact=byline)[1])
         self.assertEqual(gc.name_list(["A", "B"]), "A and B")
 
     def test_victims_greeted_by_name(self):
@@ -107,7 +156,7 @@ class TestEmail(unittest.TestCase):
         f = {**fd(pct_later=20.0), "case": "GI-535", "data_extra": ["Table 1 has the same means."],
              "extra": ["A typo is carried over."]}
         subject, e = body(f)
-        self.assertEqual(subject, 'Results data in "New paper" (doi:10.2/new) appear to match an earlier article')
+        self.assertEqual(subject, "Research integrity concern: results data in a paper you published")
         self.assertIn("appears to report the same results data as an earlier article by other authors.", e)
         order = [e.index(t) for t in ("Table 1 has the same", "A typo", "About 20%", "share no names")]
         self.assertEqual(order, sorted(order))   # data, other findings (share under half), share, checks
@@ -125,7 +174,7 @@ class TestEmail(unittest.TestCase):
         self.assertTrue(gc.shared_authors(f))
         self.assertFalse(gc.shared_authors(fd()))
         subject, e = body(f)
-        self.assertEqual(subject, 'Possible redundant publication: "New paper" (doi:10.2/new)')
+        self.assertEqual(subject, "Possible redundant publication: a paper you published")
         self.assertIn("appears to be largely a republication of an earlier article that shares authors with it.", e)
 
     def test_table_extracts_skipped(self):

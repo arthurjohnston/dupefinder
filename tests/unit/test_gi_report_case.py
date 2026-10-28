@@ -48,7 +48,10 @@ class TestSeverity(unittest.TestCase):
     def test_only_high_gets_every_email(self):
         import gi_contact
         self.assertEqual(gi_report.audiences("high"), gi_contact.EMAIL_AUDIENCES)
-        for sev in ("low", "medium", None):
+        self.assertEqual(gi_report.audiences("medium"), ("publisher",))   # no share known
+        self.assertEqual(gi_report.audiences("medium", {"second": {"pct": 50}}), ("publisher", "institution"))
+        self.assertEqual(gi_report.audiences("medium", {"second": {"pct": 49.9}}), ("publisher",))
+        for sev in ("low", None):
             self.assertEqual(gi_report.audiences(sev), ("publisher",))
         same = fd(byline="byline overlap: A. One")   # don't write to the authors who reused their own text
         self.assertNotIn("authors", gi_report.audiences("high", same))
@@ -161,7 +164,7 @@ class TestCompose(unittest.TestCase):
             arg = gi_report.compose_arg(eml)
             body = d / "compose" / "GI-1-email-publisher.txt"
             self.assertTrue(body.read_text().startswith("Dear Editor,"))
-            self.assertIn('subject=\'Text overlap in "It\u2019s new, really" (doi:10.2/new)\'', arg)
+            self.assertIn("subject='Research integrity concern: a paper you published'", arg)
             self.assertIn(f"message='{body}'", arg)
             self.assertIn("from='me@example.org'", arg)
             self.assertIn("to='ed@new.example'", arg)

@@ -133,7 +133,8 @@ CHOICES = [
     ("no problem", "text recycling", "same authors, acceptable reuse of their own text"),
     ("no problem", "legitimate reuse", "declared extension, quoted and cited, reprint"),
     ("no problem", "same paper", "one work under two records"),
-    ("no problem", "shared third source", "both quote or reuse a third document"),
+    ("no problem", "shared third source",
+     "both quote or reuse a third document, or the authors worked together on a shared project"),
     ("no problem", "boilerplate", "standard wording, templates, forms"),
     ("no problem", "shared citations", "the overlap is reference lists"),
     ("no problem", "artifact", "wrong PDF, extraction or index error"),
@@ -607,8 +608,9 @@ def edit_note(initial=""):
 
 
 def ask_severity(pair, decision, type_=None):
-    """Enter gives DEFAULT_SEVERITY (SELF_SEVERITY for a SELF_TYPES type), whatever the agent said: high also
-    writes the emails to the victims and the institution (gi_report_case.audiences()), so it has to be chosen.
+    """Enter gives DEFAULT_SEVERITY (SELF_SEVERITY for a SELF_TYPES type), whatever the agent said: medium also
+    writes the emails to the later authors' institutions (when half the later article is shared), high to the victims as well
+    (gi_report_case.audiences()), so it has to be chosen.
     "none" for a no-problem verdict."""
     if decision == "no problem":
         return "none"
@@ -932,7 +934,9 @@ HEADLESS_PROMPT = ("Prep {case}: follow \"Prep a case\" in your instructions. Th
                    "writing in the case's folder and journal_contacts.json. Don't run gi_report_case.py: the "
                    "review tool writes the report files when the user confirms. Do look up the later authors' "
                    "institutions' research integrity officers (one contacts.json entry per institution, with "
-                   "the later authors there) and the earlier article's byline names, and write contacts.json "
+                   "the later authors there), the same for each later author's current institution where it "
+                   "differs from the byline (\"current\": true, only on evidence tied to that person, see "
+                   "Contacts) and the earlier article's byline names, and write contacts.json "
                    "(see Contacts): an institution without an address there gets no email. End with one line saying what "
                    "you concluded, e.g. '4 findings proposed, contacts found' or 'not a case: already "
                    "retracted'.")
