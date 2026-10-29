@@ -1175,5 +1175,28 @@
   "matched_words": 1549,
   "runs": 70,
   "longest": 44
+ },
+ "GI-817": {
+  "file": "GI-817.html",
+  "reported": null,
+  "published": "2026-10-28",
+  "earlier_known": true,
+  "later": {
+   "title": "Endangering the endangered: Are protected areas save havens for threatened species in Cameroon? Case of Banyang-Mbo Wildlife Sanctuary, South Western Cameroon",
+   "year": 2014,
+   "doi": "10.5897/jene2013.0430",
+   "pct": 12.0,
+   "journal": "Journal of Ecology and The Natural Environment"
+  },
+  "earlier": {
+   "title": "Hunting for Livelihood in Northeast Gabon: Patterns, Evolution, and Sustainability",
+   "year": 2008,
+   "doi": "10.5751/ES-02560-130233",
+   "pct": 12.0,
+   "journal": "Ecology and Society"
+  },
+  "matched_words": 829,
+  "runs": 32,
+  "longest": 74
  }
 }
