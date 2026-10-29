@@ -1198,5 +1198,28 @@
   "matched_words": 829,
   "runs": 32,
   "longest": 74
+ },
+ "GI-148": {
+  "file": "GI-148.html",
+  "reported": "2026-10-28",
+  "published": "2026-10-28",
+  "earlier_known": true,
+  "later": {
+   "title": "Pre-Emptive Analgesic Effect of Intravenous Paracetamol in Modified radical mastectomy",
+   "year": 2018,
+   "doi": "10.3126/njc.v2i1.25646",
+   "pct": 48.0,
+   "journal": "Nepalese Journal of Cancer"
+  },
+  "earlier": {
+   "title": "A Study on Pre-Emptive Analgesic Effect of Intravenous Paracetamol in Functional Endoscopic Sinus Surgeries: A Randomized, Double-Blinded Clinical Study",
+   "year": 2014,
+   "doi": "10.7860/JCDR/2014/7016.3922",
+   "pct": 70.0,
+   "journal": "Journal of Clinical and Diagnostic Research"
+  },
+  "matched_words": 1293,
+  "runs": 48,
+  "longest": 142
  }
 }
