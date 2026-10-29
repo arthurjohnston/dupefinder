@@ -1244,5 +1244,28 @@
   "matched_words": 526,
   "runs": 30,
   "longest": 51
+ },
+ "GI-962": {
+  "file": "GI-962.html",
+  "reported": null,
+  "published": "2026-10-29",
+  "earlier_known": true,
+  "later": {
+   "title": "Undifferentiated pleomorphic sarcoma with osteoclast-like giant cells of the female breast",
+   "year": 2013,
+   "doi": "10.1186/1477-7819-11-21",
+   "pct": 14.0,
+   "journal": "World Journal of Surgical Oncology"
+  },
+  "earlier": {
+   "title": "Undifferentiated Pleomorphic Sarcoma of the Male Breast Causing Diagnostic Challenges",
+   "year": 2011,
+   "doi": "10.4048/jbc.2011.14.3.241",
+   "pct": 15.0,
+   "journal": "Journal of Breast Cancer"
+  },
+  "matched_words": 438,
+  "runs": 22,
+  "longest": 73
  }
 }
