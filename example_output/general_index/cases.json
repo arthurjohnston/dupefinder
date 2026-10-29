@@ -1221,5 +1221,28 @@
   "matched_words": 1293,
   "runs": 48,
   "longest": 142
+ },
+ "GI-810": {
+  "file": "GI-810.html",
+  "reported": "2026-10-28",
+  "published": "2026-10-28",
+  "earlier_known": true,
+  "later": {
+   "title": "Hypoxia-induced brain cell damage in male albino wistar rat",
+   "year": 2017,
+   "doi": "10.1016/j.sjbs.2017.03.018",
+   "pct": 22.0,
+   "journal": "Saudi Journal of Biological Sciences"
+  },
+  "earlier": {
+   "title": "Normobaric hypoxia-induced brain damage in wistar rat",
+   "year": 2009,
+   "doi": "10.4236/jbise.2009.28092",
+   "pct": 20.0,
+   "journal": "Journal of Biomedical Science and Engineering"
+  },
+  "matched_words": 526,
+  "runs": 30,
+  "longest": 51
  }
 }
