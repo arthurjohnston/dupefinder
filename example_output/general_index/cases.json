@@ -1267,5 +1267,28 @@
   "matched_words": 438,
   "runs": 22,
   "longest": 73
+ },
+ "GI-145": {
+  "file": "GI-145.html",
+  "reported": "2026-10-29",
+  "published": "2026-10-29",
+  "earlier_known": true,
+  "later": {
+   "title": "Comparative Study between Primary Closure and T-tube Drainage after Open Choledochotomy",
+   "year": 2017,
+   "doi": "10.3329/medtoday.v29i1.33853",
+   "pct": 76.0,
+   "journal": "Medicine Today"
+  },
+  "earlier": {
+   "title": "Advances in Bioscience & Clinical Medicine Comparison between primary closure and T-tube drainage after open choledocotomy",
+   "year": 2015,
+   "doi": "10.7575/aiac.abcmed.15.03.04.06",
+   "pct": 66.0,
+   "journal": "Advances in Bioscience and Clinical Medicine"
+  },
+  "matched_words": 1377,
+  "runs": 33,
+  "longest": 124
  }
 }
