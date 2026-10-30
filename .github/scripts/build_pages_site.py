@@ -26,7 +26,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "general_index"))
 import gi_site_index  # noqa: E402
 
-TITLE = "Text-overlap results"
+TITLE = "Text-overlap results"   # the page's heading and <title> add the total: "Text-overlap results: 173 pairs"
 GI_SECTION = "## General Index pairs reported"   # README.md's pointer to general_index/: the tables replace it
 
 STYLE = """
@@ -67,8 +67,6 @@ th { color: var(--ink-muted); font-weight: 600; white-space: nowrap; }
 td.num { white-space: nowrap; font-variant-numeric: tabular-nums; }
 td.art { min-width: 18rem; }
 .prototype td:nth-child(3), .prototype td:nth-last-child(-n+2) { white-space: nowrap; font-variant-numeric: tabular-nums; }
-.prototype td:nth-child(2) { min-width: 34rem; }
-.prototype td:nth-child(2) a { overflow-wrap: anywhere; }
 """
 
 
@@ -93,20 +91,20 @@ def front_page(readme, cases):
     gi = len(cases)
     reported = sum(1 for c in cases.values() if c.get("reported"))
     proto = prototype_count(readme)
+    title = f"{TITLE}: {gi + proto} pairs"
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{html.escape(TITLE)}</title>
+<title>{html.escape(title)}</title>
 <style>{STYLE}</style>
 </head>
 <body>
 <main>
-<h1>{html.escape(TITLE)}</h1>
-<p class="counts"><strong>{gi + proto}</strong> pairs of articles with measured text overlap:
-<strong>{gi}</strong> from the General Index scan ({reported} of them reported to the journal) and
-<strong>{proto}</strong> from the prototype.</p>
+<h1>{html.escape(title)}</h1>
+<p class="counts"><strong>{gi}</strong> from the General Index ({reported} reported) &middot;
+<strong>{proto}</strong> from the prototype</p>
 <h2 id="general-index">General Index ({gi})</h2>
 {gi_site_index.INTRO_HTML}
 {gi_site_index.tables_html(cases, prefix="general_index/", level=3)}

@@ -13,24 +13,17 @@ import json
 from pathlib import Path
 
 INDEX_GROUPS = (
-    ("data", "Copied data",
-     "Pairs where what's shared includes results data (tables, figures' values), not only text; reported or not."),
-    ("reported", "Reported: copied text", "Reported to the journal concerned."),
-    ("unreported", "Not reported",
-     "Published so the comparison is public, but not reported: judged not worth a report, or not reported yet."),
+    ("data", "Copied data", "Results data shared (table values, patient numbers), not just text."),
+    ("reported", "Reported: copied text", "Reported to the journal."),
+    ("unreported", "Not reported", "Public, but not reported to the journal."),
 )
 
-INTRO_HTML = """<p>Pairs of articles found by this project's scan of the
-<a href="https://archive.org/details/GeneralIndex">General Index</a> (word n-grams from over 100 million
-articles), checked against both articles' full text, and reported to the journal concerned, except those marked
-"not reported" (published so the comparison is public). Each page shows the measured overlap: the shared
-passages as printed in both articles, side by side, with the shared words highlighted. "Shared text" is the
-share of each article's words that fall inside a run of 10 or more matching words (allowing substituted words
-within a run). A page shows measured text overlap; it does not establish why the overlap exists, and none of
-these pages is a finding of misconduct by any named person.</p>
-<p>Where the publication years differ, the later article is listed first. Where they are the same, which
-came first is unknown and the order means nothing. Each table is sorted by the larger of the two shared-text
-figures, highest first.</p>"""
+INTRO_HTML = """<p>Found by scanning the <a href="https://archive.org/details/GeneralIndex">General Index</a>
+(word n-grams from over 100 million articles), then checked against both articles' full text. Each page shows
+the shared passages as printed in both articles. "Shared text" is the share of each article's words inside a
+run of 10+ matching words. Measured overlap only: not a finding of misconduct.</p>
+<p>The later article is listed first; where the years are the same, the order means nothing. Tables are sorted
+by the larger shared-text figure.</p>"""
 
 INDEX_STYLE = """
 :root {
