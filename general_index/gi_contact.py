@@ -3,7 +3,7 @@ authors' institution, the earlier article's authors and the earlier article's pu
 
 The wording is here: _email_intro() has what differs per recipient (subject, greeting, why I'm writing, the
 request at the end), email_parts() the body they share. email_message() makes a draft .eml of one, with the
-comparison page and the longest passage's image attached; gi_report_case.py writes the four for a case.
+comparison page and the longest passage's image attached (and, for copied data, the largest shared table's); gi_report_case.py writes the four for a case.
 
 The findings come from gi_pubpeer.findings(), so an email states the same measurements as the PubPeer
 Markdown. When the publication years are the same, none of them says who copied whom. A ticked [data]
@@ -288,7 +288,7 @@ def readable(passage):
 
 
 def email_parts(fd, attachment, shot_name=None, examples=EMAIL_PASSAGES, audience="publisher",
-                name=None, contact=None):
+                name=None, contact=None, table_name=None):
     """(subject, body) of a plain-text email about the pair to one of EMAIL_AUDIENCES. The body, in order:
     greeting, who I am (ABOUT_ME) and why I'm writing, the two articles, the findings, what's attached, extracts of the `examples` longest readable passages
     (the journal's email only), the request, and the sign-off with `name` (default your git user.name).
@@ -335,6 +335,10 @@ def email_parts(fd, attachment, shot_name=None, examples=EMAIL_PASSAGES, audienc
         lines.append(f"- {shot_name}: the longest shared passage of running text, as printed in both articles "
                      f"({'earlier article left, later right' if known else 'order unknown'}), the shared words "
                      f"highlighted.")
+    if table_name:
+        lines.append(f"- {table_name}: the largest shared table, as printed in both articles "
+                     f"({'earlier article left, later right' if known else 'order unknown'}), the shared words and "
+                     f"values highlighted.")
     shown = [p for p in fd["passages"] if readable(p)][:examples] if length == FULL else []
     if shown:
         n = len(shown)
@@ -380,10 +384,14 @@ def email_message(fd, attachments, examples=EMAIL_PASSAGES, audience="publisher"
     """email_parts() as a draft .eml message: To and Cc from recipients() (empty when nobody has filled in
     the journal's contact yet, and always for the institution and the authors), From `sender` when given,
     X-Unsent: 1 so a mail client opens it as a draft, and `attachments` (paths) attached. The body names
-    attachments[0] as the comparison page and attachments[1], if any, as the image."""
+    attachments[0] as the comparison page, one named *-table.jpg as the largest shared table and any other as
+    the longest passage's image."""
     attachments = [Path(a) for a in attachments]
-    subject, body = email_parts(fd, attachments[0].name, attachments[1].name if len(attachments) > 1 else None,
-                                examples=examples, audience=audience, name=name, contact=contact)
+    tables = [a.name for a in attachments[1:] if a.name.endswith("-table.jpg")]
+    shots = [a.name for a in attachments[1:] if not a.name.endswith("-table.jpg")]
+    subject, body = email_parts(fd, attachments[0].name, shots[0] if shots else None,
+                                examples=examples, audience=audience, name=name, contact=contact,
+                                table_name=tables[0] if tables else None)
     to, cc = recipients(audience, fd, contact)
     msg = email.message.EmailMessage()
     msg["To"] = to

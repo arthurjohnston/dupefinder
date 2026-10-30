@@ -280,6 +280,22 @@ class TestEmailMessage(unittest.TestCase):
         self.assertEqual((m2["To"], m2["Cc"]), ("ed@new.example", "x@y"))
         self.assertEqual(files, {"GI-1-comparison.html": "text/html", "GI-1-longest.jpg": "image/jpeg"})
 
+    def test_table_attachment(self):
+        with tempfile.TemporaryDirectory() as d:
+            page, jpg, table = (Path(d) / n for n in ("GI-1-comparison.html", "GI-1-longest.jpg", "GI-1-table.jpg"))
+            page.write_text("<p>x</p>")
+            jpg.write_bytes(b"\xff\xd8\xff\xd9")
+            table.write_bytes(b"\xff\xd8\xff\xd9")
+            msg = gc.email_message(fd(), [page, jpg, table], audience="publisher")
+            only_table = gc.email_message(fd(), [page, table], audience="publisher")
+        text = msg.get_body(("plain",)).get_content()
+        self.assertIn("- GI-1-longest.jpg: the longest shared passage", text)
+        self.assertIn("- GI-1-table.jpg: the largest shared table, as printed in both articles", text)
+        self.assertEqual(len(list(msg.iter_attachments())), 3)
+        text = only_table.get_body(("plain",)).get_content()
+        self.assertNotIn("longest shared passage of running text", text)   # the table isn't taken for the passage
+        self.assertIn("- GI-1-table.jpg: the largest shared table", text)
+
 
 if __name__ == "__main__":
     unittest.main()
