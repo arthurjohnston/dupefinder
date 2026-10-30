@@ -54,8 +54,8 @@
   "reported": "2026-10-15",
   "published": "2026-10-15",
   "earlier_known": true,
-  "type": "data copying",
-  "data": true,
+  "type": "cross-author copying",
+  "data": false,
   "later": {
    "title": "Predictors of mental distress among undergraduate health science students of Hawassa University, College of Medicine and Health Sciences, Hawassa, SNNPR, Ethiopia: a cross-sectional study",
    "year": 2020,
@@ -757,8 +757,8 @@
   "reported": "2026-10-24",
   "published": "2026-10-24",
   "earlier_known": true,
-  "type": "data copying",
-  "data": true,
+  "type": "cross-author copying",
+  "data": false,
   "later": {
    "title": "HOW ACCURATELY PHYSICIANS MEASURE BLOOD PRESSURE-AN OBSERVATIONAL STUDY IN ENAM MEDICAL COLLEGE AND HOSPITAL, SAVAR",
    "year": 2013,
