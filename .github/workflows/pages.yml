@@ -8,6 +8,7 @@ on:
     paths:
       - "example_output/**"
       - ".github/scripts/build_pages_site.py"
+      - "general_index/gi_site_index.py"
       - ".github/workflows/pages.yml"
   workflow_dispatch:
 
