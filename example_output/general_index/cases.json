@@ -1336,5 +1336,28 @@
   "matched_words": 1990,
   "runs": 54,
   "longest": 164
+ },
+ "GI-854": {
+  "file": "GI-854.html",
+  "reported": "2026-10-30",
+  "published": "2026-10-30",
+  "earlier_known": true,
+  "later": {
+   "title": "Mortality attributable to tobacco: review of different methods",
+   "year": 2014,
+   "doi": "10.1186/2049-3258-72-22",
+   "pct": 25.0,
+   "journal": "Archives of Public Health"
+  },
+  "earlier": {
+   "title": "Methodologies used to estimate tobacco-attributable mortality: a review",
+   "year": 2008,
+   "doi": "10.1186/1471-2458-8-22",
+   "pct": 20.0,
+   "journal": "BMC Public Health"
+  },
+  "matched_words": 1023,
+  "runs": 44,
+  "longest": 71
  }
 }
