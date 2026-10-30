@@ -1313,5 +1313,28 @@
   "matched_words": 2838,
   "runs": 138,
   "longest": 111
+ },
+ "GI-08": {
+  "file": "GI-08.html",
+  "reported": "2026-10-30",
+  "published": "2026-10-30",
+  "earlier_known": true,
+  "later": {
+   "title": "Clinical Outcomes for Radial Artery Versus Saphenous Vein in Coronary Artery Bypass Graft Surgery",
+   "year": 2018,
+   "doi": "10.3329/uhj.v13i1.36885",
+   "pct": 64.0,
+   "journal": "University Heart Journal"
+  },
+  "earlier": {
+   "title": "Radial artery vs saphenous vein graft used as the second conduit for surgical myocardial revascularization: long-term clinical follow-up",
+   "year": 2015,
+   "doi": "10.1186/s13019-015-0331-9",
+   "pct": 59.0,
+   "journal": "Journal of Cardiothoracic Surgery"
+  },
+  "matched_words": 1990,
+  "runs": 54,
+  "longest": 164
  }
 }
