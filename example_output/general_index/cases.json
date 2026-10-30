@@ -4,6 +4,8 @@
   "reported": "2026-10-13",
   "published": "2026-10-13",
   "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
   "later": {
    "title": "Antibiotic-resistanceStaphylococcus aureusisolated from cow’s milk in the Hawassa area, South Ethiopia",
    "year": 2012,
@@ -25,7 +27,10 @@
  "GI-428": {
   "file": "GI-428.html",
   "reported": "2026-10-13",
+  "published": "2026-10-13",
   "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
   "later": {
    "title": "Effect of SP600125 on the mitotic spindle in HeLa Cells, leading to mitotic arrest, endoreduplication and apoptosis",
    "year": 2016,
@@ -47,7 +52,10 @@
  "GI-493": {
   "file": "GI-493.html",
   "reported": "2026-10-15",
+  "published": "2026-10-15",
   "earlier_known": true,
+  "type": "data copying",
+  "data": true,
   "later": {
    "title": "Predictors of mental distress among undergraduate health science students of Hawassa University, College of Medicine and Health Sciences, Hawassa, SNNPR, Ethiopia: a cross-sectional study",
    "year": 2020,
@@ -71,6 +79,8 @@
   "reported": null,
   "published": "2026-10-16",
   "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
   "later": {
    "title": "Validation of the Spanish Version of the ICECAP-O for Nursing Home Residents with Dementia",
    "year": 2017,
@@ -94,6 +104,8 @@
   "reported": null,
   "published": "2026-10-16",
   "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
   "later": {
    "title": "Dextrocardia and asplenia in situs inversus totalis in a baby: a case report",
    "year": 2014,
@@ -117,6 +129,8 @@
   "reported": null,
   "published": "2026-10-16",
   "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
   "later": {
    "title": "Successful balloon valvuloplasty of a subpulmonic membrane associated with cor triatriatum dexter: a case report",
    "year": 2019,
@@ -140,6 +154,8 @@
   "reported": null,
   "published": "2026-10-16",
   "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
   "later": {
    "title": "Transcriptome Sequencing and De Novo Analysis for Ma Bamboo (Dendrocalamus latiflorus Munro) Using the Illumina Platform",
    "year": 2012,
@@ -163,6 +179,8 @@
   "reported": null,
   "published": "2026-10-17",
   "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
   "later": {
    "title": "Effect of active fraction isolated from the leaf extract ofDregea volubilis[Linn.] Benth. on plasma glucose concentration and lipid profile in streptozotocin-induced diabetic rats",
    "year": 2013,
@@ -186,6 +204,8 @@
   "reported": null,
   "published": "2026-10-17",
   "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
   "later": {
    "title": "Ontology integration to identify protein complex in protein interaction networks",
    "year": 2011,
@@ -209,6 +229,8 @@
   "reported": null,
   "published": "2026-10-17",
   "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
   "later": {
    "title": "A novel polyomavirus from the nasal cavity of a giant panda (Ailuropoda melanoleuca)",
    "year": 2017,
@@ -232,6 +254,8 @@
   "reported": "2026-10-17",
   "published": "2026-10-17",
   "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
   "later": {
    "title": "Role-Based-Access-Control: A Novel Approach",
    "year": 2015,
@@ -255,6 +279,8 @@
   "reported": "2026-10-17",
   "published": "2026-10-17",
   "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
   "later": {
    "title": "Dynamic analysis of squat shear wall using nonlinear finite element method",
    "year": 2014,
@@ -278,6 +304,8 @@
   "reported": "2026-10-17",
   "published": "2026-10-17",
   "earlier_known": true,
+  "type": "data copying",
+  "data": true,
   "later": {
    "title": "A Processing Algorithm with some User-Defined Parameters",
    "year": 2014,
@@ -301,6 +329,8 @@
   "reported": null,
   "published": "2026-10-17",
   "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
   "later": {
    "title": "Independent English Learning through the Internet",
    "year": 2011,
@@ -324,6 +354,8 @@
   "reported": "2026-10-17",
   "published": "2026-10-17",
   "earlier_known": false,
+  "type": "data copying",
+  "data": true,
   "later": {
    "title": "Management of neglected femur neck fractures treated with non vascularised fibular graft",
    "year": 2018,
@@ -347,6 +379,8 @@
   "reported": null,
   "published": "2026-10-17",
   "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
   "later": {
    "title": "Inter-observer agreement according to malaria parasite density",
    "year": 2013,
@@ -370,6 +404,8 @@
   "reported": "2026-10-17",
   "published": "2026-10-17",
   "earlier_known": true,
+  "type": "data copying",
+  "data": true,
   "later": {
    "title": "A Study on the Wastewater Treatment from Antibiotic Production",
    "year": 2014,
@@ -393,6 +429,8 @@
   "reported": null,
   "published": "2026-10-17",
   "earlier_known": false,
+  "type": "cross-author copying",
+  "data": false,
   "later": {
    "title": "Haemorrhagic Fevers â Getting ready: viewpoints from Kenyan Public Health Practioners",
    "year": 2015,
@@ -416,6 +454,8 @@
   "reported": null,
   "published": "2026-10-17",
   "earlier_known": false,
+  "type": "cross-author copying",
+  "data": false,
   "later": {
    "title": "Imaging of cerebral aneurysms: a clinical perspective",
    "year": 2016,
@@ -439,6 +479,8 @@
   "reported": "2026-10-19",
   "published": "2026-10-19",
   "earlier_known": false,
+  "type": "cross-author copying",
+  "data": false,
   "later": {
    "title": "A comparative study of parapharyngeal space tumors over a 7 year period experience in tertiary care hospital",
    "year": 2018,
@@ -462,6 +504,8 @@
   "reported": "2026-10-19",
   "published": "2026-10-19",
   "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
   "later": {
    "title": "Hypothyroidism - A New View On An Old Disease",
    "year": 2017,
@@ -485,6 +529,8 @@
   "reported": "2026-10-19",
   "published": "2026-10-19",
   "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
   "later": {
    "title": "Clinical measurement of tooth wear: Tooth Wear Indices",
    "year": 2012,
@@ -508,6 +554,8 @@
   "reported": "2026-10-20",
   "published": "2026-10-20",
   "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
   "later": {
    "title": "Emergency Cesarean Delivery in a Guillain- Barre Syndrome Patient",
    "year": 2016,
@@ -531,6 +579,8 @@
   "reported": "2026-10-20",
   "published": "2026-10-20",
   "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
   "later": {
    "title": "Translators and Interpreters Certification in Australia, Canada, the Usа and Ukraine: Comparative Analysis",
    "year": 2014,
@@ -554,6 +604,8 @@
   "reported": "2026-10-27",
   "published": "2026-10-21",
   "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
   "later": {
    "title": "A NEUTROSOPHIC DESCRIPTION LOGIC",
    "year": 2008,
@@ -577,6 +629,8 @@
   "reported": null,
   "published": "2026-10-22",
   "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
   "later": {
    "title": "CASE REPORT Rare Thoracolumbar Facet Synovial Cyst Presenting as Paraparesis",
    "year": 2015,
@@ -600,6 +654,8 @@
   "reported": "2026-10-22",
   "published": "2026-10-22",
   "earlier_known": true,
+  "type": "data copying",
+  "data": true,
   "later": {
    "title": "Factors Determining Pakistani Medical Students’ Career Preference for General Practice Residency Training",
    "year": 2018,
@@ -623,6 +679,8 @@
   "reported": null,
   "published": "2026-10-23",
   "earlier_known": false,
+  "type": "cross-author copying",
+  "data": false,
   "later": {
    "title": "Deep wound infection after a trochanteric fracture internal fixation presenting with hip dislocation: a case report",
    "year": 2010,
@@ -646,6 +704,8 @@
   "reported": "2026-10-23",
   "published": "2026-10-23",
   "earlier_known": true,
+  "type": "data copying",
+  "data": true,
   "later": {
    "title": "A Comparative Study of Benefits and Drawbacks of Dispensing the Exact Number of Pills",
    "year": 2018,
@@ -669,6 +729,8 @@
   "reported": "2026-10-23",
   "published": "2026-10-23",
   "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
   "later": {
    "title": "Effect of Toxic Metals on Human Health",
    "year": 2010,
@@ -685,13 +747,18 @@
   },
   "matched_words": 688,
   "runs": 13,
-  "longest": 143
+  "longest": 143,
+  "sources": 2,
+  "union_words": 1736,
+  "union_pct": 40.2
  },
  "GI-110": {
   "file": "GI-110.html",
   "reported": "2026-10-24",
   "published": "2026-10-24",
   "earlier_known": true,
+  "type": "data copying",
+  "data": true,
   "later": {
    "title": "HOW ACCURATELY PHYSICIANS MEASURE BLOOD PRESSURE-AN OBSERVATIONAL STUDY IN ENAM MEDICAL COLLEGE AND HOSPITAL, SAVAR",
    "year": 2013,
@@ -715,6 +782,8 @@
   "reported": null,
   "published": "2026-10-24",
   "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
   "later": {
    "title": "Correlation of Ultrasound Parameters with Serum Creatinine in Renal Parenchymal Disease",
    "year": 2019,
@@ -738,6 +807,8 @@
   "reported": null,
   "published": "2026-10-24",
   "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
   "later": {
    "title": "Weight Management for Athletes: Important Things to be Considered",
    "year": 2017,
@@ -761,6 +832,8 @@
   "reported": "2026-10-24",
   "published": "2026-10-24",
   "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
   "later": {
    "title": "EDCAM: Early Detection Congestion Avoidance Mechanism for Wireless Sensor Network",
    "year": 2010,
@@ -784,6 +857,8 @@
   "reported": "2026-10-25",
   "published": "2026-10-25",
   "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
   "later": {
    "title": "Hereditary Gastric Cancer: Review of Literature",
    "year": 2013,
@@ -807,6 +882,8 @@
   "reported": "2026-10-25",
   "published": "2026-10-25",
   "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
   "later": {
    "title": "Pharmaco-economics analysis, as a strategy on facilitating choices between health and non-health programs in the establishment of the national health care system",
    "year": 2013,
@@ -830,6 +907,8 @@
   "reported": null,
   "published": "2026-10-25",
   "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
   "later": {
    "title": "[IEEE 2017 11th International Conference on Software, Knowledge, Information Management and Applications (SKIMA) - Malabe, Sri Lanka (2017.12.6-2017.12.8)] 2017 11th International Conference on Software, Knowledge, Information Management and Applications (SKIMA) - A review of CPS 5 components architecture for manufacturing based on standards",
    "year": 2017,
@@ -856,6 +935,8 @@
   "reported": null,
   "published": "2026-10-25",
   "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
   "later": {
    "title": "Identifying economic periods and crisis with",
    "year": 2010,
@@ -879,6 +960,8 @@
   "reported": null,
   "published": "2026-10-25",
   "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
   "later": {
    "title": "Smart Textiles and Nano-Technology: A General Overview",
    "year": 2015,
@@ -902,6 +985,8 @@
   "reported": "2026-10-25",
   "published": "2026-10-25",
   "earlier_known": true,
+  "type": "data copying",
+  "data": true,
   "later": {
    "title": "The Synergic Scheduling Optimization and Effectiveness Evaluation Model for Multi-types Generation Resources Considering Emission Constraints",
    "year": 2016,
@@ -925,6 +1010,8 @@
   "reported": null,
   "published": "2026-10-26",
   "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
   "later": {
    "title": "Correlation Between Orthodontic Forces and Root Resorption – a Systematic Review of the Literature",
    "year": 2016,
@@ -948,6 +1035,8 @@
   "reported": null,
   "published": "2026-10-26",
   "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
   "later": {
    "title": "Axillary lymphadenectomy for breast cancer in elderly patients and fibrin glue",
    "year": 2013,
@@ -971,6 +1060,8 @@
   "reported": null,
   "published": "2026-10-26",
   "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
   "later": {
    "title": "Automatic structure discovery for varying-coefficient partially linear models",
    "year": 2016,
@@ -994,6 +1085,8 @@
   "reported": "2026-10-26",
   "published": "2026-10-26",
   "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
   "later": {
    "title": "Effect of broth from meat of linseed‐fed cattle on glucose‐stimulated insulin release in healthy male volunteers",
    "year": 2019,
@@ -1017,6 +1110,8 @@
   "reported": null,
   "published": "2026-10-27",
   "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
   "later": {
    "title": "Adult primary paratesticular mesenchymal tumors with emphasis on a case presentation and discussion of spermatic cord leiomyosarcoma",
    "year": 2014,
@@ -1040,6 +1135,8 @@
   "reported": null,
   "published": "2026-10-27",
   "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
   "later": {
    "title": "Laparoscopic distal pancreatectomy in elderly patients: is it safe?",
    "year": 2016,
@@ -1066,6 +1163,8 @@
   "reported": "2026-10-27",
   "published": "2026-10-27",
   "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
   "later": {
    "title": "Can early introduction of specialized palliative care limit intensive care, emergency and hospital admissions in patients with severe and very severe COPD? a randomized study",
    "year": 2014,
@@ -1089,6 +1188,8 @@
   "reported": null,
   "published": "2026-10-27",
   "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
   "later": {
    "title": "Color stability of esthetic restorative materials: a spectrophotometric analysis",
    "year": 2016,
@@ -1112,6 +1213,8 @@
   "reported": null,
   "published": "2026-10-28",
   "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
   "later": {
    "title": "Sepsis Biomarkers in Neonates and Children: C-Reactive Protein and Procalcitonin",
    "year": 2017,
@@ -1135,6 +1238,8 @@
   "reported": null,
   "published": "2026-10-28",
   "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
   "later": {
    "title": "Pain management after total knee arthroplasty: A prospective randomized study",
    "year": 2018,
@@ -1158,6 +1263,8 @@
   "reported": "2026-10-28",
   "published": "2026-10-28",
   "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
   "later": {
    "title": "Free Radicals Cardiovascular Diseases: An Update",
    "year": 2011,
@@ -1181,6 +1288,8 @@
   "reported": null,
   "published": "2026-10-28",
   "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
   "later": {
    "title": "Endangering the endangered: Are protected areas save havens for threatened species in Cameroon? Case of Banyang-Mbo Wildlife Sanctuary, South Western Cameroon",
    "year": 2014,
@@ -1204,6 +1313,8 @@
   "reported": "2026-10-28",
   "published": "2026-10-28",
   "earlier_known": true,
+  "type": "data copying",
+  "data": true,
   "later": {
    "title": "Pre-Emptive Analgesic Effect of Intravenous Paracetamol in Modified radical mastectomy",
    "year": 2018,
@@ -1227,6 +1338,8 @@
   "reported": "2026-10-28",
   "published": "2026-10-28",
   "earlier_known": true,
+  "type": "data copying",
+  "data": true,
   "later": {
    "title": "Hypoxia-induced brain cell damage in male albino wistar rat",
    "year": 2017,
@@ -1250,6 +1363,8 @@
   "reported": null,
   "published": "2026-10-29",
   "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
   "later": {
    "title": "Undifferentiated pleomorphic sarcoma with osteoclast-like giant cells of the female breast",
    "year": 2013,
@@ -1273,6 +1388,8 @@
   "reported": "2026-10-29",
   "published": "2026-10-29",
   "earlier_known": true,
+  "type": "data copying",
+  "data": true,
   "later": {
    "title": "Comparative Study between Primary Closure and T-tube Drainage after Open Choledochotomy",
    "year": 2017,
@@ -1296,6 +1413,8 @@
   "reported": "2026-10-30",
   "published": "2026-10-30",
   "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
   "later": {
    "title": "A hybrid iterative method for a common solution of variational inequalities, generalized mixed equilibrium problems, and hierarchical fixed point problems",
    "year": 2015,
@@ -1319,6 +1438,8 @@
   "reported": "2026-10-30",
   "published": "2026-10-30",
   "earlier_known": true,
+  "type": "data copying",
+  "data": true,
   "later": {
    "title": "Clinical Outcomes for Radial Artery Versus Saphenous Vein in Coronary Artery Bypass Graft Surgery",
    "year": 2018,
@@ -1342,6 +1463,8 @@
   "reported": "2026-10-30",
   "published": "2026-10-30",
   "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
   "later": {
    "title": "Mortality attributable to tobacco: review of different methods",
    "year": 2014,
@@ -1359,5 +1482,608 @@
   "matched_words": 1023,
   "runs": 44,
   "longest": 71
+ },
+ "GI-03": {
+  "file": "GI-03.html",
+  "reported": null,
+  "published": "2026-10-30",
+  "earlier_known": true,
+  "type": "data copying",
+  "data": true,
+  "later": {
+   "title": "Sleep Apnea in Children May Affect Brain Development",
+   "year": 2017,
+   "doi": "10.18535/jmscr/v5i3.217",
+   "pct": 92.0,
+   "journal": "Journal of Medical Science And clinical Research"
+  },
+  "earlier": {
+   "title": "Childhood Obstructive Sleep Apnea Associates with Neuropsychological Deficits and Neuronal Brain Injury",
+   "year": 2006,
+   "doi": "10.1371/journal.pmed.0030301",
+   "pct": 33.0,
+   "journal": "PLoS Medicine"
+  },
+  "matched_words": 2845,
+  "runs": 49,
+  "longest": 250
+ },
+ "GI-06": {
+  "file": "GI-06.html",
+  "reported": null,
+  "published": "2026-10-30",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Assessment of postoperative analgesia after intraperitoneal instillation of lornoxicam in laparoscopic appendectomy: a randomized study",
+   "year": 2018,
+   "doi": "10.18203/2349-2902.isj20183202",
+   "pct": 88.0,
+   "journal": "International Surgery Journal"
+  },
+  "earlier": {
+   "title": "A RANDOMIZED SINGLE BLIND CONTROLLED TRIAL TO ASSESS POSTOPERATIVE ANALGESIA AFTER INTRAPERITONEAL INSTILLATION OF LORNOXICAM IN LAPAROSCOPIC APPENDECTOMY",
+   "year": 2015,
+   "doi": "10.14260/jemds/2015/1484",
+   "pct": 73.0,
+   "journal": "Journal of Evolution of Medical and Dental Sciences"
+  },
+  "matched_words": 2616,
+  "runs": 36,
+  "longest": 601
+ },
+ "GI-09": {
+  "file": "GI-09.html",
+  "reported": null,
+  "published": "2026-10-30",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Study of Implementation of Image Analysis with Hardware and Software Co-Design on the Xilinx Platform",
+   "year": 2016,
+   "doi": "10.20431/2349-4050.0305001",
+   "pct": 92.0,
+   "journal": "International Journal of Innovative Research in Electronics and Communications"
+  },
+  "earlier": {
+   "title": "Real-Time System Implementation for Image Processing with Hardware/Software Co-design on the Xilinx Zynq Platform",
+   "year": 2015,
+   "doi": "10.7763/ijiee.2015.v5.582",
+   "pct": 69.0,
+   "journal": "International Journal of Information and Electronics Engineering"
+  },
+  "matched_words": 1952,
+  "runs": 32,
+  "longest": 280
+ },
+ "GI-15": {
+  "file": "GI-15.html",
+  "reported": null,
+  "published": "2026-10-30",
+  "earlier_known": true,
+  "type": "data copying",
+  "data": true,
+  "later": {
+   "title": "EVALUATION OF NEUROPHARMACOLOGICAL, ANTIBACTERIAL AND ANTINOCICEPTIVE ACTIVITY OF METHANOLIC EXTRACT OF THE BARK OF CYNOMETRA RAMIFLORA LINN. (LEGUMINOSAE)",
+   "year": 2013,
+   "doi": "10.7897/2277-4343.04220",
+   "pct": 34.0,
+   "journal": "International Journal of Research in Ayurveda and Pharmacy"
+  },
+  "earlier": {
+   "title": "Antinociceptive and neuropharmacological activities of ethanolic extract of the fruits of Ficus hispida Linn.",
+   "year": 2012,
+   "doi": "10.5897/AJPP12.870",
+   "pct": 36.0,
+   "journal": "African Journal of Pharmacy and Pharmacology"
+  },
+  "matched_words": 1400,
+  "runs": 40,
+  "longest": 133
+ },
+ "GI-37": {
+  "file": "GI-37.html",
+  "reported": null,
+  "published": "2026-10-30",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Structural analysis of hubs in human NR-RTK network",
+   "year": 2011,
+   "doi": "10.1186/1745-6150-6-49",
+   "pct": 18.0,
+   "journal": "Biology Direct"
+  },
+  "earlier": {
+   "title": "Structural interpretation of protein-protein interaction network",
+   "year": 2010,
+   "doi": "10.1186/1472-6807-10-s1-s4",
+   "pct": 15.0,
+   "journal": "BMC Structural Biology"
+  },
+  "matched_words": 677,
+  "runs": 20,
+  "longest": 188
+ },
+ "GI-49": {
+  "file": "GI-49.html",
+  "reported": null,
+  "published": "2026-10-30",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Lumbar Degenerative Disc Disease: Clinical Presentation and Treatment Approaches",
+   "year": 2016,
+   "doi": "10.9790/0853-1508051223",
+   "pct": 88.0,
+   "journal": "IOSR Journal of Dental and Medical Sciences"
+  },
+  "earlier": {
+   "title": "Lumbar spondylosis: clinical presentation and treatment approaches",
+   "year": 2009,
+   "doi": "10.1007/s12178-009-9051-x",
+   "pct": 94.0,
+   "journal": "Current Reviews in Musculoskeletal Medicine"
+  },
+  "matched_words": 5727,
+  "runs": 59,
+  "longest": 442
+ },
+ "GI-50": {
+  "file": "GI-50.html",
+  "reported": null,
+  "published": "2026-10-30",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Medical tourism's impact for health systems: A study from three Asian countries",
+   "year": 2015,
+   "doi": "10.5281/zenodo.376815",
+   "pct": 88.0,
+   "journal": null
+  },
+  "earlier": {
+   "title": "Medical tourism and policy implications for health systems: a conceptual framework from a comparative study of Thailand, Singapore and Malaysia",
+   "year": 2011,
+   "doi": "10.1186/1744-8603-7-12",
+   "pct": 76.0,
+   "journal": "Globalization and Health"
+  },
+  "matched_words": 5675,
+  "runs": 131,
+  "longest": 238
+ },
+ "GI-52": {
+  "file": "GI-52.html",
+  "reported": null,
+  "published": "2026-10-30",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Intelligent Systems and Applications",
+   "year": 2012,
+   "doi": "10.5815/ijisa.2013.01.06",
+   "pct": 92.0,
+   "journal": "International Journal of Intelligent Systems and Applications"
+  },
+  "earlier": {
+   "title": "A New Transmission Control Protocol for Satellite Networks",
+   "year": 2011,
+   "doi": "10.4236/ijcns.2011.44031",
+   "pct": 84.0,
+   "journal": "International Journal of Communications, Network and System Sciences"
+  },
+  "matched_words": 5275,
+  "runs": 75,
+  "longest": 505
+ },
+ "GI-54": {
+  "file": "GI-54.html",
+  "reported": null,
+  "published": "2026-10-30",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Multiple Access Technologies for Beyond 3G Wireless Cellular Systems",
+   "year": 2013,
+   "doi": "10.9790/3021-03763745",
+   "pct": 81.0,
+   "journal": "IOSR Journal of Engineering"
+  },
+  "earlier": {
+   "title": "A tutorial on multiple access technologies for beyond 3G mobile networks",
+   "year": 2005,
+   "doi": "10.1109/mcom.2005.1391509",
+   "pct": 89.0,
+   "journal": "IEEE Communications Magazine"
+  },
+  "matched_words": 4649,
+  "runs": 69,
+  "longest": 348
+ },
+ "GI-59": {
+  "file": "GI-59.html",
+  "reported": null,
+  "published": "2026-10-30",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Evolution of Reovirus in Cancer Therapy",
+   "year": 2017,
+   "doi": "10.9790/3008-1204010614",
+   "pct": 89.0,
+   "journal": "IOSR Journal of Pharmacy and Biological Sciences"
+  },
+  "earlier": {
+   "title": "Reovirus in cancer therapy: an evidence-based review",
+   "year": 2014,
+   "doi": "10.2147/ov.s51321",
+   "pct": 79.0,
+   "journal": "Oncolytic Virotherapy"
+  },
+  "matched_words": 3652,
+  "runs": 73,
+  "longest": 157
+ },
+ "GI-60": {
+  "file": "GI-60.html",
+  "reported": null,
+  "published": "2026-10-30",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Evolution of Reovirus in Cancer Therapy",
+   "year": 2017,
+   "doi": "10.9790/3008-1204016270",
+   "pct": 89.0,
+   "journal": "IOSR Journal of Pharmacy and Biological Sciences"
+  },
+  "earlier": {
+   "title": "Reovirus in cancer therapy: an evidence-based review",
+   "year": 2014,
+   "doi": "10.2147/ov.s51321",
+   "pct": 79.0,
+   "journal": "Oncolytic Virotherapy"
+  },
+  "matched_words": 3652,
+  "runs": 73,
+  "longest": 157
+ },
+ "GI-64": {
+  "file": "GI-64.html",
+  "reported": null,
+  "published": "2026-10-30",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Teaching New Vocabulary to Young Learners: Using Two Methods Total Physical Response and Keyword Method",
+   "year": 2017,
+   "doi": "10.11591/ijere.v6i2.7593",
+   "pct": 90.0,
+   "journal": "International Journal of Evaluation and Research in Education (IJERE)"
+  },
+  "earlier": {
+   "title": "Teaching Young FL Learners New Vocabulary: A Comparison between the Efficiency of Keyword Method and Total Physical Response",
+   "year": 2016,
+   "doi": "10.5539/ijel.v6n6p1",
+   "pct": 90.0,
+   "journal": "International Journal of English Linguistics"
+  },
+  "matched_words": 3397,
+  "runs": 48,
+  "longest": 414
+ },
+ "GI-76": {
+  "file": "GI-76.html",
+  "reported": null,
+  "published": "2026-10-30",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Bulletin of Electrical Engineering and Informatics Organic Semiconductor and Transistor Electrical Characteristic Based on Carbon Nanotubes 1",
+   "year": 2016,
+   "doi": "10.11591/eei.v5i1.551",
+   "pct": 90.0,
+   "journal": "Bulletin of Electrical Engineering and Informatics"
+  },
+  "earlier": {
+   "title": "The effect of carbon nanotube/organic semiconductor interfacial area on the performance of organic transistors",
+   "year": 2012,
+   "doi": "10.1063/1.4769439",
+   "pct": 95.0,
+   "journal": "Applied Physics Letters"
+  },
+  "matched_words": 2754,
+  "runs": 46,
+  "longest": 277
+ },
+ "GI-80": {
+  "file": "GI-80.html",
+  "reported": null,
+  "published": "2026-10-30",
+  "earlier_known": false,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "A Survey on Recommendation System",
+   "year": 2017,
+   "doi": "10.5120/ijca2017913081",
+   "pct": 77.0,
+   "journal": "International Journal of Computer Applications"
+  },
+  "earlier": {
+   "title": "A Survey Paper on Various Algorithm's based Recommender System",
+   "year": 2017,
+   "doi": "10.9790/0661-1903042732",
+   "pct": 94.0,
+   "journal": "IOSR Journal of Computer Engineering"
+  },
+  "matched_words": 2660,
+  "runs": 19,
+  "longest": 454
+ },
+ "GI-89": {
+  "file": "GI-89.html",
+  "reported": null,
+  "published": "2026-10-30",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Fixation of Distal Radius Fractures with Diaphyseal Involvement 410",
+   "year": 2014,
+   "doi": "10.5455/ijmsph.2014.260120142",
+   "pct": 88.0,
+   "journal": "International Journal of Medical Science and Public Health"
+  },
+  "earlier": {
+   "title": "Distal radius fractures with diaphyseal involvement: fixation with fixed angle volar plate",
+   "year": 2011,
+   "doi": "10.1007/s10195-011-0147-x",
+   "pct": 76.0,
+   "journal": "Journal of Orthopaedics and Traumatology"
+  },
+  "matched_words": 2434,
+  "runs": 39,
+  "longest": 242
+ },
+ "GI-97": {
+  "file": "GI-97.html",
+  "reported": null,
+  "published": "2026-10-30",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "MULTIPLE PROJECT ENVIRONMENTS AND MANAGEMENT CHALLENGES",
+   "year": 2018,
+   "doi": "10.20472/iac.2018.038.012",
+   "pct": 93.0,
+   "journal": "Proceedings of the 38th International Academic Conference, Prague"
+  },
+  "earlier": {
+   "title": "Management Challenges within Multiple Project Environments: Lessons for Developing Countries",
+   "year": 2013,
+   "doi": "10.5130/ajceb-cs.v1i2.3163",
+   "pct": 56.0,
+   "journal": "Australasian Journal of Construction Economics and Building - Conference Series"
+  },
+  "matched_words": 2265,
+  "runs": 13,
+  "longest": 422
+ },
+ "GI-101": {
+  "file": "GI-101.html",
+  "reported": null,
+  "published": "2026-10-30",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Dynamic Passwords Using Graphics",
+   "year": 2016,
+   "doi": "10.9790/0661-1805026973",
+   "pct": 88.0,
+   "journal": "IOSR Journal of Computer Engineering"
+  },
+  "earlier": {
+   "title": "Authentication Schemes for Session Passwords using Color and Images",
+   "year": 2011,
+   "doi": "10.5121/ijnsa.2011.3308",
+   "pct": 79.0,
+   "journal": "International Journal of Network Security &amp; Its Applications"
+  },
+  "matched_words": 2213,
+  "runs": 54,
+  "longest": 132
+ },
+ "GI-119": {
+  "file": "GI-119.html",
+  "reported": null,
+  "published": "2026-10-30",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "How to Improve the Teaching of Translation: A Constructivist Perspective",
+   "year": 2018,
+   "doi": "10.2991/essd-18.2018.37",
+   "pct": 93.0,
+   "journal": "Proceedings of the 2018 International Conference on Education Science and Social Development (ESSD 2018)"
+  },
+  "earlier": {
+   "title": "Constructivism Theory and Translation Teaching",
+   "year": 2017,
+   "doi": "10.2991/hss-17.2017.2",
+   "pct": 79.0,
+   "journal": "Proceedings of the 2017 2nd International Conference on Humanities and Social Science (HSS 2017)"
+  },
+  "matched_words": 1916,
+  "runs": 29,
+  "longest": 196
+ },
+ "GI-128": {
+  "file": "GI-128.html",
+  "reported": null,
+  "published": "2026-10-30",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "How to Improve the Participation and Subjectivity of English Teaching",
+   "year": 2017,
+   "doi": "10.2991/mse-17.2017.30",
+   "pct": 64.0,
+   "journal": "Proceedings of the 3rd Annual 2017 International Conference on Management Science and Engineering (MSE 2017)"
+  },
+  "earlier": {
+   "title": "On Students' Subjectivity in English Teaching",
+   "year": 2016,
+   "doi": "10.2991/hss-26.2016.19",
+   "pct": 90.0,
+   "journal": "Proceedings of the 2016 International Conference on Humanities and Social Science"
+  },
+  "matched_words": 1682,
+  "runs": 16,
+  "longest": 234
+ },
+ "GI-129": {
+  "file": "GI-129.html",
+  "reported": null,
+  "published": "2026-10-30",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "An Extensible Anti-Virus Framework Design Scheme",
+   "year": 2016,
+   "doi": "10.2991/ceis-16.2016.99",
+   "pct": 93.0,
+   "journal": "Proceedings of the 2016 International Conference on Computer Engineering and Information Systems"
+  },
+  "earlier": {
+   "title": "Design of An Extensible Anti-Virus Framework",
+   "year": 2015,
+   "doi": "10.2991/icitmi-15.2015.140",
+   "pct": 95.0,
+   "journal": "Proceedings of the 4th International Conference on Information Technology and Management Innovation"
+  },
+  "matched_words": 1679,
+  "runs": 22,
+  "longest": 294
+ },
+ "GI-144": {
+  "file": "GI-144.html",
+  "reported": null,
+  "published": "2026-10-30",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Sharp geometrical properties of a-rarefied sets via fixed point index for the Schrödinger operator equations",
+   "year": 2015,
+   "doi": "10.1186/s13663-015-0342-1",
+   "pct": 50.0,
+   "journal": "Fixed Point Theory and Applications"
+  },
+  "earlier": {
+   "title": "Rarefied sets at infinity associated with the Schrödinger operator",
+   "year": 2014,
+   "doi": "10.1186/1029-242X-2014-247",
+   "pct": 45.0,
+   "journal": "Journal of Inequalities and Applications"
+  },
+  "matched_words": 1378,
+  "runs": 46,
+  "longest": 160
+ },
+ "GI-227": {
+  "file": "GI-227.html",
+  "reported": null,
+  "published": "2026-10-30",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "The Use of Renewable Materials in Interior Design",
+   "year": 2016,
+   "doi": "10.2991/essaeme-16.2016.191",
+   "pct": 42.0,
+   "journal": "Proceedings of the 2016 International Conference on Economics, Social Science, Arts, Education and Management Engineering"
+  },
+  "earlier": {
+   "title": "Application of the Interior Decoration Materials in Environmental Engineering Section Two: The ground adornment material",
+   "year": 2015,
+   "doi": "10.2991/icimm-15.2015.4",
+   "pct": 96.0,
+   "journal": "Advances in Engineering Research"
+  },
+  "matched_words": 2054,
+  "runs": 15,
+  "longest": 346
+ },
+ "GI-647": {
+  "file": "GI-647.html",
+  "reported": null,
+  "published": "2026-10-30",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Fournier’s gangrene at a tertiary health facility in northwestern Tanzania: a single centre experiences with 84 patients",
+   "year": 2015,
+   "doi": "10.1186/s13104-015-1493-1",
+   "pct": 9.0,
+   "journal": "BMC Research Notes"
+  },
+  "earlier": {
+   "title": "Fournier’s gangrene: our experience with 50 patients and analysis of factors affecting mortality",
+   "year": 2013,
+   "doi": "10.1186/1749-7922-8-13",
+   "pct": 15.0,
+   "journal": "World Journal of Emergency Surgery"
+  },
+  "matched_words": 412,
+  "runs": 23,
+  "longest": 39
+ },
+ "GI-949": {
+  "file": "GI-949.html",
+  "reported": null,
+  "published": "2026-10-30",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Risperidone Long-Acting Injection: Safety and Efficacy in Elderly Patients with Schizophrenia",
+   "year": 2011,
+   "doi": "10.4137/jcnsd.s4125",
+   "pct": 10.0,
+   "journal": "Journal of Central Nervous System Disease"
+  },
+  "earlier": {
+   "title": "Efficacy and safety of risperidone long-acting injection in elderly people with schizophrenia",
+   "year": 2009,
+   "doi": "10.2147/cia.s3252",
+   "pct": 21.0,
+   "journal": "Clinical Interventions in Aging"
+  },
+  "matched_words": 533,
+  "runs": 26,
+  "longest": 46,
+  "sources": 2,
+  "union_words": 993,
+  "union_pct": 17.8
  }
 }

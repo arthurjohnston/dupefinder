@@ -25,7 +25,9 @@
 body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.6 var(--font-body); }
 main { max-width: 1300px; margin: 0 auto; padding: 2.5rem 16px 5rem; }
 main > p { max-width: 78ch; }
-h1 { font-family: var(--font-display); line-height: 1.2; font-size: 2.2rem; margin: 0 0 1rem; }
+h1, h2 { font-family: var(--font-display); line-height: 1.2; }
+h1 { font-size: 2.2rem; margin: 0 0 1rem; }
+h2 { font-size: 1.4rem; margin: 2.5rem 0 0.5rem; border-bottom: 1px solid var(--border); padding-bottom: .3rem; }
 a { color: var(--accent-strong); }
 .table-wrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; }
 table { border-collapse: collapse; width: 100%; font-size: .9rem; }
@@ -41,70 +43,24 @@ td.art { min-width: 18rem; }
 <p>Pairs of articles found by this project's scan of the
 <a href="https://archive.org/details/GeneralIndex">General Index</a> (word n-grams from over 100 million
 articles), checked against both articles' full text, and reported to the journal concerned, except those marked
-"not reported" (judged not worth a report, but published so the comparison is public). Each page shows
-the measured overlap: the shared passages side by side with the differences marked, and the longest one as
-printed in both articles. "Shared text" is the share of each article's words that fall inside a run of 10 or
+"not reported" (published so the comparison is public). Each page shows the measured overlap: the shared
+passages as printed in both articles, side by side, with the shared words highlighted. "Shared text" is the share of each article's words that fall inside a run of 10 or
 more matching words (allowing substituted words within a run). A page shows measured text overlap; it does
 not establish why the overlap exists, and none of these pages is a finding of misconduct by any named
 person.</p>
 <p>Where the publication years differ, the later article is listed first. Where they are the same, which
-came first is unknown and the order means nothing.</p>
+came first is unknown and the order means nothing. Each table is sorted by the larger of the two shared-text
+figures, highest first.</p>
+<h2 id="data">Copied data (14)</h2>
+<p>Pairs where what&#x27;s shared includes results data (tables, figures&#x27; values), not only text; reported or not.</p>
 <div class="table-wrap"><table>
 <thead><tr><th>Case</th><th>Later article</th><th>Earlier article</th><th>Shared text (later / earlier)</th>
 <th>Longest passage</th><th>Reported</th></tr></thead>
 <tbody>
-<tr><td class="num"><a href="GI-04.html">GI-04</a></td>
-<td class="art">A NEUTROSOPHIC DESCRIPTION LOGIC (2008), <i>New Mathematics and Natural Computation</i><br><a href="https://doi.org/10.1142/S1793005708001100">doi:10.1142/S1793005708001100</a></td><td class="art">Reasoning within Fuzzy Description Logics (2001), <i>Journal of Artificial Intelligence Research</i><br><a href="https://doi.org/10.1613/jair.813">doi:10.1613/jair.813</a></td>
-<td class="num">41% / 21%</td>
-<td class="num">109 words</td><td class="num">2026-10-27</td></tr>
-<tr><td class="num"><a href="GI-08.html">GI-08</a></td>
-<td class="art">Clinical Outcomes for Radial Artery Versus Saphenous Vein in Coronary Artery Bypass Graft Surgery (2018), <i>University Heart Journal</i><br><a href="https://doi.org/10.3329/uhj.v13i1.36885">doi:10.3329/uhj.v13i1.36885</a></td><td class="art">Radial artery vs saphenous vein graft used as the second conduit for surgical myocardial revascularization: long-term clinical follow-up (2015), <i>Journal of Cardiothoracic Surgery</i><br><a href="https://doi.org/10.1186/s13019-015-0331-9">doi:10.1186/s13019-015-0331-9</a></td>
-<td class="num">64% / 59%</td>
-<td class="num">164 words</td><td class="num">2026-10-30</td></tr>
-<tr><td class="num"><a href="GI-10.html">GI-10</a></td>
-<td class="art">Hypothyroidism - A New View On An Old Disease (2017), <i>KYAMC Journal</i><br><a href="https://doi.org/10.3329/kyamcj.v7i1.33764">doi:10.3329/kyamcj.v7i1.33764</a></td><td class="art">Hypothyroidism: an update (2012), <i>South African Family Practice</i><br><a href="https://doi.org/10.1080/20786204.2012.10874256">doi:10.1080/20786204.2012.10874256</a></td>
-<td class="num">66% / 54%</td>
-<td class="num">116 words</td><td class="num">2026-10-19</td></tr>
-<tr><td class="num"><a href="GI-18.html">GI-18</a></td>
-<td class="art">A Study on the Wastewater Treatment from Antibiotic Production (2014), <i>Current World Environment Journal</i><br><a href="https://doi.org/10.12944/cwe.9.1.33">doi:10.12944/cwe.9.1.33</a></td><td class="art">Study on the Treatment Process of Wastewater from Cephalosporin Production (2009), <i>Journal of Sustainable Development</i><br><a href="https://doi.org/10.5539/jsd.v2n2p133">doi:10.5539/jsd.v2n2p133</a></td>
-<td class="num">75% / 87%</td>
-<td class="num">235 words</td><td class="num">2026-10-17</td></tr>
-<tr><td class="num"><a href="GI-30.html">GI-30</a></td>
-<td class="art">Transcriptome Sequencing and De Novo Analysis for Ma Bamboo (Dendrocalamus latiflorus Munro) Using the Illumina Platform (2012), <i>PLoS ONE</i><br><a href="https://doi.org/10.1371/journal.pone.0046766">doi:10.1371/journal.pone.0046766</a></td><td class="art">Transcriptome Sequencing and De Novo Analysis for Yesso Scallop (Patinopecten yessoensis) Using 454 GS FLX (2011), <i>PLoS ONE</i><br><a href="https://doi.org/10.1371/journal.pone.0021560">doi:10.1371/journal.pone.0021560</a></td>
-<td class="num">11% / 19%</td>
-<td class="num">57 words</td><td class="num">not reported</td></tr>
-<tr><td class="num"><a href="GI-46.html">GI-46</a></td>
-<td class="art">Successful balloon valvuloplasty of a subpulmonic membrane associated with cor triatriatum dexter: a case report (2019), <i>Journal of Medical Case Reports</i><br><a href="https://doi.org/10.1186/s13256-019-2218-1">doi:10.1186/s13256-019-2218-1</a></td><td class="art">Discrete subpulmonic membrane in association with isolated severe pulmonary valvar stenosis (2013), <i>BMC Cardiovascular Disorders</i><br><a href="https://doi.org/10.1186/1471-2261-13-43">doi:10.1186/1471-2261-13-43</a></td>
-<td class="num">14% / 19%</td>
-<td class="num">43 words</td><td class="num">not reported</td></tr>
-<tr><td class="num"><a href="GI-74.html">GI-74</a></td>
-<td class="art">The Synergic Scheduling Optimization and Effectiveness Evaluation Model for Multi-types Generation Resources Considering Emission Constraints (2016), <i>Proceedings of the 3rd International Conference on Material Engineering and Application (ICMEA 2016)</i><br><a href="https://doi.org/10.2991/icmea-16.2016.10">doi:10.2991/icmea-16.2016.10</a></td><td class="art">Send Orders for Reprints to reprints@benthamscience.ae The Stochastic Optimization Scheduling Model for Wind Power, Thermal Power and Hydropower with Carbon Emissions Trading (2015), <i>The Open Cybernetics &amp; Systemics Journal</i><br><a href="https://doi.org/10.2174/1874110x01509011074">doi:10.2174/1874110x01509011074</a></td>
-<td class="num">74% / 74%</td>
-<td class="num">200 words</td><td class="num">2026-10-25</td></tr>
-<tr><td class="num"><a href="GI-85.html">GI-85</a></td>
-<td class="art">A Comparative Study of Benefits and Drawbacks of Dispensing the Exact Number of Pills (2018), <i>Biomedical Journal of Scientific &amp; Technical Research</i><br><a href="https://doi.org/10.26717/bjstr.2018.02.000798">doi:10.26717/bjstr.2018.02.000798</a></td><td class="art">The expected and unexpected benefits of dispensing the exact number of pills (2017), <i>PLOS ONE</i><br><a href="https://doi.org/10.1371/journal.pone.0184420">doi:10.1371/journal.pone.0184420</a></td>
-<td class="num">86% / 60%</td>
-<td class="num">289 words</td><td class="num">2026-10-23</td></tr>
-<tr><td class="num"><a href="GI-110.html">GI-110</a></td>
-<td class="art">HOW ACCURATELY PHYSICIANS MEASURE BLOOD PRESSURE-AN OBSERVATIONAL STUDY IN ENAM MEDICAL COLLEGE AND HOSPITAL, SAVAR (2013), <i>Bangladesh Journal of Medicine</i><br><a href="https://doi.org/10.3329/bjmed.v22i1.13594">doi:10.3329/bjmed.v22i1.13594</a></td><td class="art">ACCURATE BLOOD PRESSURE RECORDING: IS IT DIFFICULT? (2005), <i>Indian Journal of Medical Sciences</i><br><a href="https://doi.org/10.4103/0019-5359.18965">doi:10.4103/0019-5359.18965</a></td>
-<td class="num">78% / 67%</td>
-<td class="num">491 words</td><td class="num">2026-10-24</td></tr>
-<tr><td class="num"><a href="GI-132.html">GI-132</a></td>
-<td class="art">Clinical measurement of tooth wear: Tooth Wear Indices (2012), <i>Journal of Clinical and Experimental Dentistry</i><br><a href="https://doi.org/10.4317/jced.50592">doi:10.4317/jced.50592</a></td><td class="art">The evolution of tooth wear indices (2008), <i>Clinical Oral Investigations</i><br><a href="https://doi.org/10.1007/s00784-007-0184-2">doi:10.1007/s00784-007-0184-2</a></td>
-<td class="num">47% / 61%</td>
-<td class="num">151 words</td><td class="num">2026-10-19</td></tr>
-<tr><td class="num"><a href="GI-145.html">GI-145</a></td>
-<td class="art">Comparative Study between Primary Closure and T-tube Drainage after Open Choledochotomy (2017), <i>Medicine Today</i><br><a href="https://doi.org/10.3329/medtoday.v29i1.33853">doi:10.3329/medtoday.v29i1.33853</a></td><td class="art">Advances in Bioscience &amp; Clinical Medicine Comparison between primary closure and T-tube drainage after open choledocotomy (2015), <i>Advances in Bioscience and Clinical Medicine</i><br><a href="https://doi.org/10.7575/aiac.abcmed.15.03.04.06">doi:10.7575/aiac.abcmed.15.03.04.06</a></td>
-<td class="num">76% / 66%</td>
-<td class="num">124 words</td><td class="num">2026-10-29</td></tr>
-<tr><td class="num"><a href="GI-148.html">GI-148</a></td>
-<td class="art">Pre-Emptive Analgesic Effect of Intravenous Paracetamol in Modified radical mastectomy (2018), <i>Nepalese Journal of Cancer</i><br><a href="https://doi.org/10.3126/njc.v2i1.25646">doi:10.3126/njc.v2i1.25646</a></td><td class="art">A Study on Pre-Emptive Analgesic Effect of Intravenous Paracetamol in Functional Endoscopic Sinus Surgeries: A Randomized, Double-Blinded Clinical Study (2014), <i>Journal of Clinical and Diagnostic Research</i><br><a href="https://doi.org/10.7860/JCDR/2014/7016.3922">doi:10.7860/JCDR/2014/7016.3922</a></td>
-<td class="num">48% / 70%</td>
-<td class="num">142 words</td><td class="num">2026-10-28</td></tr>
-<tr><td class="num"><a href="GI-177.html">GI-177</a></td>
-<td class="art">Dynamic analysis of squat shear wall using nonlinear finite element method (2014), <i>IOSR Journal of Mechanical and Civil Engineering</i><br><a href="https://doi.org/10.9790/1684-11220620">doi:10.9790/1684-11220620</a></td><td class="art">Nonlinear finite element dynamic analysis of squat shear wall with openings (2013), <i>International Journal of Advanced Structural Engineering</i><br><a href="https://doi.org/10.1186/2008-6695-5-27">doi:10.1186/2008-6695-5-27</a></td>
-<td class="num">91% / 86%</td>
-<td class="num">617 words</td><td class="num">2026-10-17</td></tr>
+<tr><td class="num"><a href="GI-03.html">GI-03</a></td>
+<td class="art">Sleep Apnea in Children May Affect Brain Development (2017), <i>Journal of Medical Science And clinical Research</i><br><a href="https://doi.org/10.18535/jmscr/v5i3.217">doi:10.18535/jmscr/v5i3.217</a></td><td class="art">Childhood Obstructive Sleep Apnea Associates with Neuropsychological Deficits and Neuronal Brain Injury (2006), <i>PLoS Medicine</i><br><a href="https://doi.org/10.1371/journal.pmed.0030301">doi:10.1371/journal.pmed.0030301</a></td>
+<td class="num">92% / 33%</td>
+<td class="num">250 words</td><td class="num">not reported</td></tr>
 <tr><td class="num"><a href="GI-184.html">GI-184</a></td>
 <td class="art">A Processing Algorithm with some User-Defined Parameters (2014), <i>International Journal of Control and Automation</i><br><a href="https://doi.org/10.14257/ijca.2014.7.5.30">doi:10.14257/ijca.2014.7.5.30</a></td><td class="art">An Adaptive Image Quality Assessment Algorithm (2012), <i>International journal of advanced smart convergence</i><br><a href="https://doi.org/10.7236/jasc2012.1.1.2">doi:10.7236/jasc2012.1.1.2</a></td>
 <td class="num">89% / 64%</td>
@@ -113,126 +69,110 @@ came first is unknown and the order means nothing.</p>
 <td class="art">Management of neglected femur neck fractures treated with non vascularised fibular graft (2018), <i>Indian Journal of Orthopaedics Surgery</i><br><a href="https://doi.org/10.18231/2395-1362.2018.0033">doi:10.18231/2395-1362.2018.0033</a></td><td class="art">Outcome analysis of neglected neck of femur treated with non vascularised fibular graft and cancellous screws (2018), <i>International Journal of Orthopaedics Sciences</i><br><a href="https://doi.org/10.22271/ortho.2018.v4.i1e.41">doi:10.22271/ortho.2018.v4.i1e.41</a></td>
 <td class="num">88% / 86%</td>
 <td class="num">238 words</td><td class="num">2026-10-17</td></tr>
-<tr><td class="num"><a href="GI-217.html">GI-217</a></td>
-<td class="art">Independent English Learning through the Internet (2011), <i>Journal of Language Teaching and Research</i><br><a href="https://doi.org/10.4304/jltr.2.5.1080-1085">doi:10.4304/jltr.2.5.1080-1085</a></td><td class="art">A Study of Autonomy English Learning on the Internet (2008), <i>English Language Teaching</i><br><a href="https://doi.org/10.5539/elt.v1n2p147">doi:10.5539/elt.v1n2p147</a></td>
-<td class="num">52% / 88%</td>
-<td class="num">414 words</td><td class="num">not reported</td></tr>
-<tr><td class="num"><a href="GI-232.html">GI-232</a></td>
-<td class="art">Haemorrhagic Fevers â Getting ready: viewpoints from Kenyan Public Health Practioners (2015), <i>International Journal of Biomedical Research</i><br><a href="https://doi.org/10.7439/ijbr.v6i9.2455">doi:10.7439/ijbr.v6i9.2455</a></td><td class="art">Preparing for Ebola Virus Disease in West African countries not yet affected: perspectives from Ghanaian health professionals (2015), <i>Globalization and Health</i><br><a href="https://doi.org/10.1186/s12992-015-0094-z">doi:10.1186/s12992-015-0094-z</a></td>
-<td class="num">62% / 57%</td>
-<td class="num">136 words</td><td class="num">not reported</td></tr>
-<tr><td class="num"><a href="GI-235.html">GI-235</a></td>
-<td class="art">Antibiotic-resistanceStaphylococcus aureusisolated from cow’s milk in the Hawassa area, South Ethiopia (2012), <i>Annals of Clinical Microbiology and Antimicrobials</i><br><a href="https://doi.org/10.1186/1476-0711-11-26">doi:10.1186/1476-0711-11-26</a></td><td class="art">Antibiotic-resistant Staphylococcus aureus isolated from milk in the Mafikeng Area, North West province, South Africa (2010), <i>South African Journal of Science</i><br><a href="https://doi.org/10.4102/sajs.v106i11/12.243">doi:10.4102/sajs.v106i11/12.243</a></td>
-<td class="num">49% / 41%</td>
-<td class="num">81 words</td><td class="num">2026-10-13</td></tr>
-<tr><td class="num"><a href="GI-238.html">GI-238</a></td>
-<td class="art">Hereditary Gastric Cancer: Review of Literature (2013), <i>Acta Chirurgica Latviensis</i><br><a href="https://doi.org/10.2478/chilat-2013-0013">doi:10.2478/chilat-2013-0013</a></td><td class="art">Familial gastric cancer: detection of a hereditary cause helps to understand its etiology (2012), <i>Hereditary Cancer in Clinical Practice</i><br><a href="https://doi.org/10.1186/1897-4287-10-18">doi:10.1186/1897-4287-10-18</a></td>
-<td class="num">78% / 58%</td>
-<td class="num">251 words</td><td class="num">2026-10-25</td></tr>
-<tr><td class="num"><a href="GI-332.html">GI-332</a></td>
-<td class="art">Emergency Cesarean Delivery in a Guillain- Barre Syndrome Patient (2016), <i>Journal of the Bangladesh Society of Anaesthesiologists</i><br><a href="https://doi.org/10.3329/jbsa.v27i1.29001">doi:10.3329/jbsa.v27i1.29001</a></td><td class="art">Anesthetic management for cesarean delivery in a Guillain-Barré syndrome patient -A case report- (2013), <i>Korean Journal of Anesthesiology</i><br><a href="https://doi.org/10.4097/kjae.2013.64.3.268">doi:10.4097/kjae.2013.64.3.268</a></td>
-<td class="num">51% / 39%</td>
-<td class="num">86 words</td><td class="num">2026-10-20</td></tr>
-<tr><td class="num"><a href="GI-362.html">GI-362</a></td>
-<td class="art">CASE REPORT Rare Thoracolumbar Facet Synovial Cyst Presenting as Paraparesis (2015), <i>Korean Journal of Spine</i><br><a href="https://doi.org/10.14245/kjs.2015.12.3.193">doi:10.14245/kjs.2015.12.3.193</a></td><td class="art">Synovial cyst of the thoracic spine: case report (2007), <i>Arquivos de Neuro-Psiquiatria</i><br><a href="https://doi.org/10.1590/s0004-282x2007000500021">doi:10.1590/s0004-282x2007000500021</a></td>
-<td class="num">35% / 37%</td>
-<td class="num">69 words</td><td class="num">not reported</td></tr>
-<tr><td class="num"><a href="GI-369.html">GI-369</a></td>
-<td class="art">A comparative study of parapharyngeal space tumors over a 7 year period experience in tertiary care hospital (2018), <i>International Journal of Otorhinolaryngology and Head and Neck Surgery</i><br><a href="https://doi.org/10.18203/issn.2454-5929.ijohns20182958">doi:10.18203/issn.2454-5929.ijohns20182958</a></td><td class="art">Tumors of the parapharyngeal space: the VU University Medical Center experience over a 20-year period (2018), <i>European Archives of Oto-Rhino-Laryngology</i><br><a href="https://doi.org/10.1007/s00405-018-4891-x">doi:10.1007/s00405-018-4891-x</a></td>
-<td class="num">16% / 15%</td>
-<td class="num">98 words</td><td class="num">2026-10-19</td></tr>
-<tr><td class="num"><a href="GI-391.html">GI-391</a></td>
-<td class="art">Role-Based-Access-Control: A Novel Approach (2015), <i>Advances in Social Science, Education and Humanities Research</i><br><a href="https://doi.org/10.2991/icemct-15.2015.44">doi:10.2991/icemct-15.2015.44</a></td><td class="art">Static Enforcement of Role-Based Access Control on Method Invocation (2014), <i>Electronic Proceedings in Theoretical Computer Science</i><br><a href="https://doi.org/10.4204/eptcs.163.4">doi:10.4204/eptcs.163.4</a></td>
-<td class="num">93% / 23%</td>
-<td class="num">240 words</td><td class="num">2026-10-17</td></tr>
-<tr><td class="num"><a href="GI-395.html">GI-395</a></td>
-<td class="art">Translators and Interpreters Certification in Australia, Canada, the Usа and Ukraine: Comparative Analysis (2014), <i>Comparative Professional Pedagogy</i><br><a href="https://doi.org/10.2478/rpp-2014-0036">doi:10.2478/rpp-2014-0036</a></td><td class="art">A Cross-National Overview of Translator and Interpreter Certification Procedures (2013), <i>The International Journal of Translation and Interpreting Research</i><br><a href="https://doi.org/10.12807/ti.105201.2013.a02">doi:10.12807/ti.105201.2013.a02</a></td>
-<td class="num">49% / 11%</td>
-<td class="num">159 words</td><td class="num">2026-10-20</td></tr>
-<tr><td class="num"><a href="GI-428.html">GI-428</a></td>
-<td class="art">Effect of SP600125 on the mitotic spindle in HeLa Cells, leading to mitotic arrest, endoreduplication and apoptosis (2016), <i>Molecular Cytogenetics</i><br><a href="https://doi.org/10.1186/s13039-016-0296-y">doi:10.1186/s13039-016-0296-y</a></td><td class="art">JNK inhibitor SP600125 promotes the formation of polymerized tubulin, leading to G2/M phase arrest, endoreduplication, and delayed apoptosis (2009), <i>Experimental and Molecular Medicine</i><br><a href="https://doi.org/10.3858/emm.2009.41.9.073">doi:10.3858/emm.2009.41.9.073</a></td>
-<td class="num">36% / 19%</td>
-<td class="num">50 words</td><td class="num">2026-10-13</td></tr>
-<tr><td class="num"><a href="GI-436.html">GI-436</a></td>
-<td class="art">Validation of the Spanish Version of the ICECAP-O for Nursing Home Residents with Dementia (2017), <i>PLOS ONE</i><br><a href="https://doi.org/10.1371/journal.pone.0169354">doi:10.1371/journal.pone.0169354</a></td><td class="art">Quality of Life of Nursing Home Residents with Dementia: Validation of the German Version of the ICECAP-O (2014), <i>PLoS ONE</i><br><a href="https://doi.org/10.1371/journal.pone.0092016">doi:10.1371/journal.pone.0092016</a></td>
-<td class="num">21% / 17%</td>
-<td class="num">85 words</td><td class="num">not reported</td></tr>
-<tr><td class="num"><a href="GI-464.html">GI-464</a></td>
-<td class="art">Weight Management for Athletes: Important Things to be Considered (2017), <i>Arab Journal of Nutrition and Exercise (AJNE)</i><br><a href="https://doi.org/10.18502/ajne.v1i3.1232">doi:10.18502/ajne.v1i3.1232</a></td><td class="art">Weight Management for Athletes and Active Individuals: A Brief Review (2015), <i>Sports Medicine</i><br><a href="https://doi.org/10.1007/s40279-015-0401-0">doi:10.1007/s40279-015-0401-0</a></td>
-<td class="num">20% / 14%</td>
-<td class="num">47 words</td><td class="num">not reported</td></tr>
-<tr><td class="num"><a href="GI-484.html">GI-484</a></td>
-<td class="art">Ontology integration to identify protein complex in protein interaction networks (2011), <i>Proteome Science</i><br><a href="https://doi.org/10.1186/1477-5956-9-s1-s7">doi:10.1186/1477-5956-9-s1-s7</a></td><td class="art">Semantic integration to identify overlapping functional modules in protein interaction networks (2007), <i>BMC Bioinformatics</i><br><a href="https://doi.org/10.1186/1471-2105-8-265">doi:10.1186/1471-2105-8-265</a></td>
-<td class="num">18% / 9%</td>
-<td class="num">120 words</td><td class="num">not reported</td></tr>
+<tr><td class="num"><a href="GI-18.html">GI-18</a></td>
+<td class="art">A Study on the Wastewater Treatment from Antibiotic Production (2014), <i>Current World Environment Journal</i><br><a href="https://doi.org/10.12944/cwe.9.1.33">doi:10.12944/cwe.9.1.33</a></td><td class="art">Study on the Treatment Process of Wastewater from Cephalosporin Production (2009), <i>Journal of Sustainable Development</i><br><a href="https://doi.org/10.5539/jsd.v2n2p133">doi:10.5539/jsd.v2n2p133</a></td>
+<td class="num">75% / 87%</td>
+<td class="num">235 words</td><td class="num">2026-10-17</td></tr>
+<tr><td class="num"><a href="GI-85.html">GI-85</a></td>
+<td class="art">A Comparative Study of Benefits and Drawbacks of Dispensing the Exact Number of Pills (2018), <i>Biomedical Journal of Scientific &amp; Technical Research</i><br><a href="https://doi.org/10.26717/bjstr.2018.02.000798">doi:10.26717/bjstr.2018.02.000798</a></td><td class="art">The expected and unexpected benefits of dispensing the exact number of pills (2017), <i>PLOS ONE</i><br><a href="https://doi.org/10.1371/journal.pone.0184420">doi:10.1371/journal.pone.0184420</a></td>
+<td class="num">86% / 60%</td>
+<td class="num">289 words</td><td class="num">2026-10-23</td></tr>
+<tr><td class="num"><a href="GI-110.html">GI-110</a></td>
+<td class="art">HOW ACCURATELY PHYSICIANS MEASURE BLOOD PRESSURE-AN OBSERVATIONAL STUDY IN ENAM MEDICAL COLLEGE AND HOSPITAL, SAVAR (2013), <i>Bangladesh Journal of Medicine</i><br><a href="https://doi.org/10.3329/bjmed.v22i1.13594">doi:10.3329/bjmed.v22i1.13594</a></td><td class="art">ACCURATE BLOOD PRESSURE RECORDING: IS IT DIFFICULT? (2005), <i>Indian Journal of Medical Sciences</i><br><a href="https://doi.org/10.4103/0019-5359.18965">doi:10.4103/0019-5359.18965</a></td>
+<td class="num">78% / 67%</td>
+<td class="num">491 words</td><td class="num">2026-10-24</td></tr>
+<tr><td class="num"><a href="GI-145.html">GI-145</a></td>
+<td class="art">Comparative Study between Primary Closure and T-tube Drainage after Open Choledochotomy (2017), <i>Medicine Today</i><br><a href="https://doi.org/10.3329/medtoday.v29i1.33853">doi:10.3329/medtoday.v29i1.33853</a></td><td class="art">Advances in Bioscience &amp; Clinical Medicine Comparison between primary closure and T-tube drainage after open choledocotomy (2015), <i>Advances in Bioscience and Clinical Medicine</i><br><a href="https://doi.org/10.7575/aiac.abcmed.15.03.04.06">doi:10.7575/aiac.abcmed.15.03.04.06</a></td>
+<td class="num">76% / 66%</td>
+<td class="num">124 words</td><td class="num">2026-10-29</td></tr>
+<tr><td class="num"><a href="GI-74.html">GI-74</a></td>
+<td class="art">The Synergic Scheduling Optimization and Effectiveness Evaluation Model for Multi-types Generation Resources Considering Emission Constraints (2016), <i>Proceedings of the 3rd International Conference on Material Engineering and Application (ICMEA 2016)</i><br><a href="https://doi.org/10.2991/icmea-16.2016.10">doi:10.2991/icmea-16.2016.10</a></td><td class="art">Send Orders for Reprints to reprints@benthamscience.ae The Stochastic Optimization Scheduling Model for Wind Power, Thermal Power and Hydropower with Carbon Emissions Trading (2015), <i>The Open Cybernetics &amp; Systemics Journal</i><br><a href="https://doi.org/10.2174/1874110x01509011074">doi:10.2174/1874110x01509011074</a></td>
+<td class="num">74% / 74%</td>
+<td class="num">200 words</td><td class="num">2026-10-25</td></tr>
+<tr><td class="num"><a href="GI-148.html">GI-148</a></td>
+<td class="art">Pre-Emptive Analgesic Effect of Intravenous Paracetamol in Modified radical mastectomy (2018), <i>Nepalese Journal of Cancer</i><br><a href="https://doi.org/10.3126/njc.v2i1.25646">doi:10.3126/njc.v2i1.25646</a></td><td class="art">A Study on Pre-Emptive Analgesic Effect of Intravenous Paracetamol in Functional Endoscopic Sinus Surgeries: A Randomized, Double-Blinded Clinical Study (2014), <i>Journal of Clinical and Diagnostic Research</i><br><a href="https://doi.org/10.7860/JCDR/2014/7016.3922">doi:10.7860/JCDR/2014/7016.3922</a></td>
+<td class="num">48% / 70%</td>
+<td class="num">142 words</td><td class="num">2026-10-28</td></tr>
+<tr><td class="num"><a href="GI-08.html">GI-08</a></td>
+<td class="art">Clinical Outcomes for Radial Artery Versus Saphenous Vein in Coronary Artery Bypass Graft Surgery (2018), <i>University Heart Journal</i><br><a href="https://doi.org/10.3329/uhj.v13i1.36885">doi:10.3329/uhj.v13i1.36885</a></td><td class="art">Radial artery vs saphenous vein graft used as the second conduit for surgical myocardial revascularization: long-term clinical follow-up (2015), <i>Journal of Cardiothoracic Surgery</i><br><a href="https://doi.org/10.1186/s13019-015-0331-9">doi:10.1186/s13019-015-0331-9</a></td>
+<td class="num">64% / 59%</td>
+<td class="num">164 words</td><td class="num">2026-10-30</td></tr>
+<tr><td class="num"><a href="GI-15.html">GI-15</a></td>
+<td class="art">EVALUATION OF NEUROPHARMACOLOGICAL, ANTIBACTERIAL AND ANTINOCICEPTIVE ACTIVITY OF METHANOLIC EXTRACT OF THE BARK OF CYNOMETRA RAMIFLORA LINN. (LEGUMINOSAE) (2013), <i>International Journal of Research in Ayurveda and Pharmacy</i><br><a href="https://doi.org/10.7897/2277-4343.04220">doi:10.7897/2277-4343.04220</a></td><td class="art">Antinociceptive and neuropharmacological activities of ethanolic extract of the fruits of Ficus hispida Linn. (2012), <i>African Journal of Pharmacy and Pharmacology</i><br><a href="https://doi.org/10.5897/AJPP12.870">doi:10.5897/AJPP12.870</a></td>
+<td class="num">34% / 36%</td>
+<td class="num">133 words</td><td class="num">not reported</td></tr>
 <tr><td class="num"><a href="GI-493.html">GI-493</a></td>
 <td class="art">Predictors of mental distress among undergraduate health science students of Hawassa University, College of Medicine and Health Sciences, Hawassa, SNNPR, Ethiopia: a cross-sectional study (2020), <i>Annals of General Psychiatry</i><br><a href="https://doi.org/10.1186/s12991-020-0258-y">doi:10.1186/s12991-020-0258-y</a></td><td class="art">Prevalence of Mental Distress and Associated Factors among Undergraduate Students of University of Gondar, Northwest Ethiopia: A Cross-Sectional Institutional Based Study (2015), <i>PLOS ONE</i><br><a href="https://doi.org/10.1371/journal.pone.0119464">doi:10.1371/journal.pone.0119464</a></td>
 <td class="num">27% / 21%</td>
 <td class="num">107 words</td><td class="num">2026-10-15</td></tr>
-<tr><td class="num"><a href="GI-518.html">GI-518</a></td>
-<td class="art">Effect of Toxic Metals on Human Health (2010), <i>The Open Nutraceuticals Journal</i><br><a href="https://doi.org/10.2174/18763960010030100094">doi:10.2174/18763960010030100094</a></td><td class="art">Heavy metal ions in wines: meta-analysis of target hazard quotients reveal health risks (2008), <i>Chemistry Central Journal</i><br><a href="https://doi.org/10.1186/1752-153x-2-22">doi:10.1186/1752-153x-2-22</a></td>
-<td class="num">16% / 22%</td>
-<td class="num">143 words</td><td class="num">2026-10-23</td></tr>
-<tr><td class="num"><a href="GI-535.html">GI-535</a></td>
-<td class="art">Factors Determining Pakistani Medical Students’ Career Preference for General Practice Residency Training (2018), <i>Cureus</i><br><a href="https://doi.org/10.7759/cureus.3114">doi:10.7759/cureus.3114</a></td><td class="art">What determines medical students’ career preference for general practice residency training?: a multicenter survey in Japan (2018), <i>Asia Pacific Family Medicine</i><br><a href="https://doi.org/10.1186/s12930-018-0039-9">doi:10.1186/s12930-018-0039-9</a></td>
-<td class="num">20% / 18%</td>
-<td class="num">137 words</td><td class="num">2026-10-22</td></tr>
-<tr><td class="num"><a href="GI-566.html">GI-566</a></td>
-<td class="art">Correlation of Ultrasound Parameters with Serum Creatinine in Renal Parenchymal Disease (2019), <i>Journal of Gandaki Medical College-Nepal</i><br><a href="https://doi.org/10.3126/jgmcn.v12i1.22619">doi:10.3126/jgmcn.v12i1.22619</a></td><td class="art">Correlation of Ultrasonographic Parameters with Serum Creatinine in Chronic Kidney Disease (2013), <i>Journal of Clinical Imaging Science</i><br><a href="https://doi.org/10.4103/2156-7514.114809">doi:10.4103/2156-7514.114809</a></td>
-<td class="num">15% / 20%</td>
-<td class="num">165 words</td><td class="num">not reported</td></tr>
-<tr><td class="num"><a href="GI-577.html">GI-577</a></td>
-<td class="art">EDCAM: Early Detection Congestion Avoidance Mechanism for Wireless Sensor Network (2010), <i>International Journal of Computer Applications</i><br><a href="https://doi.org/10.5120/1139-1490">doi:10.5120/1139-1490</a></td><td class="art">Traffic Analysis &amp; Modeling in Wireless Sensor Networks and Their Applications on Network Optimization and Anomaly Detection (2010), <i>Network Protocols and Algorithms</i><br><a href="https://doi.org/10.5296/npa.v2i1.328">doi:10.5296/npa.v2i1.328</a></td>
-<td class="num">17% / 7%</td>
-<td class="num">87 words</td><td class="num">2026-10-24</td></tr>
-<tr><td class="num"><a href="GI-587.html">GI-587</a></td>
-<td class="art">Effect of active fraction isolated from the leaf extract ofDregea volubilis[Linn.] Benth. on plasma glucose concentration and lipid profile in streptozotocin-induced diabetic rats (2013), <i>SpringerPlus</i><br><a href="https://doi.org/10.1186/2193-1801-2-394">doi:10.1186/2193-1801-2-394</a></td><td class="art">Effect of an isolated active compound (Cg-1) of Cassia glauca leaf on blood glucose, lipid profile, and atherogenic index in diabetic rats (2009), <i>Indian Journal of Pharmacology</i><br><a href="https://doi.org/10.4103/0253-7613.56076">doi:10.4103/0253-7613.56076</a></td>
-<td class="num">17% / 18%</td>
-<td class="num">39 words</td><td class="num">not reported</td></tr>
-<tr><td class="num"><a href="GI-618.html">GI-618</a></td>
-<td class="art">A novel polyomavirus from the nasal cavity of a giant panda (Ailuropoda melanoleuca) (2017), <i>Virology Journal</i><br><a href="https://doi.org/10.1186/s12985-017-0867-5">doi:10.1186/s12985-017-0867-5</a></td><td class="art">Characterization of a Novel Polyomavirus Isolated from a Fibroma on the Trunk of an African Elephant (Loxodonta africana) (2013), <i>PLoS ONE</i><br><a href="https://doi.org/10.1371/journal.pone.0077884">doi:10.1371/journal.pone.0077884</a></td>
-<td class="num">15% / 12%</td>
-<td class="num">80 words</td><td class="num">not reported</td></tr>
-<tr><td class="num"><a href="GI-699.html">GI-699</a></td>
-<td class="art">Deep wound infection after a trochanteric fracture internal fixation presenting with hip dislocation: a case report (2010), <i>Cases Journal</i><br><a href="https://doi.org/10.1186/1757-1626-3-19">doi:10.1186/1757-1626-3-19</a></td><td class="art">Press Infective Failure of Internal Fixation for Intertrochanteric Femoral Neck Fracture Presenting as Hip Joint Subluxation: A Case Report (2010), <i>Journal of Medical Cases</i><br><a href="https://doi.org/10.4021/jmc31w">doi:10.4021/jmc31w</a></td>
-<td class="num">18% / 17%</td>
-<td class="num">55 words</td><td class="num">not reported</td></tr>
-<tr><td class="num"><a href="GI-701.html">GI-701</a></td>
-<td class="art">Dextrocardia and asplenia in situs inversus totalis in a baby: a case report (2014), <i>Journal of Medical Case Reports</i><br><a href="https://doi.org/10.1186/1752-1947-8-408">doi:10.1186/1752-1947-8-408</a></td><td class="art">Dextrocardia With Situs Inversus Totalis in an Adult Nigerian: a Case Report (2012), <i>American Journal of Medicine and Medical Sciences</i><br><a href="https://doi.org/10.5923/j.ajmms.20120203.06">doi:10.5923/j.ajmms.20120203.06</a></td>
-<td class="num">20% / 20%</td>
-<td class="num">45 words</td><td class="num">not reported</td></tr>
-<tr><td class="num"><a href="GI-724.html">GI-724</a></td>
-<td class="art">Imaging of cerebral aneurysms: a clinical perspective (2016), <i>Neurovascular Imaging</i><br><a href="https://doi.org/10.1186/s40809-016-0016-3">doi:10.1186/s40809-016-0016-3</a></td><td class="art">DIAGNOSTIC ACCURACY OF THREE DIMENTIONAL DIGITAL SUBSTRACTION ANGIOGRAPHY (3D DSA) IN CORRELATION WITH COMPUTED TOMOGRAPHIC ANGIOGRAPHY (CTA) AND MAGNETIC RESONANCE ANGIOGRAPHY (MRA) IN EVALUATION OF ANEURYSMAL SUBARACHNOID HAEMORRHAGE : A COMPARATIVE STUDY IN A TERTIARY CARE HOSPITAL</td>
-<td class="num">18% / 22%</td>
-<td class="num">53 words</td><td class="num">not reported</td></tr>
-<tr><td class="num"><a href="GI-725.html">GI-725</a></td>
-<td class="art">Inter-observer agreement according to malaria parasite density (2013), <i>Malaria Journal</i><br><a href="https://doi.org/10.1186/1475-2875-12-335">doi:10.1186/1475-2875-12-335</a></td><td class="art">Inter-rater reliability of malaria parasite counts and comparison of methods (2009), <i>Malaria Journal</i><br><a href="https://doi.org/10.1186/1475-2875-8-267">doi:10.1186/1475-2875-8-267</a></td>
-<td class="num">14% / 7%</td>
-<td class="num">38 words</td><td class="num">not reported</td></tr>
 <tr><td class="num"><a href="GI-810.html">GI-810</a></td>
 <td class="art">Hypoxia-induced brain cell damage in male albino wistar rat (2017), <i>Saudi Journal of Biological Sciences</i><br><a href="https://doi.org/10.1016/j.sjbs.2017.03.018">doi:10.1016/j.sjbs.2017.03.018</a></td><td class="art">Normobaric hypoxia-induced brain damage in wistar rat (2009), <i>Journal of Biomedical Science and Engineering</i><br><a href="https://doi.org/10.4236/jbise.2009.28092">doi:10.4236/jbise.2009.28092</a></td>
 <td class="num">22% / 20%</td>
 <td class="num">51 words</td><td class="num">2026-10-28</td></tr>
-<tr><td class="num"><a href="GI-817.html">GI-817</a></td>
-<td class="art">Endangering the endangered: Are protected areas save havens for threatened species in Cameroon? Case of Banyang-Mbo Wildlife Sanctuary, South Western Cameroon (2014), <i>Journal of Ecology and The Natural Environment</i><br><a href="https://doi.org/10.5897/jene2013.0430">doi:10.5897/jene2013.0430</a></td><td class="art">Hunting for Livelihood in Northeast Gabon: Patterns, Evolution, and Sustainability (2008), <i>Ecology and Society</i><br><a href="https://doi.org/10.5751/ES-02560-130233">doi:10.5751/ES-02560-130233</a></td>
-<td class="num">12% / 12%</td>
-<td class="num">74 words</td><td class="num">not reported</td></tr>
-<tr><td class="num"><a href="GI-830.html">GI-830</a></td>
-<td class="art">Color stability of esthetic restorative materials: a spectrophotometric analysis (2016), <i>Acta Biomaterialia Odontologica Scandinavica</i><br><a href="https://doi.org/10.1080/23337931.2016.1217416">doi:10.1080/23337931.2016.1217416</a></td><td class="art">Effect of staining solutions and repolishing on color stability of direct composites (2010), <i>Journal of Applied Oral Science</i><br><a href="https://doi.org/10.1590/S1678-77572010000300009">doi:10.1590/S1678-77572010000300009</a></td>
-<td class="num">11% / 13%</td>
-<td class="num">61 words</td><td class="num">not reported</td></tr>
-<tr><td class="num"><a href="GI-841.html">GI-841</a></td>
-<td class="art">Adult primary paratesticular mesenchymal tumors with emphasis on a case presentation and discussion of spermatic cord leiomyosarcoma (2014), <i>Diagnostic Pathology</i><br><a href="https://doi.org/10.1186/1746-1596-9-90">doi:10.1186/1746-1596-9-90</a></td><td class="art">Leiomyosarcoma of the spermatic cord: case report and literature review (2012), <i>Canadian Urological Association Journal</i><br><a href="https://doi.org/10.5489/cuaj.42">doi:10.5489/cuaj.42</a></td>
-<td class="num">12% / 20%</td>
-<td class="num">95 words</td><td class="num">not reported</td></tr>
-<tr><td class="num"><a href="GI-845.html">GI-845</a></td>
-<td class="art">Identifying economic periods and crisis with (2010), <i>Nonlinear Dynamics</i><br><a href="https://doi.org/10.1007/s11071-010-9823-2">doi:10.1007/s11071-010-9823-2</a></td><td class="art">Encyclopedia of Statistics in Behavioral Science || Multidimensional Scaling (2005), <i>Encyclopedia of Statistics in Behavioral Science</i><br><a href="https://doi.org/10.1002/0470013192.bsa415">doi:10.1002/0470013192.bsa415</a></td>
-<td class="num">15% / 12%</td>
-<td class="num">74 words</td><td class="num">not reported</td></tr>
+<tr><td class="num"><a href="GI-535.html">GI-535</a></td>
+<td class="art">Factors Determining Pakistani Medical Students’ Career Preference for General Practice Residency Training (2018), <i>Cureus</i><br><a href="https://doi.org/10.7759/cureus.3114">doi:10.7759/cureus.3114</a></td><td class="art">What determines medical students’ career preference for general practice residency training?: a multicenter survey in Japan (2018), <i>Asia Pacific Family Medicine</i><br><a href="https://doi.org/10.1186/s12930-018-0039-9">doi:10.1186/s12930-018-0039-9</a></td>
+<td class="num">20% / 18%</td>
+<td class="num">137 words</td><td class="num">2026-10-22</td></tr>
+</tbody>
+</table></div>
+<h2 id="reported">Reported: copied text (19)</h2>
+<p>Reported to the journal concerned.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Case</th><th>Later article</th><th>Earlier article</th><th>Shared text (later / earlier)</th>
+<th>Longest passage</th><th>Reported</th></tr></thead>
+<tbody>
+<tr><td class="num"><a href="GI-391.html">GI-391</a></td>
+<td class="art">Role-Based-Access-Control: A Novel Approach (2015), <i>Advances in Social Science, Education and Humanities Research</i><br><a href="https://doi.org/10.2991/icemct-15.2015.44">doi:10.2991/icemct-15.2015.44</a></td><td class="art">Static Enforcement of Role-Based Access Control on Method Invocation (2014), <i>Electronic Proceedings in Theoretical Computer Science</i><br><a href="https://doi.org/10.4204/eptcs.163.4">doi:10.4204/eptcs.163.4</a></td>
+<td class="num">93% / 23%</td>
+<td class="num">240 words</td><td class="num">2026-10-17</td></tr>
+<tr><td class="num"><a href="GI-177.html">GI-177</a></td>
+<td class="art">Dynamic analysis of squat shear wall using nonlinear finite element method (2014), <i>IOSR Journal of Mechanical and Civil Engineering</i><br><a href="https://doi.org/10.9790/1684-11220620">doi:10.9790/1684-11220620</a></td><td class="art">Nonlinear finite element dynamic analysis of squat shear wall with openings (2013), <i>International Journal of Advanced Structural Engineering</i><br><a href="https://doi.org/10.1186/2008-6695-5-27">doi:10.1186/2008-6695-5-27</a></td>
+<td class="num">91% / 86%</td>
+<td class="num">617 words</td><td class="num">2026-10-17</td></tr>
+<tr><td class="num"><a href="GI-238.html">GI-238</a></td>
+<td class="art">Hereditary Gastric Cancer: Review of Literature (2013), <i>Acta Chirurgica Latviensis</i><br><a href="https://doi.org/10.2478/chilat-2013-0013">doi:10.2478/chilat-2013-0013</a></td><td class="art">Familial gastric cancer: detection of a hereditary cause helps to understand its etiology (2012), <i>Hereditary Cancer in Clinical Practice</i><br><a href="https://doi.org/10.1186/1897-4287-10-18">doi:10.1186/1897-4287-10-18</a></td>
+<td class="num">78% / 58%</td>
+<td class="num">251 words</td><td class="num">2026-10-25</td></tr>
+<tr><td class="num"><a href="GI-10.html">GI-10</a></td>
+<td class="art">Hypothyroidism - A New View On An Old Disease (2017), <i>KYAMC Journal</i><br><a href="https://doi.org/10.3329/kyamcj.v7i1.33764">doi:10.3329/kyamcj.v7i1.33764</a></td><td class="art">Hypothyroidism: an update (2012), <i>South African Family Practice</i><br><a href="https://doi.org/10.1080/20786204.2012.10874256">doi:10.1080/20786204.2012.10874256</a></td>
+<td class="num">66% / 54%</td>
+<td class="num">116 words</td><td class="num">2026-10-19</td></tr>
+<tr><td class="num"><a href="GI-132.html">GI-132</a></td>
+<td class="art">Clinical measurement of tooth wear: Tooth Wear Indices (2012), <i>Journal of Clinical and Experimental Dentistry</i><br><a href="https://doi.org/10.4317/jced.50592">doi:10.4317/jced.50592</a></td><td class="art">The evolution of tooth wear indices (2008), <i>Clinical Oral Investigations</i><br><a href="https://doi.org/10.1007/s00784-007-0184-2">doi:10.1007/s00784-007-0184-2</a></td>
+<td class="num">47% / 61%</td>
+<td class="num">151 words</td><td class="num">2026-10-19</td></tr>
 <tr><td class="num"><a href="GI-851.html">GI-851</a></td>
 <td class="art">Pharmaco-economics analysis, as a strategy on facilitating choices between health and non-health programs in the establishment of the national health care system (2013), <i>Alexandria Journal of Medicine</i><br><a href="https://doi.org/10.1016/j.ajme.2013.06.001">doi:10.1016/j.ajme.2013.06.001</a></td><td class="art">Pharmacoeconomy: an indispensable tool for the rationalization of health costs (2011), <i>Brazilian Journal of Pharmaceutical Sciences</i><br><a href="https://doi.org/10.1590/S1984-82502011000200004">doi:10.1590/S1984-82502011000200004</a></td>
 <td class="num">57% / 43%</td>
 <td class="num">119 words</td><td class="num">2026-10-25</td></tr>
+<tr><td class="num"><a href="GI-332.html">GI-332</a></td>
+<td class="art">Emergency Cesarean Delivery in a Guillain- Barre Syndrome Patient (2016), <i>Journal of the Bangladesh Society of Anaesthesiologists</i><br><a href="https://doi.org/10.3329/jbsa.v27i1.29001">doi:10.3329/jbsa.v27i1.29001</a></td><td class="art">Anesthetic management for cesarean delivery in a Guillain-Barré syndrome patient -A case report- (2013), <i>Korean Journal of Anesthesiology</i><br><a href="https://doi.org/10.4097/kjae.2013.64.3.268">doi:10.4097/kjae.2013.64.3.268</a></td>
+<td class="num">51% / 39%</td>
+<td class="num">86 words</td><td class="num">2026-10-20</td></tr>
+<tr><td class="num"><a href="GI-235.html">GI-235</a></td>
+<td class="art">Antibiotic-resistanceStaphylococcus aureusisolated from cow’s milk in the Hawassa area, South Ethiopia (2012), <i>Annals of Clinical Microbiology and Antimicrobials</i><br><a href="https://doi.org/10.1186/1476-0711-11-26">doi:10.1186/1476-0711-11-26</a></td><td class="art">Antibiotic-resistant Staphylococcus aureus isolated from milk in the Mafikeng Area, North West province, South Africa (2010), <i>South African Journal of Science</i><br><a href="https://doi.org/10.4102/sajs.v106i11/12.243">doi:10.4102/sajs.v106i11/12.243</a></td>
+<td class="num">49% / 41%</td>
+<td class="num">81 words</td><td class="num">2026-10-13</td></tr>
+<tr><td class="num"><a href="GI-395.html">GI-395</a></td>
+<td class="art">Translators and Interpreters Certification in Australia, Canada, the Usа and Ukraine: Comparative Analysis (2014), <i>Comparative Professional Pedagogy</i><br><a href="https://doi.org/10.2478/rpp-2014-0036">doi:10.2478/rpp-2014-0036</a></td><td class="art">A Cross-National Overview of Translator and Interpreter Certification Procedures (2013), <i>The International Journal of Translation and Interpreting Research</i><br><a href="https://doi.org/10.12807/ti.105201.2013.a02">doi:10.12807/ti.105201.2013.a02</a></td>
+<td class="num">49% / 11%</td>
+<td class="num">159 words</td><td class="num">2026-10-20</td></tr>
+<tr><td class="num"><a href="GI-891.html">GI-891</a></td>
+<td class="art">Free Radicals Cardiovascular Diseases: An Update (2011), <i>Free Radicals and Antioxidants</i><br><a href="https://doi.org/10.5530/ax.2011.1.4">doi:10.5530/ax.2011.1.4</a></td><td class="art">Oxidative Stress as a Mediator of Cardiovascular Disease (2009), <i>Oxidative Medicine and Cellular Longevity</i><br><a href="https://doi.org/10.4161/oxim.2.5.9441">doi:10.4161/oxim.2.5.9441</a></td>
+<td class="num">47% / 26%</td>
+<td class="num">44 words</td><td class="num">2026-10-28</td></tr>
+<tr><td class="num"><a href="GI-997.html">GI-997</a></td>
+<td class="art">A hybrid iterative method for a common solution of variational inequalities, generalized mixed equilibrium problems, and hierarchical fixed point problems (2015), <i>Journal of Inequalities and Applications</i><br><a href="https://doi.org/10.1186/s13660-015-0671-y">doi:10.1186/s13660-015-0671-y</a></td><td class="art">An iterative method for a common solution of generalized mixed equilibrium problems, variational inequalities, and hierarchical fixed point problems (2014), <i>Fixed Point Theory and Applications</i><br><a href="https://doi.org/10.1186/1687-1812-2014-155">doi:10.1186/1687-1812-2014-155</a></td>
+<td class="num">42% / 46%</td>
+<td class="num">111 words</td><td class="num">2026-10-30</td></tr>
+<tr><td class="num"><a href="GI-04.html">GI-04</a></td>
+<td class="art">A NEUTROSOPHIC DESCRIPTION LOGIC (2008), <i>New Mathematics and Natural Computation</i><br><a href="https://doi.org/10.1142/S1793005708001100">doi:10.1142/S1793005708001100</a></td><td class="art">Reasoning within Fuzzy Description Logics (2001), <i>Journal of Artificial Intelligence Research</i><br><a href="https://doi.org/10.1613/jair.813">doi:10.1613/jair.813</a></td>
+<td class="num">41% / 21%</td>
+<td class="num">109 words</td><td class="num">2026-10-27</td></tr>
+<tr><td class="num"><a href="GI-428.html">GI-428</a></td>
+<td class="art">Effect of SP600125 on the mitotic spindle in HeLa Cells, leading to mitotic arrest, endoreduplication and apoptosis (2016), <i>Molecular Cytogenetics</i><br><a href="https://doi.org/10.1186/s13039-016-0296-y">doi:10.1186/s13039-016-0296-y</a></td><td class="art">JNK inhibitor SP600125 promotes the formation of polymerized tubulin, leading to G2/M phase arrest, endoreduplication, and delayed apoptosis (2009), <i>Experimental and Molecular Medicine</i><br><a href="https://doi.org/10.3858/emm.2009.41.9.073">doi:10.3858/emm.2009.41.9.073</a></td>
+<td class="num">36% / 19%</td>
+<td class="num">50 words</td><td class="num">2026-10-13</td></tr>
 <tr><td class="num"><a href="GI-854.html">GI-854</a></td>
 <td class="art">Mortality attributable to tobacco: review of different methods (2014), <i>Archives of Public Health</i><br><a href="https://doi.org/10.1186/2049-3258-72-22">doi:10.1186/2049-3258-72-22</a></td><td class="art">Methodologies used to estimate tobacco-attributable mortality: a review (2008), <i>BMC Public Health</i><br><a href="https://doi.org/10.1186/1471-2458-8-22">doi:10.1186/1471-2458-8-22</a></td>
 <td class="num">25% / 20%</td>
@@ -241,10 +181,162 @@ came first is unknown and the order means nothing.</p>
 <td class="art">Effect of broth from meat of linseed‐fed cattle on glucose‐stimulated insulin release in healthy male volunteers (2019), <i>Animal Science Journal</i><br><a href="https://doi.org/10.1111/asj.13193">doi:10.1111/asj.13193</a></td><td class="art">Manipulating the fatty acid composition of muscle and adipose tissue in beef cattle (2001), <i>British Journal of Nutrition</i><br><a href="https://doi.org/10.1079/bjn2000223">doi:10.1079/bjn2000223</a></td>
 <td class="num">25% / 12%</td>
 <td class="num">56 words</td><td class="num">2026-10-26</td></tr>
+<tr><td class="num"><a href="GI-518.html">GI-518</a></td>
+<td class="art">Effect of Toxic Metals on Human Health (2010), <i>The Open Nutraceuticals Journal</i><br><a href="https://doi.org/10.2174/18763960010030100094">doi:10.2174/18763960010030100094</a></td><td class="art">Heavy metal ions in wines: meta-analysis of target hazard quotients reveal health risks (2008), <i>Chemistry Central Journal</i><br><a href="https://doi.org/10.1186/1752-153x-2-22">doi:10.1186/1752-153x-2-22</a></td>
+<td class="num">16% / 22%<br><small>40% in 2 earlier works</small></td>
+<td class="num">143 words</td><td class="num">2026-10-23</td></tr>
+<tr><td class="num"><a href="GI-577.html">GI-577</a></td>
+<td class="art">EDCAM: Early Detection Congestion Avoidance Mechanism for Wireless Sensor Network (2010), <i>International Journal of Computer Applications</i><br><a href="https://doi.org/10.5120/1139-1490">doi:10.5120/1139-1490</a></td><td class="art">Traffic Analysis &amp; Modeling in Wireless Sensor Networks and Their Applications on Network Optimization and Anomaly Detection (2010), <i>Network Protocols and Algorithms</i><br><a href="https://doi.org/10.5296/npa.v2i1.328">doi:10.5296/npa.v2i1.328</a></td>
+<td class="num">17% / 7%</td>
+<td class="num">87 words</td><td class="num">2026-10-24</td></tr>
+<tr><td class="num"><a href="GI-369.html">GI-369</a></td>
+<td class="art">A comparative study of parapharyngeal space tumors over a 7 year period experience in tertiary care hospital (2018), <i>International Journal of Otorhinolaryngology and Head and Neck Surgery</i><br><a href="https://doi.org/10.18203/issn.2454-5929.ijohns20182958">doi:10.18203/issn.2454-5929.ijohns20182958</a></td><td class="art">Tumors of the parapharyngeal space: the VU University Medical Center experience over a 20-year period (2018), <i>European Archives of Oto-Rhino-Laryngology</i><br><a href="https://doi.org/10.1007/s00405-018-4891-x">doi:10.1007/s00405-018-4891-x</a></td>
+<td class="num">16% / 15%</td>
+<td class="num">98 words</td><td class="num">2026-10-19</td></tr>
+<tr><td class="num"><a href="GI-941.html">GI-941</a></td>
+<td class="art">Can early introduction of specialized palliative care limit intensive care, emergency and hospital admissions in patients with severe and very severe COPD? a randomized study (2014), <i>BMC Palliative Care</i><br><a href="https://doi.org/10.1186/1472-684X-13-47">doi:10.1186/1472-684X-13-47</a></td><td class="art">Palliative and end-of-life care for patients with severe COPD (2007), <i>European Respiratory Journal</i><br><a href="https://doi.org/10.1183/09031936.00126107">doi:10.1183/09031936.00126107</a></td>
+<td class="num">16% / 12%</td>
+<td class="num">69 words</td><td class="num">2026-10-27</td></tr>
+</tbody>
+</table></div>
+<h2 id="unreported">Not reported (50)</h2>
+<p>Published so the comparison is public, but not reported: judged not worth a report, or not reported yet.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Case</th><th>Later article</th><th>Earlier article</th><th>Shared text (later / earlier)</th>
+<th>Longest passage</th><th>Reported</th></tr></thead>
+<tbody>
+<tr><td class="num"><a href="GI-227.html">GI-227</a></td>
+<td class="art">The Use of Renewable Materials in Interior Design (2016), <i>Proceedings of the 2016 International Conference on Economics, Social Science, Arts, Education and Management Engineering</i><br><a href="https://doi.org/10.2991/essaeme-16.2016.191">doi:10.2991/essaeme-16.2016.191</a></td><td class="art">Application of the Interior Decoration Materials in Environmental Engineering Section Two: The ground adornment material (2015), <i>Advances in Engineering Research</i><br><a href="https://doi.org/10.2991/icimm-15.2015.4">doi:10.2991/icimm-15.2015.4</a></td>
+<td class="num">42% / 96%</td>
+<td class="num">346 words</td><td class="num">not reported</td></tr>
+<tr><td class="num"><a href="GI-76.html">GI-76</a></td>
+<td class="art">Bulletin of Electrical Engineering and Informatics Organic Semiconductor and Transistor Electrical Characteristic Based on Carbon Nanotubes 1 (2016), <i>Bulletin of Electrical Engineering and Informatics</i><br><a href="https://doi.org/10.11591/eei.v5i1.551">doi:10.11591/eei.v5i1.551</a></td><td class="art">The effect of carbon nanotube/organic semiconductor interfacial area on the performance of organic transistors (2012), <i>Applied Physics Letters</i><br><a href="https://doi.org/10.1063/1.4769439">doi:10.1063/1.4769439</a></td>
+<td class="num">90% / 95%</td>
+<td class="num">277 words</td><td class="num">not reported</td></tr>
+<tr><td class="num"><a href="GI-129.html">GI-129</a></td>
+<td class="art">An Extensible Anti-Virus Framework Design Scheme (2016), <i>Proceedings of the 2016 International Conference on Computer Engineering and Information Systems</i><br><a href="https://doi.org/10.2991/ceis-16.2016.99">doi:10.2991/ceis-16.2016.99</a></td><td class="art">Design of An Extensible Anti-Virus Framework (2015), <i>Proceedings of the 4th International Conference on Information Technology and Management Innovation</i><br><a href="https://doi.org/10.2991/icitmi-15.2015.140">doi:10.2991/icitmi-15.2015.140</a></td>
+<td class="num">93% / 95%</td>
+<td class="num">294 words</td><td class="num">not reported</td></tr>
+<tr><td class="num"><a href="GI-49.html">GI-49</a></td>
+<td class="art">Lumbar Degenerative Disc Disease: Clinical Presentation and Treatment Approaches (2016), <i>IOSR Journal of Dental and Medical Sciences</i><br><a href="https://doi.org/10.9790/0853-1508051223">doi:10.9790/0853-1508051223</a></td><td class="art">Lumbar spondylosis: clinical presentation and treatment approaches (2009), <i>Current Reviews in Musculoskeletal Medicine</i><br><a href="https://doi.org/10.1007/s12178-009-9051-x">doi:10.1007/s12178-009-9051-x</a></td>
+<td class="num">88% / 94%</td>
+<td class="num">442 words</td><td class="num">not reported</td></tr>
+<tr><td class="num"><a href="GI-80.html">GI-80</a></td>
+<td class="art">A Survey on Recommendation System (2017), <i>International Journal of Computer Applications</i><br><a href="https://doi.org/10.5120/ijca2017913081">doi:10.5120/ijca2017913081</a></td><td class="art">A Survey Paper on Various Algorithm&#x27;s based Recommender System (2017), <i>IOSR Journal of Computer Engineering</i><br><a href="https://doi.org/10.9790/0661-1903042732">doi:10.9790/0661-1903042732</a></td>
+<td class="num">77% / 94%</td>
+<td class="num">454 words</td><td class="num">not reported</td></tr>
+<tr><td class="num"><a href="GI-97.html">GI-97</a></td>
+<td class="art">MULTIPLE PROJECT ENVIRONMENTS AND MANAGEMENT CHALLENGES (2018), <i>Proceedings of the 38th International Academic Conference, Prague</i><br><a href="https://doi.org/10.20472/iac.2018.038.012">doi:10.20472/iac.2018.038.012</a></td><td class="art">Management Challenges within Multiple Project Environments: Lessons for Developing Countries (2013), <i>Australasian Journal of Construction Economics and Building - Conference Series</i><br><a href="https://doi.org/10.5130/ajceb-cs.v1i2.3163">doi:10.5130/ajceb-cs.v1i2.3163</a></td>
+<td class="num">93% / 56%</td>
+<td class="num">422 words</td><td class="num">not reported</td></tr>
+<tr><td class="num"><a href="GI-119.html">GI-119</a></td>
+<td class="art">How to Improve the Teaching of Translation: A Constructivist Perspective (2018), <i>Proceedings of the 2018 International Conference on Education Science and Social Development (ESSD 2018)</i><br><a href="https://doi.org/10.2991/essd-18.2018.37">doi:10.2991/essd-18.2018.37</a></td><td class="art">Constructivism Theory and Translation Teaching (2017), <i>Proceedings of the 2017 2nd International Conference on Humanities and Social Science (HSS 2017)</i><br><a href="https://doi.org/10.2991/hss-17.2017.2">doi:10.2991/hss-17.2017.2</a></td>
+<td class="num">93% / 79%</td>
+<td class="num">196 words</td><td class="num">not reported</td></tr>
+<tr><td class="num"><a href="GI-09.html">GI-09</a></td>
+<td class="art">Study of Implementation of Image Analysis with Hardware and Software Co-Design on the Xilinx Platform (2016), <i>International Journal of Innovative Research in Electronics and Communications</i><br><a href="https://doi.org/10.20431/2349-4050.0305001">doi:10.20431/2349-4050.0305001</a></td><td class="art">Real-Time System Implementation for Image Processing with Hardware/Software Co-design on the Xilinx Zynq Platform (2015), <i>International Journal of Information and Electronics Engineering</i><br><a href="https://doi.org/10.7763/ijiee.2015.v5.582">doi:10.7763/ijiee.2015.v5.582</a></td>
+<td class="num">92% / 69%</td>
+<td class="num">280 words</td><td class="num">not reported</td></tr>
+<tr><td class="num"><a href="GI-52.html">GI-52</a></td>
+<td class="art">Intelligent Systems and Applications (2012), <i>International Journal of Intelligent Systems and Applications</i><br><a href="https://doi.org/10.5815/ijisa.2013.01.06">doi:10.5815/ijisa.2013.01.06</a></td><td class="art">A New Transmission Control Protocol for Satellite Networks (2011), <i>International Journal of Communications, Network and System Sciences</i><br><a href="https://doi.org/10.4236/ijcns.2011.44031">doi:10.4236/ijcns.2011.44031</a></td>
+<td class="num">92% / 84%</td>
+<td class="num">505 words</td><td class="num">not reported</td></tr>
+<tr><td class="num"><a href="GI-64.html">GI-64</a></td>
+<td class="art">Teaching New Vocabulary to Young Learners: Using Two Methods Total Physical Response and Keyword Method (2017), <i>International Journal of Evaluation and Research in Education (IJERE)</i><br><a href="https://doi.org/10.11591/ijere.v6i2.7593">doi:10.11591/ijere.v6i2.7593</a></td><td class="art">Teaching Young FL Learners New Vocabulary: A Comparison between the Efficiency of Keyword Method and Total Physical Response (2016), <i>International Journal of English Linguistics</i><br><a href="https://doi.org/10.5539/ijel.v6n6p1">doi:10.5539/ijel.v6n6p1</a></td>
+<td class="num">90% / 90%</td>
+<td class="num">414 words</td><td class="num">not reported</td></tr>
+<tr><td class="num"><a href="GI-128.html">GI-128</a></td>
+<td class="art">How to Improve the Participation and Subjectivity of English Teaching (2017), <i>Proceedings of the 3rd Annual 2017 International Conference on Management Science and Engineering (MSE 2017)</i><br><a href="https://doi.org/10.2991/mse-17.2017.30">doi:10.2991/mse-17.2017.30</a></td><td class="art">On Students&#x27; Subjectivity in English Teaching (2016), <i>Proceedings of the 2016 International Conference on Humanities and Social Science</i><br><a href="https://doi.org/10.2991/hss-26.2016.19">doi:10.2991/hss-26.2016.19</a></td>
+<td class="num">64% / 90%</td>
+<td class="num">234 words</td><td class="num">not reported</td></tr>
+<tr><td class="num"><a href="GI-54.html">GI-54</a></td>
+<td class="art">Multiple Access Technologies for Beyond 3G Wireless Cellular Systems (2013), <i>IOSR Journal of Engineering</i><br><a href="https://doi.org/10.9790/3021-03763745">doi:10.9790/3021-03763745</a></td><td class="art">A tutorial on multiple access technologies for beyond 3G mobile networks (2005), <i>IEEE Communications Magazine</i><br><a href="https://doi.org/10.1109/mcom.2005.1391509">doi:10.1109/mcom.2005.1391509</a></td>
+<td class="num">81% / 89%</td>
+<td class="num">348 words</td><td class="num">not reported</td></tr>
+<tr><td class="num"><a href="GI-59.html">GI-59</a></td>
+<td class="art">Evolution of Reovirus in Cancer Therapy (2017), <i>IOSR Journal of Pharmacy and Biological Sciences</i><br><a href="https://doi.org/10.9790/3008-1204010614">doi:10.9790/3008-1204010614</a></td><td class="art">Reovirus in cancer therapy: an evidence-based review (2014), <i>Oncolytic Virotherapy</i><br><a href="https://doi.org/10.2147/ov.s51321">doi:10.2147/ov.s51321</a></td>
+<td class="num">89% / 79%</td>
+<td class="num">157 words</td><td class="num">not reported</td></tr>
+<tr><td class="num"><a href="GI-60.html">GI-60</a></td>
+<td class="art">Evolution of Reovirus in Cancer Therapy (2017), <i>IOSR Journal of Pharmacy and Biological Sciences</i><br><a href="https://doi.org/10.9790/3008-1204016270">doi:10.9790/3008-1204016270</a></td><td class="art">Reovirus in cancer therapy: an evidence-based review (2014), <i>Oncolytic Virotherapy</i><br><a href="https://doi.org/10.2147/ov.s51321">doi:10.2147/ov.s51321</a></td>
+<td class="num">89% / 79%</td>
+<td class="num">157 words</td><td class="num">not reported</td></tr>
+<tr><td class="num"><a href="GI-06.html">GI-06</a></td>
+<td class="art">Assessment of postoperative analgesia after intraperitoneal instillation of lornoxicam in laparoscopic appendectomy: a randomized study (2018), <i>International Surgery Journal</i><br><a href="https://doi.org/10.18203/2349-2902.isj20183202">doi:10.18203/2349-2902.isj20183202</a></td><td class="art">A RANDOMIZED SINGLE BLIND CONTROLLED TRIAL TO ASSESS POSTOPERATIVE ANALGESIA AFTER INTRAPERITONEAL INSTILLATION OF LORNOXICAM IN LAPAROSCOPIC APPENDECTOMY (2015), <i>Journal of Evolution of Medical and Dental Sciences</i><br><a href="https://doi.org/10.14260/jemds/2015/1484">doi:10.14260/jemds/2015/1484</a></td>
+<td class="num">88% / 73%</td>
+<td class="num">601 words</td><td class="num">not reported</td></tr>
+<tr><td class="num"><a href="GI-50.html">GI-50</a></td>
+<td class="art">Medical tourism&#x27;s impact for health systems: A study from three Asian countries (2015)<br><a href="https://doi.org/10.5281/zenodo.376815">doi:10.5281/zenodo.376815</a></td><td class="art">Medical tourism and policy implications for health systems: a conceptual framework from a comparative study of Thailand, Singapore and Malaysia (2011), <i>Globalization and Health</i><br><a href="https://doi.org/10.1186/1744-8603-7-12">doi:10.1186/1744-8603-7-12</a></td>
+<td class="num">88% / 76%</td>
+<td class="num">238 words</td><td class="num">not reported</td></tr>
+<tr><td class="num"><a href="GI-89.html">GI-89</a></td>
+<td class="art">Fixation of Distal Radius Fractures with Diaphyseal Involvement 410 (2014), <i>International Journal of Medical Science and Public Health</i><br><a href="https://doi.org/10.5455/ijmsph.2014.260120142">doi:10.5455/ijmsph.2014.260120142</a></td><td class="art">Distal radius fractures with diaphyseal involvement: fixation with fixed angle volar plate (2011), <i>Journal of Orthopaedics and Traumatology</i><br><a href="https://doi.org/10.1007/s10195-011-0147-x">doi:10.1007/s10195-011-0147-x</a></td>
+<td class="num">88% / 76%</td>
+<td class="num">242 words</td><td class="num">not reported</td></tr>
+<tr><td class="num"><a href="GI-101.html">GI-101</a></td>
+<td class="art">Dynamic Passwords Using Graphics (2016), <i>IOSR Journal of Computer Engineering</i><br><a href="https://doi.org/10.9790/0661-1805026973">doi:10.9790/0661-1805026973</a></td><td class="art">Authentication Schemes for Session Passwords using Color and Images (2011), <i>International Journal of Network Security &amp;amp; Its Applications</i><br><a href="https://doi.org/10.5121/ijnsa.2011.3308">doi:10.5121/ijnsa.2011.3308</a></td>
+<td class="num">88% / 79%</td>
+<td class="num">132 words</td><td class="num">not reported</td></tr>
+<tr><td class="num"><a href="GI-217.html">GI-217</a></td>
+<td class="art">Independent English Learning through the Internet (2011), <i>Journal of Language Teaching and Research</i><br><a href="https://doi.org/10.4304/jltr.2.5.1080-1085">doi:10.4304/jltr.2.5.1080-1085</a></td><td class="art">A Study of Autonomy English Learning on the Internet (2008), <i>English Language Teaching</i><br><a href="https://doi.org/10.5539/elt.v1n2p147">doi:10.5539/elt.v1n2p147</a></td>
+<td class="num">52% / 88%</td>
+<td class="num">414 words</td><td class="num">not reported</td></tr>
+<tr><td class="num"><a href="GI-232.html">GI-232</a></td>
+<td class="art">Haemorrhagic Fevers â Getting ready: viewpoints from Kenyan Public Health Practioners (2015), <i>International Journal of Biomedical Research</i><br><a href="https://doi.org/10.7439/ijbr.v6i9.2455">doi:10.7439/ijbr.v6i9.2455</a></td><td class="art">Preparing for Ebola Virus Disease in West African countries not yet affected: perspectives from Ghanaian health professionals (2015), <i>Globalization and Health</i><br><a href="https://doi.org/10.1186/s12992-015-0094-z">doi:10.1186/s12992-015-0094-z</a></td>
+<td class="num">62% / 57%</td>
+<td class="num">136 words</td><td class="num">not reported</td></tr>
+<tr><td class="num"><a href="GI-144.html">GI-144</a></td>
+<td class="art">Sharp geometrical properties of a-rarefied sets via fixed point index for the Schrödinger operator equations (2015), <i>Fixed Point Theory and Applications</i><br><a href="https://doi.org/10.1186/s13663-015-0342-1">doi:10.1186/s13663-015-0342-1</a></td><td class="art">Rarefied sets at infinity associated with the Schrödinger operator (2014), <i>Journal of Inequalities and Applications</i><br><a href="https://doi.org/10.1186/1029-242X-2014-247">doi:10.1186/1029-242X-2014-247</a></td>
+<td class="num">50% / 45%</td>
+<td class="num">160 words</td><td class="num">not reported</td></tr>
+<tr><td class="num"><a href="GI-929.html">GI-929</a></td>
+<td class="art">Correlation Between Orthodontic Forces and Root Resorption – a Systematic Review of the Literature (2016), <i>Journal of Interdisciplinary Medicine</i><br><a href="https://doi.org/10.1515/jim-2016-0033">doi:10.1515/jim-2016-0033</a></td><td class="art">The Effect of Orthodontic Therapy on Periodontal Health: A Review of the Literature (2014), <i>International Journal of Dentistry</i><br><a href="https://doi.org/10.1155/2014/585048">doi:10.1155/2014/585048</a></td>
+<td class="num">46% / 20%</td>
+<td class="num">72 words</td><td class="num">not reported</td></tr>
+<tr><td class="num"><a href="GI-362.html">GI-362</a></td>
+<td class="art">CASE REPORT Rare Thoracolumbar Facet Synovial Cyst Presenting as Paraparesis (2015), <i>Korean Journal of Spine</i><br><a href="https://doi.org/10.14245/kjs.2015.12.3.193">doi:10.14245/kjs.2015.12.3.193</a></td><td class="art">Synovial cyst of the thoracic spine: case report (2007), <i>Arquivos de Neuro-Psiquiatria</i><br><a href="https://doi.org/10.1590/s0004-282x2007000500021">doi:10.1590/s0004-282x2007000500021</a></td>
+<td class="num">35% / 37%</td>
+<td class="num">69 words</td><td class="num">not reported</td></tr>
+<tr><td class="num"><a href="GI-999.html">GI-999</a></td>
+<td class="art">Automatic structure discovery for varying-coefficient partially linear models (2016), <i>Communications in Statistics - Theory and Methods</i><br><a href="https://doi.org/10.1080/03610926.2016.1161796">doi:10.1080/03610926.2016.1161796</a></td><td class="art">Semiparametric Regression Pursuit (2011), <i>Statistica Sinica</i><br><a href="https://doi.org/10.5705/ss.2010.298">doi:10.5705/ss.2010.298</a></td>
+<td class="num">36% / 24%</td>
+<td class="num">81 words</td><td class="num">not reported</td></tr>
+<tr><td class="num"><a href="GI-912.html">GI-912</a></td>
+<td class="art">Axillary lymphadenectomy for breast cancer in elderly patients and fibrin glue (2013), <i>BMC Surgery</i><br><a href="https://doi.org/10.1186/1471-2482-13-S2-S8">doi:10.1186/1471-2482-13-S2-S8</a></td><td class="art">Efficacy of Fibrin Glue on Seroma Formation after Breast Surgery (2012), <i>International Journal of Breast Cancer</i><br><a href="https://doi.org/10.1155/2012/643132">doi:10.1155/2012/643132</a></td>
+<td class="num">35% / 22%</td>
+<td class="num">113 words</td><td class="num">not reported</td></tr>
 <tr><td class="num"><a href="GI-874.html">GI-874</a></td>
 <td class="art">[IEEE 2017 11th International Conference on Software, Knowledge, Information Management and Applications (SKIMA) - Malabe, Sri Lanka (2017.12.6-2017.12.8)] 2017 11th International Conference on Software, Knowledge, Information Management and Applications (SKIMA) - A review of CPS 5 components architecture for manufacturing based on standards (2017), <i>2017 11th International Conference on Software, Knowledge, Information Management and Applications (SKIMA)</i><br><a href="https://doi.org/10.1109/SKIMA.2017.8294091">doi:10.1109/SKIMA.2017.8294091</a></td><td class="art">A Review of Technology Standards and Patent Portfolios for Enabling Cyber-Physical Systems (CPS) in Advanced Manufacturing (2016), <i>IEEE Access</i><br><a href="https://doi.org/10.1109/ACCESS.2016.2619360">doi:10.1109/ACCESS.2016.2619360</a></td>
 <td class="num">31% / 10%<br><small>41% in 4 earlier works</small></td>
 <td class="num">53 words</td><td class="num">not reported</td></tr>
+<tr><td class="num"><a href="GI-724.html">GI-724</a></td>
+<td class="art">Imaging of cerebral aneurysms: a clinical perspective (2016), <i>Neurovascular Imaging</i><br><a href="https://doi.org/10.1186/s40809-016-0016-3">doi:10.1186/s40809-016-0016-3</a></td><td class="art">DIAGNOSTIC ACCURACY OF THREE DIMENTIONAL DIGITAL SUBSTRACTION ANGIOGRAPHY (3D DSA) IN CORRELATION WITH COMPUTED TOMOGRAPHIC ANGIOGRAPHY (CTA) AND MAGNETIC RESONANCE ANGIOGRAPHY (MRA) IN EVALUATION OF ANEURYSMAL SUBARACHNOID HAEMORRHAGE : A COMPARATIVE STUDY IN A TERTIARY CARE HOSPITAL</td>
+<td class="num">18% / 22%</td>
+<td class="num">53 words</td><td class="num">not reported</td></tr>
+<tr><td class="num"><a href="GI-436.html">GI-436</a></td>
+<td class="art">Validation of the Spanish Version of the ICECAP-O for Nursing Home Residents with Dementia (2017), <i>PLOS ONE</i><br><a href="https://doi.org/10.1371/journal.pone.0169354">doi:10.1371/journal.pone.0169354</a></td><td class="art">Quality of Life of Nursing Home Residents with Dementia: Validation of the German Version of the ICECAP-O (2014), <i>PLoS ONE</i><br><a href="https://doi.org/10.1371/journal.pone.0092016">doi:10.1371/journal.pone.0092016</a></td>
+<td class="num">21% / 17%</td>
+<td class="num">85 words</td><td class="num">not reported</td></tr>
+<tr><td class="num"><a href="GI-949.html">GI-949</a></td>
+<td class="art">Risperidone Long-Acting Injection: Safety and Efficacy in Elderly Patients with Schizophrenia (2011), <i>Journal of Central Nervous System Disease</i><br><a href="https://doi.org/10.4137/jcnsd.s4125">doi:10.4137/jcnsd.s4125</a></td><td class="art">Efficacy and safety of risperidone long-acting injection in elderly people with schizophrenia (2009), <i>Clinical Interventions in Aging</i><br><a href="https://doi.org/10.2147/cia.s3252">doi:10.2147/cia.s3252</a></td>
+<td class="num">10% / 21%<br><small>18% in 2 earlier works</small></td>
+<td class="num">46 words</td><td class="num">not reported</td></tr>
+<tr><td class="num"><a href="GI-464.html">GI-464</a></td>
+<td class="art">Weight Management for Athletes: Important Things to be Considered (2017), <i>Arab Journal of Nutrition and Exercise (AJNE)</i><br><a href="https://doi.org/10.18502/ajne.v1i3.1232">doi:10.18502/ajne.v1i3.1232</a></td><td class="art">Weight Management for Athletes and Active Individuals: A Brief Review (2015), <i>Sports Medicine</i><br><a href="https://doi.org/10.1007/s40279-015-0401-0">doi:10.1007/s40279-015-0401-0</a></td>
+<td class="num">20% / 14%</td>
+<td class="num">47 words</td><td class="num">not reported</td></tr>
+<tr><td class="num"><a href="GI-566.html">GI-566</a></td>
+<td class="art">Correlation of Ultrasound Parameters with Serum Creatinine in Renal Parenchymal Disease (2019), <i>Journal of Gandaki Medical College-Nepal</i><br><a href="https://doi.org/10.3126/jgmcn.v12i1.22619">doi:10.3126/jgmcn.v12i1.22619</a></td><td class="art">Correlation of Ultrasonographic Parameters with Serum Creatinine in Chronic Kidney Disease (2013), <i>Journal of Clinical Imaging Science</i><br><a href="https://doi.org/10.4103/2156-7514.114809">doi:10.4103/2156-7514.114809</a></td>
+<td class="num">15% / 20%</td>
+<td class="num">165 words</td><td class="num">not reported</td></tr>
+<tr><td class="num"><a href="GI-701.html">GI-701</a></td>
+<td class="art">Dextrocardia and asplenia in situs inversus totalis in a baby: a case report (2014), <i>Journal of Medical Case Reports</i><br><a href="https://doi.org/10.1186/1752-1947-8-408">doi:10.1186/1752-1947-8-408</a></td><td class="art">Dextrocardia With Situs Inversus Totalis in an Adult Nigerian: a Case Report (2012), <i>American Journal of Medicine and Medical Sciences</i><br><a href="https://doi.org/10.5923/j.ajmms.20120203.06">doi:10.5923/j.ajmms.20120203.06</a></td>
+<td class="num">20% / 20%</td>
+<td class="num">45 words</td><td class="num">not reported</td></tr>
+<tr><td class="num"><a href="GI-841.html">GI-841</a></td>
+<td class="art">Adult primary paratesticular mesenchymal tumors with emphasis on a case presentation and discussion of spermatic cord leiomyosarcoma (2014), <i>Diagnostic Pathology</i><br><a href="https://doi.org/10.1186/1746-1596-9-90">doi:10.1186/1746-1596-9-90</a></td><td class="art">Leiomyosarcoma of the spermatic cord: case report and literature review (2012), <i>Canadian Urological Association Journal</i><br><a href="https://doi.org/10.5489/cuaj.42">doi:10.5489/cuaj.42</a></td>
+<td class="num">12% / 20%</td>
+<td class="num">95 words</td><td class="num">not reported</td></tr>
 <tr><td class="num"><a href="GI-881.html">GI-881</a></td>
 <td class="art">Laparoscopic distal pancreatectomy in elderly patients: is it safe? (2016), <i>Aging Clinical and Experimental Research</i><br><a href="https://doi.org/10.1007/s40520-016-0677-4">doi:10.1007/s40520-016-0677-4</a></td><td class="art">Laparoscopic versus open distal pancreatectomy: a single-institution comparative study (2014), <i>World Journal of Surgical Oncology</i><br><a href="https://doi.org/10.1186/1477-7819-12-327">doi:10.1186/1477-7819-12-327</a></td>
 <td class="num">20% / 17%<br><small>27% in 2 earlier works</small></td>
@@ -253,42 +345,66 @@ came first is unknown and the order means nothing.</p>
 <td class="art">Smart Textiles and Nano-Technology: A General Overview (2015), <i>Journal of Textile Science &amp;amp; Engineering</i><br><a href="https://doi.org/10.4172/2165-8064.1000181">doi:10.4172/2165-8064.1000181</a></td><td class="art">Reference Module in Materials Science and Materials Engineering || Smart Nanotextiles: Materials and Their Application (2015), <i>Reference Module in Materials Science and Materials Engineering</i><br><a href="https://doi.org/10.1016/B978-0-12-803581-8.03345-2">doi:10.1016/B978-0-12-803581-8.03345-2</a></td>
 <td class="num">10% / 20%</td>
 <td class="num">58 words</td><td class="num">not reported</td></tr>
-<tr><td class="num"><a href="GI-891.html">GI-891</a></td>
-<td class="art">Free Radicals Cardiovascular Diseases: An Update (2011), <i>Free Radicals and Antioxidants</i><br><a href="https://doi.org/10.5530/ax.2011.1.4">doi:10.5530/ax.2011.1.4</a></td><td class="art">Oxidative Stress as a Mediator of Cardiovascular Disease (2009), <i>Oxidative Medicine and Cellular Longevity</i><br><a href="https://doi.org/10.4161/oxim.2.5.9441">doi:10.4161/oxim.2.5.9441</a></td>
-<td class="num">47% / 26%</td>
-<td class="num">44 words</td><td class="num">2026-10-28</td></tr>
-<tr><td class="num"><a href="GI-912.html">GI-912</a></td>
-<td class="art">Axillary lymphadenectomy for breast cancer in elderly patients and fibrin glue (2013), <i>BMC Surgery</i><br><a href="https://doi.org/10.1186/1471-2482-13-S2-S8">doi:10.1186/1471-2482-13-S2-S8</a></td><td class="art">Efficacy of Fibrin Glue on Seroma Formation after Breast Surgery (2012), <i>International Journal of Breast Cancer</i><br><a href="https://doi.org/10.1155/2012/643132">doi:10.1155/2012/643132</a></td>
-<td class="num">35% / 22%</td>
-<td class="num">113 words</td><td class="num">not reported</td></tr>
-<tr><td class="num"><a href="GI-929.html">GI-929</a></td>
-<td class="art">Correlation Between Orthodontic Forces and Root Resorption – a Systematic Review of the Literature (2016), <i>Journal of Interdisciplinary Medicine</i><br><a href="https://doi.org/10.1515/jim-2016-0033">doi:10.1515/jim-2016-0033</a></td><td class="art">The Effect of Orthodontic Therapy on Periodontal Health: A Review of the Literature (2014), <i>International Journal of Dentistry</i><br><a href="https://doi.org/10.1155/2014/585048">doi:10.1155/2014/585048</a></td>
-<td class="num">46% / 20%</td>
-<td class="num">72 words</td><td class="num">not reported</td></tr>
-<tr><td class="num"><a href="GI-941.html">GI-941</a></td>
-<td class="art">Can early introduction of specialized palliative care limit intensive care, emergency and hospital admissions in patients with severe and very severe COPD? a randomized study (2014), <i>BMC Palliative Care</i><br><a href="https://doi.org/10.1186/1472-684X-13-47">doi:10.1186/1472-684X-13-47</a></td><td class="art">Palliative and end-of-life care for patients with severe COPD (2007), <i>European Respiratory Journal</i><br><a href="https://doi.org/10.1183/09031936.00126107">doi:10.1183/09031936.00126107</a></td>
-<td class="num">16% / 12%</td>
-<td class="num">69 words</td><td class="num">2026-10-27</td></tr>
-<tr><td class="num"><a href="GI-959.html">GI-959</a></td>
-<td class="art">Sepsis Biomarkers in Neonates and Children: C-Reactive Protein and Procalcitonin (2017), <i>Journal of Child Science</i><br><a href="https://doi.org/10.1055/s-0037-1603895">doi:10.1055/s-0037-1603895</a></td><td class="art">Biomarkers for pediatric sepsis and septic shock (2010), <i>Expert Review of Anti-infective Therapy</i><br><a href="https://doi.org/10.1586/eri.10.154">doi:10.1586/eri.10.154</a></td>
-<td class="num">12% / 8%</td>
-<td class="num">58 words</td><td class="num">not reported</td></tr>
+<tr><td class="num"><a href="GI-30.html">GI-30</a></td>
+<td class="art">Transcriptome Sequencing and De Novo Analysis for Ma Bamboo (Dendrocalamus latiflorus Munro) Using the Illumina Platform (2012), <i>PLoS ONE</i><br><a href="https://doi.org/10.1371/journal.pone.0046766">doi:10.1371/journal.pone.0046766</a></td><td class="art">Transcriptome Sequencing and De Novo Analysis for Yesso Scallop (Patinopecten yessoensis) Using 454 GS FLX (2011), <i>PLoS ONE</i><br><a href="https://doi.org/10.1371/journal.pone.0021560">doi:10.1371/journal.pone.0021560</a></td>
+<td class="num">11% / 19%</td>
+<td class="num">57 words</td><td class="num">not reported</td></tr>
+<tr><td class="num"><a href="GI-46.html">GI-46</a></td>
+<td class="art">Successful balloon valvuloplasty of a subpulmonic membrane associated with cor triatriatum dexter: a case report (2019), <i>Journal of Medical Case Reports</i><br><a href="https://doi.org/10.1186/s13256-019-2218-1">doi:10.1186/s13256-019-2218-1</a></td><td class="art">Discrete subpulmonic membrane in association with isolated severe pulmonary valvar stenosis (2013), <i>BMC Cardiovascular Disorders</i><br><a href="https://doi.org/10.1186/1471-2261-13-43">doi:10.1186/1471-2261-13-43</a></td>
+<td class="num">14% / 19%</td>
+<td class="num">43 words</td><td class="num">not reported</td></tr>
+<tr><td class="num"><a href="GI-37.html">GI-37</a></td>
+<td class="art">Structural analysis of hubs in human NR-RTK network (2011), <i>Biology Direct</i><br><a href="https://doi.org/10.1186/1745-6150-6-49">doi:10.1186/1745-6150-6-49</a></td><td class="art">Structural interpretation of protein-protein interaction network (2010), <i>BMC Structural Biology</i><br><a href="https://doi.org/10.1186/1472-6807-10-s1-s4">doi:10.1186/1472-6807-10-s1-s4</a></td>
+<td class="num">18% / 15%</td>
+<td class="num">188 words</td><td class="num">not reported</td></tr>
+<tr><td class="num"><a href="GI-484.html">GI-484</a></td>
+<td class="art">Ontology integration to identify protein complex in protein interaction networks (2011), <i>Proteome Science</i><br><a href="https://doi.org/10.1186/1477-5956-9-s1-s7">doi:10.1186/1477-5956-9-s1-s7</a></td><td class="art">Semantic integration to identify overlapping functional modules in protein interaction networks (2007), <i>BMC Bioinformatics</i><br><a href="https://doi.org/10.1186/1471-2105-8-265">doi:10.1186/1471-2105-8-265</a></td>
+<td class="num">18% / 9%</td>
+<td class="num">120 words</td><td class="num">not reported</td></tr>
+<tr><td class="num"><a href="GI-587.html">GI-587</a></td>
+<td class="art">Effect of active fraction isolated from the leaf extract ofDregea volubilis[Linn.] Benth. on plasma glucose concentration and lipid profile in streptozotocin-induced diabetic rats (2013), <i>SpringerPlus</i><br><a href="https://doi.org/10.1186/2193-1801-2-394">doi:10.1186/2193-1801-2-394</a></td><td class="art">Effect of an isolated active compound (Cg-1) of Cassia glauca leaf on blood glucose, lipid profile, and atherogenic index in diabetic rats (2009), <i>Indian Journal of Pharmacology</i><br><a href="https://doi.org/10.4103/0253-7613.56076">doi:10.4103/0253-7613.56076</a></td>
+<td class="num">17% / 18%</td>
+<td class="num">39 words</td><td class="num">not reported</td></tr>
+<tr><td class="num"><a href="GI-699.html">GI-699</a></td>
+<td class="art">Deep wound infection after a trochanteric fracture internal fixation presenting with hip dislocation: a case report (2010), <i>Cases Journal</i><br><a href="https://doi.org/10.1186/1757-1626-3-19">doi:10.1186/1757-1626-3-19</a></td><td class="art">Press Infective Failure of Internal Fixation for Intertrochanteric Femoral Neck Fracture Presenting as Hip Joint Subluxation: A Case Report (2010), <i>Journal of Medical Cases</i><br><a href="https://doi.org/10.4021/jmc31w">doi:10.4021/jmc31w</a></td>
+<td class="num">18% / 17%</td>
+<td class="num">55 words</td><td class="num">not reported</td></tr>
+<tr><td class="num"><a href="GI-618.html">GI-618</a></td>
+<td class="art">A novel polyomavirus from the nasal cavity of a giant panda (Ailuropoda melanoleuca) (2017), <i>Virology Journal</i><br><a href="https://doi.org/10.1186/s12985-017-0867-5">doi:10.1186/s12985-017-0867-5</a></td><td class="art">Characterization of a Novel Polyomavirus Isolated from a Fibroma on the Trunk of an African Elephant (Loxodonta africana) (2013), <i>PLoS ONE</i><br><a href="https://doi.org/10.1371/journal.pone.0077884">doi:10.1371/journal.pone.0077884</a></td>
+<td class="num">15% / 12%</td>
+<td class="num">80 words</td><td class="num">not reported</td></tr>
+<tr><td class="num"><a href="GI-647.html">GI-647</a></td>
+<td class="art">Fournier’s gangrene at a tertiary health facility in northwestern Tanzania: a single centre experiences with 84 patients (2015), <i>BMC Research Notes</i><br><a href="https://doi.org/10.1186/s13104-015-1493-1">doi:10.1186/s13104-015-1493-1</a></td><td class="art">Fournier’s gangrene: our experience with 50 patients and analysis of factors affecting mortality (2013), <i>World Journal of Emergency Surgery</i><br><a href="https://doi.org/10.1186/1749-7922-8-13">doi:10.1186/1749-7922-8-13</a></td>
+<td class="num">9% / 15%</td>
+<td class="num">39 words</td><td class="num">not reported</td></tr>
+<tr><td class="num"><a href="GI-845.html">GI-845</a></td>
+<td class="art">Identifying economic periods and crisis with (2010), <i>Nonlinear Dynamics</i><br><a href="https://doi.org/10.1007/s11071-010-9823-2">doi:10.1007/s11071-010-9823-2</a></td><td class="art">Encyclopedia of Statistics in Behavioral Science || Multidimensional Scaling (2005), <i>Encyclopedia of Statistics in Behavioral Science</i><br><a href="https://doi.org/10.1002/0470013192.bsa415">doi:10.1002/0470013192.bsa415</a></td>
+<td class="num">15% / 12%</td>
+<td class="num">74 words</td><td class="num">not reported</td></tr>
 <tr><td class="num"><a href="GI-962.html">GI-962</a></td>
 <td class="art">Undifferentiated pleomorphic sarcoma with osteoclast-like giant cells of the female breast (2013), <i>World Journal of Surgical Oncology</i><br><a href="https://doi.org/10.1186/1477-7819-11-21">doi:10.1186/1477-7819-11-21</a></td><td class="art">Undifferentiated Pleomorphic Sarcoma of the Male Breast Causing Diagnostic Challenges (2011), <i>Journal of Breast Cancer</i><br><a href="https://doi.org/10.4048/jbc.2011.14.3.241">doi:10.4048/jbc.2011.14.3.241</a></td>
 <td class="num">14% / 15%</td>
 <td class="num">73 words</td><td class="num">not reported</td></tr>
+<tr><td class="num"><a href="GI-725.html">GI-725</a></td>
+<td class="art">Inter-observer agreement according to malaria parasite density (2013), <i>Malaria Journal</i><br><a href="https://doi.org/10.1186/1475-2875-12-335">doi:10.1186/1475-2875-12-335</a></td><td class="art">Inter-rater reliability of malaria parasite counts and comparison of methods (2009), <i>Malaria Journal</i><br><a href="https://doi.org/10.1186/1475-2875-8-267">doi:10.1186/1475-2875-8-267</a></td>
+<td class="num">14% / 7%</td>
+<td class="num">38 words</td><td class="num">not reported</td></tr>
+<tr><td class="num"><a href="GI-830.html">GI-830</a></td>
+<td class="art">Color stability of esthetic restorative materials: a spectrophotometric analysis (2016), <i>Acta Biomaterialia Odontologica Scandinavica</i><br><a href="https://doi.org/10.1080/23337931.2016.1217416">doi:10.1080/23337931.2016.1217416</a></td><td class="art">Effect of staining solutions and repolishing on color stability of direct composites (2010), <i>Journal of Applied Oral Science</i><br><a href="https://doi.org/10.1590/S1678-77572010000300009">doi:10.1590/S1678-77572010000300009</a></td>
+<td class="num">11% / 13%</td>
+<td class="num">61 words</td><td class="num">not reported</td></tr>
+<tr><td class="num"><a href="GI-817.html">GI-817</a></td>
+<td class="art">Endangering the endangered: Are protected areas save havens for threatened species in Cameroon? Case of Banyang-Mbo Wildlife Sanctuary, South Western Cameroon (2014), <i>Journal of Ecology and The Natural Environment</i><br><a href="https://doi.org/10.5897/jene2013.0430">doi:10.5897/jene2013.0430</a></td><td class="art">Hunting for Livelihood in Northeast Gabon: Patterns, Evolution, and Sustainability (2008), <i>Ecology and Society</i><br><a href="https://doi.org/10.5751/ES-02560-130233">doi:10.5751/ES-02560-130233</a></td>
+<td class="num">12% / 12%</td>
+<td class="num">74 words</td><td class="num">not reported</td></tr>
+<tr><td class="num"><a href="GI-959.html">GI-959</a></td>
+<td class="art">Sepsis Biomarkers in Neonates and Children: C-Reactive Protein and Procalcitonin (2017), <i>Journal of Child Science</i><br><a href="https://doi.org/10.1055/s-0037-1603895">doi:10.1055/s-0037-1603895</a></td><td class="art">Biomarkers for pediatric sepsis and septic shock (2010), <i>Expert Review of Anti-infective Therapy</i><br><a href="https://doi.org/10.1586/eri.10.154">doi:10.1586/eri.10.154</a></td>
+<td class="num">12% / 8%</td>
+<td class="num">58 words</td><td class="num">not reported</td></tr>
 <tr><td class="num"><a href="GI-977.html">GI-977</a></td>
 <td class="art">Pain management after total knee arthroplasty: A prospective randomized study (2018), <i>Journal of Clinical Orthopaedics and Trauma</i><br><a href="https://doi.org/10.1016/j.jcot.2018.12.005">doi:10.1016/j.jcot.2018.12.005</a></td><td class="art">Local infiltration of analgesia and sciatic nerve block provide similar pain relief after total knee arthroplasty (2017), <i>Journal of Orthopaedic Surgery and Research</i><br><a href="https://doi.org/10.1186/s13018-017-0616-x">doi:10.1186/s13018-017-0616-x</a></td>
 <td class="num">12% / 11%</td>
 <td class="num">83 words</td><td class="num">not reported</td></tr>
-<tr><td class="num"><a href="GI-997.html">GI-997</a></td>
-<td class="art">A hybrid iterative method for a common solution of variational inequalities, generalized mixed equilibrium problems, and hierarchical fixed point problems (2015), <i>Journal of Inequalities and Applications</i><br><a href="https://doi.org/10.1186/s13660-015-0671-y">doi:10.1186/s13660-015-0671-y</a></td><td class="art">An iterative method for a common solution of generalized mixed equilibrium problems, variational inequalities, and hierarchical fixed point problems (2014), <i>Fixed Point Theory and Applications</i><br><a href="https://doi.org/10.1186/1687-1812-2014-155">doi:10.1186/1687-1812-2014-155</a></td>
-<td class="num">42% / 46%</td>
-<td class="num">111 words</td><td class="num">2026-10-30</td></tr>
-<tr><td class="num"><a href="GI-999.html">GI-999</a></td>
-<td class="art">Automatic structure discovery for varying-coefficient partially linear models (2016), <i>Communications in Statistics - Theory and Methods</i><br><a href="https://doi.org/10.1080/03610926.2016.1161796">doi:10.1080/03610926.2016.1161796</a></td><td class="art">Semiparametric Regression Pursuit (2011), <i>Statistica Sinica</i><br><a href="https://doi.org/10.5705/ss.2010.298">doi:10.5705/ss.2010.298</a></td>
-<td class="num">36% / 24%</td>
-<td class="num">81 words</td><td class="num">not reported</td></tr>
 </tbody>
 </table></div>
 <p><a href="../">Example output</a></p>
