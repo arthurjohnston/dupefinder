@@ -9,6 +9,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / "general_index"))
 
 import gi_report_case as gi_report  # noqa: E402
+import gi_site_index  # noqa: E402
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from test_gi_pubpeer import fd  # noqa: E402
 
@@ -53,7 +54,7 @@ class TestIndex(unittest.TestCase):
             gi_report.record(d, "GI-4", dict(fd(pct_later=90.0), data_extra=["table 2 copied"]))
             gi_report.record(d, "GI-5", fd(pct_later=95.0), reported=False)
             cases = json.loads((Path(d) / "cases.json").read_text())
-            self.assertEqual([gi_report.index_group(cases[f"GI-{n}"]) for n in range(1, 6)],
+            self.assertEqual([gi_site_index.index_group(cases[f"GI-{n}"]) for n in range(1, 6)],
                              ["unreported", "reported", "data", "data", "unreported"])
             page = gi_report.write_index(d).read_text()
             order = [page.index(f'href="GI-{n}.html"') for n in (4, 3, 2, 5, 1)]

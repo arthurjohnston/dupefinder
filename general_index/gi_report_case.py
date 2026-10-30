@@ -91,7 +91,6 @@ import email
 import base64
 import hashlib
 import email.policy
-import html
 import json
 import sqlite3
 import subprocess
@@ -106,6 +105,7 @@ import gi_contact
 import gi_db
 import gi_pubpeer as pp
 import gi_sources
+from gi_site_index import case_key, write_index
 
 ROOT = Path(__file__).resolve().parent.parent
 REPORT_DIR = gi_db.DATA / "dupe_publisher"
@@ -393,56 +393,6 @@ def record(site_dir, case, fd, reported=True):
     path.write_text(json.dumps(cases, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
 
 
-def case_key(case):
-    """GI-235 sorts as 235, after GI-80."""
-    tail = case.rsplit("-", 1)[-1]
-    return (0, int(tail), case) if tail.isdigit() else (1, 0, case)
-
-
-INDEX_STYLE = """
-:root {
-  --bg: #f2f4ef; --surface: #ffffff; --ink: #1a1f1a; --ink-muted: #565f57;
-  --border: #d7dbd0; --accent-strong: #7c4a15;
-  --font-display: "Source Serif 4", Georgia, "Times New Roman", serif;
-  --font-body: "Source Sans 3", -apple-system, "Segoe UI", sans-serif;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #14170f; --surface: #1c2016; --ink: #e9ede4; --ink-muted: #a2ab98;
-    --border: #333a29; --accent-strong: #f0b46a;
-  }
-}
-:root[data-theme="dark"] {
-  --bg: #14170f; --surface: #1c2016; --ink: #e9ede4; --ink-muted: #a2ab98;
-  --border: #333a29; --accent-strong: #f0b46a;
-}
-* { box-sizing: border-box; }
-body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.6 var(--font-body); }
-main { max-width: 1300px; margin: 0 auto; padding: 2.5rem 16px 5rem; }
-main > p { max-width: 78ch; }
-h1, h2 { font-family: var(--font-display); line-height: 1.2; }
-h1 { font-size: 2.2rem; margin: 0 0 1rem; }
-h2 { font-size: 1.4rem; margin: 2.5rem 0 0.5rem; border-bottom: 1px solid var(--border); padding-bottom: .3rem; }
-a { color: var(--accent-strong); }
-.table-wrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; }
-table { border-collapse: collapse; width: 100%; font-size: .9rem; }
-th, td { text-align: left; padding: .45rem .7rem; border-bottom: 1px solid var(--border); vertical-align: top; }
-th { color: var(--ink-muted); font-weight: 600; white-space: nowrap; }
-td.num { white-space: nowrap; font-variant-numeric: tabular-nums; }
-td.art { min-width: 18rem; }
-"""
-
-
-def _article(p):
-    title = html.escape((p["title"] or p["doi"] or "").replace("*", ""))
-    doi = p["doi"] or ""
-    link = pp.doi_url(doi)
-    year = f" ({p['year']})" if p["year"] else ""
-    if p.get("journal"):
-        year += f", <i>{html.escape(p['journal'])}</i>"
-    return f'{title}{year}<br><a href="{html.escape(link)}">doi:{html.escape(doi)}</a>' if link else title + year
-
-
 def is_reported(case, site_dir=SITE_DIR):
     """The date the case was reported on the site (cases.json), None when it wasn't or isn't there."""
     path = Path(site_dir) / "cases.json"
@@ -481,91 +431,6 @@ def take_down(case, site_dir=SITE_DIR, report_dir=REPORT_DIR):
         compose.replace(gone / "compose")
         moved.append(gone / "compose")
     return moved
-
-
-def _union(c):
-    """The index's note for a case with other sources (gi_sources): the share found in all of them."""
-    if not c.get("union_pct"):
-        return ""
-    return f"<br><small>{c['union_pct']:.0f}% in {c['sources']} earlier works</small>"
-
-
-INDEX_GROUPS = (
-    ("data", "Copied data",
-     "Pairs where what's shared includes results data (tables, figures' values), not only text; reported or not."),
-    ("reported", "Reported: copied text", "Reported to the journal concerned."),
-    ("unreported", "Not reported",
-     "Published so the comparison is public, but not reported: judged not worth a report, or not reported yet."),
-)
-
-
-def index_group(c):
-    """Which INDEX_GROUPS table a cases.json entry goes in."""
-    return "data" if c.get("data") else "reported" if c.get("reported") else "unreported"
-
-
-def share_key(item):
-    """Largest shared-text share (of either article) first; ties by case number."""
-    case, c = item
-    return (-max(c["later"].get("pct") or 0, c["earlier"].get("pct") or 0), case_key(case))
-
-
-def _row(case, c):
-    later, earlier = c["later"], c["earlier"]
-    return f"""<tr><td class="num"><a href="{html.escape(c['file'])}">{html.escape(case)}</a></td>
-<td class="art">{_article(later)}</td><td class="art">{_article(earlier)}</td>
-<td class="num">{pp.pct(later['pct'])} / {pp.pct(earlier['pct'])}{_union(c)}</td>
-<td class="num">{c['longest'] or '?'} words</td><td class="num">{html.escape(c['reported'] or 'not reported')}</td></tr>"""
-
-
-def write_index(site_dir):
-    site_dir = Path(site_dir)
-    cases = json.loads((site_dir / "cases.json").read_text(encoding="utf-8"))
-    tables = []
-    for key, heading, about in INDEX_GROUPS:
-        group = sorted(((k, c) for k, c in cases.items() if index_group(c) == key), key=share_key)
-        if not group:
-            continue
-        rows = "\n".join(_row(k, c) for k, c in group)
-        tables.append(f"""<h2 id="{key}">{html.escape(heading)} ({len(group)})</h2>
-<p>{html.escape(about)}</p>
-<div class="table-wrap"><table>
-<thead><tr><th>Case</th><th>Later article</th><th>Earlier article</th><th>Shared text (later / earlier)</th>
-<th>Longest passage</th><th>Reported</th></tr></thead>
-<tbody>
-{rows}
-</tbody>
-</table></div>""")
-    path = site_dir / "index.html"
-    path.write_text(f"""<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>General Index: checked pairs</title>
-<style>{INDEX_STYLE}</style>
-</head>
-<body>
-<main>
-<h1>General Index: checked pairs</h1>
-<p>Pairs of articles found by this project's scan of the
-<a href="https://archive.org/details/GeneralIndex">General Index</a> (word n-grams from over 100 million
-articles), checked against both articles' full text, and reported to the journal concerned, except those marked
-"not reported" (published so the comparison is public). Each page shows the measured overlap: the shared
-passages as printed in both articles, side by side, with the shared words highlighted. "Shared text" is the share of each article's words that fall inside a run of 10 or
-more matching words (allowing substituted words within a run). A page shows measured text overlap; it does
-not establish why the overlap exists, and none of these pages is a finding of misconduct by any named
-person.</p>
-<p>Where the publication years differ, the later article is listed first. Where they are the same, which
-came first is unknown and the order means nothing. Each table is sorted by the larger of the two shared-text
-figures, highest first.</p>
-{chr(10).join(tables)}
-<p><a href="../">Example output</a></p>
-</main>
-</body>
-</html>
-""", encoding="utf-8")
-    return path
 
 
 def main():
