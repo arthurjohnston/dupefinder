@@ -2892,8 +2892,32 @@ interactionism textbooks (IES 2008 vs Teaching Sociology 2003), MIS Quarterly 20
 journal, chironomid biomass (J Freshwater Ecol 2006 vs Ecology 1998). Takeaway: JSTOR mostly supplies
 the earlier, copied-from side; the copying venues are rarely in JSTOR.
 
+**2026-10-25 update:** the metadata file is loaded (`general_index/gi_jstor.py`, `data/jstor.sqlite3`);
+it has no abstracts and item IDs are UUIDs. 63 cross-venue pairs triaged worth full text, 33 later
+sides downloaded and index-checked; one 103-item request is ready
+(`general_index/data/jstor_experiment/request_combined.txt`, README.md there). It supersedes the
+7-item test below.
+
 **Next (user):** submit the 7-item test request: files and steps in
 `general_index/data/jstor_experiment/` (README.md, pairs.tsv, request_dois.txt / request_item_ids.txt;
 check the item-ID format against JSTOR's metadata file first), and ask about quoting excerpts and
 AI-agent use. Also check whether the EHP side (`10.2307/3454989`) is simply free on PubMed Central.
 Then measure OCR quality vs PDF extraction and run the 6 pairs through `compare_two_papers.py`.
+
+## General Index: the byline check hides cross-author pairs (2026-10-26, gate not fixed yet)
+
+`gi_verify.measure()` (and `floor_measure.py`) marks a pair `byline overlap: <surname>` when either paper's
+metadata surname appears anywhere in the other's first 6 paragraphs + PDF page 1, and every page/queue
+step (`gi_write_pages.py`, `gi_review_cli.py`, `gi_db.py`, `gi_affiliations.py`) drops those pairs. An
+agent read both PDFs' bylines for the 66 unreviewed pairs it had hidden that Claude called cross-author or
+data copying: **0 of 66 shared an author** (`general_index/data/byline_check_2026-10-26.tsv`). Causes: the
+other paper citing this one by surname (~35), metadata "authors" that aren't names ("article", "student",
+"group", "jemds"; 11), a common surname on two people (~20). Those 66 were set to `no byline overlap` and
+given pages GI-993..1058 in `data/fulltext_pages_s16`.
+
+A text-only fix was tried and reverted: requiring a first name/initial next to the surname and dropping
+"et al"/year contexts cleared 52 of the 66 but also cleared ~13 pairs the agent called self-reuse (metadata
+with several authors in one string, single-name authors, "Johann" vs "Hans Kroha"). There are 560 pairs
+marked `byline overlap` in all; the agent's own byline reading (`agent_reviews.byline_names_a/b`,
+`shared_names`, from PDF page 1) matched the PDFs in 66/66. Better gate, not built: hide a pair only when
+the crude check fires AND the agent review (when there is one) lists a shared name.

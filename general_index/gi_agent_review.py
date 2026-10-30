@@ -161,7 +161,9 @@ type (each maps to REVIEWING.md's agent vocabulary):
   an authorised reprint, a templated report series (e.g. a government agency's standard template), a
   book chapter reprinting its author's article.
 - shared third source: both papers quote or adapt the same external text (a standard protocol, a
-  guideline, a legal text, a canonical passage by a named scholar) rather than each other.
+  guideline, a legal text, a canonical passage by a named scholar) rather than each other, or the two
+  author groups worked together on a shared project (a joint grant, consortium or study) that both
+  papers report.
 - boilerplate (agent_decided_boilerplate): template/disclaimer/licence/masthead/funding/ethics text
   that many unrelated papers would contain.
 - shared citations (agent_decided_citation): the shared text is formatted reference-list entries.
