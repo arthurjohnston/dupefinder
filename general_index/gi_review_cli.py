@@ -40,13 +40,14 @@ in the queue, with a note: such uploads are most often the authors' own or an ag
 publishable finding. Pairs where the order is unknown and one side is a preprint go just before them.
 --order affiliation (the default since 2026-10-17; --order publisher for the order above alone) ranks by who
 the later paper's authors are now (gi_affiliations.py: an author still
-publishing, at a US or European university, first; then at a university elsewhere; then no data; then no author
-active in academia), within the agent's problem calls and within the rest separately; it fetches any missing
-OpenAlex/ORCID data first. --us-europe-only keeps only the first of those. --no-medical drops pairs where
+publishing, at a Western (US, Canadian, European, Japanese, Australian or NZ) university, first; then at a
+university elsewhere; then no data; then no author active in academia), within the agent's problem calls and within the rest separately; it fetches any missing
+OpenAlex/ORCID data first. --western-only keeps only pairs whose copying (later) paper has such an author; with
+the order unknown, either paper will do. --no-medical drops pairs where
 either paper's OpenAlex primary topic is in the Health Sciences domain (medicine, nursing, dentistry, health
 professions); a paper with no cached OpenAlex record (gi_metadata.py fetch) doesn't count. --order professor ranks by the
 authors above everything else: a later paper with an author whose ORCID lists a current (not emeritus)
-professor/lecturer post at a US/European institution first, then the affiliation ranks, the agent's calls and
+professor/lecturer post at a Western institution first, then the affiliation ranks, the agent's calls and
 the publisher order holding within each; only authors with an ORCID record can be found this way. Each pair
 shows its later paper's authors' line whenever the data is cached (gi_affiliations.py fetch). Pages whose
 later paper is the later paper of another page too (one article copied from several earlier ones) are kept
@@ -100,6 +101,8 @@ the comparison page and index on the project site, example_output/general_index/
   - the site pages are pushed to main (gi_publish_site.py), after the last rewrite (the emails don't link
     it: the comparison is attached);
   - o opens the drafts as Thunderbird compose windows.
+Before the next pair opens, a prompt: Enter goes on, d talks the pair just finished through with the agent again
+(its session resumed, as d at the menu; as often as you like), q quits.
 After the agent's summary, and again after you talk it through with it (d), v changes your verdict (the
 menu again; the new one replaces the saved one) and s stops there, not reported: nothing has been written
 yet at that point. A pair reported with t before its verdict isn't taken through all that again when the
@@ -108,7 +111,7 @@ problem on a pair already reported (--gi NN --include-reviewed) offers t to take
 cases.json entry removed and pushed, the report files moved to GI-NN/withdrawn/ (gi_report_case.take_down());
 emails and a PubPeer post already sent are yours to withdraw.
 
-Usage: gi_review_cli.py [--gi 12,40] [--ai-type cross-author,data] [--ai-decision problem] [--include-reviewed] [--order affiliation|professor|publisher|overlap] [--us-europe-only] [--no-medical] [--pdfs] [--no-open] [--no-agent] [--no-lookahead] [--pages-dir data/fulltext_pages_s16] [--sample-rate 8]
+Usage: gi_review_cli.py [--gi 12,40] [--ai-type cross-author,data] [--ai-decision problem] [--include-reviewed] [--order affiliation|professor|publisher|overlap] [--western-only] [--no-medical] [--pdfs] [--no-open] [--no-agent] [--no-lookahead] [--pages-dir data/fulltext_pages_s16] [--sample-rate 8]
                         [--db data/gi.sqlite3]
 """
 import argparse
@@ -297,11 +300,11 @@ order by case when r.ai_decision = 'problem' and r.ai_type in ('cross-author cop
 
 
 def load_queue(db, gi=None, include_reviewed=False, ai_types=None, ai_decisions=None, order="publisher",
-               us_europe_only=False, groups=None, no_medical=False):
+               western_only=False, groups=None, no_medical=False):
     """ai_types / ai_decisions: lists of AI_TYPES / AI_DECISIONS names to keep ('none': the agent hasn't
-    reviewed the pair). us_europe_only: only pairs whose later paper has an author active at a US/European
-    university (gi_affiliations.py). no_medical: drop pairs with a Health Sciences paper (medical_pairs()).
-    Ignored with gi. Pages sharing a later paper (groups:
+    reviewed the pair). western_only: only pairs whose copying (later) paper has an author active at a Western
+    university (gi_affiliations.py); with the order unknown, either paper. no_medical: drop
+    pairs with a Health Sciences paper (medical_pairs()). Ignored with gi. Pages sharing a later paper (groups:
     later_paper_groups(), computed when not given) are kept together, where the first of them falls."""
     rows = db.execute(QUEUE_SQL).fetchall()
     if gi:
@@ -323,11 +326,11 @@ def load_queue(db, gi=None, include_reviewed=False, ai_types=None, ai_decisions=
     import gi_write_pages
     aff = {}
     profs = {}
-    if order in ("affiliation", "professor") or us_europe_only:
+    if order in ("affiliation", "professor") or western_only:
         aff = affiliation_ranks(db, rows)
-        if us_europe_only:
+        if western_only:
             import gi_affiliations
-            rows = [r for r in rows if aff[r["pair_lo"], r["pair_hi"]] == gi_affiliations.TARGET]
+            rows = [r for r in rows if aff[pair_key(r)] == gi_affiliations.TARGET]
     if order == "professor":
         profs = professor_pairs(db, rows)
     ranked = sorted(rows, key=lambda r: queue_key(r, gi_write_pages.priority_status(r)[0], order,
@@ -439,7 +442,7 @@ def affiliation_ranks(db, rows):
 
 
 def professor_pairs(db, rows):
-    """{(pair_lo, pair_hi): the later paper's US/European professors (gi_affiliations.pair_professors)}."""
+    """{(pair_lo, pair_hi): the later paper's Western professors (gi_affiliations.pair_professors)}."""
     import gi_affiliations
     import gi_write_pages
     profs = gi_affiliations.doi_professors(db, [d for r in rows for d in (r["doi_a"], r["doi_b"])])
@@ -471,7 +474,7 @@ def queue_key(r, priority, order="publisher", affiliation=None, professor=False)
     calls and within the rest separately (so a pair the agent cleared never jumps one it flagged), the
     publisher order then holding within each rank. order="professor" puts who the authors are ahead of
     everything: a later paper with an author whose ORCID lists a current professor/lecturer post at a
-    US/European institution (professor: gi_affiliations.professor_job) first, then by affiliation rank, then
+    Western institution (professor: gi_affiliations.professor_job) first, then by affiliation rank, then
     the affiliation order within each (so the agent's calls and the publisher order still hold inside a rank,
     and a preprint copy still goes after the rest of its rank). Verdicts are untouched; only the order."""
     pct = max(r["ft_pct_a"] or 0, r["ft_pct_b"] or 0)
@@ -584,7 +587,7 @@ def affiliation_line(scores, shown):
 
 
 def professor_line(profs, shown):
-    """The later paper's US/European professors (both papers' when the order is unknown), or None."""
+    """The later paper's Western professors (both papers' when the order is unknown), or None."""
     import gi_affiliations as ga
     found = ga.pair_professors(profs, shown["doi_a"], shown["doi_b"], shown.get("earlier"))
     return "; ".join(f"{n} ({why})" for n, why in found) or None
@@ -1090,6 +1093,19 @@ def next_to_prep(rest):
     return None
 
 
+def between_cases(case, prep=None, nxt=None):
+    """Before the next pair opens: d talks the case just finished through with the agent again (discuss(): its
+    session resumed when it has one), as often as you like; q quits; Enter goes on. True to go on."""
+    while True:
+        ans = ask(f"[Enter: next case{' (' + nxt + ')' if nxt else ''}, d: talk {case} through with the agent "
+                  f"again, q: quit] ").lower()
+        if ans.startswith("q"):
+            return False
+        if not ans.startswith("d"):
+            return True
+        discuss(case, prep if prep and (prep.running() or prep.result()) else BackgroundPrep.previous(case))
+
+
 def publish_site(case):
     """Push the site pages to main (gi_publish_site.py), printing what happened; never fatal."""
     import gi_publish_site
@@ -1250,15 +1266,17 @@ def main():
                                                         "opens them for one pair)")
     ap.add_argument("--no-open", action="store_true", help="don't open anything automatically")
     ap.add_argument("--order", choices=("affiliation", "professor", "publisher", "overlap"), default="affiliation",
-                    help="affiliation (default): pairs whose later paper has an author still at a US/European "
+                    help="affiliation (default): pairs whose later paper has an author still at a Western "
                          "university first (gi_affiliations.py), then as publisher; professor: by the authors "
                          "above all else -- an author whose ORCID lists a current professor/lecturer post at a "
-                         "US/European institution first, then US/European academics, then the rest; publisher: "
+                         "Western institution first, then Western academics, then the rest; publisher: "
                          "within the agent's "
                          "cross-author / data copying group, major publisher first, then overlap; overlap: "
                          "overlap first, then publisher")
-    ap.add_argument("--us-europe-only", action="store_true",
-                    help="only pairs whose later paper has an author still at a US/European university")
+    ap.add_argument("--western-only", "--us-europe-only", action="store_true",
+                    help="only pairs whose copying (later) paper has an author still at a Western university (US, "
+                         "Canada, Europe west of Russia, Japan, Australia, New Zealand); with the order unknown, "
+                         "either paper (--us-europe-only: the old name)")
     ap.add_argument("--no-medical", action="store_true",
                     help="skip pairs where either paper's OpenAlex primary topic is in Health Sciences (medicine, "
                          "nursing, dentistry, ...); papers with no cached OpenAlex record are kept")
@@ -1280,7 +1298,7 @@ def main():
             ap.error(f"{name}: unknown {', '.join(bad)} (use: {', '.join(known)})")
     groups = later_paper_groups(db)
     queue = load_queue(db, args.gi, args.include_reviewed, args.ai_type, args.ai_decision, args.order,
-                       args.us_europe_only, groups, args.no_medical)
+                       args.western_only, groups, args.no_medical)
     if not queue:
         print("nothing to review")
         return
@@ -1416,6 +1434,8 @@ def main():
                             print("  not reported (t on this pair later does it)")
                 break
             if out == "quit":
+                break
+            if i < len(queue) and not between_cases(case, prep, f"GI-{queue[i]['page_number']:02d}"):
                 break
     finally:   # quitting (or Ctrl-C) stops a run started ahead: it starts again when you reach that pair
         for p_ in ahead.values():

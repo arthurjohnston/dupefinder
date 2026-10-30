@@ -1,10 +1,10 @@
 """Who the authors are now: OpenAlex (and ORCID) author data for case and lead DOIs, and a rank for targeting.
 
-The point is to spend review and download effort on cases whose authors are still in academia, at a US or
-European (west of Russia) university first. For each DOI, OpenAlex's work record gives its authors
-(disambiguated author ids); each author's record gives the years they published in (counts_by_year) and their
-last known institutions (with ROR type and country); an author with an ORCID also has ORCID's employment list,
-whose entries with no end date are current jobs. An author is:
+The point is to spend review and download effort on cases whose authors are still in academia, at a Western
+university first (the US, Canada, Europe west of Russia, Japan, Australia and New Zealand: TARGET_COUNTRIES).
+For each DOI, OpenAlex's work record gives its authors (disambiguated author ids); each author's record gives the
+years they published in (counts_by_year) and their last known institutions (with ROR type and country); an
+author with an ORCID also has ORCID's employment list, whose entries with no end date are current jobs. An author is:
   target    active (a work in ACTIVE_SINCE or later, or a current ORCID job) and at an academic institution
             (OpenAlex type 'education', or a current ORCID job whose name looks academic) in TARGET_COUNTRIES
   academic  active and at an academic institution elsewhere
@@ -59,7 +59,7 @@ runs did the best-ranked 160K (36.4K matched, ~25%; ~$155) and left ~141K, lower
 
 coverage: for the scored leads (pair_affiliation) and the full-text-checked pairs, which papers have a university:
 on the byline, only in a raw affiliation string, only as an author's last known institution, or none.
-gi_review_cli.py --order affiliation / --us-europe-only and gi_verify.py select --order affiliation use it.
+gi_review_cli.py --order affiliation / --western-only and gi_verify.py select --order affiliation use it.
 """
 import argparse
 import html
@@ -120,14 +120,14 @@ create table if not exists orcid_employments (
 MIGRATIONS = {"oa_authorships": ["raw", "raw_university"], "oa_authors": ["raw"], "orcid_employments": ["raw"]}
 
 TARGET, ACADEMIC, UNKNOWN, OTHER = 0, 1, 2, 3
-LABELS = {TARGET: "US/Europe academic", ACADEMIC: "academic elsewhere", UNKNOWN: "unknown",
+LABELS = {TARGET: "Western academic", ACADEMIC: "academic elsewhere", UNKNOWN: "unknown",
           OTHER: "not active in academia"}
 
-# The US, and Europe west of Russia: Russia itself, Turkey and the Caucasus are left out, Belarus, Ukraine and
-# Moldova are in. ISO 3166-1 alpha-2, as OpenAlex and ORCID give them (XK: Kosovo).
+# "Western": the US, Canada, Japan, Australia, New Zealand, and Europe west of Russia: Russia itself, Turkey and
+# the Caucasus are left out, Belarus, Ukraine and Moldova are in. ISO 3166-1 alpha-2, as OpenAlex and ORCID give them (XK: Kosovo).
 EUROPE = frozenset("""AD AL AT BA BE BG BY CH CY CZ DE DK EE ES FI FO FR GB GI GR HR HU IE IM IS IT LI LT LU LV
                       MC MD ME MK MT NL NO PL PT RO RS SE SI SK SM UA VA XK""".split())
-TARGET_COUNTRIES = EUROPE | {"US"}
+TARGET_COUNTRIES = EUROPE | {"US", "CA", "JP", "AU", "NZ"}
 ACADEMIC_TYPES = frozenset({"education"})       # OpenAlex / ROR institution types
 ACTIVE_SINCE = date.today().year - 2             # a work in this year or later is "still publishing"
 # An ORCID employer has no type: a current job counts as academic when its name looks like a university's
@@ -516,7 +516,7 @@ def professor_job(jobs):
 
 def doi_professors(db, dois):
     """{doi (lower): [(name, 'role, institution, country')]}: the DOI's authors whose ORCID lists a current
-    professor/lecturer post at a US/European institution (professor_job). Cache only; ORCID records are
+    professor/lecturer post at a Western institution (professor_job). Cache only; ORCID records are
     fetched by `fetch` (case DOIs) and `backfill --orcid`, so leads without them simply have none."""
     ensure_tables(db)
     dois = sorted({(d or "").lower() for d in dois if d})
@@ -536,7 +536,7 @@ def doi_professors(db, dois):
 
 
 def pair_professors(profs, doi_a, doi_b, earlier):
-    """The later paper's US/European professors (both papers' when the order is unknown)."""
+    """The later paper's Western professors (both papers' when the order is unknown)."""
     get = lambda d: profs.get((d or "").lower(), [])
     if earlier == "a":
         return get(doi_b)

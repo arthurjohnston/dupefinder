@@ -1,6 +1,6 @@
 """general_index/gi_affiliations.py: ranking cases by who the later paper's authors are now.
 
-An author is target (still publishing, at a US/European university), academic (still publishing, at a
+An author is target (still publishing, at a Western university), academic (still publishing, at a
 university elsewhere), known (neither) or unknown (no data); a DOI takes its best author, a pair its later
 paper. Europe is everything west of Russia: Ukraine and Belarus in, Russia and Turkey out.
 """
@@ -32,7 +32,8 @@ class TestCountries(unittest.TestCase):
             self.assertIn(cc, ga.TARGET_COUNTRIES, cc)
         for cc in ("RU", "TR", "GE", "AM", "AZ", "KZ", "CN", "IN"):
             self.assertNotIn(cc, ga.TARGET_COUNTRIES, cc)
-        self.assertIn("US", ga.TARGET_COUNTRIES)
+        for cc in ("US", "CA", "JP", "AU", "NZ"):
+            self.assertIn(cc, ga.TARGET_COUNTRIES, cc)
 
 
 class TestAuthorStatus(unittest.TestCase):
@@ -132,7 +133,7 @@ class TestScores(unittest.TestCase):
 
     def test_describe_names_the_qualifying_author(self):
         line = ga.describe(self.scores, "10.1/target")
-        self.assertTrue(line.startswith("US/Europe academic"))
+        self.assertTrue(line.startswith("Western academic"))
         self.assertIn("name A2", line)
         self.assertNotIn("name A1", line)     # stopped publishing: not why it ranks
 

@@ -181,7 +181,7 @@ def ranked(db, args):
     # own or an aggregator's copy. So a --limit batch spends its retrievals on the promoted pairs first. Stable:
     # lead_rank order holds otherwise. (stratified() is a calibration sample and is deliberately left unsorted.)
     # --order affiliation: within a tier, by who the later paper's authors are now (gi_affiliations.py: still
-    # publishing at a US/European university first), the publisher order then holding within each rank. Ahead of
+    # publishing at a Western university first), the publisher order then holding within each rank. Ahead of
     # that, complete() leads: a real DOI and a year on both sides. Without them the author data, the shared-author
     # check and which paper came first are all guesses, and most of the noise in a batch was those leads.
     import gi_preprints
@@ -482,7 +482,7 @@ def main():
     ap.add_argument("--order", choices=["rank", "affiliation"], default="rank",
                     help="select (ranked): lead_rank and publisher (default), or affiliation: within a tier, "
                          "leads with a DOI and a year on both sides first, then those whose later paper has an "
-                         "author still at a US/European university "
+                         "author still at a Western university "
                          "(fetches OpenAlex/ORCID author data, gi_affiliations.py)")
     ap.add_argument("--pool", type=int, default=0,
                     help="select --order affiliation: how many top-ranked leads to choose --limit from "

@@ -427,6 +427,26 @@ class TestDiscuss(unittest.TestCase):
         out = cli.review_one({"ai_decision": None, "year_a": 2016, "year_b": 2017}, cli.CHOICES, {}, case="GI-07")
         self.assertEqual(out, "discuss")
 
+    def test_between_cases_talks_again_then_goes_on(self):
+        it = iter(["d", "d", ""])
+        cli.ask = lambda prompt: next(it)
+        self.assertTrue(cli.between_cases("GI-07", self.prep(), "GI-08"))
+        self.assertEqual([r[1:3] for r in self.runs], [["--resume", "s1"]] * 2)
+
+    def test_between_cases_quit(self):
+        cli.ask = lambda prompt: "q"
+        self.assertFalse(cli.between_cases("GI-07", self.prep(), "GI-08"))
+        self.assertEqual(self.runs, [])
+
+    def test_between_cases_after_the_run_was_dropped(self):
+        """prep gone (reported, or stopped without a result): a new conversation from findings.md."""
+        (self.dir / "GI-07").mkdir()
+        (self.dir / "GI-07" / "findings.md").write_text("## Findings\n")
+        it = iter(["d", ""])
+        cli.ask = lambda prompt: next(it)
+        self.assertTrue(cli.between_cases("GI-07", None))
+        self.assertNotIn("--resume", self.runs[0])
+
 
 class TestAgentEnv(unittest.TestCase):
     def test_api_keys_removed(self):
