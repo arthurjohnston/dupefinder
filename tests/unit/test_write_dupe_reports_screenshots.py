@@ -320,6 +320,17 @@ class TestSelectPassages(unittest.TestCase):
         self.assertFalse(wds.readable_run(table))
         self.assertTrue(wds.readable_run("in 2010 the 28 samples were taken"))
 
+    def test_tables_first(self):
+        prose = "the milk was collected from farms in the area and taken to the laboratory for analysis"
+        big = "Mean 4.81 (1.00) 4.60 (1.03) 4.93 (0.97) balance 4.87 (0.93) 4.91 (0.89) 4.87 (0.95) x y z"
+        runs = [self.run_(prose + " and stored overnight before it was tested", 0, 0),
+                self.run_("Age 40.7 (9.24) 43.9 (7.58) years", 100, 100),
+                self.run_(big, 200, 200),
+                self.run_("a different sentence about the results", 300, 300)]
+        tables = {100, 200}
+        chosen = wds.select_passages(runs, 3, is_table=lambda r: r.start_a in tables)
+        self.assertEqual([r.start_a for r in chosen], [200, 100, 0])   # tables, largest first, then text
+
 
 class TestComposeShot(unittest.TestCase):
     """compose_shot(): each side's crops stacked, the two sides next to each other."""

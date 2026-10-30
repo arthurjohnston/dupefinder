@@ -85,6 +85,10 @@ MAX_KGRAM_HITS = 40        # a k-gram occurring more often than this (running he
 # same") says nothing about where a run is, and would flood the offset vote
 REGION_GAP_PT = 150        # a vertical jump bigger than this within one column starts a new crop,
 # so a figure sitting between two matched paragraphs isn't rendered as part of the exhibit
+TABLE_SHARE = 0.5          # a run with this share of its placed words inside a table PyMuPDF finds
+                           # (page.find_tables()) on either side is a table (table_run())
+TABLE_DIGITS = 0.15        # ... and only a run with at least this share of words containing digits is
+                           # looked for in a table at all: a table is numbers, and finding tables costs time
 TITLE_BLOCK_MAX_PT = 150  # a text block taller than this isn't just a title (title_rect())
 MATCH_RGB = (1.0, 0.86, 0.15)
 DIFF_RGB = (1.0, 0.55, 0.55)
@@ -487,6 +491,7 @@ class PdfSide:
     def __init__(self, path):
         self.path, self.doc, self.error = path, None, None
         self.tokens, self.index, self.extents = [], {}, {}
+        self._tables = {}
         if path is None:
             self.error = "no local PDF for this paper"
             return
@@ -508,6 +513,26 @@ class PdfSide:
         self.page_words = {}
         for t in self.tokens:
             self.page_words.setdefault(t.page, []).extend(r for _, r in t.parts)
+
+    def tables(self, page_no):
+        """The bounding boxes of the tables PyMuPDF finds on one page (page.find_tables()), cached; [] when
+        it finds none or fails."""
+        if page_no not in self._tables:
+            try:
+                self._tables[page_no] = [tuple(t.bbox) for t in self.doc[page_no].find_tables().tables]
+            except Exception:
+                self._tables[page_no] = []
+        return self._tables[page_no]
+
+
+def _inside(rect, box):
+    """Whether rect's centre is inside box."""
+    cx, cy = (rect[0] + rect[2]) / 2, (rect[1] + rect[3]) / 2
+    return box[0] <= cx <= box[2] and box[1] <= cy <= box[3]
+
+
+def _overlaps(a, b):
+    return a[0] < b[2] and b[0] < a[2] and a[1] < b[3] and b[1] < a[3]
 
 
 class ImageWriter:
@@ -615,6 +640,8 @@ class ScreenshotExhibits:
         self.sides, self.writer, self.case_key = sides, writer, case_key
         self.context_pt, self.text_px = context_pt, text_px
         self.outcomes = []
+        self.table_crops = False   # widen each crop to the whole of any table its highlights sit in
+        self.plans = []            # the last exhibit's two plans, left side then right
 
     def _plan_side(self, side, words, start, match_words, diff_idx):
         """Locate one side of one run and lay out its crops. Returns a dict with `status`
@@ -646,12 +673,29 @@ class ScreenshotExhibits:
         for reg in group_regions(line_highlights(side.tokens, placed), side.extents):
             clip = crop_rect(reg, side.page_rects[reg["page"]], side.extents, context=self.context_pt)
             clip = snap_clip(clip, side.page_words.get(reg["page"], []), reg["rect"])
+            if self.table_crops:   # the whole table, with a little room round it, not just the matched rows
+                for box in side.tables(reg["page"]):
+                    if _overlaps(box, reg["rect"]):
+                        pr = side.page_rects[reg["page"]]
+                        clip = _union(clip, (max(pr[0], box[0] - CROP_PAD_PT), max(pr[1], box[1] - CROP_PAD_PT),
+                                             min(pr[2], box[2] + CROP_PAD_PT), min(pr[3], box[3] + CROP_PAD_PT)))
+                        # off any line the padding slices through (a caption just above the table)
+                        clip = snap_clip(clip, side.page_words.get(reg["page"], []), _union(reg["rect"], box))
+                if crops and crops[-1][0] == reg["page"] and _overlaps(crops[-1][1], clip):
+                    # two stretches of one table: one crop of it
+                    page_no, prev, items = crops.pop()
+                    clip, reg["items"] = _union(prev, clip), items + reg["items"]
             crops.append((reg["page"], clip, reg["items"]))
+        boxes = {}
+        if _digit_share(" ".join(match_words)) >= TABLE_DIGITS:
+            boxes = {pg: side.tables(pg) for pg in {side.tokens[j].page for j, _ in placed}}
+        in_table = sum(1 for j, _ in placed
+                       if any(_inside(side.tokens[j].parts[0][1], b) for b in boxes.get(side.tokens[j].page, ())))
         # Measured on the placed words themselves, one box per word: a line highlight's height is
         # its line's, so this is the size of the text being compared, not of the page's headings.
         text_h = text_height_pt([r for j, _ in placed for _, r in side.tokens[j].parts])
         return {"status": "located" if share >= LOCATED_MIN else "partial", "crops": crops,
-                "share": share, "text_h": text_h}
+                "share": share, "text_h": text_h, "table_share": in_table / max(1, len(placed))}
 
     def _emit_side(self, side, plan, scale, name, role, match_words, column_px=COLUMN_PX):
         """HTML for a planned side at display scale `scale`. Returns (html, pages)."""
@@ -723,6 +767,7 @@ class ScreenshotExhibits:
             sides = ((self.sides[left[0]], left), (self.sides[right[0]], right))
             plans = [self._plan_side(side, words, s, mw, dset)
                      for side, (_, words, s, mw, dset) in sides]
+            self.plans = plans
             scales, column_px, stacked = choose_layout(
                 [(pl.get("text_h"), max((c[2] - c[0] for _, c, _ in pl["crops"]), default=None)
                   if "crops" in pl else None) for pl in plans], target_px=self.text_px)
@@ -879,25 +924,41 @@ def longest_shot(conn, sides, writer, case_key, pid1, pid2, earlier_id, args, ou
 NUMERIC_SHARE = 0.5   # a run with more than this share of words containing digits is a table row
 
 
+def _digit_share(text):
+    """The share of text's words that contain a digit."""
+    words = text.split()
+    return sum(any(c.isdigit() for c in w) for w in words) / len(words) if words else 0.0
+
+
 def readable_run(text):
     """False for a run that is mostly numbers (a table run together), which makes a poor exhibit."""
-    words = text.split()
-    return bool(words) and sum(any(c.isdigit() for c in w) for w in words) / len(words) <= NUMERIC_SHARE
+    return bool(text.split()) and _digit_share(text) <= NUMERIC_SHARE
+
+
+def table_run(run, plans):
+    """Whether a run is (part of) a table: mostly numbers (not readable_run()), or at least TABLE_SHARE of its
+    placed words inside a table PyMuPDF finds, on either side. plans: ScreenshotExhibits.plans for the run."""
+    return not readable_run(run.text_b) or any(pl.get("table_share", 0) >= TABLE_SHARE for pl in plans)
 
 
 def _norm_text(text):
     return " ".join(re.sub(r"[^\w\s]", "", text.lower()).split())
 
 
-def select_passages(runs, n):
+def select_passages(runs, n, is_table=None):
     """Up to n runs for PubPeer images: the longest first, skipping table rows (readable_run()), a run whose
     text repeats one already chosen (a sentence a paper prints several times gives one run per repeat), and
-    a run overlapping a chosen one's span on either side."""
+    a run overlapping a chosen one's span on either side. With is_table (run -> bool, table_run()), the tables
+    come first, largest first, then the longest runs of text."""
+    ordered = sorted(runs, key=lambda r: -max(r.length, len(r.text_b.split())))
+    if is_table:
+        tables = [r for r in ordered if is_table(r)]
+        ordered = tables + [r for r in ordered if r not in tables and readable_run(r.text_b)]
     chosen = []
-    for r in sorted(runs, key=lambda r: -max(r.length, len(r.text_b.split()))):
+    for r in ordered:
         if len(chosen) >= n:
             break
-        if not readable_run(r.text_b):
+        if not is_table and not readable_run(r.text_b):
             continue
         if any(_norm_text(r.text_b) == _norm_text(c.text_b)
                or (r.start_a < c.end_a and c.start_a < r.end_a)
@@ -914,10 +975,11 @@ def _side_label(conn, role, pid, pages=()):
     return role + (f" ({', '.join(facts)})" if facts else "") + where   # pages 1-based
 
 
-def passage_shots(conn, sides, writer, case_key, pid1, pid2, earlier_id, args, out_dir, n):
+def passage_shots(conn, sides, writer, case_key, pid1, pid2, earlier_id, args, out_dir, n, tables_first=False):
     """One side-by-side JPEG per select_passages() run (earlier/PAPER A left), out_dir/passage-K.jpg, and
-    out_dir/passages.json describing them: [{file, words, left: {doi, pages, text}, right: {...}}], pages
-    1-based. A run neither PDF could place is left out. Returns that list."""
+    out_dir/passages.json describing them: [{file, words, table, left: {doi, pages, text}, right: {...}}], pages
+    1-based. A run neither PDF could place is left out. tables_first: the tables first (table_run()), each
+    crop widened to the whole table, one image per table, then the longest runs of text. Returns that list."""
     import json
     out_dir = Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -933,11 +995,34 @@ def passage_shots(conn, sides, writer, case_key, pid1, pid2, earlier_id, args, o
     order = (pid2, pid1) if swap else (pid1, pid2)
     doi = {pid: (conn.execute("SELECT doi FROM papers WHERE id=?", (pid,)).fetchone() or [None])[0]
            for pid in order}
-    out = []
-    for run in select_passages(runs, n):
+    is_table = None
+    if tables_first:
+        found = {}
+
+        def is_table(run):   # placed on both PDFs once, the tables found on its pages
+            if id(run) not in found:
+                plans = []
+                if _digit_share(run.text_b) >= TABLE_DIGITS:
+                    for pid, start, text in ((pid1, run.start_a, run.text_a), (pid2, run.start_b, run.text_b)):
+                        words = words_1 if pid == pid1 else words_2
+                        plans.append(exhibits._plan_side(sides[pid], words, start, text.split(), set()))
+                found[id(run)] = table_run(run, plans)
+            return found[id(run)]
+    out, shown_tables = [], set()
+    for run in select_passages(runs, n + 10 if tables_first else n, is_table):   # spare: one table, several runs
+        if len(out) >= n:
+            break
+        table = bool(is_table and is_table(run))
+        exhibits.table_crops = table
         writer.kept = []
         try:
             exhibits(conn, pid1, pid2, earlier_id, args.shingle_size, 1, runs=[run])
+            if table:   # another run of a table already shown
+                key = tuple((i, c[0], tuple(round(x) for x in c[1]))
+                            for i, pl in enumerate(exhibits.plans) for c in pl.get("crops", ()))
+                if key in shown_tables:
+                    continue
+                shown_tables.add(key)
             pages = [[p + 1 for p in sorted(set(ps))] for ps in exhibits.pages]
             name = f"passage-{len(out) + 1}.jpg"
             labels = [_side_label(conn, role, pid, pg) for role, pid, pg in zip(roles, order, pages)]
@@ -946,7 +1031,7 @@ def passage_shots(conn, sides, writer, case_key, pid1, pid2, earlier_id, args, o
         finally:
             writer.kept = None
         texts = (run.text_b, run.text_a) if swap else (run.text_a, run.text_b)
-        out.append({"file": name, "words": max(run.length, len(run.text_b.split())),
+        out.append({"file": name, "words": max(run.length, len(run.text_b.split())), "table": table,
                     **{key: {"doi": doi[pid], "pages": pg, "text": t}
                        for key, pid, pg, t in zip(("left", "right"), order, pages, texts)}})
     (out_dir / "passages.json").write_text(json.dumps(out, indent=1), encoding="utf-8")
@@ -1019,6 +1104,9 @@ def parse_args():
                    help="also write --passage-count passages (the longest of running text, no repeats) as "
                         "side-by-side JPEGs, passage-K.jpg, plus passages.json, into this folder (for PubPeer)")
     p.add_argument("--passage-count", type=int, default=4)
+    p.add_argument("--tables-first", action="store_true",
+                   help="with --passage-shots: the shared tables first, each as an image of the whole table, "
+                        "then the longest passages of text (for a case of copied results data)")
     p.add_argument("--title-shot", type=Path,
                    help="also write both papers' title and byline, side by side, as one JPEG to this path")
     p.add_argument("--longest-shot", type=Path,
@@ -1079,7 +1167,7 @@ def main():
               "no longest-run image: neither PDF could be used")
     if args.passage_shots:
         shots = passage_shots(conn, sides, writer, case_key, pid1, pid2, earlier_id, args, args.passage_shots,
-                              args.passage_count)
+                              args.passage_count, tables_first=args.tables_first)
         print(f"wrote {len(shots)} passage image(s) to {args.passage_shots}")
     if args.title_shot:
         size = title_shot(conn, sides, writer, pid1, pid2, earlier_id, args, args.title_shot)

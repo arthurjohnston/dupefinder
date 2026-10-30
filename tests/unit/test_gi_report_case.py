@@ -26,7 +26,8 @@ class TestIndex(unittest.TestCase):
             self.assertEqual(cases["GI-235"]["reported"], "2026-01-01")
             self.assertEqual(cases["GI-235"]["later"]["pct"], 70.0)
             page = gi_report.write_index(d).read_text()
-            self.assertLess(page.index('href="GI-80.html"'), page.index('href="GI-235.html"'))
+            # one table (both reported text cases), the larger share first: GI-235 at 70% before GI-80 at 62%
+            self.assertLess(page.index('href="GI-235.html"'), page.index('href="GI-80.html"'))
             self.assertIn("70% / 40%", page)
             self.assertIn('New paper (2015)<br><a href="https://doi.org/10.2/new">doi:10.2/new</a>', page)
             self.assertIn("300 words", page)
@@ -42,6 +43,65 @@ class TestIndex(unittest.TestCase):
             self.assertTrue(json.loads((Path(d) / "cases.json").read_text())["GI-474"]["reported"])
             gi_report.record(d, "GI-474", fd(), reported=False)   # publishing again doesn't undo that
             self.assertTrue(json.loads((Path(d) / "cases.json").read_text())["GI-474"]["reported"])
+
+
+    def test_groups_data_then_reported_then_not(self):
+        with tempfile.TemporaryDirectory() as d:
+            gi_report.record(d, "GI-1", fd(pct_later=20.0), reported=False)
+            gi_report.record(d, "GI-2", fd(pct_later=30.0))
+            gi_report.record(d, "GI-3", dict(fd(pct_later=10.0), type="data copying"), reported=False)
+            gi_report.record(d, "GI-4", dict(fd(pct_later=90.0), data_extra=["table 2 copied"]))
+            gi_report.record(d, "GI-5", fd(pct_later=95.0), reported=False)
+            cases = json.loads((Path(d) / "cases.json").read_text())
+            self.assertEqual([gi_report.index_group(cases[f"GI-{n}"]) for n in range(1, 6)],
+                             ["unreported", "reported", "data", "data", "unreported"])
+            page = gi_report.write_index(d).read_text()
+            order = [page.index(f'href="GI-{n}.html"') for n in (4, 3, 2, 5, 1)]
+            self.assertEqual(order, sorted(order))
+            self.assertIn("Copied data (2)", page)
+            self.assertLess(page.index("Copied data"), page.index("Reported: copied text"))
+            self.assertLess(page.index("Reported: copied text"), page.index("Not reported (2)"))
+
+
+class TestSiteImages(unittest.TestCase):
+    def test_externalize_images(self):
+        import base64
+        a, b = base64.b64encode(b"jpeg-a").decode(), base64.b64encode(b"jpeg-b").decode()
+        page = f'<img src="data:image/jpeg;base64,{a}"><img alt="x" src="data:image/jpeg;base64,{b}">' \
+               f'<img src="data:image/jpeg;base64,{a}"><img src="https://example.org/x.jpg">'
+        with tempfile.TemporaryDirectory() as d:
+            stale = Path(d) / "img" / "GI-7" / "old.jpg"
+            stale.parent.mkdir(parents=True)
+            stale.write_bytes(b"old")
+            out = gi_report.externalize_images(page, d, "GI-7")
+            self.assertNotIn("data:", out)
+            self.assertIn('src="https://example.org/x.jpg"', out)
+            files = sorted((Path(d) / "img" / "GI-7").iterdir())
+            self.assertEqual(sorted(f.read_bytes() for f in files), [b"jpeg-a", b"jpeg-b"])   # the repeat once
+            self.assertFalse(stale.exists())
+            self.assertEqual(out.count('loading="lazy" src="img/GI-7/'), 3)
+            self.assertEqual(gi_report.externalize_images(page, d, "GI-7"), out)   # same names on a re-run
+            gi_report.externalize_images("<p>no images</p>", d, "GI-7")
+            self.assertFalse((Path(d) / "img" / "GI-7").exists())
+
+
+class TestSkipped(unittest.TestCase):
+    def test_skipped_problems(self):
+        import sqlite3
+        db = sqlite3.connect(":memory:")
+        db.row_factory = sqlite3.Row
+        db.executescript("""create table fulltext (page_number int, pair_lo text, pair_hi text);
+            create table reviews (pair_lo text, pair_hi text, decision text, type text);
+            create table review_flags (pair_lo text, pair_hi text, flag text, flagged_at text);""")
+        for n, decision, type_ in ((1, "problem", "cross-author copying"), (2, "problem", "data copying"),
+                                   (3, "problem", "text recycling"), (4, "no problem", None),
+                                   (5, "problem", "cross-author copying"), (6, "problem", "data copying")):
+            db.execute("insert into fulltext values (?, ?, ?)", (n, f"a{n}", f"b{n}"))
+            db.execute("insert into reviews values (?, ?, ?, ?)", (f"a{n}", f"b{n}", decision, type_))
+        db.execute("insert into review_flags values ('a6', 'b6', 'already retracted', '')")
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / "cases.json").write_text(json.dumps({"GI-05": {}}))
+            self.assertEqual([f["page_number"] for f in gi_report.skipped_problems(db, d)], [1, 2])
 
 
 class TestSeverity(unittest.TestCase):
@@ -65,7 +125,7 @@ class TestSeverity(unittest.TestCase):
         saved = gi_report.case_findings, gi_pubpeer.write_page, gi_pubpeer.publisher_page, gi_pubpeer.case_name
         gi_report.case_findings = lambda db, row, report_dir: f
         gi_pubpeer.write_page = lambda db, row, out, fd, name: (Path(out) / name, None)
-        gi_pubpeer.publisher_page = lambda row, fd: ("<p>page</p>", None)
+        gi_pubpeer.publisher_page = lambda row, fd: ("<p>page</p>", None, None)
         gi_pubpeer.case_name = lambda row: "GI-99"
         try:
             d = Path(tempfile.mkdtemp())
@@ -90,7 +150,7 @@ class TestSeverity(unittest.TestCase):
         saved = gi_report.case_findings, gi_pubpeer.write_page, gi_pubpeer.publisher_page, gi_pubpeer.case_name
         gi_report.case_findings = lambda db, row, report_dir: f
         gi_pubpeer.write_page = lambda db, row, out, fd, name: (Path(out) / name, None)
-        gi_pubpeer.publisher_page = lambda row, fd: ("<p>page</p>", None)
+        gi_pubpeer.publisher_page = lambda row, fd: ("<p>page</p>", None, None)
         gi_pubpeer.case_name = lambda row: "GI-99"
         try:
             d = Path(tempfile.mkdtemp())
@@ -111,7 +171,7 @@ class TestSeverity(unittest.TestCase):
         saved = gi_report.case_findings, gi_pubpeer.write_page, gi_pubpeer.publisher_page, gi_pubpeer.case_name
         gi_report.case_findings = lambda db, row, report_dir: dict(f)
         gi_pubpeer.write_page = lambda *a, **k: self.fail("authors only: no PubPeer page")
-        gi_pubpeer.publisher_page = lambda row, fd: ("<p>page</p>", b"\xff\xd8\xff\xd9")
+        gi_pubpeer.publisher_page = lambda row, fd: ("<p>page</p>", b"\xff\xd8\xff\xd9", None)
         gi_pubpeer.case_name = lambda row: "GI-99"
         try:
             d = Path(tempfile.mkdtemp())

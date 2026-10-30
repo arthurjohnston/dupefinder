@@ -73,17 +73,25 @@ def load(case_dir):
     return text, other
 
 
+MIN_PDF_ENGLISH = 0.03   # review_dupes.english_score() below this: the PDF's text layer is garbled (GI-518: 0.003,
+                         # its saved text 0.31)
+
+
 def source_paragraphs(case_dir, s):
     """(paragraphs, pdf path or None) for one source: from the PDF beside its fulltext file (same name, .pdf)
-    with extract_papers.py's extraction, else the text file split at blank lines."""
+    with extract_papers.py's extraction, else the text file split at blank lines. The PDF's text is used only if
+    it has some and it reads as English: a PDF whose fonts map to the wrong characters (GI-518's source:
+    "'LHWDU\\" for "Dietary") extracts plenty of words that match nothing."""
     full = Path(case_dir) / s["fulltext"]
     pdf = full.with_suffix(".pdf")
     if pdf.is_file():
         if str(ROOT) not in sys.path:
             sys.path.insert(0, str(ROOT))
         import extract_papers
+        from review_dupes import english_score
         paras = extract_papers.extract_paper(pdf)[0]
-        if sum(len(p.split()) for p in paras) >= 100:   # no text layer: fall back to the saved text
+        # no text layer, or a garbled one: fall back to the saved text
+        if sum(len(p.split()) for p in paras) >= 100 and english_score(" ".join(paras)) >= MIN_PDF_ENGLISH:
             return paras, pdf
     paras = [" ".join(p.split()) for p in re.split(r"\n\s*\n", full.read_text(encoding="utf-8", errors="replace"))]
     return [p for p in paras if len(p.split()) >= 3], (pdf if pdf.is_file() else None)

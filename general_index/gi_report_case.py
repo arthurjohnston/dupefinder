@@ -3,11 +3,13 @@
 Into data/dupe_publisher/GI-NN/:
   GI-NN-pubpeer.html     the PubPeer page (gi_pubpeer.write_page(): the Markdown findings with a Copy button,
                          the title pages as images, the passages as text)
-  GI-NN-titles.jpg, GI-NN-passage-K.jpg
-                         the images for the PubPeer comment: both titles and bylines, and gi_pubpeer.PASSAGE_IMAGES
-                         passages as printed in both PDFs, side by side (gi_pubpeer.write_page())
+  GI-NN-table-K.jpg, GI-NN-passage-K.jpg
+                         the images for the PubPeer comment: gi_pubpeer.PASSAGE_IMAGES passages as printed in both
+                         PDFs, side by side, the shared tables first when a [data] finding is ticked
+                         (gi_pubpeer.write_page())
   GI-NN-images.jpg       all of those stacked into one image, the one the PubPeer comment asks you to upload
-  GI-NN-longest.jpg      passage 1 again, attached to the emails
+  GI-NN-longest.jpg      the longest passage of text again, attached to the emails
+  GI-NN-table.jpg        with a ticked [data] finding, the largest shared table, attached to the emails too
   GI-NN-comparison.html  the attachment for the journal: the same comparison without the PubPeer box or the
                          title images, with the shared-text figures and the longest passage's image at the top;
                          with a sources.json (the trace-other-sources skill), every other text source's passages too,
@@ -29,9 +31,14 @@ Into data/dupe_publisher/GI-NN/:
 
 And on the project site (example_output/, which .github/workflows/pages.yml publishes from main to
 SITE_URL), unless --no-site:
-  example_output/general_index/GI-NN.html   the same file as GI-NN-comparison.html
+  example_output/general_index/GI-NN.html   the same comparison as GI-NN-comparison.html, but every passage as
+                                            printed in both PDFs (image crops) instead of as text, unless
+                                            --site-text; the images in img/GI-NN/ beside it, not inlined (a
+                                            page has 100+ of them)
   example_output/general_index/index.html   every published pair, rebuilt from cases.json there (one entry per
-                                            case; the date first reported is kept on a re-run)
+                                            case; the date first reported is kept on a re-run): copied data
+                                            first, then the reported cases, then those not reported, each
+                                            by the larger shared-text share
 
 data/journal_contacts.json keeps each article's journal and publisher (asked of Crossref once per DOI) and, per
 journal, a "to"/"cc"/"page"/"notes" entry that is blank until you fill it in; every later case in that journal then
@@ -44,6 +51,12 @@ or authors' address there, a case gets no -institution / -authors draft at all (
 
 --publish-only writes just the site page and index entry, marked "not reported": for a pair you judged not
 worth reporting (low, say) whose comparison should still be public.
+
+--skipped does that for every pair you reviewed as a problem that isn't on the site at all (you answered s at
+the report prompt), except self-author types (SELF_TYPES) and pairs flagged already retracted.
+
+--rebuild-site re-renders every page already on the site (each keeps whether and when it was reported) and
+the index: after changing how site pages look, e.g. to switch existing pages to images.
 
 --authors-only publishes the finding and lets the victims know, nothing else: the site page (marked reported)
 and the email to the earlier article's authors, which then doesn't say the journal was told. No PubPeer page,
@@ -68,18 +81,23 @@ your PubPeer post is up, --pubpeer-url URL saves it (pubpeer_url.txt) and the em
 
 Usage: gi_report_case.py GI_NUMBER [GI_NUMBER ...] [--problems] [--no-site] [--from ADDRESS] [--open-drafts]
                          [--severity low|medium|high] [--pubpeer-url URL] [--publish-only | --authors-only]
-                         [--db data/gi.sqlite3]
+                         [--site-text] [--db data/gi.sqlite3]
+       gi_report_case.py --skipped | --rebuild-site [--site-text]
        --problems: every pair you've reviewed as a problem
 """
 import argparse
 import datetime
 import email
+import base64
+import hashlib
 import email.policy
 import html
 import json
 import sqlite3
 import subprocess
 import sys
+import re
+import shutil
 import time
 from pathlib import Path
 
@@ -102,6 +120,9 @@ def git_email():
 
 DEFAULT_SEVERITY = "medium"
 ALL_EMAILS_SEVERITY = "high"
+SITE_IMAGES = True   # site pages show the passages as image crops of both PDFs (--site-text: as text)
+SELF_TYPES = ("text recycling", "duplicate publication")   # gi_review_cli.SELF_TYPES: never published by --skipped
+DATA_TYPE = "data copying"
 
 
 # the emails whose address is the case's own (contacts.json): no address there, no draft
@@ -136,11 +157,23 @@ def review_severity(db, f):
     return row[0] if row and row[0] in ("low", "medium", "high") else DEFAULT_SEVERITY
 
 
+def review_type(db, f):
+    """Your review's type for the pair ('data copying', ...), None when not reviewed."""
+    try:
+        row = db.execute("select type from reviews where pair_lo = ? and pair_hi = ?",
+                         (f["pair_lo"], f["pair_hi"])).fetchone()
+    except (sqlite3.OperationalError, KeyError, IndexError):
+        row = None
+    return row[0] if row else None
+
+
 def case_findings(db, f, report_dir=REPORT_DIR):
-    """pp.findings() plus your ticked findings.md items, the PubPeer post and both journals' names/contacts."""
+    """pp.findings() plus your ticked findings.md items, the PubPeer post, both journals' names/contacts and your
+    review's type."""
     case = pp.case_name(f)
     fd = pp.findings(db, f)
     fd["case"] = case
+    fd["type"] = review_type(db, f)
     fd["data_extra"] = gi_case_findings.included(case, report_dir, data=True)   # your ticked [data] items
     fd["extra"] = gi_case_findings.included(case, report_dir, data=False)   # and the rest
     fd["pubpeer_post"] = gi_case_findings.pubpeer_url(case, report_dir)
@@ -154,23 +187,76 @@ def case_findings(db, f, report_dir=REPORT_DIR):
     return fd
 
 
+DATA_JPEG = re.compile(r'src="data:image/jpeg;base64,([A-Za-z0-9+/=]+)"')
+
+
+def externalize_images(page, site_dir, case):
+    """page with every inlined JPEG written to site_dir/img/<case>/<hash>.jpg and referenced from there, lazily
+    loaded (a site page with image passages has 100+ of them). Named by content, so re-rendering an unchanged
+    page rewrites the same files; any the page no longer uses are removed."""
+    img_dir = Path(site_dir) / "img" / case
+    img_dir.mkdir(parents=True, exist_ok=True)
+    used = set()
+
+    def write(m):
+        data = base64.b64decode(m.group(1))
+        name = hashlib.sha1(data).hexdigest()[:16] + ".jpg"
+        if name not in used:
+            (img_dir / name).write_bytes(data)
+            used.add(name)
+        return f'loading="lazy" src="img/{case}/{name}"'
+
+    page = DATA_JPEG.sub(write, page)
+    for old in img_dir.glob("*.jpg"):
+        if old.name not in used:
+            old.unlink()
+    if not used:
+        img_dir.rmdir()
+    return page
+
+
+def site_page(f, fd, case_dir, images=None):
+    """The case's page for the project site: the comparison page (pp.publisher_page(), other sources added), with
+    the passages as image crops of both PDFs when `images` (default SITE_IMAGES)."""
+    images = SITE_IMAGES if images is None else images
+    page, _, _ = pp.publisher_page(f, fd, images=images)
+    page, fd["sources"] = gi_sources.add_sources(page, f, fd, Path(case_dir))
+    return page
+
+
 def write_site(site_dir, case, page, fd, reported=True):
-    """The case's page on the project site, its cases.json entry and the index; returns {site, index}."""
+    """The case's page on the project site (its images under img/<case>/), its cases.json entry and the index;
+    returns {site, index}."""
     site_dir = Path(site_dir)
     site_dir.mkdir(parents=True, exist_ok=True)
     site = site_dir / f"{case}.html"
-    site.write_text(page, encoding="utf-8")
+    site.write_text(externalize_images(page, site_dir, case), encoding="utf-8")
     record(site_dir, case, fd, reported=reported)
     return {"site": site, "index": write_index(site_dir)}
 
 
-def publish_only(db, f, site_dir=SITE_DIR, report_dir=REPORT_DIR):
-    """Only the project-site page and index entry, marked not reported: for a pair you judged not worth
-    reporting (low, say) whose comparison should still be public. No PubPeer page, no emails."""
+def publish_only(db, f, site_dir=SITE_DIR, report_dir=REPORT_DIR, images=None):
+    """Only the project-site page and index entry, marked not reported (unless it already was): for a pair you
+    judged not worth reporting (low, say) whose comparison should still be public, and --rebuild-site. No
+    PubPeer page, no emails."""
     fd = case_findings(db, f, report_dir)
-    page, _ = pp.publisher_page(f, fd)
-    page, fd["sources"] = gi_sources.add_sources(page, f, fd, Path(report_dir) / pp.case_name(f))
+    page = site_page(f, fd, Path(report_dir) / pp.case_name(f), images)
     return write_site(site_dir, pp.case_name(f), page, fd, reported=False)
+
+
+def skipped_problems(db, site_dir=SITE_DIR):
+    """The fulltext rows of pairs you reviewed as a problem that aren't on the site: skipped at the report prompt.
+    Not the self-author types (SELF_TYPES) or pairs flagged already retracted, which are left off on purpose."""
+    path = Path(site_dir) / "cases.json"
+    on_site = set(json.loads(path.read_text(encoding="utf-8"))) if path.exists() else set()
+    retracted = "and not exists (select 1 from review_flags g where g.pair_lo = f.pair_lo and g.pair_hi = f.pair_hi " \
+                "and g.flag = 'already retracted')" if db.execute(
+                    "select 1 from sqlite_master where name = 'review_flags'").fetchone() else ""
+    rows = db.execute(f"""select f.* from fulltext f join reviews r using (pair_lo, pair_hi)
+                          where r.decision = 'problem' and f.page_number is not null
+                            and coalesce(r.type, '') not in ({", ".join("?" * len(SELF_TYPES))}) {retracted}
+                          order by f.page_number""", SELF_TYPES).fetchall()
+    return [f for f in rows if pp.case_name(f) not in on_site]
 
 
 def write_report(db, f, report_dir=REPORT_DIR, site_dir=SITE_DIR, sender=None, severity=None,
@@ -192,18 +278,27 @@ def write_report(db, f, report_dir=REPORT_DIR, site_dir=SITE_DIR, sender=None, s
     paths = {}
     if not authors_only:
         paths["pubpeer"], _ = pp.write_page(db, f, out, fd=dict(fd), name=f"{case}-pubpeer.html")
-    page, shot = pp.publisher_page(f, fd)
+    page, shot, table = pp.publisher_page(f, fd)
     page, fd["sources"] = gi_sources.add_sources(page, f, fd, out)   # sources.json: every source on one page
     paths["comparison"] = out / f"{case}-comparison.html"
     paths["comparison"].write_text(page, encoding="utf-8")
+    site = page
+    if site_dir and SITE_IMAGES:   # the site's page shows the passages as printed; the attachment stays text
+        site = site_page(f, fd, out, images=True)
     shot_path = out / f"{case}-longest.jpg"
     if shot:
         if authors_only:   # write_page() writes it otherwise
             shot_path.write_bytes(shot)
         paths["image"] = shot_path
     if site_dir:
-        paths.update(write_site(site_dir, case, page, fd))
-    attachments = [paths["comparison"]] + ([shot_path] if shot else [])
+        paths.update(write_site(site_dir, case, site, fd))
+    table_path = out / f"{case}-table.jpg"   # copied data: the largest shared table
+    if table:
+        table_path.write_bytes(table)
+        paths["table image"] = table_path
+    else:
+        table_path.unlink(missing_ok=True)
+    attachments = [paths["comparison"]] + ([shot_path] if shot else []) + ([table_path] if table else [])
     for old in out.glob(f"{case}-email-*.txt"):   # the plain-text drafts an earlier version wrote
         old.unlink()
     for old in out.glob(f"{case}-email-institution-*.eml"):   # one per institution: the count may have changed
@@ -288,7 +383,8 @@ def record(site_dir, case, fd, reported=True):
     old = cases.get(case, {})
     cases[case] = {"file": f"{case}.html", "reported": old.get("reported") or (today if reported else None),
                    "published": old.get("published") or old.get("reported") or today,
-                   "earlier_known": fd["earlier_known"],
+                   "earlier_known": fd["earlier_known"], "type": fd.get("type"),
+                   "data": fd.get("type") == DATA_TYPE or bool(fd.get("data_extra")),
                    "later": {k: fd["second"].get(k) for k in keep}, "earlier": {k: fd["first"].get(k) for k in keep},
                    "matched_words": fd["matched_words"], "runs": fd["runs"],
                    "longest": fd["passages"][0]["words"] if fd["passages"] else None}
@@ -324,7 +420,9 @@ INDEX_STYLE = """
 body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.6 var(--font-body); }
 main { max-width: 1300px; margin: 0 auto; padding: 2.5rem 16px 5rem; }
 main > p { max-width: 78ch; }
-h1 { font-family: var(--font-display); line-height: 1.2; font-size: 2.2rem; margin: 0 0 1rem; }
+h1, h2 { font-family: var(--font-display); line-height: 1.2; }
+h1 { font-size: 2.2rem; margin: 0 0 1rem; }
+h2 { font-size: 1.4rem; margin: 2.5rem 0 0.5rem; border-bottom: 1px solid var(--border); padding-bottom: .3rem; }
 a { color: var(--accent-strong); }
 .table-wrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; }
 table { border-collapse: collapse; width: 100%; font-size: .9rem; }
@@ -364,6 +462,7 @@ def take_down(case, site_dir=SITE_DIR, report_dir=REPORT_DIR):
     if cases.pop(case, None) is not None:
         path.write_text(json.dumps(cases, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
     (site_dir / f"{case}.html").unlink(missing_ok=True)
+    shutil.rmtree(site_dir / "img" / case, ignore_errors=True)
     if path.exists():
         write_index(site_dir)
     out = Path(report_dir) / case
@@ -378,7 +477,6 @@ def take_down(case, site_dir=SITE_DIR, report_dir=REPORT_DIR):
     if compose.is_dir():
         gone.mkdir(exist_ok=True)
         if (gone / "compose").exists():   # taken down before: this one's drafts replace those
-            import shutil
             shutil.rmtree(gone / "compose")
         compose.replace(gone / "compose")
         moved.append(gone / "compose")
@@ -392,17 +490,52 @@ def _union(c):
     return f"<br><small>{c['union_pct']:.0f}% in {c['sources']} earlier works</small>"
 
 
+INDEX_GROUPS = (
+    ("data", "Copied data",
+     "Pairs where what's shared includes results data (tables, figures' values), not only text; reported or not."),
+    ("reported", "Reported: copied text", "Reported to the journal concerned."),
+    ("unreported", "Not reported",
+     "Published so the comparison is public, but not reported: judged not worth a report, or not reported yet."),
+)
+
+
+def index_group(c):
+    """Which INDEX_GROUPS table a cases.json entry goes in."""
+    return "data" if c.get("data") else "reported" if c.get("reported") else "unreported"
+
+
+def share_key(item):
+    """Largest shared-text share (of either article) first; ties by case number."""
+    case, c = item
+    return (-max(c["later"].get("pct") or 0, c["earlier"].get("pct") or 0), case_key(case))
+
+
+def _row(case, c):
+    later, earlier = c["later"], c["earlier"]
+    return f"""<tr><td class="num"><a href="{html.escape(c['file'])}">{html.escape(case)}</a></td>
+<td class="art">{_article(later)}</td><td class="art">{_article(earlier)}</td>
+<td class="num">{pp.pct(later['pct'])} / {pp.pct(earlier['pct'])}{_union(c)}</td>
+<td class="num">{c['longest'] or '?'} words</td><td class="num">{html.escape(c['reported'] or 'not reported')}</td></tr>"""
+
+
 def write_index(site_dir):
     site_dir = Path(site_dir)
     cases = json.loads((site_dir / "cases.json").read_text(encoding="utf-8"))
-    rows = []
-    for case in sorted(cases, key=case_key):
-        c = cases[case]
-        later, earlier = c["later"], c["earlier"]
-        rows.append(f"""<tr><td class="num"><a href="{html.escape(c['file'])}">{html.escape(case)}</a></td>
-<td class="art">{_article(later)}</td><td class="art">{_article(earlier)}</td>
-<td class="num">{pp.pct(later['pct'])} / {pp.pct(earlier['pct'])}{_union(c)}</td>
-<td class="num">{c['longest'] or '?'} words</td><td class="num">{html.escape(c['reported'] or 'not reported')}</td></tr>""")
+    tables = []
+    for key, heading, about in INDEX_GROUPS:
+        group = sorted(((k, c) for k, c in cases.items() if index_group(c) == key), key=share_key)
+        if not group:
+            continue
+        rows = "\n".join(_row(k, c) for k, c in group)
+        tables.append(f"""<h2 id="{key}">{html.escape(heading)} ({len(group)})</h2>
+<p>{html.escape(about)}</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Case</th><th>Later article</th><th>Earlier article</th><th>Shared text (later / earlier)</th>
+<th>Longest passage</th><th>Reported</th></tr></thead>
+<tbody>
+{rows}
+</tbody>
+</table></div>""")
     path = site_dir / "index.html"
     path.write_text(f"""<!DOCTYPE html>
 <html lang="en">
@@ -418,21 +551,15 @@ def write_index(site_dir):
 <p>Pairs of articles found by this project's scan of the
 <a href="https://archive.org/details/GeneralIndex">General Index</a> (word n-grams from over 100 million
 articles), checked against both articles' full text, and reported to the journal concerned, except those marked
-"not reported" (judged not worth a report, but published so the comparison is public). Each page shows
-the measured overlap: the shared passages side by side with the differences marked, and the longest one as
-printed in both articles. "Shared text" is the share of each article's words that fall inside a run of 10 or
+"not reported" (published so the comparison is public). Each page shows the measured overlap: the shared
+passages as printed in both articles, side by side, with the shared words highlighted. "Shared text" is the share of each article's words that fall inside a run of 10 or
 more matching words (allowing substituted words within a run). A page shows measured text overlap; it does
 not establish why the overlap exists, and none of these pages is a finding of misconduct by any named
 person.</p>
 <p>Where the publication years differ, the later article is listed first. Where they are the same, which
-came first is unknown and the order means nothing.</p>
-<div class="table-wrap"><table>
-<thead><tr><th>Case</th><th>Later article</th><th>Earlier article</th><th>Shared text (later / earlier)</th>
-<th>Longest passage</th><th>Reported</th></tr></thead>
-<tbody>
-{chr(10).join(rows)}
-</tbody>
-</table></div>
+came first is unknown and the order means nothing. Each table is sorted by the larger of the two shared-text
+figures, highest first.</p>
+{chr(10).join(tables)}
 <p><a href="../">Example output</a></p>
 </main>
 </body>
@@ -460,8 +587,41 @@ def main():
     ap.add_argument("--authors-only", action="store_true",
                     help="publish the finding and tell the earlier authors, nothing else: the site page and the "
                          "authors' email only (no PubPeer page, no journal or institution emails)")
+    ap.add_argument("--skipped", action="store_true",
+                    help="publish (as not reported) every pair reviewed as a problem that isn't on the site yet: "
+                         "the ones skipped at the report prompt (not self-author types or already retracted ones)")
+    ap.add_argument("--rebuild-site", action="store_true",
+                    help="re-render every page already on the site and the index; each keeps its reported date")
+    ap.add_argument("--site-text", action="store_true",
+                    help="site pages show the passages as text, not as images cropped from the PDFs")
     ap.add_argument("--db", default=str(gi_db.DB_PATH))
     args = ap.parse_args()
+    global SITE_IMAGES
+    SITE_IMAGES = not args.site_text
+    if args.skipped or args.rebuild_site:
+        if args.gi or args.problems or args.no_site or args.authors_only or args.pubpeer_url:
+            ap.error("--skipped / --rebuild-site take no GI numbers and only --site-text / --db")
+        db = sqlite3.connect(f"file:{args.db}?mode=ro", uri=True, timeout=300)
+        db.row_factory = sqlite3.Row
+        rows = []
+        if args.rebuild_site:
+            path = SITE_DIR / "cases.json"
+            for case in sorted(json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}, key=case_key):
+                f = db.execute("select * from fulltext where page_number = ?", (case_key(case)[1],)).fetchone()
+                if f is None:
+                    print(f"{case}: no such page", file=sys.stderr)
+                else:
+                    rows.append(f)
+        if args.skipped:
+            rows += skipped_problems(db)
+        for i, f in enumerate(rows, 1):
+            try:
+                paths = publish_only(db, f)
+                print(f"[{i}/{len(rows)}] {pp.case_name(f)}  {paths['site']}")
+            except Exception as e:  # one pair failing shouldn't stop a batch
+                print(f"[{i}/{len(rows)}] {pp.case_name(f)}: {e}", file=sys.stderr)
+        print("nothing to do" if not rows else f"index: {SITE_DIR / 'index.html'} (not pushed: gi_publish_site.py)")
+        return
     if args.publish_only and args.no_site:
         ap.error("--publish-only writes only the site page, so not with --no-site")
     if args.publish_only and args.authors_only:

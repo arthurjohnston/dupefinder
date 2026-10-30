@@ -58,13 +58,18 @@ class TestMarkdown(unittest.TestCase):
         self.assertIn("The longest shared passage", md)
 
     def test_images_side_by_side(self):
-        imgs = [{"kind": "titles", "name": "GI-1-titles.jpg"},
+        imgs = [{"kind": "table", "n": 1, "name": "GI-1-table-1.jpg", "words": 40, "table": True,
+                 "left": {"doi": "10.1/old", "pages": [5], "text": "1.9 (0.9) 2.0 (1.4)"},
+                 "right": {"doi": "10.2/NEW", "pages": [3], "text": "1.9 (0.9) 2.0 (1.4)"}},
                 {"kind": "passage", "n": 1, "name": "GI-1-passage-1.jpg", "words": 81, "file": "passage-1.jpg",
                  "left": {"doi": "10.1/old", "pages": [3], "text": "old wording here"},
                  "right": {"doi": "10.2/NEW", "pages": [4, 5], "text": "new wording here"}}]
         md = pp.markdown({**fd(passages=5), "images": imgs, "site_url": "https://x.example/GI-1.html"})
-        self.assertIn("Titles and author lists as printed (earlier article left, this article right):\n\n"
-                      "[Image: GI-1-titles.jpg]", md)
+        self.assertIn("**Shared table 1** (earlier article PDF p. 5, this article PDF p. 3), as printed in both articles. "
+                      "Shared words and values are highlighted yellow, those that differ pink:\n\n"
+                      "[Image: GI-1-table-1.jpg]", md)
+        self.assertNotIn("1.9 (0.9)", md)   # a table's numbers aren't quoted
+        self.assertLess(md.index("**Shared table 1**"), md.index("**Passage 1**"))
         self.assertIn("**Passage 1**, 81 words (earlier article PDF p. 3, this article PDF p. 4-5).", md)
         self.assertIn('- Earlier article: "old wording here"\n\n- This article: "new wording here"\n\n'
                       '[Image: GI-1-passage-1.jpg]', md)
@@ -75,13 +80,15 @@ class TestMarkdown(unittest.TestCase):
         self.assertNotIn("[Image", pp.markdown(fd()))
 
     def test_stitched_image_is_the_one_upload(self):
-        imgs = [{"kind": "titles", "name": "GI-1-titles.jpg"},
+        imgs = [{"kind": "table", "n": 1, "name": "GI-1-table-1.jpg", "words": 40,
+                 "left": {"doi": "10.1/old", "pages": [5], "text": "1"},
+                 "right": {"doi": "10.2/NEW", "pages": [3], "text": "1"}},
                 {"kind": "passage", "n": 1, "name": "GI-1-passage-1.jpg", "words": 81,
                  "left": {"doi": "10.1/old", "pages": [3], "text": "old wording here"},
                  "right": {"doi": "10.2/NEW", "pages": [4], "text": "new wording here"}}]
         md = pp.markdown({**fd(), "images": imgs, "stitched": "GI-1-images.jpg"})
         self.assertEqual(md.count("[Image:"), 1)
-        self.assertTrue(md.endswith("The titles and the passages, in the order above, top to bottom:\n\n"
+        self.assertTrue(md.endswith("The tables and the passages, in the order above, top to bottom:\n\n"
                                     "[Image: GI-1-images.jpg]"))
         self.assertIn("**Passage 1**, 81 words", md)
 
@@ -131,7 +138,7 @@ class TestPage(unittest.TestCase):
         import pymupdf
         def jpeg(w, h):
             return pymupdf.Pixmap(pymupdf.csRGB, pymupdf.IRect(0, 0, w, h), 0).tobytes("jpeg")
-        out = pymupdf.Pixmap(pp.stitch([{"kind": "titles", "jpeg": jpeg(300, 50)},
+        out = pymupdf.Pixmap(pp.stitch([{"kind": "table", "n": 1, "jpeg": jpeg(300, 50)},
                                         {"kind": "passage", "n": 1, "words": 81, "jpeg": jpeg(500, 200)}]))
         self.assertEqual(out.width, 500 + 2 * pp.STITCH_GAP)   # as wide as the widest, nothing scaled
         self.assertEqual(out.height, 250 + 2 * pp.STITCH_LABEL + 3 * pp.STITCH_GAP)
