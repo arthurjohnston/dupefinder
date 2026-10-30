@@ -2,7 +2,7 @@
 
 Pairs found while building the pipeline. Each page is a word-level diff of the text two documents share.
 
-**Measured overlap only.** Shared text can be legitimate (same authors, preprint and published version,
+**Measured overlap only.** Shared text can be legitimate (preprint and published version,
 a template, licensed reuse) or a retrieval error. No page is a finding of misconduct.
 
 ## General Index pairs reported
