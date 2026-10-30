@@ -24,3 +24,20 @@ name or between collaborators, so screen both before downloading.
   score. Writes `data/useu_manual_downloads/{_pending.md,_pending.html,_manifest.json}`; each manifest entry names
   its run so imported PDFs go back to that run's workdir. Reads `useu_ranked_r1.pkl` (the list rounds 1-2 ran
   from) as well as `useu_ranked.pkl`, since the rebuild after rest4 dropped already-checked pairs.
+
+## The unobtainable pool: what OpenAlex alone can rule out (2026-10-27)
+
+Pairs the full-text runs tried but can't complete (a missing side is no_oa / 404 / DOI not found, not a 403 or a
+landing page). Which of them are self-reuse or the same paper, without the PDFs?
+
+| script | does | output |
+|---|---|---|
+| `unobtainable_fetch.py $D [MAX_CALLS]` | builds the pool (~10 min join), fetches OpenAlex authorships for its DOIs (cached in gi.sqlite3) | `unobtainable_pool.pkl` |
+| `unobtainable_screen.py $D` | calibrates each signal on the checked real-overlap pairs, scores the pool with top30_rank.py's model, flags each pair | `data/unobtainable_openalex_screen.tsv` |
+| `unobtainable_coauthors.py $D [MAX_CALLS] [MIN_P]` | joint works between the two sides' authors, one OpenAlex call per surviving pair, best score first; rerun the screen after | `unobtainable_coauthors.json` |
+
+Eliminated = shared author id, a name in any word order ("Jia Li Wei" = "Liwei Jia", which OpenAlex splits into two
+ids), surname + first initial, 2+ joint works, or a JPT synopsis of an SPE paper. On 1,406 checked real-overlap pairs
+the author signals caught 417 of 613 self-reuse/same-paper pairs and none of 793 cross-author cases. NOT eliminated:
+same title with different authors (it also holds whole papers republished under other names: worth reading as leads)
+and shared institution alone (would lose ~3% of real cases).
