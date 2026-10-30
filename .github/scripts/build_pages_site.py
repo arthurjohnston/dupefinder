@@ -67,6 +67,8 @@ th { color: var(--ink-muted); font-weight: 600; white-space: nowrap; }
 td.num { white-space: nowrap; font-variant-numeric: tabular-nums; }
 td.art { min-width: 18rem; }
 .prototype td:nth-child(3), .prototype td:nth-last-child(-n+2) { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.prototype td:nth-child(2) { min-width: 34rem; }
+.prototype td:nth-child(2) a { overflow-wrap: anywhere; }
 """
 
 
