@@ -463,6 +463,20 @@ than silently mispairing everything past the first gap. Substitution and indel c
 same `difflib` alignment (`_alignment_counts()`), not from a DP traceback, so the numbers always
 match the alignment the reports draw.
 
+**Per-page masthead text (`strip_page_furniture()`, `--strip-page-furniture`).** Zestera Publications
+(10.64751) prints a running masthead, page footer and received/accepted/published line on every page
+("AMERICAN JOURNAL OF MANAGEMENT AND IOT MEDICAL COMPUTING Peer Reviewed, Referred & Indexed Journal
+E-ISSN: 3069-0110 Vol.5, No.2(2026) www.ajmimc.com 234 ..."), and extraction merges it into body
+paragraphs. Two papers from one issue share it verbatim, and it also splits real runs at every page
+break. `load_paper_words(..., strip_furniture=True)` removes it first; `write_dupe_reports_html.py`
+and `rank_paper_pairs.py` take `--strip-page-furniture`. Journal names and site domains are listed
+explicitly, and the ISSN/volume stamps are only removed next to the masthead, so reference-list
+entries like "Vol. 1, No. 78 (2008)" in any paper are untouched (pinned in
+`tests/unit/test_compare_two_papers.py`). On the 77 Zestera pairs from the 2026-10-04 backlog
+triage it moved coverage by at most 6 points and often made the longest run longer
+(`page_furniture_audit.py` re-runs that comparison): the overlap there is body text. Every
+`example_output/` page involving a Zestera paper is rendered with it.
+
 ### Wrong-PDF records: a retrieval failure that tops every ranking
 
 A paper record can contain **a different paper entirely**: the publisher's DOI resolves to the wrong
@@ -598,8 +612,11 @@ size of the exhibit version, since no passage is rendered twice with context.
 
 **`--neutral`**: for pages shown outside a review (this repo's `example_output/`). Heading
 "Text-overlap comparison" instead of "Duplicate-text finding", a two-way arrow between the papers
-instead of an earlier→later one, no "this was copied" phrasing, and no `--classification` badge or
-`review_dupes.py` command block. Measurements and the diff itself are unchanged.
+instead of an earlier→later one, paper cards labelled "Paper A"/"Paper B" rather than "Earlier /
+source" and "Later / flagged", no "this was copied" phrasing, and no `--classification` badge or
+`review_dupes.py` command block. Measurements and the diff itself are unchanged. (Before 2026-10-04 the
+card labels leaked through `--neutral` on every pair with different years; printed years are not
+reliable enough to label a side anyway -- CE-36's "2023" paper cites 2025 work.)
 
 **`--drop-furniture`** (off by default): drops runs that are page furniture before anything is
 rendered or counted — `compare_two_papers.drop_furniture_runs()`, which marks a word as furniture if it

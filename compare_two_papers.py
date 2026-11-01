@@ -111,21 +111,80 @@ def load_paper_sentences(conn, paper_id):
 
 _WORD_RE = re.compile(r"\S+")
 
+# Page furniture: the running masthead, page footer and dates line that Zestera Publications
+# (DOI prefix 10.64751) prints on every page. PyMuPDF extraction merges it into whatever body
+# paragraph the page break falls in, so two papers from the same journal and issue share it
+# verbatim -- e.g. "AMERICAN JOURNAL OF MANAGEMENT AND IOT MEDICAL COMPUTING Peer Reviewed,
+# Referred & Indexed Journal E-ISSN: 3069-0110 Vol.5, No.2(2026) www.ajmimc.com 234 Received:
+# 28-02-2026 | Accepted: 01-04-2026 | Published: 09-04-2026". That is a 10-word shingle on its
+# own, and it also sits inside real runs and splits them at every page break. Measured on the 77
+# Zestera pairs in the 2026-10-04 backlog triage (FLAGGED_CASES_INDEX.txt, LEAD-12 "MASTHEAD
+# CHECK"), stripping it moves coverage by at most 6 points and often makes the longest run longer.
+# Journal names and site domains are listed explicitly rather than matched generically, so a
+# body sentence that mentions some other "International Journal of ..." is never touched.
+_FURNITURE_JOURNALS = [
+    "American Journal of AI Cyber Computing Management",
+    "American Journal of AI Cyber Computing Anagement",  # misprint on some pages
+    "American Journal of Management and IOT Medical Computing",
+    "American Journal of AI Digital Transformation and Regenerative Pharmacist",
+    "International Journal of Economic Social Science and Management Law",
+    "International Journal of Economic Socal Science and Management Law",  # misprint
+    "International Journal of Data Science and IOT Management System",
+    "International Journal of AI Electronics and Nexus Energy",
+    "International Journal of Pharmacy with Medical Sciences",
+    "International Journal of AI EBioMedicine Innovations",
+    "International Journal of AI Electrical Civil and Mechanical Engineering",
+    "International Journal of Law, Arts and Humanities",
+]
+_FURNITURE_DOMAINS = ["zesterapublications", "ajaccm", "ajmimc", "ijdim", "ijeml", "ijpams"]
+_JOURNAL = r"(?:" + "|".join(r"\s+".join(map(re.escape, j.split())) for j in _FURNITURE_JOURNALS) + r")"
+_PEER = r"Peer\s+Reviewed,?\s*R\w*erred\s*&\s*Indexed\s*Journal"  # "Rferred" on some pages
+_ISSN = r"(?:E-?\s*)?ISSN\s*:?\s*\d{4}-\d{3}[\dXx]\s*,?"
+_VOLNO = r"Vol\.?\s*\d+\s*,\s*No\.?\s*\d+\s*(?:\(\d+\)\s*)+(?:\d{1,4}\b)?"
+_SITE = (r"www\.(?:" + "|".join(_FURNITURE_DOMAINS) + r")\.com"
+         r"(?:\s+[A-Z]{3,8}\s*\|)?(?:\s+\d{1,4}\b)?")
+_PIECE = rf"(?:{_PEER}|{_ISSN}|{_VOLNO}|{_SITE}|Original\s+Research\s+Paper)"
+# The ISSN and "Vol.5, No.2(2026)" stamps are only removed next to the masthead or a Zestera site
+# name, in whatever order a journal prints them: on their own they also appear in reference lists
+# ("Vol. 1, No. 78 (2008)").
+_FURNITURE_RE = re.compile(
+    "|".join([
+        # a journal name only counts when the masthead itself follows it
+        rf"(?:{_JOURNAL}(?=\s+(?:Peer|(?:E-?\s*)?ISSN|IJDIM,|www\.))|{_PEER}|{_SITE})(?:\s*{_PIECE})*",
+        rf"(?:{_ISSN}\s*)?{_VOLNO}\s*{_SITE}(?:\s*{_PIECE})*",
+        rf"{_ISSN}\s*{_SITE}(?:\s*{_PIECE})*",
+        r"\bIJDIM,\s*\d+,\s*\d+\s*\(\d+(?:\(\d+\))?\),?\s*(?:\d+\s*[\u2013-]\s*\d+\s*)?\|\s*\d+",
+        r"\b20\d\d,\s*Vol\s*\d+\s*Issue\s*\d+(?:\s*\(\d+\))?\s*\|\s*\d+",
+        r"Received\s*:\s*[\d\-/.]+\s*\|?\s*Accepted\s*:\s*[\d\-/.]+\s*\|?\s*Published\s*:\s*[\d\-/.]+(?:\s*\|)?",
+    ]),
+    re.IGNORECASE,
+)
 
-def load_paper_words(conn, paper_id):
+
+def strip_page_furniture(text):
+    """Remove the per-page masthead/footer/dates text described above from one paragraph's text.
+    Returns the text with each piece replaced by a single space (callers split on whitespace,
+    so the extra spaces are harmless)."""
+    return _FURNITURE_RE.sub(" ", text)
+
+
+def load_paper_words(conn, paper_id, strip_furniture=False):
     """Returns [(word, para_index), ...] for every word in the whole document, in reading
     order, spanning paragraph boundaries -- unlike load_paper_sentences() above, this makes
     no attempt to find sentence boundaries at all. That's the point: find_shingle_matches()
     below needs a single flat token stream to slide a window across, and a wrong sentence
     split (this module's own known gap -- see its docstring) would otherwise silently cut a
     real verbatim run in half right at the split point. Word casing is preserved for display;
-    matching itself is done case-insensitively by the caller."""
+    matching itself is done case-insensitively by the caller. `strip_furniture` removes per-page
+    masthead text first (strip_page_furniture())."""
     rows = conn.execute(
         "SELECT para_index, text FROM paragraphs WHERE paper_id = ? ORDER BY para_index",
         (paper_id,),
     ).fetchall()
     words = []
     for para_index, para_text in rows:
+        if strip_furniture:
+            para_text = strip_page_furniture(para_text)
         for w in _WORD_RE.findall(para_text):
             words.append((w, para_index))
     return words

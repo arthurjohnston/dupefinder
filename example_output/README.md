@@ -1,141 +1,76 @@
 # Example output
 
-These pages are example output from this project's comparison tools
-(`write_dupe_reports_html.py`, built on `compare_two_papers.py`'s word-shingle matcher). Each one shows
-the text two publicly available documents have in common, rendered as a word-level diff. They were
-produced while developing and testing the pipeline, and are here so you can see what the tools produce
-on real documents.
+Pairs found while building the pipeline. Each page is a word-level diff of the text two documents share.
 
-**A page shows measured text overlap. It does not establish why the overlap exists.** Shared text has many
-legitimate explanations: the same authors publishing the same work twice, a preprint and its published
-version, a shared institutional template, properly licensed reuse, or a retrieval error. None of these
-pages is a finding of misconduct by any named person, and none has been adjudicated by anyone, except
-where a publisher has already acted publicly.
+**Measured overlap only.** Shared text can be legitimate (preprint and published version,
+a template, licensed reuse) or a retrieval error. No page is a finding of misconduct.
 
-Open any page directly in a browser. Each is a self-contained HTML fragment with no external resources.
+## General Index pairs reported
 
-The pages use `write_dupe_reports_html.py --neutral` wording: a "Text-overlap comparison" heading, a
-two-way arrow between the documents rather than a directional one, and no verdict labels. The red/green
-diff and every figure are exactly as originally rendered.
-
-## Layout
-
-- `full_copies/`: pairs where at least 80% of one document's words fall inside text shared with
-  the other. The documents are substantially the same text.
-- `partial_overlap/`: pairs where less than that is shared, but still at least one long verbatim passage.
-- A subdirectory inside either one groups several pairs from one related set of documents. A group
-  whose pairs fall on both sides of the 80% line appears in both.
-- Every pair in `full_copies/` is shown as one continuous word-level diff of the two documents end to
-  end. Where some shared text sits at a different position in each document, which an in-order diff
-  cannot place, the pair also has a *per-passage view* listing each matched passage separately.
-- Pages in `partial_overlap/` use either view: some are a single diff, others list the matched passages.
-
-
-## How the figures below were measured
-
-Every pair was re-measured the same way for this table: 10-word shingles, lockstep X-drop extension of 3,
-over each document's full extracted text. "Shared text" is the share of each document's words that fall
-inside a matched run. A page may print a slightly different figure because some pages were rendered with
-other settings (the page footer names them).
-
-Each pair was also checked for the usual non-copying explanations before being included:
-
-- **Same authors on both sides.** Checked against both the extracted metadata and the publisher's own
-  Crossref record, with names normalized for order, accents and honorifics, plus a looser surname-and-initial
-  match. Pairs that share any author are not included here.
-- **Shared text that doesn't show copying between the two.** Pairs where most of the shared text turned
-  out to be a publisher's own template, journal boilerplate, or text both documents took from a common
-  outside source (such as a widely copied tutorial) were removed.
-- **The same document cataloged twice.** No pair shares a DOI.
-- **A retrieval error** where one record actually contains the other document's PDF: none found.
-- **Citation.** Where one document cites the other, that is noted below. A citation does not by itself
-  mean the reused text is attributed, so those pairs remain.
-
-Where a publisher has already acted publicly: the later document in `CE-N05` was retracted by Cureus on
-2017-12-13 (retraction notice 10.7759/cureus.r9).
-
-Documents that cite their counterpart: `CE-N14` (the later document lists the earlier one in its
-references).
+See [general_index/](general_index/index.html).
 
 ## Pairs where the shared material is data
 
-In most pairs the shared material is prose. In these three it also includes measured or surveyed
-data: counts, percentages and test statistics that two separate studies would not normally be expected
-to report identically.
+These also share data that two separate studies wouldn't report identically.
 
-- **AN-03, low birth weight** ([page](full_copies/AN-03-a-study-of-factors-affecting-low-birth-weight-in-a-tertiary--vs-a-study-of-factors-affecting-low-birth-weight-in-a-tertiary-.html)). Two 2024 articles in the International Journal
-  of Pharmaceutical and Clinical Research (vol. 16, issues 3 and 5) with the same title, different author
-  lists with no author in common, and bylines at different medical colleges in Bihar (DMCH,
-  Laheriasarai and JLNMC, Bhagalpur). Both report a study of 300 cases and 600 controls, and give the
-  same counts and percentages to one decimal place, for example in the maternal-age table and the
-  education and occupation breakdowns, alongside the same methods text.
-- **CE-04, teachers' views on AI in education** ([page](partial_overlap/CE-04-teachers-perspectives-on-artificial-intelligence-in-educatio-vs-balancing-innovation-and-ethics-educators-perspectives-on-th-48-shingle-matches.html)). A March 2024 article in
-  *Advances in Mobile Learning Educational Research* and a September 2024 article in *The American
-  Journal of Social Science and Education Innovations*, with different titles and different authors.
-  Both report a survey of 74 teachers with the same item-by-item frequency tables, means and standard
-  deviations, the same independent-samples t-test and the same one-way ANOVA table (for example a
-  between-groups sum of squares of 1356.645).
-- **CE-N02, electric-vehicle ownership** ([page](partial_overlap/CE-N02-electric-vehicle-ownership-in-kerala-insights-on-brand-choic-vs-electric-vehicles-in-india-bridging-the-gap-between-expectat-22-shingle-matches.html)). A 2023 article on EV ownership
-  in Kerala and a 2025 article on EVs in India, in two different IAEME journals with different
-  authors. They share the same demographic table for 100 respondents (income bands, area of
-  residence), the same summary figures (58% female, 64% aged 18 to 25) and the same methodology
-  paragraph, which in both articles describes the sample as EV users in Kerala's Thiruvananthapuram
-  district.
+- **AN-03, low birth weight** ([view](full_copies/AN-03-a-study-of-factors-affecting-low-birth-weight-in-a-tertiary--vs-a-study-of-factors-affecting-low-birth-weight-in-a-tertiary-.html)):
+  same title, no shared authors; both report 300 cases and 600 controls with identical counts and percentages.
+- **CE-04, teachers' views on AI** ([view](partial_overlap/CE-04-teachers-perspectives-on-artificial-intelligence-in-educatio-vs-balancing-innovation-and-ethics-educators-perspectives-on-th-48-shingle-matches.html)):
+  the same survey of 74 teachers, with identical frequency tables, t-test and ANOVA.
+- **CE-N02, electric-vehicle ownership** ([view](partial_overlap/CE-N02-electric-vehicle-ownership-in-kerala-insights-on-brand-choic-vs-electric-vehicles-in-india-bridging-the-gap-between-expectat-22-shingle-matches.html)):
+  the same demographic table for 100 respondents (58% female, 64% aged 18 to 25).
+- **LEAD-17, distal humerus fractures** ([view](partial_overlap/LEAD-17-surgical-management-of-intercondylar-fracture-of-distal-hume-vs-surgical-management-of-distal-humeral-fractures-in-adults.html)):
+  same journal issue, different authors; the same fracture outcomes and complications.
+- **LEAD-12, ten Zestera pairs** (e.g. [bone fracture](partial_overlap/LEAD-12-telangana-zestera/LEAD-12-140306-140451-deit-based-feature-extraction-with-ensemble-machine-learning-vs-a-dual-model-interpretable-pipeline-for-multi-class-bone-fra.html)):
+  several share model-comparison tables to two or four decimal places.
 
 ## Grouped by publisher
 
-Pairs are grouped by where the two documents were published, taken from each DOI's registration
-record (Crossref, or DataCite for repository and preprint deposits). "Full copy" pages are in
-`full_copies/` and "partial" pages in `partial_overlap/`, as described above.
+From each DOI's registration record. "Full copy": at least 80% of one document shared.
 
-### Both documents: Zestera Publications (16 pairs)
+### Both documents: Zestera Publications (27 pairs)
 
-Journals (10), with the number of articles on this site from each:
-
-- *American Journal of AI Cyber Computing Management*: 5
-- *American Journal of Management and IOT Medical Computing*: 4
-- *International Journal of AI EBioMedicine Innovations*: 4
-- *International Journal of Data Science and IoT Management System*: 4
-- *International Journal of AI Electrical Civil and Mechanical engineering*: 3
-- *International Journal of AI Electronics and Nexus Energy*: 3
-- *International Journal of LAW, Arts and Humanities*: 2
-- *International Journal of Pharmacy with Medical Sciences*: 2
-- *American Journal of AI Digital Transformation and Regenerative Pharmacist*: 1
-- *International Journal of Economic Social Science and Management LAW*: 1
+10 journals.
 
 | case | page | overlap | shared text (A / B) | length in words (A / B) |
 |---|---|---|---|---|
-| CE-36 | [CE-36-a-novel-ensemble-deep-learning-approach-for-accurate-credit--vs-hybrid-ensemble-and-deep-learning-approach-for-improved-cred.html](full_copies/CE-36-a-novel-ensemble-deep-learning-approach-for-accurate-credit--vs-hybrid-ensemble-and-deep-learning-approach-for-improved-cred.html) | full copy | 96% / 93% | 4,839 / 4,982 |
-| CE-37 | [37-140649-140665-o-insight-system-a-multi-agent-ai-platform-for-automated-iee-vs-oretes-insight-system-a-multi-agent-ai-platform-for-automate.html](full_copies/CE-37-insight-system/37-140649-140665-o-insight-system-a-multi-agent-ai-platform-for-automated-iee-vs-oretes-insight-system-a-multi-agent-ai-platform-for-automate.html) | full copy | 96% / 91% | 5,765 / 6,027 |
-| CE-37 | [37-140649-140684-o-insight-system-a-multi-agent-ai-platform-for-automated-iee-vs-oretes-insight-system-a-multi-agent-ai-platform-for-automate.html](full_copies/CE-37-insight-system/37-140649-140684-o-insight-system-a-multi-agent-ai-platform-for-automated-iee-vs-oretes-insight-system-a-multi-agent-ai-platform-for-automate.html) | full copy | 94% / 91% | 5,765 / 5,980 |
-| CE-37 | [37-140649-140684-per-run-o-insight-system-a-multi-agent-ai-platform-for-automated-iee-vs-oretes-insight-system-a-multi-agent-ai-platform-for-automate.html](full_copies/CE-37-insight-system/37-140649-140684-per-run-o-insight-system-a-multi-agent-ai-platform-for-automated-iee-vs-oretes-insight-system-a-multi-agent-ai-platform-for-automate.html) *(per-passage view)* | full copy | 94% / 91% | 5,765 / 5,980 |
-| CE-38 | [38-140562-140693-design-and-implementation-of-an-ai-based-vulnerability-manag-vs-ai-powered-regulatory-compliance-checker-for-contracts.html](full_copies/CE-38-gift-zestera-student-projects/38-140562-140693-design-and-implementation-of-an-ai-based-vulnerability-manag-vs-ai-powered-regulatory-compliance-checker-for-contracts.html) | full copy | 81% / 80% | 4,614 / 4,643 |
-| CE-38 | [38-140564-140604-study-planner-app-vs-ai-study-habit-analyzer.html](full_copies/CE-38-gift-zestera-student-projects/38-140564-140604-study-planner-app-vs-ai-study-habit-analyzer.html) | full copy | 91% / 92% | 4,316 / 4,251 |
-| CE-38 | [38-140581-140679-agrisahayak-ai-based-smart-agriculture-management-dashboard--vs-agrisahayak-ai-based-digital-agriculture-assistant.html](full_copies/CE-38-gift-zestera-student-projects/38-140581-140679-agrisahayak-ai-based-smart-agriculture-management-dashboard--vs-agrisahayak-ai-based-digital-agriculture-assistant.html) | full copy | 93% / 92% | 3,873 / 3,888 |
-| CE-38 | [38-140601-140657-debeats-full-stack-food-delivery-application-vs-busbee-real-time-school-bus-monitoring-system.html](full_copies/CE-38-gift-zestera-student-projects/38-140601-140657-debeats-full-stack-food-delivery-application-vs-busbee-real-time-school-bus-monitoring-system.html) | full copy | 84% / 80% | 4,562 / 4,821 |
-| CE-34 | [34-advanced-agricultural-decision-system-using-recurrent-polyno-vs-advanced-agricultural-decision-system-using-recurrent-polyno.html](partial_overlap/CE-34-agricultural-decision-system/34-advanced-agricultural-decision-system-using-recurrent-polyno-vs-advanced-agricultural-decision-system-using-recurrent-polyno.html) | partial | 58% / 55% | 3,277 / 3,472 |
-| CE-34 | [34b-140288-140417-a-data-driven-sound-analysis-approach-for-detecting-mechanic-vs-transformer-driven-wavlm-audio-modelling-for-robust-predicti.html](partial_overlap/CE-34-agricultural-decision-system/34b-140288-140417-a-data-driven-sound-analysis-approach-for-detecting-mechanic-vs-transformer-driven-wavlm-audio-modelling-for-robust-predicti.html) | partial | 59% / 50% | 3,344 / 4,007 |
-| CE-35 | [CE-35-advanced-ai-facing-voting-system-vs-advanced-ai-facing-voting-system.html](partial_overlap/CE-35-advanced-ai-facing-voting-system-vs-advanced-ai-facing-voting-system.html) | partial | 74% / 60% | 3,115 / 3,834 |
-| CE-38 | [38-140555-140566-ai-doctor-voice-amp-vision-vs-realestate-houseprice-prediction.html](partial_overlap/CE-38-gift-zestera-student-projects/38-140555-140566-ai-doctor-voice-amp-vision-vs-realestate-houseprice-prediction.html) | partial | 63% / 62% | 3,861 / 3,940 |
-| CE-38 | [38-140555-140566-per-run-ai-doctor-voice-amp-vision-vs-realestate-houseprice-prediction.html](partial_overlap/CE-38-gift-zestera-student-projects/38-140555-140566-per-run-ai-doctor-voice-amp-vision-vs-realestate-houseprice-prediction.html) *(per-passage view)* | partial | 63% / 62% | 3,861 / 3,940 |
-| CE-38 | [38-140567-140578-per-run-student-study-portal-vs-automated-examination-seating-arrangement-and-hall-allocatio.html](partial_overlap/CE-38-gift-zestera-student-projects/38-140567-140578-per-run-student-study-portal-vs-automated-examination-seating-arrangement-and-hall-allocatio.html) *(per-passage view)* | partial | 61% / 66% | 3,454 / 3,273 |
-| CE-38 | [38-140567-140578-student-study-portal-vs-automated-examination-seating-arrangement-and-hall-allocatio.html](partial_overlap/CE-38-gift-zestera-student-projects/38-140567-140578-student-study-portal-vs-automated-examination-seating-arrangement-and-hall-allocatio.html) | partial | 61% / 66% | 3,454 / 3,273 |
-| CE-38 | [38-140602-140673-design-and-implementation-of-smart-mart-an-ai-powered-e-comm-vs-design-and-implementation-of-home-deal-a-web-based-house-ren.html](partial_overlap/CE-38-gift-zestera-student-projects/38-140602-140673-design-and-implementation-of-smart-mart-an-ai-powered-e-comm-vs-design-and-implementation-of-home-deal-a-web-based-house-ren.html) | partial | 45% / 40% | 4,922 / 5,164 |
-| CE-38 | [38-140602-140673-per-run-design-and-implementation-of-smart-mart-an-ai-powered-e-comm-vs-design-and-implementation-of-home-deal-a-web-based-house-ren.html](partial_overlap/CE-38-gift-zestera-student-projects/38-140602-140673-per-run-design-and-implementation-of-smart-mart-an-ai-powered-e-comm-vs-design-and-implementation-of-home-deal-a-web-based-house-ren.html) *(per-passage view)* | partial | 45% / 40% | 4,922 / 5,164 |
-| CE-38 | [38-140606-140637-hospital-managemnet-system-vs-the-women-safety-tracker-app.html](partial_overlap/CE-38-gift-zestera-student-projects/38-140606-140637-hospital-managemnet-system-vs-the-women-safety-tracker-app.html) | partial | 75% / 77% | 4,307 / 4,212 |
-| CE-38 | [38-140618-140657-per-run-smart-inventory-and-product-management-system-vs-busbee-real-time-school-bus-monitoring-system.html](partial_overlap/CE-38-gift-zestera-student-projects/38-140618-140657-per-run-smart-inventory-and-product-management-system-vs-busbee-real-time-school-bus-monitoring-system.html) *(per-passage view)* | partial | 31% / 34% | 5,320 / 4,821 |
-| CE-38 | [38-140618-140657-smart-inventory-and-product-management-system-vs-busbee-real-time-school-bus-monitoring-system.html](partial_overlap/CE-38-gift-zestera-student-projects/38-140618-140657-smart-inventory-and-product-management-system-vs-busbee-real-time-school-bus-monitoring-system.html) | partial | 31% / 34% | 5,320 / 4,821 |
-| CE-38 | [38-140627-140693-design-and-implementation-of-an-ai-based-vulnerability-manag-vs-ai-powered-regulatory-compliance-checker-for-contracts.html](partial_overlap/CE-38-gift-zestera-student-projects/38-140627-140693-design-and-implementation-of-an-ai-based-vulnerability-manag-vs-ai-powered-regulatory-compliance-checker-for-contracts.html) | partial | 80% / 80% | 4,664 / 4,643 |
+| CE-36 | [CE-36-a-novel-ensemble-deep-learning-approach-for-accurate-credit--vs-hybrid-ensemble-and-deep-learning-approach-for-improved-cred.html](full_copies/CE-36-a-novel-ensemble-deep-learning-approach-for-accurate-credit--vs-hybrid-ensemble-and-deep-learning-approach-for-improved-cred.html) | full copy | 98% / 98% | 4,715 / 4,708 |
+| CE-37 | [37-140649-140665-o-insight-system-a-multi-agent-ai-platform-for-automated-iee-vs-oretes-insight-system-a-multi-agent-ai-platform-for-automate.html](full_copies/CE-37-insight-system/37-140649-140665-o-insight-system-a-multi-agent-ai-platform-for-automated-iee-vs-oretes-insight-system-a-multi-agent-ai-platform-for-automate.html) | full copy | 98% / 96% | 5,657 / 5,738 |
+| CE-37 | [37-140649-140684-o-insight-system-a-multi-agent-ai-platform-for-automated-iee-vs-oretes-insight-system-a-multi-agent-ai-platform-for-automate.html](full_copies/CE-37-insight-system/37-140649-140684-o-insight-system-a-multi-agent-ai-platform-for-automated-iee-vs-oretes-insight-system-a-multi-agent-ai-platform-for-automate.html) | full copy | 96% / 96% | 5,657 / 5,691 |
+| CE-37 | [37-140649-140684-per-run-o-insight-system-a-multi-agent-ai-platform-for-automated-iee-vs-oretes-insight-system-a-multi-agent-ai-platform-for-automate.html](full_copies/CE-37-insight-system/37-140649-140684-per-run-o-insight-system-a-multi-agent-ai-platform-for-automated-iee-vs-oretes-insight-system-a-multi-agent-ai-platform-for-automate.html) *(per-passage view)* | full copy | 96% / 96% | 5,657 / 5,691 |
+| CE-38 | [38-140562-140693-design-and-implementation-of-an-ai-based-vulnerability-manag-vs-ai-powered-regulatory-compliance-checker-for-contracts.html](full_copies/CE-38-gift-zestera-student-projects/38-140562-140693-design-and-implementation-of-an-ai-based-vulnerability-manag-vs-ai-powered-regulatory-compliance-checker-for-contracts.html) | full copy | 83% / 82% | 4,480 / 4,498 |
+| CE-38 | [38-140564-140604-study-planner-app-vs-ai-study-habit-analyzer.html](full_copies/CE-38-gift-zestera-student-projects/38-140564-140604-study-planner-app-vs-ai-study-habit-analyzer.html) | full copy | 98% / 98% | 4,036 / 4,024 |
+| CE-38 | [38-140581-140679-agrisahayak-ai-based-smart-agriculture-management-dashboard--vs-agrisahayak-ai-based-digital-agriculture-assistant.html](full_copies/CE-38-gift-zestera-student-projects/38-140581-140679-agrisahayak-ai-based-smart-agriculture-management-dashboard--vs-agrisahayak-ai-based-digital-agriculture-assistant.html) | full copy | 98% / 98% | 3,656 / 3,672 |
+| CE-38 | [38-140601-140657-debeats-full-stack-food-delivery-application-vs-busbee-real-time-school-bus-monitoring-system.html](full_copies/CE-38-gift-zestera-student-projects/38-140601-140657-debeats-full-stack-food-delivery-application-vs-busbee-real-time-school-bus-monitoring-system.html) | full copy | 89% / 85% | 4,360 / 4,563 |
+| LEAD-15c | [LEAD-15c-a-modern-learning-management-system-for-smart-vs-a-modern-web-based-e-learning-platform-for-online-education.html](full_copies/LEAD-15c-a-modern-learning-management-system-for-smart-vs-a-modern-web-based-e-learning-platform-for-online-education.html) | full copy | 96% / 98% | 1,797 / 1,768 |
+| LEAD-15c | [LEAD-15c-per-run-a-modern-learning-management-system-for-smart-vs-a-modern-web-based-e-learning-platform-for-online-education.html](full_copies/LEAD-15c-per-run-a-modern-learning-management-system-for-smart-vs-a-modern-web-based-e-learning-platform-for-online-education.html) *(per-passage view)* | full copy | 96% / 98% | 1,797 / 1,768 |
+| CE-34 | [34-advanced-agricultural-decision-system-using-recurrent-polyno-vs-advanced-agricultural-decision-system-using-recurrent-polyno.html](partial_overlap/CE-34-agricultural-decision-system/34-advanced-agricultural-decision-system-using-recurrent-polyno-vs-advanced-agricultural-decision-system-using-recurrent-polyno.html) | partial | 63% / 58% | 3,037 / 3,323 |
+| CE-34 | [34b-140288-140417-a-data-driven-sound-analysis-approach-for-detecting-mechanic-vs-transformer-driven-wavlm-audio-modelling-for-robust-predicti.html](partial_overlap/CE-34-agricultural-decision-system/34b-140288-140417-a-data-driven-sound-analysis-approach-for-detecting-mechanic-vs-transformer-driven-wavlm-audio-modelling-for-robust-predicti.html) | partial | 58% / 49% | 3,236 / 3,837 |
+| CE-35 | [CE-35-advanced-ai-facing-voting-system-vs-advanced-ai-facing-voting-system.html](partial_overlap/CE-35-advanced-ai-facing-voting-system-vs-advanced-ai-facing-voting-system.html) | partial | 77% / 61% | 2,992 / 3,749 |
+| CE-38 | [38-140555-140566-ai-doctor-voice-amp-vision-vs-realestate-houseprice-prediction.html](partial_overlap/CE-38-gift-zestera-student-projects/38-140555-140566-ai-doctor-voice-amp-vision-vs-realestate-houseprice-prediction.html) | partial | 66% / 64% | 3,654 / 3,784 |
+| CE-38 | [38-140555-140566-per-run-ai-doctor-voice-amp-vision-vs-realestate-houseprice-prediction.html](partial_overlap/CE-38-gift-zestera-student-projects/38-140555-140566-per-run-ai-doctor-voice-amp-vision-vs-realestate-houseprice-prediction.html) *(per-passage view)* | partial | 66% / 64% | 3,654 / 3,784 |
+| CE-38 | [38-140567-140578-per-run-student-study-portal-vs-automated-examination-seating-arrangement-and-hall-allocatio.html](partial_overlap/CE-38-gift-zestera-student-projects/38-140567-140578-per-run-student-study-portal-vs-automated-examination-seating-arrangement-and-hall-allocatio.html) *(per-passage view)* | partial | 70% / 76% | 3,087 / 2,903 |
+| CE-38 | [38-140567-140578-student-study-portal-vs-automated-examination-seating-arrangement-and-hall-allocatio.html](partial_overlap/CE-38-gift-zestera-student-projects/38-140567-140578-student-study-portal-vs-automated-examination-seating-arrangement-and-hall-allocatio.html) | partial | 70% / 76% | 3,087 / 2,903 |
+| CE-38 | [38-140602-140673-design-and-implementation-of-smart-mart-an-ai-powered-e-comm-vs-design-and-implementation-of-home-deal-a-web-based-house-ren.html](partial_overlap/CE-38-gift-zestera-student-projects/38-140602-140673-design-and-implementation-of-smart-mart-an-ai-powered-e-comm-vs-design-and-implementation-of-home-deal-a-web-based-house-ren.html) | partial | 47% / 43% | 4,692 / 4,888 |
+| CE-38 | [38-140602-140673-per-run-design-and-implementation-of-smart-mart-an-ai-powered-e-comm-vs-design-and-implementation-of-home-deal-a-web-based-house-ren.html](partial_overlap/CE-38-gift-zestera-student-projects/38-140602-140673-per-run-design-and-implementation-of-smart-mart-an-ai-powered-e-comm-vs-design-and-implementation-of-home-deal-a-web-based-house-ren.html) *(per-passage view)* | partial | 47% / 43% | 4,692 / 4,888 |
+| CE-38 | [38-140606-140637-hospital-managemnet-system-vs-the-women-safety-tracker-app.html](partial_overlap/CE-38-gift-zestera-student-projects/38-140606-140637-hospital-managemnet-system-vs-the-women-safety-tracker-app.html) | full copy | 80% / 80% | 4,049 / 4,071 |
+| CE-38 | [38-140618-140657-per-run-smart-inventory-and-product-management-system-vs-busbee-real-time-school-bus-monitoring-system.html](partial_overlap/CE-38-gift-zestera-student-projects/38-140618-140657-per-run-smart-inventory-and-product-management-system-vs-busbee-real-time-school-bus-monitoring-system.html) *(per-passage view)* | partial | 32% / 37% | 5,185 / 4,563 |
+| CE-38 | [38-140618-140657-smart-inventory-and-product-management-system-vs-busbee-real-time-school-bus-monitoring-system.html](partial_overlap/CE-38-gift-zestera-student-projects/38-140618-140657-smart-inventory-and-product-management-system-vs-busbee-real-time-school-bus-monitoring-system.html) | partial | 32% / 37% | 5,185 / 4,563 |
+| CE-38 | [38-140627-140693-design-and-implementation-of-an-ai-based-vulnerability-manag-vs-ai-powered-regulatory-compliance-checker-for-contracts.html](partial_overlap/CE-38-gift-zestera-student-projects/38-140627-140693-design-and-implementation-of-an-ai-based-vulnerability-manag-vs-ai-powered-regulatory-compliance-checker-for-contracts.html) | full copy | 84% / 82% | 4,436 / 4,498 |
+| LEAD-12 | [LEAD-12-140295-140440-unsupervised-deep-characterization-of-machine-behavior-throu-vs-leveraging-transformed-based-speech-representation-for-indus.html](partial_overlap/LEAD-12-telangana-zestera/LEAD-12-140295-140440-unsupervised-deep-characterization-of-machine-behavior-throu-vs-leveraging-transformed-based-speech-representation-for-indus.html) | partial | 74% / 74% | 3,723 / 3,724 |
+| LEAD-12 | [LEAD-12-140317-140463-intelligent-context-fusion-for-early-anomaly-detection-in-io-vs-detecting-anomalous-patterns-in-iot-healthcare-systems-throu.html](partial_overlap/LEAD-12-telangana-zestera/LEAD-12-140317-140463-intelligent-context-fusion-for-early-anomaly-detection-in-io-vs-detecting-anomalous-patterns-in-iot-healthcare-systems-throu.html) | partial | 70% / 59% | 2,522 / 2,977 |
+| LEAD-12 | [LEAD-12-140318-140420-svetnet-a-deep-feature-integrated-hybrid-framework-for-hiera-vs-tri-category-medicinal-plant-classification-using-fine-grain.html](partial_overlap/LEAD-12-telangana-zestera/LEAD-12-140318-140420-svetnet-a-deep-feature-integrated-hybrid-framework-for-hiera-vs-tri-category-medicinal-plant-classification-using-fine-grain.html) | partial | 72% / 62% | 3,988 / 4,643 |
+| LEAD-12 | [LEAD-12-140306-140451-deit-based-feature-extraction-with-ensemble-machine-learning-vs-a-dual-model-interpretable-pipeline-for-multi-class-bone-fra.html](partial_overlap/LEAD-12-telangana-zestera/LEAD-12-140306-140451-deit-based-feature-extraction-with-ensemble-machine-learning-vs-a-dual-model-interpretable-pipeline-for-multi-class-bone-fra.html) | partial | 71% / 56% | 2,894 / 3,687 |
+| LEAD-12 | [LEAD-12-140338-140444-synaptiq-a-hybrid-neuro-analytical-framework-for-multidimens-vs-automated-multiclass-eeg-signal-classification-for-early-dia.html](partial_overlap/LEAD-12-telangana-zestera/LEAD-12-140338-140444-synaptiq-a-hybrid-neuro-analytical-framework-for-multidimens-vs-automated-multiclass-eeg-signal-classification-for-early-dia.html) | partial | 64% / 67% | 2,480 / 2,427 |
+| LEAD-12 | [LEAD-12-140202-140330-a-scalable-ai-driven-framework-for-cybersecurity-training-si-vs-next-gen-ai-cybersecurity-simulator-with-real-time-network-i.html](partial_overlap/LEAD-12-telangana-zestera/LEAD-12-140202-140330-a-scalable-ai-driven-framework-for-cybersecurity-training-si-vs-next-gen-ai-cybersecurity-simulator-with-real-time-network-i.html) | partial | 62% / 61% | 2,374 / 2,405 |
+| LEAD-12 | [LEAD-12-140454-140741-structured-representation-learning-of-multi-class-gait-dynam-vs-adaptive-latent-motion-intelligence-for-multi-gait-behaviora.html](partial_overlap/LEAD-12-telangana-zestera/LEAD-12-140454-140741-structured-representation-learning-of-multi-class-gait-dynam-vs-adaptive-latent-motion-intelligence-for-multi-gait-behaviora.html) | partial | 60% / 54% | 3,295 / 3,714 |
+| LEAD-12 | [LEAD-12-140414-140429-a-next-generation-iot-driven-robotic-rescue-paradigm-for-bor-vs-torquemax-rs-an-iot-synchronized-deep-shaft-robotic-extracti.html](partial_overlap/LEAD-12-telangana-zestera/LEAD-12-140414-140429-a-next-generation-iot-driven-robotic-rescue-paradigm-for-bor-vs-torquemax-rs-an-iot-synchronized-deep-shaft-robotic-extracti.html) | partial | 60% / 62% | 2,796 / 2,708 |
+| LEAD-12 | [LEAD-12-140259-140318-svetnet-a-novel-explainable-deep-learning-approach-for-medic-vs-svetnet-a-deep-feature-integrated-hybrid-framework-for-hiera.html](partial_overlap/LEAD-12-telangana-zestera/LEAD-12-140259-140318-svetnet-a-novel-explainable-deep-learning-approach-for-medic-vs-svetnet-a-deep-feature-integrated-hybrid-framework-for-hiera.html) | partial | 21% / 18% | 3,424 / 3,988 |
+| LEAD-12 | [LEAD-12-140294-140468-multi-feature-wavelet-based-network-intrusion-detection-usin-vs-scalable-ai-framework-for-real-time-anomaly-detection-and-au.html](partial_overlap/LEAD-12-telangana-zestera/LEAD-12-140294-140468-multi-feature-wavelet-based-network-intrusion-detection-usin-vs-scalable-ai-framework-for-real-time-anomaly-detection-and-au.html) | partial | 50% / 42% | 2,704 / 3,169 |
 
-### Both documents: ScienceTech Xplore (14 pairs)
+### Both documents: ScienceTech Xplore (16 pairs)
 
-Journals (5), with the number of articles on this site from each (one article comes from a pair listed under "Different publishers"):
-
-- *International Journal of Artificial Intelligence, Data Science, and Machine Learning*: 8
-- *International Journal of AI, BigData, Computational and Management Studies*: 6
-- *International Journal of Emerging Trends in Computer Science and Information Technology*: 6
-- *International Journal of Emerging Research in Engineering and Technology*: 5
-- *American International Journal of Computer Science and Technology*: 4
+5 journals.
 
 | case | page | overlap | shared text (A / B) | length in words (A / B) |
 |---|---|---|---|---|
@@ -154,25 +89,19 @@ Journals (5), with the number of articles on this site from each (one article co
 | CE-18 | [CE-18-iot-and-big-data-ecosystems-a-comprehensive-review-of-techno-vs-iot-and-big-data-ecosystems-a-comprehensive-review-of-techno.html](full_copies/CE-18-iot-and-big-data-ecosystems-a-comprehensive-review-of-techno-vs-iot-and-big-data-ecosystems-a-comprehensive-review-of-techno.html) | full copy | 98% / 98% | 6,710 / 6,701 |
 | CE-19 | [CE-19-ai-driven-insights-for-risk-management-in-banking-leveraging-vs-ai-driven-insights-for-risk-management-in-banking-leveraging.html](full_copies/CE-19-ai-driven-insights-for-risk-management-in-banking-leveraging-vs-ai-driven-insights-for-risk-management-in-banking-leveraging.html) | full copy | 97% / 98% | 4,894 / 4,861 |
 | CE-32 | [CE-32-the-role-of-explainable-ai-in-enhancing-data-driven-decision-vs-the-role-of-explainable-ai-in-enhancing-data-driven-decision.html](full_copies/CE-32-the-role-of-explainable-ai-in-enhancing-data-driven-decision-vs-the-role-of-explainable-ai-in-enhancing-data-driven-decision.html) | full copy | 98% / 98% | 5,956 / 6,005 |
+| LEAD-13a | [LEAD-13a-how-citizen-developers-changed-the-game-vs-agentic-ai-building-self-directed-software-agents-with-multi.html](partial_overlap/LEAD-13a-how-citizen-developers-changed-the-game-vs-agentic-ai-building-self-directed-software-agents-with-multi.html) | partial | 6% / 6% | 6,224 / 6,049 |
+| LEAD-13b | [LEAD-13b-ai-driven-cybersecurity-a-reinforcement-learningbased-approa-vs-an-efficient-transformer-based-model-for-automated-code-gene.html](partial_overlap/LEAD-13b-ai-driven-cybersecurity-a-reinforcement-learningbased-approa-vs-an-efficient-transformer-based-model-for-automated-code-gene.html) | partial | 6% / 6% | 5,550 / 5,980 |
 
-### Both documents: Springer (1 pair)
+### Both documents: Springer (2 pairs)
 
 | case | page | overlap | shared text (A / B) | length in words (A / B) |
 |---|---|---|---|---|
 | CE-X5 | [CE-X5-an-extension-of-the-mixed-integer-part-of-a-nonlinear-form-vs-the-integer-part-of-a-nonlinear-form-with-integer-variables-74-shingle-matches.html](partial_overlap/CE-X5-an-extension-of-the-mixed-integer-part-of-a-nonlinear-form-vs-the-integer-part-of-a-nonlinear-form-with-integer-variables-74-shingle-matches.html) | partial | 47% / 40% | 2,195 / 2,643 |
+| LEAD-01 | [LEAD-01-error-analysis-for-l-q-l-q-coefficient-regularized-moving-le-vs-minimal-thinness-with-respect-to-the-schr-dinger-operator-an.html](partial_overlap/LEAD-01-error-analysis-for-l-q-l-q-coefficient-regularized-moving-le-vs-minimal-thinness-with-respect-to-the-schr-dinger-operator-an.html) | partial | 6% / 9% | 4,217 / 2,885 |
 
 ### Both documents: IAEME Publication (4 pairs)
 
-Journals (8), with the number of articles on this site from each (one article comes from a pair listed under "Different publishers"):
-
-- *International Journal of Cloud Computing*: 2
-- *International Journal of Artificial Intelligence & Machine Learning*: 1
-- *International Journal of Artificial Intelligence Research and Development*: 1
-- *International Journal of Artificial Intelligence and Deep Learning*: 1
-- *International Journal of Commerce and Business Studies*: 1
-- *International Journal of Marketing and Human Resource Management*: 1
-- *International Journal of Research in Computer Applications and Information Technology*: 1
-- *International Journal of Scientific Research in Computer Science and Information Technology*: 1
+8 journals.
 
 | case | page | overlap | shared text (A / B) | length in words (A / B) |
 |---|---|---|---|---|
@@ -182,7 +111,19 @@ Journals (8), with the number of articles on this site from each (one article co
 | CE-02 | [CE-02-proactive-vulnerability-management-in-cloud-clusters-through-vs-threat-intelligence-enhanced-by-ai-for-self-sustained-vulner.html](partial_overlap/CE-02-proactive-vulnerability-management-in-cloud-clusters-through-vs-threat-intelligence-enhanced-by-ai-for-self-sustained-vulner.html) | partial | 74% / 73% | 2,534 / 2,549 |
 | CE-N02 | [CE-N02-electric-vehicle-ownership-in-kerala-insights-on-brand-choic-vs-electric-vehicles-in-india-bridging-the-gap-between-expectat-22-shingle-matches.html](partial_overlap/CE-N02-electric-vehicle-ownership-in-kerala-insights-on-brand-choic-vs-electric-vehicles-in-india-bridging-the-gap-between-expectat-22-shingle-matches.html) | partial | 14% / 14% | 4,613 / 4,539 |
 
-### Both documents: the same other publisher (3 pairs)
+### Both documents: Technoscience Academy (5 pairs)
+
+3 journals.
+
+| case | page | overlap | shared text (A / B) | length in words (A / B) |
+|---|---|---|---|---|
+| LEAD-11 | [LEAD-11-139195-139329-anticipated-security-model-for-session-transfer-and-services-vs-probable-defense-representation-for-session-transfer-and-net.html](full_copies/LEAD-11-ijsrcseit-2019/LEAD-11-139195-139329-anticipated-security-model-for-session-transfer-and-services-vs-probable-defense-representation-for-session-transfer-and-net.html) | full copy | 90% / 84% | 2,214 / 2,403 |
+| LEAD-11 | [LEAD-11-139138-139532-enhanced-classification-of-incomplete-pattern-using-fuzzy-sy-vs-enhanced-classification-of-incomplete-pattern-using-hierarch.html](full_copies/LEAD-11-ijsrcseit-2019/LEAD-11-139138-139532-enhanced-classification-of-incomplete-pattern-using-fuzzy-sy-vs-enhanced-classification-of-incomplete-pattern-using-hierarch.html) | full copy | 56% / 92% | 3,190 / 1,933 |
+| LEAD-11 | [LEAD-11-139756-139842-sentiment-analysis-for-product-recommendation-system-using-h-vs-sentiment-analysis-for-product-recommendation-system-using-e.html](partial_overlap/LEAD-11-ijsrcseit-2019/LEAD-11-139756-139842-sentiment-analysis-for-product-recommendation-system-using-h-vs-sentiment-analysis-for-product-recommendation-system-using-e.html) | partial | 49% / 20% | 1,417 / 3,415 |
+| LEAD-11 | [LEAD-11-139583-139884-img-shelter-privacy-protection-of-images-in-online-social-ne-vs-medical-image-privacy-using-watermarking-techniques.html](partial_overlap/LEAD-11-ijsrcseit-2019/LEAD-11-139583-139884-img-shelter-privacy-protection-of-images-in-online-social-ne-vs-medical-image-privacy-using-watermarking-techniques.html) | partial | 10% / 9% | 5,496 / 6,358 |
+| LEAD-11 | [LEAD-11-139373-139604-storage-and-security-preservation-using-cloud-based-intellig-vs-storage-preservation-using-big-data-based-intelligent-compre.html](partial_overlap/LEAD-11-ijsrcseit-2019/LEAD-11-139373-139604-storage-and-security-preservation-using-cloud-based-intellig-vs-storage-preservation-using-big-data-based-intelligent-compre.html) | partial | 19% / 19% | 3,789 / 3,801 |
+
+### Both documents: the same other publisher (9 pairs)
 
 | case | page | overlap | publisher | shared text (A / B) | length in words (A / B) |
 |---|---|---|---|---|---|
@@ -191,8 +132,16 @@ Journals (8), with the number of articles on this site from each (one article co
 | AN-04 | [AN-04-cross-cultural-competence-in-teaching-english-vs-cross-cultural-competence-in-teaching-english.html](full_copies/AN-04-cross-cultural-competence-in-teaching-english-vs-cross-cultural-competence-in-teaching-english.html) | full copy | Zenodo | 93% / 96% | 1,205 / 1,163 |
 | CE-30 | [CE-30-ai-in-healthcare-transforming-patient-care-through-predictiv-vs-ai-in-healthcare-revolutionizing-patient-care-with-predictiv.html](full_copies/CE-30-ai-in-healthcare-transforming-patient-care-through-predictiv-vs-ai-in-healthcare-revolutionizing-patient-care-with-predictiv.html) | full copy | Open Knowledge | 83% / 67% | 1,447 / 1,808 |
 | CE-30 | [CE-30-per-run-ai-in-healthcare-transforming-patient-care-through-predictiv-vs-ai-in-healthcare-revolutionizing-patient-care-with-predictiv.html](full_copies/CE-30-per-run-ai-in-healthcare-transforming-patient-care-through-predictiv-vs-ai-in-healthcare-revolutionizing-patient-care-with-predictiv.html) *(per-passage view)* | full copy | Open Knowledge | 83% / 67% | 1,447 / 1,808 |
+| LEAD-05 | [LEAD-05-the-impact-of-social-class-on-language-use-in-multilingual-c-vs-the-impact-of-social-class-on-language-use-in-multilingual-c.html](full_copies/LEAD-05-the-impact-of-social-class-on-language-use-in-multilingual-c-vs-the-impact-of-social-class-on-language-use-in-multilingual-c.html) | full copy | ISRG Publishers | 68% / 91% | 3,136 / 2,329 |
+| LEAD-05 | [LEAD-05-per-run-the-impact-of-social-class-on-language-use-in-multilingual-c-vs-the-impact-of-social-class-on-language-use-in-multilingual-c.html](full_copies/LEAD-05-per-run-the-impact-of-social-class-on-language-use-in-multilingual-c-vs-the-impact-of-social-class-on-language-use-in-multilingual-c.html) *(per-passage view)* | full copy | ISRG Publishers | 68% / 91% | 3,136 / 2,329 |
+| LEAD-06 | [LEAD-06-artificial-intelligence-and-the-future-of-human-rights-legal-vs-lt-b-gt-artificial-intelligence-and-algorithmic-accountabili.html](full_copies/LEAD-06-artificial-intelligence-and-the-future-of-human-rights-legal-vs-lt-b-gt-artificial-intelligence-and-algorithmic-accountabili.html) | full copy | International Research Institute Pakistan | 97% / 94% | 8,758 / 9,037 |
+| LEAD-06 | [LEAD-06-per-run-artificial-intelligence-and-the-future-of-human-rights-legal-vs-lt-b-gt-artificial-intelligence-and-algorithmic-accountabili.html](full_copies/LEAD-06-per-run-artificial-intelligence-and-the-future-of-human-rights-legal-vs-lt-b-gt-artificial-intelligence-and-algorithmic-accountabili.html) *(per-passage view)* | full copy | International Research Institute Pakistan | 97% / 94% | 8,758 / 9,037 |
+| LEAD-08 | [LEAD-08-the-impact-of-artificial-intelligence-on-business-amp-social-vs-unveiling-the-potential-of-ai-impacts-on-industries-and-ethi.html](full_copies/LEAD-08-the-impact-of-artificial-intelligence-on-business-amp-social-vs-unveiling-the-potential-of-ai-impacts-on-industries-and-ethi.html) | full copy | Green Publication | 83% / 77% | 4,389 / 4,756 |
+| LEAD-17 | [LEAD-17-surgical-management-of-intercondylar-fracture-of-distal-hume-vs-surgical-management-of-distal-humeral-fractures-in-adults.html](partial_overlap/LEAD-17-surgical-management-of-intercondylar-fracture-of-distal-hume-vs-surgical-management-of-distal-humeral-fractures-in-adults.html) | partial | AkiNik Publications | 59% / 58% | 1,915 / 2,060 |
+| LEAD-15d | [LEAD-15d-the-role-of-ai-in-cybersecurity-addressing-threats-in-the-di-vs-ai-for-sustainable-development-addressing-environmental-and-.html](partial_overlap/LEAD-15d-the-role-of-ai-in-cybersecurity-addressing-threats-in-the-di-vs-ai-for-sustainable-development-addressing-environmental-and-.html) | partial | Open Knowledge | 9% / 10% | 3,072 / 2,755 |
+| LEAD-15g | [LEAD-15g-adaptive-and-context-aware-authentication-framework-using-ed-vs-a-novel-authentication-systems-in-vehicular-communication-ch.html](partial_overlap/LEAD-15g-adaptive-and-context-aware-authentication-framework-using-ed-vs-a-novel-authentication-systems-in-vehicular-communication-ch.html) | partial | Smart Technologies Academic Press | 21% / 21% | 2,970 / 2,992 |
 
-### Different publishers (14 pairs)
+### Different publishers (27 pairs)
 
 | case | page | overlap | publishers (A / B) | shared text (A / B) | length in words (A / B) |
 |---|---|---|---|---|---|
@@ -212,3 +161,24 @@ Journals (8), with the number of articles on this site from each (one article co
 | CE-N14 | [CE-N14-vigilante-groups-and-policing-in-a-democratizing-nigeria-nav-vs-vigilantism-and-policing-in-akwa-ibom-state-of-nigeria-1987--55-shingle-matches.html](partial_overlap/CE-N14-vigilante-groups-and-policing-in-a-democratizing-nigeria-nav-vs-vigilantism-and-policing-in-akwa-ibom-state-of-nigeria-1987--55-shingle-matches.html) | partial | Universidade Federal do Rio Grande do Sul / Bluemark Publishers | 36% / 34% | 6,743 / 7,069 |
 | CE-X2 | [CE-X2-effective-strategies-for-mitigating-bias-in-hiring-algorithm-vs-a-machine-learning-approach-to-recognize-bias-and-discrimina-22-shingle-matches.html](partial_overlap/CE-X2-effective-strategies-for-mitigating-bias-in-hiring-algorithm-vs-a-machine-learning-approach-to-recognize-bias-and-discrimina-22-shingle-matches.html) | partial | Springer / United Research Forum | 21% / 19% | 5,243 / 5,706 |
 | CE-X3 | [CE-X3-internet-of-things-iot-based-smart-environment-integrating-v-vs-internet-of-things-iot-based-smart-environment-integrating-v-28-shingle-matches.html](partial_overlap/CE-X3-internet-of-things-iot-based-smart-environment-integrating-v-vs-internet-of-things-iot-based-smart-environment-integrating-v-28-shingle-matches.html) | partial | Foundation of Computer Science / South Asia Management Association | 15% / 24% | 3,734 / 2,428 |
+| LEAD-03 | [LEAD-03-risk-assessment-tools-in-criminal-justice-and-forensic-psych-vs-artificial-intelligence-in-the-court-justice-system.html](partial_overlap/LEAD-03-risk-assessment-tools-in-criminal-justice-and-forensic-psych-vs-artificial-intelligence-in-the-court-justice-system.html) | partial | Cambridge University Press / University of Niš | 16% / 9% | 2,887 / 4,898 |
+| LEAD-04 | [LEAD-04-operationalizing-generative-ai-in-software-product-managemen-vs-empowering-business-transformation-the-positive-impact-and-e.html](partial_overlap/LEAD-04-operationalizing-generative-ai-in-software-product-managemen-vs-empowering-business-transformation-the-positive-impact-and-e.html) | partial | arXiv / Open Engineering Inc (engrXiv) | 41% / 66% | 8,726 / 5,281 |
+| LEAD-15 | [LEAD-15-from-google-gemini-to-openai-q-q-star-a-survey-of-reshaping--vs-from-bard-to-gemini-an-investigative-exploration-journey-thr.html](partial_overlap/LEAD-15-from-google-gemini-to-openai-q-q-star-a-survey-of-reshaping--vs-from-bard-to-gemini-an-investigative-exploration-journey-thr.html) | partial | arXiv / Academic Publishing Pte. Ltd. | 2% / 5% | 17,167 / 7,328 |
+| LEAD-18 | [LEAD-18-is-a-drain-tip-culture-required-after-spinal-surgery-vs-drain-tip-culture-would-it-help-us-predict-and-prevent-surgi.html](partial_overlap/LEAD-18-is-a-drain-tip-culture-required-after-spinal-surgery-vs-drain-tip-culture-would-it-help-us-predict-and-prevent-surgi.html) | partial | Wolters Kluwer Health / International Journal of Pharmaceutical and Clinical Research | 16% / 17% | 2,045 / 2,004 |
+| LEAD-07 | [LEAD-07-exploring-ethical-considerations-in-ai-driven-autonomous-veh-vs-finding-differences-in-perspectives-between-designers-and-en.html](partial_overlap/LEAD-07-exploring-ethical-considerations-in-ai-driven-autonomous-veh-vs-finding-differences-in-perspectives-between-designers-and-en.html) | partial | Open Knowledge / Luleå University of Technology | 8% / 3% | 4,714 / 14,146 |
+| LEAD-09 | [LEAD-09-guidelines-for-securing-radio-frequency-identification-rfid--vs-multi-agent-rfid-process-in-project-chain-management.html](partial_overlap/LEAD-09-guidelines-for-securing-radio-frequency-identification-rfid--vs-multi-agent-rfid-process-in-project-chain-management.html) | partial | National Institute of Standards and Technology / Science Arena Publications | 2% / 32% | 54,640 / 3,130 |
+| LEAD-10 | [LEAD-10-review-of-mathematical-frameworks-for-fairness-in-machine-le-vs-fairness-metrics-a-comparative-analysis.html](partial_overlap/LEAD-10-review-of-mathematical-frameworks-for-fairness-in-machine-le-vs-fairness-metrics-a-comparative-analysis.html) | partial | arXiv / IEEE | 4% / 8% | 12,891 / 6,115 |
+| LEAD-15a | [LEAD-15a-a-study-of-cyber-security-challenges-and-its-emerging-trends-vs-a-review-on-cybersecurity-issues-and-emerging-trends-in-mode.html](partial_overlap/LEAD-15a-a-study-of-cyber-security-challenges-and-its-emerging-trends-vs-a-review-on-cybersecurity-issues-and-emerging-trends-in-mode.html) | partial | arXiv / Zenodo | 14% / 17% | 2,724 / 2,166 |
+| LEAD-15b | [LEAD-15b-enabling-identity-based-integrity-auditing-and-data-sharing--vs-improving-security-in-cloud-storage-auditing-by-identity-hid.html](partial_overlap/LEAD-15b-enabling-identity-based-integrity-auditing-and-data-sharing--vs-improving-security-in-cloud-storage-auditing-by-identity-hid.html) | partial | IEEE / Zestera Publications | 8% / 29% | 11,514 / 2,825 |
+| LEAD-15e | [LEAD-15e-explainable-ai-for-cloud-based-machine-learning-interpretabl-vs-transparency-and-interpretability-in-cloudbased-machine-lear.html](partial_overlap/LEAD-15e-explainable-ai-for-cloud-based-machine-learning-interpretabl-vs-transparency-and-interpretability-in-cloudbased-machine-lear.html) | partial | Science Research Society / Ess & Ess Research Publications | 7% / 9% | 3,953 / 3,192 |
+| LEAD-15f | [LEAD-15f-the-role-of-artificial-intelligence-in-advancing-public-serv-vs-the-impact-of-artificial-governance-on-indian-public-adminis.html](partial_overlap/LEAD-15f-the-role-of-artificial-intelligence-in-advancing-public-serv-vs-the-impact-of-artificial-governance-on-indian-public-adminis.html) | partial | Goacademica Research and Publishing / Zenodo | 7% / 21% | 6,457 / 2,047 |
+| LEAD-20 | [LEAD-20-attendance-management-system-using-facial-recognition-vs-attendance-management-system-based-on-facial-recognition.html](partial_overlap/LEAD-20-attendance-management-system-using-facial-recognition-vs-attendance-management-system-based-on-facial-recognition.html) | partial | Zain Publications / International Journal for Research in Applied Science and Engineering Technology | 4% / 3% | 2,827 / 2,739 |
+| LEAD-19 | [LEAD-19-an-enhanced-multi-layered-cryptosystem-based-secure-and-auth-vs-secure-auditing-and-deduplicating-data-in-cloud-published-ab.html](partial_overlap/LEAD-19-an-enhanced-multi-layered-cryptosystem-based-secure-and-auth-vs-secure-auditing-and-deduplicating-data-in-cloud-published-ab.html) | partial | IEEE / AI Publications | 92% / 12% | 173 / 1,613 |
+
+`LEAD-07`: the second document is a Luleå University of Technology master's thesis with no DOI.
+
+`LEAD-09`: the second DOI (10.51847/4hrmacreqz) is deleted at Crossref; its details come from the PDF.
+
+`LEAD-20`: reworded sentence by sentence, so 10-word matching finds little (4% / 3%); its page uses 5-word matches.
+
+`LEAD-19`: the first document is only the 173-word abstract of an IEEE paper, so "A" is a share of that.
