@@ -9,6 +9,9 @@ and journal_contacts.json) and your claude.ai subscription only: nothing starts 
 says claude.ai, and API-key variables are removed from its environment, so it never bills an API account.
 In the review tool such a case then shows what the run concluded, and d resumes its session.
 
+--cases prepares a given list instead (in its order, skipping cases already prepped), e.g. one taken from
+gi_western_csv.py's list.
+
 --at HH:MM waits until then (today, or tomorrow if that's past) before picking the cases, so the picks
 reflect the queue at that time. Each finished case is logged with its minutes and API-equivalent cost
 (total_cost_usd: what the run would have cost on the API; on the subscription it comes out of your usage
@@ -16,6 +19,7 @@ instead) to data/prep_batch/<start>.log, with a summary at the end. Ctrl-C or SI
 going; a stopped case is simply prepped again later.
 
 Usage: gi_prep_batch.py [--orders affiliation,professor,publisher] [--per-order 15] [--parallel 3]
+                        [--cases GI-NN ... | --cases @FILE]
                         [--at 22:00] [--dry-run] [--db data/gi.sqlite3]
 """
 import argparse
@@ -46,6 +50,15 @@ def pick(db, orders, per_order):
             seen.add(case)
             picked.append((case, order))
             n += 1
+    return picked
+
+
+def pick_cases(cases):
+    """[(case, "list")]: the given GI-NN cases in order, without duplicates or ones already prepped."""
+    picked = []
+    for case in dict.fromkeys(cases):
+        if not gi_case_findings.findings_path(case).exists():
+            picked.append((case, "list"))
     return picked
 
 
@@ -107,6 +120,9 @@ def main():
     ap.add_argument("--db", default=str(gi_db.DB_PATH))
     ap.add_argument("--orders", type=lambda v: v.split(","), default=["affiliation", "professor", "publisher"])
     ap.add_argument("--per-order", type=int, default=15)
+    ap.add_argument("--cases", nargs="+", metavar="GI-NN",
+                    help="prep these cases, in this order (skipping prepped ones), instead of picking from the queue; "
+                         "@FILE reads them from a file, one per line")
     ap.add_argument("--parallel", type=int, default=3)
     ap.add_argument("--at", help="HH:MM: wait until then before picking and starting")
     ap.add_argument("--dry-run", action="store_true", help="print what would be picked now and stop")
@@ -120,10 +136,16 @@ def main():
             sys.exit(f"not starting: {why}")
         if args.at:
             wait_until(args.at)
-    db = sqlite3.connect(f"file:{args.db}?mode=ro", uri=True, timeout=300)
-    db.row_factory = sqlite3.Row
-    picked = pick(db, args.orders, args.per_order)
-    db.close()
+    if args.cases:
+        cases = [c for a in args.cases
+                 for c in (open(a[1:]).read().split() if a.startswith("@") else [a])]
+        picked = pick_cases(cases)
+        args.orders = ["list"]
+    else:
+        db = sqlite3.connect(f"file:{args.db}?mode=ro", uri=True, timeout=300)
+        db.row_factory = sqlite3.Row
+        picked = pick(db, args.orders, args.per_order)
+        db.close()
     for o in args.orders:
         print(f"{o}: " + " ".join(c for c, oo in picked if oo == o), flush=True)
     if args.dry_run or not picked:
