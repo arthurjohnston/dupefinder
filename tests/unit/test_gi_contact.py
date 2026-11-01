@@ -71,6 +71,7 @@ class TestEmail(unittest.TestCase):
         self.assertIn("an article by A. One, B. Two and C. Three, affiliated with your institution, which", e)
         self.assertEqual(gc.recipients("institution", f, inst), ("rio@u.example", ""))
         self.assertEqual(len(gc.institutions(f)), 2)
+        self.assertEqual(gc.recipients("institution", f), ("rio@u.example, rio@v.example", ""))
         self.assertIn("by authors affiliated with your institution", body(audience="institution")[1])
 
     def test_html_entities_in_metadata_are_decoded(self):
@@ -114,7 +115,6 @@ class TestEmail(unittest.TestCase):
         e = body(f, audience="institution", contact=now)[1]
         self.assertIn("an article by A. One, who is now affiliated with your institution. It was published "
                       "while they were at University U, and appears", e)
-        self.assertIn("I have also written to University U.", e)
         self.assertEqual(body(f, audience="institution", contact=now)[0],
                          "Research integrity concern: a paper by someone associated with your institution")
         self.assertEqual(body(f, audience="institution", contact=byline)[0],
@@ -122,6 +122,35 @@ class TestEmail(unittest.TestCase):
         self.assertEqual(gc.recipients("institution", f, now), ("rio@v.example", ""))
         self.assertNotIn("now affiliated", body(f, audience="institution", contact=byline)[1])
         self.assertEqual(gc.name_list(["A", "B"]), "A and B")
+
+    def test_one_email_to_every_institution(self):
+        u = {"to": "rio@u.example", "name": "Research Integrity Office, University U", "authors": ["A. One", "B. Two"]}
+        v = {"to": "rio@v.example, x@v.example", "cc": "dean@v.example", "name": "Integrity Office, University V",
+             "authors": ["B. Two"], "current": True, "published_at": "University U"}
+        none = {"to": "", "name": "W", "authors": ["C. Three"]}
+        f = {**fd(), "case_contacts": {"institution": [u, v, none]}}
+        self.assertEqual(gc.recipients("institution", f), ("rio@u.example, rio@v.example, x@v.example",
+                                                           "dean@v.example"))
+        subject, e = body(f, audience="institution")
+        self.assertEqual(subject, "Research integrity concern: a paper by authors associated with your institutions")
+        self.assertTrue(e.startswith("Dear Research Integrity Officers,"))
+        self.assertIn("an article by A. One and B. Two, affiliated with your institutions, which appears", e)
+        self.assertIn("This email has gone to all of the authors' institutions at once:\n"
+                      "- Research Integrity Office, University U: A. One and B. Two\n"
+                      "- Integrity Office, University V: B. Two, now affiliated there; the article was published "
+                      "while they were at University U\n\n", e)
+        self.assertNotIn("C. Three", e)   # no address, not written to
+        self.assertIn("each look into this", e)
+        self.assertNotIn("forward", e)
+        dean = {"to": "dean@w.example", "name": "Office of the Dean, W", "authors": ["C. Three"]}
+        e = body({**fd(), "case_contacts": {"institution": [u, dean]}}, audience="institution")[1]
+        self.assertTrue(e.startswith("Dear Sir or Madam,"))
+        self.assertIn("For some of your institutions I couldn't find a research integrity contact", e)
+        self.assertIn("where this address isn't the office that handles them, forward this", e)
+        e = body({**fd(), "case_contacts": {"institution": [{**dean, "to": "a@x.example"}, dean]}},
+                 audience="institution")[1]
+        self.assertIn("for any of your institutions", e)
+        self.assertIn("Could you please forward this", e)
 
     def test_victims_greeted_by_name(self):
         one = {**fd(), "first": {**fd()["first"], "authors": ["Old Author"]}}
@@ -278,7 +307,26 @@ class TestEmailMessage(unittest.TestCase):
             page.write_text("x")
             m2 = gc.email_message(f, [page], audience="publisher")
         self.assertEqual((m2["To"], m2["Cc"]), ("ed@new.example", "x@y"))
+        self.assertIsNone(m2["Bcc"])
         self.assertEqual(files, {"GI-1-comparison.html": "text/html", "GI-1-longest.jpg": "image/jpeg"})
+
+    def test_institutions_bcc_and_authors_cc(self):
+        f = {**fd(), "case_contacts": {
+            "institution": [{"to": "rio@u.example", "cc": "dean@u.example", "authors": ["A. One"]},
+                            {"to": "rio@v.example, rio@u.example", "authors": ["B. Two"]}, {"to": "", "authors": ["C"]}],
+            "authors": {"to": "old1@e.example, old2@e.example", "cc": "old3@e.example"}}}
+        self.assertEqual(gc.headers("institution", f, "me@example.org"),
+                         {"To": "me@example.org", "Bcc": "rio@u.example, rio@v.example, dean@u.example"})
+        self.assertEqual(gc.headers("authors", f, "me@example.org"),
+                         {"To": "me@example.org", "Cc": "old1@e.example, old2@e.example, old3@e.example"})
+        self.assertEqual(gc.headers("authors", fd(), "me@example.org"), {})   # nobody to send it to
+        with tempfile.TemporaryDirectory() as d:
+            page = Path(d) / "p.html"
+            page.write_text("x")
+            raw = bytes(gc.email_message(f, [page], audience="institution", sender="me@example.org"))
+        msg = email.message_from_bytes(raw, policy=email.policy.default)
+        self.assertEqual((msg["To"], msg["Bcc"], msg["Cc"]),
+                         ("me@example.org", "rio@u.example, rio@v.example, dean@u.example", None))
 
     def test_table_attachment(self):
         with tempfile.TemporaryDirectory() as d:
