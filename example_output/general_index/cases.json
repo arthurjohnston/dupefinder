@@ -2135,5 +2135,30 @@
   "matched_words": 1429,
   "runs": 58,
   "longest": 244
+ },
+ "GI-142": {
+  "file": "GI-142.html",
+  "reported": "2026-11-01",
+  "published": "2026-11-01",
+  "earlier_known": true,
+  "type": "data copying",
+  "data": true,
+  "later": {
+   "title": "Low Cost Synthesis of Single Walled Carbon Nanotubes from Coal Tar Using Arc Discharge Method",
+   "year": 2017,
+   "doi": "10.9790/4861-0901032731",
+   "pct": 72.0,
+   "journal": "IOSR Journal of Applied Physics"
+  },
+  "earlier": {
+   "title": "Optimization of Electrical Parameters for Production of Carbon Nanotubes",
+   "year": 2012,
+   "doi": "10.4236/jmmce.2012.1110095",
+   "pct": 64.0,
+   "journal": "Journal of Minerals and Materials Characterization and Engineering"
+  },
+  "matched_words": 1417,
+  "runs": 43,
+  "longest": 131
  }
 }
