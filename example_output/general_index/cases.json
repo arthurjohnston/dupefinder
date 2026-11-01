@@ -2235,5 +2235,33 @@
   "matched_words": 1288,
   "runs": 53,
   "longest": 73
+ },
+ "GI-259": {
+  "file": "GI-259.html",
+  "reported": "2026-11-01",
+  "published": "2026-11-01",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Radiation-induced effects and the immune system in cancer",
+   "year": 2012,
+   "doi": "10.3389/fonc.2012.00191",
+   "pct": 23.0,
+   "journal": "Frontiers in Oncology"
+  },
+  "earlier": {
+   "title": "The Tumor-Immune Microenvironment and Response to Radiation Therapy",
+   "year": 2010,
+   "doi": "10.1007/s10911-010-9194-9",
+   "pct": 32.0,
+   "journal": "Journal of Mammary Gland Biology and Neoplasia"
+  },
+  "matched_words": 1510,
+  "runs": 59,
+  "longest": 72,
+  "sources": 2,
+  "union_words": 2238,
+  "union_pct": 34.3
  }
 }
