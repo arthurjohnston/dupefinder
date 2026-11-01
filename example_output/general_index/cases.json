@@ -2210,5 +2210,30 @@
   "matched_words": 1627,
   "runs": 62,
   "longest": 97
+ },
+ "GI-895": {
+  "file": "GI-895.html",
+  "reported": "2026-11-01",
+  "published": "2026-11-01",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Herpes Simplex Virus Infection in Pregnancy",
+   "year": 2012,
+   "doi": "10.1155/2012/385697",
+   "pct": 42.0,
+   "journal": "Infectious Diseases in Obstetrics and Gynecology"
+  },
+  "earlier": {
+   "title": "Herpes simplex virus infection in pregnancy and in neonate: status of art of epidemiology, diagnosis, therapy and prevention",
+   "year": 2009,
+   "doi": "10.1186/1743-422x-6-40",
+   "pct": 24.0,
+   "journal": "Virology Journal"
+  },
+  "matched_words": 1288,
+  "runs": 53,
+  "longest": 73
  }
 }
