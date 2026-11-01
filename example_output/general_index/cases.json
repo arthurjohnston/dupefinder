@@ -2363,5 +2363,30 @@
   "matched_words": 380,
   "runs": 23,
   "longest": 56
+ },
+ "GI-1029": {
+  "file": "GI-1029.html",
+  "reported": null,
+  "published": "2026-11-01",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "High-redshift cosmography: new results and implications for dark energy",
+   "year": 2012,
+   "doi": "10.1111/j.1365-2966.2012.21568.x",
+   "pct": 7.0,
+   "journal": "Monthly Notices of the Royal Astronomical Society"
+  },
+  "earlier": {
+   "title": "Comprehensive cosmographic analysis by Markov chain method",
+   "year": 2011,
+   "doi": "10.1103/PhysRevD.84.124061",
+   "pct": 5.0,
+   "journal": "Physical Review D"
+  },
+  "matched_words": 722,
+  "runs": 41,
+  "longest": 50
  }
 }
