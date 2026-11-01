@@ -238,8 +238,8 @@ def _email_intro(audience, fd, contact=None):
         verb = "to be largely a republication of" if share >= 50 else "to reuse substantial text from"
     else:
         verb = "to be largely a duplicate of" if share >= 50 else "to reuse substantial text from"
-    distinct = fd["byline"] == "no byline overlap"   # only then say "other authors"
-    whose_earlier = " by other authors" if distinct else " that shares authors with it" if same else ""
+    # no author lists sharing no names / "by other authors": the byline check isn't stated in an email
+    whose_earlier = " that shares authors with it" if same else ""
     pair = ("two articles, published the same year, that share extensive " + ("results data and text" if data
             else "text") + ". Which one came first can't be told from the publication years.")
     def subject_for(paper):
@@ -300,9 +300,8 @@ def _email_intro(audience, fd, contact=None):
                 greeting,
                 [("I am writing because the results data of your article appear" if data else
                   "I am writing because your article appears") + " to have been reused in a later article"
-                 f"{' by other authors' if distinct else ''}." if known else
-                 f"I am writing about {pair} The second is yours, and the two author lists share no names."
-                 if distinct else f"I am writing about {pair} The second is yours.",
+                 "." if known else
+                 f"I am writing about {pair} The second is yours.",
                  (f"I have reported this to {journal}. " if reported else "") + tell],
                 "If you weren't aware of it, you may want to contact "
                 + ("that journal " if reported else f"{journal} ") + ("yourself." if one else "yourselves."))
@@ -346,8 +345,8 @@ def email_parts(fd, attachment, shot_name=None, examples=EMAIL_PASSAGES, audienc
     """(subject, body) of a plain-text email about the pair to one of EMAIL_AUDIENCES. The body, in order:
     greeting, who I am (ABOUT_ME) and why I'm writing, the two articles, the findings, what's attached, extracts of the `examples` longest readable passages
     (the journal's email only), the request, and the sign-off with `name` (default your git user.name).
-    The findings run strongest first: the [data] ones, then the text share, then your other ticked findings
-    (before the share when it is under half); the earlier side's emails (AUDIENCE_LENGTH) get only the share
+    The findings: the text share (with whether the later article cites the earlier) first, then the [data]
+    ones and your other ticked findings; the earlier side's emails (AUDIENCE_LENGTH) get only the share
     and the [data] findings. contact: the institutions() entry (or entries) an institution email is for,
     default every addressed() one."""
     first, second = fd["first"], fd["second"]
@@ -370,20 +369,12 @@ def email_parts(fd, attachment, shot_name=None, examples=EMAIL_PASSAGES, audienc
                  f"({fd['matched_words'] or 0:,} matched words in {fd['runs']} passages)."]
     data = [f"- {t}" for t in fd.get("data_extra", ())]   # the [data] findings you ticked (gi_case_findings.py)
     extra = [f"- {t}" for t in fd.get("extra", ())]   # the other findings you ticked
-    checks = []
-    if fd["byline"] == "no byline overlap":
-        checks.append("- The two author lists share no names.")
-    which, other = ("The later", "the earlier article") if known else ("The first", "the second")
-    if fd["later_cites_earlier"] is False:
-        checks.append(f"- {which} article's reference list does not appear to cite {other}.")
-    elif fd["later_cites_earlier"]:
-        checks.append(f"- {which} article's reference list appears to cite {other}.")
-    if length == SHORT:
-        lines += data + share
-    elif (second["pct"] or 0) < 50:
-        lines += data + extra + share + checks
-    else:
-        lines += data + share + checks + extra
+    # the byline check (fd["byline"]) still picks the queue and the wording, but isn't stated in an email
+    if length != SHORT:   # the earlier side's short emails leave the citation check out, as the byline one
+        from gi_pubpeer import cites_clause
+        share = [cites_clause(share[0], fd["later_cites_earlier"],
+                              "the later article" if known else "the first article", known)]
+    lines += share + data + ([] if length == SHORT else extra)   # the share (and whether it's cited) leads
     if whole_document(fd):
         what = "both articles end to end as one diff, the shared text highlighted and the differences marked"
     else:

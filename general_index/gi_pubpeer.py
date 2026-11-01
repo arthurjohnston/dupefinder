@@ -128,6 +128,16 @@ def findings(db, f):
             "later_cites_earlier": cites, "passages": passages}
 
 
+def cites_clause(share, cites, which, known):
+    """The share line with whether `which` ("this article", "the later article") cites the other one joined on
+    as its last clause, so the overlap and the citation read as one point; unchanged when that's unknown."""
+    if cites is None:
+        return share
+    other = "it" if known else "the other article"
+    does = "does appear to cite" if cites else "does not appear to cite"
+    return f"{share.rstrip('.')}, and {which}'s reference list {does} {other}."
+
+
 def _cite(p):
     """[Title](https://doi.org/...) (Year; doi:...) for the Markdown. (The index has no journal names.)"""
     title = (p["title"] or p["doi"] or "").replace("[", "(").replace("]", ")")
@@ -146,8 +156,8 @@ def _same_doi(a, b):
 
 
 def markdown(fd):
-    """The PubPeer comment. The findings run strongest first, as in the emails: your [data] findings, then the
-    text share, then your other ticked findings (before the share when it is under half). Then, when there
+    """The PubPeer comment. The findings, as in the emails: the text share (with whether this article cites
+    the other) first, then your [data] findings and your other ticked findings. Then, when there
     are images (fd["images"], write_page()), PASSAGE_IMAGES passages side by side -- the tables first for copied
     data, each with where it is in both PDFs, the passages of text each with a short excerpt of both articles --
     and an [Image: name] line for where you upload each (PubPeer wants copy and source side by side, marked
@@ -172,20 +182,11 @@ def markdown(fd):
                       f"and {pct(first['pct'])} of the other article's text in this one "
                       f"({fd['matched_words'] or 0:,} matched words in {fd['runs']} passages)."]
     lines.append("")
-    checks = []
-    if fd["byline"] == "no byline overlap":
-        checks.append("- The two author lists share no names.")
-    other = "the earlier article" if known else "the other article"
-    if fd["later_cites_earlier"] is False:
-        checks.append(f"- This article's reference list does not appear to cite {other}.")
-    elif fd["later_cites_earlier"]:
-        checks.append(f"- This article's reference list appears to cite {other}.")
+    # the byline check (fd["byline"]) still picks the queue and the wording, but isn't stated in the post
+    share_line = [cites_clause(share_line[0], fd["later_cites_earlier"], "this article", known)]
     data = [f"- {t}" for t in fd.get("data_extra", ())]   # the findings you ticked (gi_case_findings.py)
     extra = [f"- {t}" for t in fd.get("extra", ())]
-    if (second["pct"] or 0) < 50:
-        lines += data + extra + share_line + checks
-    else:
-        lines += data + share_line + checks + extra
+    lines += share_line + data + extra   # the share (and whether it's cited) always leads
     images = fd.get("images") or []
     other_name = "Earlier article" if known else "Other article"
     for im in images:

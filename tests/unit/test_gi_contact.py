@@ -59,7 +59,9 @@ class TestEmail(unittest.TestCase):
         for a in ("authors", "source-publisher"):   # the earlier side: no citation/byline checks
             self.assertNotIn("share no names", mails[a][1])
             self.assertNotIn("reference list", mails[a][1])
-        self.assertIn("share no names", mails["institution"][1])
+        for _, m in mails.values():   # the byline check is never stated in an email
+            self.assertNotIn("share no names", m)
+            self.assertNotIn("other authors", m)
         self.assertNotIn("Extracts", mails["institution"][1])
         with self.assertRaises(ValueError):
             body(audience="nobody")
@@ -186,12 +188,13 @@ class TestEmail(unittest.TestCase):
              "extra": ["A typo is carried over."]}
         subject, e = body(f)
         self.assertEqual(subject, "Research integrity concern: results data in a paper you published")
-        self.assertIn("appears to report the same results data as an earlier article by other authors.", e)
-        order = [e.index(t) for t in ("Table 1 has the same", "A typo", "About 20%", "share no names")]
-        self.assertEqual(order, sorted(order))   # data, other findings (share under half), share, checks
+        self.assertIn("appears to report the same results data as an earlier article.", e)
+        order = [e.index(t) for t in ("About 20%", "Table 1 has the same", "A typo")]
+        self.assertEqual(order, sorted(order))   # the share always leads, then data, checks, other findings
         _, a = body(f, audience="authors")
         self.assertIn("the results data of your article appear to have been reused", a)
         self.assertIn("- Table 1 has the same means.", a)
+        self.assertLess(a.index("About 20%"), a.index("Table 1 has the same"))
         self.assertNotIn("A typo", a)   # the earlier side gets the data findings only
         self.assertTrue(body(f, audience="authors")[0].startswith("Results data from your article"))
         # without data, over half: the share before the other findings

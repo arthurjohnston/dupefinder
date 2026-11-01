@@ -97,9 +97,11 @@ page, with the findings as Markdown and a Copy button, the attachment for the jo
 to the later article's journal; a high-severity verdict also gets the drafts to the later authors' institution,
 the earlier authors and the earlier publisher;
 the comparison page and index on the project site, example_output/general_index/);
-  - you paste your PubPeer post's address once it's up, and the emails link to it;
-  - the site pages are pushed to main (gi_publish_site.py), after the last rewrite (the emails don't link
-    it: the comparison is attached);
+  - the site pages are pushed to main (gi_publish_site.py) in the background as soon as they're written, while
+    you write the PubPeer post (neither links the other; the emails don't link the site either: the
+    comparison is attached);
+  - you paste your PubPeer post's address once it's up, and the emails are rewritten to link to it (the site
+    folder left alone, so the push isn't racing it);
   - o opens the drafts as Thunderbird compose windows.
 Before the next pair opens, a prompt: Enter goes on, d talks the pair just finished through with the agent again
 (its session resumed, as d at the menu; as often as you like), q quits.
@@ -821,16 +823,18 @@ def review_one(pair, choices, counts, saved_flags=(), prep=None, shown=None, set
     return decision, type_, severity, build_note(reasons, text), flags, agreed
 
 
-def pubpeer_page(db, pair, open_it=True, severity=None, authors_only=False):
+def pubpeer_page(db, pair, open_it=True, severity=None, authors_only=False, site=True):
     """Write the pair's report files (gi_report_case.py: the PubPeer page, the attachment and the draft emails in
     data/dupe_publisher/GI-NN/, the page and index on the project site) and open the PubPeer page; a
     failure is printed, never fatal. severity picks the emails (None: the saved review's, else medium).
-    authors_only: the site page and the earlier authors' email only (write_report(authors_only=True))."""
+    authors_only: the site page and the earlier authors' email only (write_report(authors_only=True)).
+    site=False leaves the site folder alone (a push of it may be running)."""
     import gi_report_case
     print("  writing the report files ...")
     try:
         paths = gi_report_case.write_report(db, pair, sender=gi_report_case.git_email(), severity=severity,
-                                            authors_only=authors_only)
+                                            authors_only=authors_only,
+                                            **({} if site else {"site_dir": None}))
     except Exception as e:
         print(f"  report failed: {e}")
         return None
@@ -1108,12 +1112,33 @@ def between_cases(case, prep=None, nxt=None):
 
 def publish_site(case):
     """Push the site pages to main (gi_publish_site.py), printing what happened; never fatal."""
+    print(publish_site_message(case))
+
+
+def publish_site_message(case):
+    """publish_site()'s push, returning the line it prints instead of printing it (so it can run in a thread
+    while a prompt is up, its result shown after)."""
     import gi_publish_site
     try:
         sha = gi_publish_site.publish([case])
-        print(f"  site: pushed {sha} to main" if sha else "  site: main already has it")
+        return f"  site: pushed {sha} to main" if sha else "  site: main already has it"
     except Exception as e:
-        print(f"  site push failed: {getattr(e, 'stderr', '') or e}")
+        return f"  site push failed: {getattr(e, 'stderr', '') or e}"
+
+
+def publish_site_background(case):
+    """Start publish_site_message() in a thread; returns a function that waits for it and prints its line."""
+    import threading
+    out = []
+    t = threading.Thread(target=lambda: out.append(publish_site_message(case)), daemon=True)
+    t.start()
+
+    def finish():
+        if t.is_alive():
+            print("  site: waiting for the push to finish ...")
+        t.join()
+        print(out[0] if out else "  site push failed: no result")
+    return finish
 
 
 def publish_only(db, pair):
@@ -1163,8 +1188,8 @@ def take_down_flow(db, pair):
 def report_flow(db, pair, open_it=True, severity=None, prep=None, authors_only=False):
     """Everything for reporting the pair, in order: the gi-cases agent to prep it (waited for, or Ctrl-C to go
     on without it), ticking its findings, then the report files written and the PubPeer page opened, once,
-    with what the agent found and what you ticked; your PubPeer post's address, the site page pushed (last,
-    so it has the final files), and the drafts opened in Thunderbird. Every step but writing the report
+    with what the agent found and what you ticked; the site page pushed in the background while you post on
+    PubPeer, your PubPeer post's address, and the drafts opened in Thunderbird. Every step but writing the report
     files can be skipped with Enter / s. After the agent's summary, and again after talking it through with
     it, you can change your mind before anything is written: returns 'verdict' (ask the verdict again) or
     'stopped' (not reported), else None. authors_only (a at the report prompt): the finding published and the
@@ -1200,16 +1225,18 @@ def report_flow(db, pair, open_it=True, severity=None, prep=None, authors_only=F
     paths = pubpeer_page(db, pair, open_it, severity=severity, authors_only=authors_only)
     if not paths:
         return
+    # the site page doesn't link the PubPeer post, so it goes up while you write the post
+    finish_push = publish_site_background(case) if paths.get("site") else None
     have = gi_case_findings.pubpeer_url(case)
     url = "" if authors_only else ask(f"PubPeer post's address once it's up [Enter: {'keep ' + have if have else 'later (t asks again)'}] ")
     if url:
         try:
             gi_case_findings.save_pubpeer_url(case, url)
-            paths = pubpeer_page(db, pair, False, severity=severity) or paths   # the emails now link it
+            paths = pubpeer_page(db, pair, False, severity=severity, site=False) or paths   # the emails now link it
         except ValueError as e:
             print(f"  {e}: not saved")
-    if paths.get("site"):
-        publish_site(case)
+    if finish_push:
+        finish_push()
     emls = [p for k, p in paths.items() if k.startswith("email ")]
     if emls and ask("[o: open the drafts in Thunderbird, Enter: not now] ").lower().startswith("o"):
         try:

@@ -233,10 +233,13 @@ class TestReportFlow(unittest.TestCase):
             orig = getattr(gi_case_findings, fn)
             setattr(self, "_" + fn, orig)
             setattr(gi_case_findings, fn, lambda case, report_dir=None, o=orig: o(case, self.dir))
-        cli.pubpeer_page = lambda db, pair, open_it=True, severity=None, authors_only=False: (
-            self.calls.append(("report", open_it) + (("authors only",) if authors_only else ())) or
+        self.site = False   # pubpeer_page() reports a site page, so the push runs
+        cli.pubpeer_page = lambda db, pair, open_it=True, severity=None, authors_only=False, site=True: (
+            self.calls.append(("report", open_it) + (("authors only",) if authors_only else ())
+                              + (() if site else ("no site",))) or
             ({"email authors": self.dir / "a.eml"} if authors_only else
-             {"pubpeer": self.dir / "p.html", "email publisher": self.dir / "e.eml"}))
+             {"pubpeer": self.dir / "p.html", "email publisher": self.dir / "e.eml",
+              **({"site": self.dir / "s.html"} if self.site else {})}))
 
         def agent(case):
             self.calls.append(("agent", case))
@@ -265,10 +268,38 @@ class TestReportFlow(unittest.TestCase):
             gi_report_case.open_drafts = orig
         return opened
 
+    def test_site_pushed_while_you_post(self):
+        """The site push starts as soon as the files are written, before the PubPeer address is asked for, and
+        the rewrite for the address leaves the site folder alone."""
+        import threading
+        self.site = True
+        started, release = threading.Event(), threading.Event()
+        orig = cli.publish_site_message
+
+        def push(case):
+            started.set()
+            release.wait(5)
+            return "  site: pushed abc to main"
+        cli.publish_site_message = push
+        answers = iter(["", "y", "n"])
+
+        def ask(prompt):
+            if prompt.startswith("PubPeer post"):
+                self.assertTrue(started.wait(5))   # already pushing while the prompt is up
+                release.set()
+                return "https://pubpeer.com/publications/X1"
+            return next(answers, "s")
+        try:
+            cli.ask = ask
+            cli.report_flow(None, {"page_number": 7}, open_it=True)
+        finally:
+            cli.publish_site_message = orig
+        self.assertEqual(self.calls[-1], ("report", False, "no site"))
+
     def test_whole_flow(self):
         opened = self.run_flow(["", "y", "n", "https://pubpeer.com/publications/X1", "o"])
         # the agent, then the files written and the PubPeer page opened once, then rewritten for the URL
-        self.assertEqual(self.calls, [("agent", "GI-07"), ("report", True), ("report", False)])
+        self.assertEqual(self.calls, [("agent", "GI-07"), ("report", True), ("report", False, "no site")])
         self.assertEqual(self.cf.included("GI-07", self.dir), ["One."])
         self.assertEqual(self.cf.pubpeer_url("GI-07", self.dir), "https://pubpeer.com/publications/X1")
         self.assertEqual(len(opened), 1)
