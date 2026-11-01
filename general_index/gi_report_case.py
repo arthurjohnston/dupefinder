@@ -86,6 +86,7 @@ import gi_contact
 import gi_db
 import gi_pubpeer as pp
 import gi_sources
+import gi_site_index
 
 ROOT = Path(__file__).resolve().parent.parent
 REPORT_DIR = gi_db.DATA / "dupe_publisher"
@@ -394,7 +395,7 @@ def write_index(site_dir):
         rows.append(f"""<tr><td class="num"><a href="{html.escape(c['file'])}">{html.escape(case)}</a></td>
 <td class="art">{_article(later)}</td><td class="art">{_article(earlier)}</td>
 <td class="num">{pp.pct(later['pct'])} / {pp.pct(earlier['pct'])}{_union(c)}</td>
-<td class="num">{c['longest'] or '?'} words</td><td class="num">{html.escape(c['reported'] or 'not reported')}</td></tr>""")
+<td class="num">{gi_site_index._words(c)}</td><td class="num">{html.escape(c['reported'] or 'not reported')}</td></tr>""")
     path = site_dir / "index.html"
     path.write_text(f"""<!DOCTYPE html>
 <html lang="en">
@@ -420,7 +421,7 @@ person.</p>
 came first is unknown and the order means nothing.</p>
 <div class="table-wrap"><table>
 <thead><tr><th>Case</th><th>Later article</th><th>Earlier article</th><th>Shared text (later / earlier)</th>
-<th>Longest passage</th><th>Reported</th></tr></thead>
+<th>Words shared</th><th>Reported</th></tr></thead>
 <tbody>
 {chr(10).join(rows)}
 </tbody>
