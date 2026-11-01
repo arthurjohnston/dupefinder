@@ -2085,5 +2085,30 @@
   "sources": 2,
   "union_words": 993,
   "union_pct": 17.8
+ },
+ "GI-894": {
+  "file": "GI-894.html",
+  "reported": null,
+  "published": "2026-11-01",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "New treatments for chronic hepatitis C",
+   "year": 2010,
+   "doi": "10.3350/kjhep.2010.16.3.263",
+   "pct": 20.0,
+   "journal": "The Korean Journal of Hepatology"
+  },
+  "earlier": {
+   "title": "Targeting host factors: A novel rationale for the management of hepatitis C virus",
+   "year": 2009,
+   "doi": "10.3748/wjg.15.3472",
+   "pct": 32.0,
+   "journal": "World Journal of Gastroenterology"
+  },
+  "matched_words": 1362,
+  "runs": 55,
+  "longest": 51
  }
 }
