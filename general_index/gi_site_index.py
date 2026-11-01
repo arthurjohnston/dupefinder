@@ -106,12 +106,21 @@ def _union(c):
     return f"<br><small>{c['union_pct']:.0f}% in {c['sources']} earlier works</small>"
 
 
+def _words(c):
+    """Words of the later article found in the earlier one (and, with other sources, in all of them)."""
+    n = c.get("matched_words")
+    out = f"{n:,}" if n is not None else "?"
+    if c.get("union_words"):
+        out += f"<br><small>{c['union_words']:,} in all</small>"
+    return out
+
+
 def _row(case, c, prefix=""):
     later, earlier = c["later"], c["earlier"]
     return f"""<tr><td class="num"><a href="{html.escape(prefix + c['file'])}">{html.escape(case)}</a></td>
 <td class="art">{_article(later)}</td><td class="art">{_article(earlier)}</td>
 <td class="num">{pct(later['pct'])} / {pct(earlier['pct'])}{_union(c)}</td>
-<td class="num">{c['longest'] or '?'} words</td><td class="num">{html.escape(c['reported'] or 'not reported')}</td></tr>"""
+<td class="num">{_words(c)}</td><td class="num">{html.escape(c['reported'] or 'not reported')}</td></tr>"""
 
 
 def tables_html(cases, prefix="", level=2):
@@ -127,7 +136,7 @@ def tables_html(cases, prefix="", level=2):
 <p>{html.escape(about)}</p>
 <div class="table-wrap"><table>
 <thead><tr><th>Case</th><th>Later article</th><th>Earlier article</th><th>Shared text (later / earlier)</th>
-<th>Longest passage</th><th>Reported</th></tr></thead>
+<th>Words shared</th><th>Reported</th></tr></thead>
 <tbody>
 {rows}
 </tbody>

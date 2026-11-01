@@ -31,7 +31,8 @@ class TestIndex(unittest.TestCase):
             self.assertLess(page.index('href="GI-235.html"'), page.index('href="GI-80.html"'))
             self.assertIn("70% / 40%", page)
             self.assertIn('New paper (2015)<br><a href="https://doi.org/10.2/new">doi:10.2/new</a>', page)
-            self.assertIn("300 words", page)
+            self.assertIn("<th>Words shared</th>", page)
+            self.assertIn(">2,480<", page)
 
     def test_not_reported(self):
         with tempfile.TemporaryDirectory() as d:
