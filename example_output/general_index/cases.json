@@ -2288,5 +2288,30 @@
   "matched_words": 648,
   "runs": 29,
   "longest": 61
+ },
+ "GI-327": {
+  "file": "GI-327.html",
+  "reported": "2026-11-01",
+  "published": "2026-11-01",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "A Review of Superbug: A Global Threat in Health Care System",
+   "year": 2018,
+   "doi": "10.3329/bjid.v4i1.37678",
+   "pct": 60.0,
+   "journal": "Bangladesh Journal of Infectious Diseases"
+  },
+  "earlier": {
+   "title": "Superbug, an Emerging Global Threat in Current Scenario: A Review",
+   "year": 2016,
+   "doi": "10.20431/2454-9428.0202003",
+   "pct": 69.0,
+   "journal": "International Journal of Research Studies in Microbiology and Biotechnology"
+  },
+  "matched_words": 906,
+  "runs": 22,
+  "longest": 108
  }
 }
