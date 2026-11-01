@@ -2110,5 +2110,30 @@
   "matched_words": 1362,
   "runs": 55,
   "longest": 51
+ },
+ "GI-266": {
+  "file": "GI-266.html",
+  "reported": "2026-11-01",
+  "published": "2026-11-01",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "RESEARCH THE IMPACT OF FDI ON SOME MACROECONOMIC INDICATORS IN BOSNIA AND HERZEGOVINA BY USING OF PROGRAM IBM SPSS STATISTICS",
+   "year": 2018,
+   "doi": "10.5937/jouproman6-18224",
+   "pct": 32.0,
+   "journal": "Journal of Process Management. New Technologies"
+  },
+  "earlier": {
+   "title": "Orginal article",
+   "year": 2018,
+   "doi": "10.2478/eoik-2018-0008",
+   "pct": 43.0,
+   "journal": "ECONOMICS"
+  },
+  "matched_words": 1429,
+  "runs": 58,
+  "longest": 244
  }
 }
