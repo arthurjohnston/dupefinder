@@ -426,7 +426,7 @@
  },
  "GI-232": {
   "file": "GI-232.html",
-  "reported": "2026-10-28",
+  "reported": null,
   "published": "2026-10-17",
   "earlier_known": false,
   "type": "cross-author copying",
@@ -676,7 +676,7 @@
  },
  "GI-699": {
   "file": "GI-699.html",
-  "reported": "2026-10-28",
+  "reported": null,
   "published": "2026-10-23",
   "earlier_known": false,
   "type": "cross-author copying",
@@ -779,7 +779,7 @@
  },
  "GI-566": {
   "file": "GI-566.html",
-  "reported": "2026-10-28",
+  "reported": null,
   "published": "2026-10-24",
   "earlier_known": true,
   "type": "cross-author copying",
@@ -804,7 +804,7 @@
  },
  "GI-464": {
   "file": "GI-464.html",
-  "reported": "2026-10-28",
+  "reported": null,
   "published": "2026-10-24",
   "earlier_known": true,
   "type": "cross-author copying",
@@ -904,7 +904,7 @@
  },
  "GI-874": {
   "file": "GI-874.html",
-  "reported": "2026-10-28",
+  "reported": null,
   "published": "2026-10-25",
   "earlier_known": true,
   "type": "cross-author copying",
@@ -1057,7 +1057,7 @@
  },
  "GI-999": {
   "file": "GI-999.html",
-  "reported": "2026-10-28",
+  "reported": null,
   "published": "2026-10-26",
   "earlier_known": true,
   "type": "cross-author copying",
@@ -1107,7 +1107,7 @@
  },
  "GI-841": {
   "file": "GI-841.html",
-  "reported": "2026-10-28",
+  "reported": null,
   "published": "2026-10-27",
   "earlier_known": true,
   "type": "cross-author copying",
@@ -1132,7 +1132,7 @@
  },
  "GI-881": {
   "file": "GI-881.html",
-  "reported": "2026-10-28",
+  "reported": null,
   "published": "2026-10-27",
   "earlier_known": true,
   "type": "cross-author copying",
@@ -1185,7 +1185,7 @@
  },
  "GI-830": {
   "file": "GI-830.html",
-  "reported": "2026-10-28",
+  "reported": null,
   "published": "2026-10-27",
   "earlier_known": true,
   "type": "cross-author copying",
@@ -1210,7 +1210,7 @@
  },
  "GI-959": {
   "file": "GI-959.html",
-  "reported": "2026-10-28",
+  "reported": null,
   "published": "2026-10-28",
   "earlier_known": true,
   "type": "cross-author copying",
@@ -1235,7 +1235,7 @@
  },
  "GI-977": {
   "file": "GI-977.html",
-  "reported": "2026-10-28",
+  "reported": null,
   "published": "2026-10-28",
   "earlier_known": true,
   "type": "cross-author copying",
@@ -2060,7 +2060,7 @@
  },
  "GI-949": {
   "file": "GI-949.html",
-  "reported": "2026-10-28",
+  "reported": null,
   "published": "2026-10-30",
   "earlier_known": true,
   "type": "cross-author copying",
@@ -2388,5 +2388,30 @@
   "matched_words": 722,
   "runs": 41,
   "longest": 50
+ },
+ "GI-738": {
+  "file": "GI-738.html",
+  "reported": "2026-11-01",
+  "published": "2026-11-01",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Crohn's Disease and Diagnostic Difficulty: A Case Report",
+   "year": 2018,
+   "doi": "10.3329/akmmcj.v9i2.39215",
+   "pct": 61.0,
+   "journal": "Anwer Khan Modern Medical College Journal"
+  },
+  "earlier": {
+   "title": "Crohn’s disease: A case report with literature review",
+   "year": 2015,
+   "doi": "10.1515/arsm-2015-0017",
+   "pct": 58.0,
+   "journal": "ARS Medica Tomitana"
+  },
+  "matched_words": 948,
+  "runs": 34,
+  "longest": 91
  }
 }
