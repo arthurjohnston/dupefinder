@@ -2160,5 +2160,30 @@
   "matched_words": 1417,
   "runs": 43,
   "longest": 131
+ },
+ "GI-271": {
+  "file": "GI-271.html",
+  "reported": "2026-11-01",
+  "published": "2026-11-01",
+  "earlier_known": true,
+  "type": "data copying",
+  "data": true,
+  "later": {
+   "title": "Mechanical Calculation for Workover String in Highly-Deviated and Horizontal Well",
+   "year": 2015,
+   "doi": "10.3968/8080",
+   "pct": 50.0,
+   "journal": "Advances in Petroleum Exploration and Development"
+  },
+  "earlier": {
+   "title": "Workover String Mechanical Model and Calculation of Slanted and Horizontal Well",
+   "year": 2015,
+   "doi": "10.4236/jamp.2015.35066",
+   "pct": 52.0,
+   "journal": "Journal of Applied Mathematics and Physics"
+  },
+  "matched_words": 1372,
+  "runs": 52,
+  "longest": 161
  }
 }
