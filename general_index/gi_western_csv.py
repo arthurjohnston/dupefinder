@@ -6,7 +6,8 @@ Two lists, both from gi_affiliations' cached OpenAlex/ORCID data (gi.sqlite3; no
                  cross-author copying, ...), copied_pct (the share of that paper's words in shared runs), the
                  agent's decision, overlap_pct (the larger of the two papers' shares) and a health-sciences flag;
                  cases the agent typed as text recycling, legitimate reuse, duplicate publication or an artifact
-                 are left out (--all-types keeps them)
+                 are left out (--all-types keeps them); author_check / now_at / check_basis say what the case
+                 agent found about each academic (AUTHOR_CHECKS)
   unobtainable   pairs from the pool with no full text (data/unobtainable_openalex_screen.tsv) whose larger GI
                  5-gram share is at least --min-pct (15, the original lead floor), cross-author only (the
                  screen's eliminated pairs dropped), in the n-gram lead ranking (gi_rank_leads.py's lead_rank,
@@ -46,8 +47,16 @@ MERGE_UNIVERSITIES = 3
 ORCID_SRC, OPENALEX_SRC = "ORCID current job", "OpenAlex last known"
 NOT_COPYING = ("text recycling", "legitimate reuse", "duplicate publication", "artifact")   # cases: dropped by default
 SCREEN = Path(__file__).resolve().parent / "data" / "unobtainable_openalex_screen.tsv"
+# What the case agent (gi_prep_batch) established about each listed academic, classified per (case, author,
+# university): confirmed (the author, there now), byline (there on the article; now unknown), moved (the author,
+# now at now_at), untraced, name only (a namesake there, no link), elsewhere (the agent placed the author at
+# another institution: an OpenAlex merge), on earlier paper (the agent read the order the other way, so this
+# academic is a source author), different person. Joined into the cases list as author_check, now_at and
+# check_basis; a case with no findings.md yet is "not prepped".
+AUTHOR_CHECKS = Path(__file__).resolve().parent / "data" / "western_author_checks.json"
 
-CASE_FIELDS = ["case", "copying_paper", "title", "type", "copied_pct", "author", "university", "country", "source",
+CASE_FIELDS = ["case", "copying_paper", "title", "type", "copied_pct", "author", "university", "country",
+               "author_check", "now_at", "check_basis", "source",
                "n_universities", "likely_merge", "orcid_professor_post", "last_published", "agent_decision",
                "overlap_pct", "health_sciences"]
 POOL_FIELDS = ["pair_id", "lead_rank", "tier", "copying_paper", "title", "copied_pct", "author", "university",
@@ -147,14 +156,25 @@ def cmd_cases(db, args):
     queue = cli.load_queue(db, order="affiliation", western_only=True)
     medical = cli.medical_pairs(db, queue)
     profs = ga.doi_professors(db, [d for r in queue for d in (r["doi_a"], r["doi_b"])])
+    import gi_case_findings
+    checks = {}
+    if AUTHOR_CHECKS.exists():
+        for c in json.loads(AUTHOR_CHECKS.read_text(encoding="utf-8")):
+            checks[(c["case"], c["author"], c["university"])] = c
     rows = []
     for r in queue:
         if r["ai_type"] in NOT_COPYING and not args.all_types:
             continue
         titles = {s: cli.paper_info(r["library"], r[f"paper_{s}"])[0] for s in "ab"}
+        case = f"GI-{r['page_number']:02d}"
+        prepped = gi_case_findings.findings_path(case).exists()
         for row in academic_rows(db, r["doi_a"], r["doi_b"], pages.earlier_side(r), profs):
             side = row["copying_paper"][0].lower()
-            rows.append({"case": f"GI-{r['page_number']:02d}", "copying_paper": row["copying_paper"],
+            check = checks.get((case, row["author"], row["university"]), {})
+            now_at = ", ".join(x for x in (check.get("now_at"), check.get("now_country")) if x)
+            row.update(author_check=check.get("verdict") or ("untraced" if prepped else "not prepped"),
+                       now_at=now_at, check_basis=check.get("basis", ""))
+            rows.append({"case": case, "copying_paper": row["copying_paper"],
                          "title": titles[side], "type": r["ai_type"] or "",
                          "copied_pct": "" if r[f"ft_pct_{side}"] is None else f"{r[f'ft_pct_{side}']:.0f}", **row,
                          "agent_decision": r["ai_decision"] or "not reviewed",
