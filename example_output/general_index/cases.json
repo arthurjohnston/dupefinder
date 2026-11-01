@@ -2313,5 +2313,30 @@
   "matched_words": 906,
   "runs": 22,
   "longest": 108
+ },
+ "GI-1032": {
+  "file": "GI-1032.html",
+  "reported": "2026-11-01",
+  "published": "2026-11-01",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "A Prospective Twin Registry in Southwestern China (TRiSC): Exploring the Effects of Genetic and Environmental Factors on Cognitive and Behavioral Development and Mental Health Wellbeing in Children and Adolescents",
+   "year": 2009,
+   "doi": "10.1375/twin.12.3.312",
+   "pct": 18.0,
+   "journal": "Twin Research and Human Genetics"
+  },
+  "earlier": {
+   "title": "The Longitudinal Israeli Study of Twins (LIST): Children's Social Development as Influenced by Genetics, Abilities, and Socialization",
+   "year": 2006,
+   "doi": "10.1375/183242706779462660",
+   "pct": 23.0,
+   "journal": "Twin Research and Human Genetics"
+  },
+  "matched_words": 703,
+  "runs": 39,
+  "longest": 54
  }
 }
