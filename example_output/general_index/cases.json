@@ -2185,5 +2185,30 @@
   "matched_words": 1372,
   "runs": 52,
   "longest": 161
+ },
+ "GI-247": {
+  "file": "GI-247.html",
+  "reported": "2026-11-01",
+  "published": "2026-11-01",
+  "earlier_known": true,
+  "type": "data copying",
+  "data": true,
+  "later": {
+   "title": "Management of Chest Trauma in Bangladesh Perspective: Experience of a Decade",
+   "year": 2019,
+   "doi": "10.3329/cardio.v12i1.43411",
+   "pct": 51.0,
+   "journal": "Cardiovascular Journal"
+  },
+  "earlier": {
+   "title": "Chest trauma experience over eleven-year period at al-mouassat university teaching hospital-Damascus: a retrospective review of 888 cases",
+   "year": 2012,
+   "doi": "10.1186/1749-8090-7-35",
+   "pct": 48.0,
+   "journal": "Journal of Cardiothoracic Surgery"
+  },
+  "matched_words": 1627,
+  "runs": 62,
+  "longest": 97
  }
 }
