@@ -2263,5 +2263,30 @@
   "sources": 2,
   "union_words": 2238,
   "union_pct": 34.3
+ },
+ "GI-931": {
+  "file": "GI-931.html",
+  "reported": "2026-11-01",
+  "published": "2026-11-01",
+  "earlier_known": true,
+  "type": "data copying",
+  "data": true,
+  "later": {
+   "title": "Vaccination against urinary tract infections caused by E. coli",
+   "year": 2013,
+   "doi": "10.4236/abb.2013.43a064",
+   "pct": 22.0,
+   "journal": "Advances in Bioscience and Biotechnology"
+  },
+  "earlier": {
+   "title": "Uropathogenic Escherichia coli Outer Membrane Antigens Expressed during Urinary Tract Infection",
+   "year": 2007,
+   "doi": "10.1128/iai.00337-07",
+   "pct": 10.0,
+   "journal": "Infection and Immunity"
+  },
+  "matched_words": 648,
+  "runs": 29,
+  "longest": 61
  }
 }
