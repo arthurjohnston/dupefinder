@@ -1,8 +1,8 @@
 """Where the Western academics on copying papers are now: one CSV row per academic per university.
 
 Two lists, both from gi_affiliations' cached OpenAlex/ORCID data (gi.sqlite3; nothing is fetched):
-  cases          unreviewed cases in the review tool's --western-only queue (gi_review_cli.load_queue, its
-                 affiliation order), with the title of the academic's paper, the agent's type (data copying,
+  cases          unreviewed cases in the review tool's --western-only queue (gi_review_cli.load_queue), in
+                 case_order (the queue's order without the agent's grouping), with the title of the academic's paper, the agent's type (data copying,
                  cross-author copying, ...), copied_pct (the share of that paper's words in shared runs), the
                  agent's decision, overlap_pct (the larger of the two papers' shares) and a health-sciences flag;
                  cases the agent typed as text recycling, legitimate reuse, duplicate publication or an artifact
@@ -166,10 +166,18 @@ def academic_rows(db, doi_a, doi_b, earlier, profs):
     return rows
 
 
+def case_order(r, priority):
+    """The cases list's order: gi_review_cli.queue_key()'s without the agent's grouping (its type and decision
+    don't rank a case). A copy by a preprint last, then a later paper from a major publisher first, then larger
+    overlap. priority: gi_preprints.pair_priority()'s rank."""
+    return (max(priority, 0), min(priority, 0), -max(r["ft_pct_a"] or 0, r["ft_pct_b"] or 0))
+
+
 def cmd_cases(db, args):
     import gi_review_cli as cli
     import gi_write_pages as pages
-    queue = cli.load_queue(db, order="affiliation", western_only=True)
+    queue = sorted(cli.load_queue(db, order="affiliation", western_only=True),
+                   key=lambda r: case_order(r, pages.priority_status(r)[0]))
     medical = cli.medical_pairs(db, queue)
     profs = ga.doi_professors(db, [d for r in queue for d in (r["doi_a"], r["doi_b"])])
     import gi_case_findings

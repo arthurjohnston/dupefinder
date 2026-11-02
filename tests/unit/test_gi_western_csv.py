@@ -24,6 +24,14 @@ class TestCopyingSides(unittest.TestCase):
         self.assertEqual(gw.copying_sides(None), (["a", "b"], " (order unknown)"))
 
 
+class TestCaseOrder(unittest.TestCase):
+    def test_preprint_last_major_publisher_then_overlap(self):
+        rows = {"preprint": ({"ft_pct_a": 90, "ft_pct_b": 0}, 1), "major": ({"ft_pct_a": 10, "ft_pct_b": 5}, -2),
+                "big": ({"ft_pct_a": 20, "ft_pct_b": 60}, 0), "small": ({"ft_pct_a": 30, "ft_pct_b": None}, 0)}
+        ranked = sorted(rows, key=lambda k: gw.case_order(*rows[k]))
+        self.assertEqual(ranked, ["major", "big", "small", "preprint"])
+
+
 class TestMergeFlag(unittest.TestCase):
     def test_three_openalex_universities_flagged(self):
         unis = {"Harvard University": ("US", OA), "University of Calgary": ("CA", OA),
