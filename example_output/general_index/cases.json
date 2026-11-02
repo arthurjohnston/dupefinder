@@ -2741,5 +2741,33 @@
   "matched_words": 526,
   "runs": 50,
   "longest": 44
+ },
+ "GI-573": {
+  "file": "GI-573.html",
+  "reported": "2026-11-01",
+  "published": "2026-11-01",
+  "earlier_known": true,
+  "type": null,
+  "data": false,
+  "later": {
+   "title": "Modelling Uncertainty of Stream Networks Derived from Elevation Data Using Two Free Softwares: R and SAGA",
+   "year": 2012,
+   "doi": "10.4236/jgis.2012.42020",
+   "pct": 13.0,
+   "journal": "Journal of Geographic Information System"
+  },
+  "earlier": {
+   "title": "On the uncertainty of stream networks derived from elevation data: the error propagation approach",
+   "year": 2010,
+   "doi": "10.5194/hess-14-1153-2010",
+   "pct": 7.0,
+   "journal": "Hydrology and Earth System Sciences"
+  },
+  "matched_words": 541,
+  "runs": 23,
+  "longest": 70,
+  "sources": 2,
+  "union_words": 773,
+  "union_pct": 18.0
  }
 }
