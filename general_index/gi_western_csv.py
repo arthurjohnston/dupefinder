@@ -7,7 +7,9 @@ Two lists, both from gi_affiliations' cached OpenAlex/ORCID data (gi.sqlite3; no
                  agent's decision, overlap_pct (the larger of the two papers' shares) and a health-sciences flag;
                  cases the agent typed as text recycling, legitimate reuse, duplicate publication or an artifact
                  are left out (--all-types keeps them); author_check / now_at / check_basis say what the case
-                 agent found about each academic (AUTHOR_CHECKS)
+                 agent found about each academic (AUTHOR_CHECKS); rows the agent found aren't Western (NOT_WESTERN,
+                 or moved outside TARGET_COUNTRIES) are left out, and a case with none left drops (--all-authors
+                 keeps them), as are the cases in LOOKED_AT (looked at without a decision in the review tool)
   unobtainable   pairs from the pool with no full text (data/unobtainable_openalex_screen.tsv) whose larger GI
                  5-gram share is at least --min-pct (15, the original lead floor), cross-author only (the
                  screen's eliminated pairs dropped), in the n-gram lead ranking (gi_rank_leads.py's lead_rank,
@@ -56,6 +58,10 @@ SCREEN = Path(__file__).resolve().parent / "data" / "unobtainable_openalex_scree
 # academic is a source author), different person. Joined into the cases list as author_check, now_at and
 # check_basis; a case with no findings.md yet is "not prepped".
 AUTHOR_CHECKS = Path(__file__).resolve().parent / "data" / "western_author_checks.json"
+NOT_WESTERN = ("elsewhere", "name only", "on earlier paper", "different person")   # cases: rows dropped by default
+# Cases already looked at though the review tool has no decision for them (one GI-NN per line, # comments):
+# left out of the cases list like reviewed ones.
+LOOKED_AT = Path(__file__).resolve().parent / "data" / "western_cases_looked_at.txt"
 
 CASE_FIELDS = ["case", "copying_paper", "title", "subject", "subfield", "type", "copied_pct", "author", "university", "country",
                "author_check", "now_at", "check_basis", "source",
@@ -171,9 +177,14 @@ def cmd_cases(db, args):
     if AUTHOR_CHECKS.exists():
         for c in json.loads(AUTHOR_CHECKS.read_text(encoding="utf-8")):
             checks[(c["case"], c["author"], c["university"])] = c
+    looked_at = set()
+    if LOOKED_AT.exists():
+        looked_at = {line.split("#")[0].strip() for line in LOOKED_AT.read_text(encoding="utf-8").splitlines()}
     rows = []
     for r in queue:
         if r["ai_type"] in NOT_COPYING and not args.all_types:
+            continue
+        if f"GI-{r['page_number']:02d}" in looked_at:
             continue
         titles = {s: cli.paper_info(r["library"], r[f"paper_{s}"])[0] for s in "ab"}
         case = f"GI-{r['page_number']:02d}"
@@ -181,6 +192,9 @@ def cmd_cases(db, args):
         for row in academic_rows(db, r["doi_a"], r["doi_b"], pages.earlier_side(r), profs):
             side = row["copying_paper"][0].lower()
             check = checks.get((case, row["author"], row["university"]), {})
+            if not args.all_authors and (check.get("verdict") in NOT_WESTERN or (
+                    check.get("verdict") == "moved" and check.get("now_country") not in ga.TARGET_COUNTRIES)):
+                continue
             now_at = ", ".join(x for x in (check.get("now_at"), check.get("now_country")) if x)
             row.update(author_check=check.get("verdict") or ("untraced" if prepped else "not prepped"),
                        now_at=now_at, check_basis=check.get("basis", ""))
@@ -246,6 +260,8 @@ def main():
     ap.add_argument("--db", default=str(gi_db.DB_PATH))
     ap.add_argument("--all-types", action="store_true",
                     help="cases: keep the agent types that aren't copying by someone else (NOT_COPYING)")
+    ap.add_argument("--all-authors", action="store_true",
+                    help="cases: keep academics the case agent found aren't Western (NOT_WESTERN)")
     ap.add_argument("--all-tiers", action="store_true", help="unobtainable: keep tier 5 (UNIDENTIFIED_TIER)")
     ap.add_argument("--keep-proceedings", action="store_true",
                     help="unobtainable: keep front-matter and volume-against-volume pairs (proceedings_noise)")
