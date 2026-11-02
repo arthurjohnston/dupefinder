@@ -2747,7 +2747,7 @@
   "reported": "2026-11-01",
   "published": "2026-11-01",
   "earlier_known": true,
-  "type": null,
+  "type": "cross-author copying",
   "data": false,
   "later": {
    "title": "Modelling Uncertainty of Stream Networks Derived from Elevation Data Using Two Free Softwares: R and SAGA",
