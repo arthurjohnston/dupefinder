@@ -2413,5 +2413,33 @@
   "matched_words": 948,
   "runs": 34,
   "longest": 91
+ },
+ "GI-947": {
+  "file": "GI-947.html",
+  "reported": "2026-11-01",
+  "published": "2026-11-01",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Automation || The Role of Automation in the Identification of New Bioactive Compounds",
+   "year": 2012,
+   "doi": "10.5772/45727",
+   "pct": 6.0,
+   "journal": "Automation"
+  },
+  "earlier": {
+   "title": "Making virtual screening a reality",
+   "year": 2003,
+   "doi": "10.1073/pnas.1332743100",
+   "pct": 46.0,
+   "journal": "Proceedings of the National Academy of Sciences"
+  },
+  "matched_words": 536,
+  "runs": 11,
+  "longest": 132,
+  "sources": 9,
+  "union_words": 1862,
+  "union_pct": 21.7
  }
 }
