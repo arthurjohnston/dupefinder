@@ -1635,7 +1635,7 @@
  },
  "GI-50": {
   "file": "GI-50.html",
-  "reported": null,
+  "reported": "2026-10-12",
   "published": "2026-10-30",
   "earlier_known": true,
   "type": "cross-author copying",
@@ -2441,5 +2441,280 @@
   "sources": 4,
   "union_words": 1465,
   "union_pct": 17.1
+ },
+ "GI-62": {
+  "file": "GI-62.html",
+  "reported": "2026-10-27",
+  "published": "2026-11-01",
+  "earlier_known": false,
+  "type": "data copying",
+  "data": true,
+  "later": {
+   "title": "Research on Data Mining Algorithm based on Business Cloud Platform for Mobile Internet",
+   "year": 2016,
+   "doi": "10.14257/ijunesst.2016.9.2.33",
+   "pct": 86.0,
+   "journal": "International Journal of u- and e- Service, Science and Technology"
+  },
+  "earlier": {
+   "title": "Research on Data Mining Algorithm for Mobile Internet based on Business Cloud Platform",
+   "year": 2016,
+   "doi": "10.14257/ijgdc.2016.9.5.01",
+   "pct": 82.0,
+   "journal": "International Journal of Grid and Distributed Computing"
+  },
+  "matched_words": 3544,
+  "runs": 63,
+  "longest": 209
+ },
+ "GI-88": {
+  "file": "GI-88.html",
+  "reported": "2026-10-27",
+  "published": "2026-11-01",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "NANOPLEX: A REVIEW OF NANOTECHNOLOGY APPROACH FOR SOLUBILITY AND DISSOLUTION RATE ENHANCEMENT",
+   "year": 2018,
+   "doi": "10.22159/ijcpr.2018v10i4.28467",
+   "pct": 86.0,
+   "journal": "International Journal of Current Pharmaceutical Research"
+  },
+  "earlier": {
+   "title": "A review of nanotechnology with an emphasis on Nanoplex",
+   "year": 2015,
+   "doi": "10.1590/S1984-82502015000200002",
+   "pct": 67.0,
+   "journal": "Brazilian Journal of Pharmaceutical Sciences"
+  },
+  "matched_words": 2461,
+  "runs": 68,
+  "longest": 150
+ },
+ "GI-94": {
+  "file": "GI-94.html",
+  "reported": "2026-10-27",
+  "published": "2026-11-01",
+  "earlier_known": false,
+  "type": "data copying",
+  "data": true,
+  "later": {
+   "title": "Computational Fluid Dynamics Analysis and Experimental Investigations of Optimum Geometry for the Cold End Orifice and Snail Entry of Vortex Tube",
+   "year": 2014,
+   "doi": "10.9790/1684-11432431",
+   "pct": 86.0,
+   "journal": "IOSR Journal of Mechanical and Civil Engineering"
+  },
+  "earlier": {
+   "title": "Computational Fluid Dynamics and Experimental Analysis for Optimum Geometry of Vortex Tube",
+   "year": 2014,
+   "doi": "10.15680/ijirset.2014.0308067",
+   "pct": 84.0,
+   "journal": "International Journal of Innovative Research in Science, Engineering and Technology"
+  },
+  "matched_words": 2328,
+  "runs": 46,
+  "longest": 251
+ },
+ "GI-109": {
+  "file": "GI-109.html",
+  "reported": "2026-10-27",
+  "published": "2026-11-01",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Pathogenesis and Factors associated with Insulin Resistance",
+   "year": 2017,
+   "doi": "10.3329/kyamcj.v5i2.32368",
+   "pct": 61.0,
+   "journal": "KYAMC Journal"
+  },
+  "earlier": {
+   "title": "Metabolic Syndrome and Insulin resistance: Etiopathegenesis and influencing factors",
+   "year": 2013,
+   "doi": "10.3329/bjmb.v4i2.13773",
+   "pct": 86.0,
+   "journal": "Bangladesh Journal of Medical Biochemistry"
+  },
+  "matched_words": 2102,
+  "runs": 53,
+  "longest": 152
+ },
+ "GI-121": {
+  "file": "GI-121.html",
+  "reported": "2026-10-27",
+  "published": "2026-11-01",
+  "earlier_known": true,
+  "type": "data copying",
+  "data": true,
+  "later": {
+   "title": "A randomised controlled techniques saphenous vein harvest; morbidity lowering with minimally invasive technique",
+   "year": 2018,
+   "doi": "10.18203/2349-2902.isj20182976",
+   "pct": 71.0,
+   "journal": "International Surgery Journal"
+  },
+  "earlier": {
+   "title": "Decreased morbidity following long saphenous vein harvesting using a minimally invasive technique: a randomised controlled trial comparing two techniques for long saphenous vein harvest",
+   "year": 2006,
+   "doi": "10.1186/1749-8090-1-15",
+   "pct": 85.0,
+   "journal": "Journal of Cardiothoracic Surgery"
+  },
+  "matched_words": 1885,
+  "runs": 60,
+  "longest": 141
+ },
+ "GI-131": {
+  "file": "GI-131.html",
+  "reported": "2026-10-27",
+  "published": "2026-11-01",
+  "earlier_known": false,
+  "type": "data copying",
+  "data": true,
+  "later": {
+   "title": "Low dose aspirin and low-molecular-weight heparin in the treatment of pregnant Libyan women with recurrent miscarriage",
+   "year": 2014,
+   "doi": "10.1186/1756-0500-7-23",
+   "pct": 84.0,
+   "journal": "BMC Research Notes"
+  },
+  "earlier": {
+   "title": "LOW DOSE ASPIRIN IN COMBINATION WITH LOW-MOLECULAR-WEIGHT HEPARIN IS BETTER THAN LOW DOSE ASPIRIN ALONE IN THE TREATMENT OF PREGNANT WOMEN WITH RECURRENT MISCARRIAGES",
+   "year": 2014,
+   "doi": "10.14260/jemds/2014/2660",
+   "pct": 48.0,
+   "journal": "Journal of Evolution of Medical and Dental Sciences"
+  },
+  "matched_words": 1648,
+  "runs": 36,
+  "longest": 175
+ },
+ "GI-137": {
+  "file": "GI-137.html",
+  "reported": "2026-10-27",
+  "published": "2026-11-01",
+  "earlier_known": true,
+  "type": "data copying",
+  "data": true,
+  "later": {
+   "title": "POMPP Score: Evaluation of Mortality and Morbidity in Patients with Secondary Peritonitis",
+   "year": 2018,
+   "doi": "10.23958/ijirms/vol03-i04/01",
+   "pct": 87.0,
+   "journal": "International Journal of Innovative Research in Medical Science"
+  },
+  "earlier": {
+   "title": "Evaluation of mortality and morbidity in patients with secondary peritonitis using predictive score of mortality in perforated peptic ulcer",
+   "year": 2017,
+   "doi": "10.18203/2349-2902.isj20173160",
+   "pct": 85.0,
+   "journal": "International Surgery Journal"
+  },
+  "matched_words": 1544,
+  "runs": 157,
+  "longest": 216
+ },
+ "GI-193": {
+  "file": "GI-193.html",
+  "reported": "2026-10-27",
+  "published": "2026-11-01",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Roadside landscaping with native plants in the Czech Republic: a review Volume 2 Issue 3 -2018 Roadside landscaping with native plants in the Czech Republic: a review 77 Citation: Chowdhury MH, Lasker MS. Roadside landscaping with native plants in the Czech Republic: a review. Citation: Chowdhury MH, Lasker MS. Roadside landscaping with native plants in the Czech Republic: a review",
+   "year": 2018,
+   "doi": "10.15406/hij.2018.02.00030",
+   "pct": 51.0,
+   "journal": "Horticulture International Journal"
+  },
+  "earlier": {
+   "title": "Landscaping with native plants in the UAE: A review",
+   "year": 2017,
+   "doi": "10.9755/ejfa.2017.v29.i10.319",
+   "pct": 37.0,
+   "journal": "Emirates Journal of Food and Agriculture"
+  },
+  "matched_words": 2726,
+  "runs": 119,
+  "longest": 132
+ },
+ "GI-248": {
+  "file": "GI-248.html",
+  "reported": "2026-10-27",
+  "published": "2026-11-01",
+  "earlier_known": false,
+  "type": "data copying",
+  "data": true,
+  "later": {
+   "title": "Hybridization of battery and ultracapacitor for low weight electric vehicle",
+   "year": 2018,
+   "doi": "10.30464/jmee.2018.2.1.43",
+   "pct": 57.0,
+   "journal": "Journal of Mechanical and Energy Engineering"
+  },
+  "earlier": {
+   "title": "Ultra-capacitor based Hybrid Electric Vehicle (Medium) for Developing Countries",
+   "year": 2018,
+   "doi": "10.14710/reaktor.18.2.84-90",
+   "pct": 54.0,
+   "journal": "Reaktor"
+  },
+  "matched_words": 1575,
+  "runs": 68,
+  "longest": 53
+ },
+ "GI-282": {
+  "file": "GI-282.html",
+  "reported": "2026-10-27",
+  "published": "2026-11-01",
+  "earlier_known": false,
+  "type": "data copying",
+  "data": true,
+  "later": {
+   "title": "A Clinical Study on Pre-Eclampsia and Thyroid Hormone Alteration in Women Presenting to Tertiary Care Institute of North India",
+   "year": 2016,
+   "doi": "10.18535/jmscr/v4i10.19",
+   "pct": 85.0,
+   "journal": "Journal of Medical Science And clinical Research"
+  },
+  "earlier": {
+   "title": "Thyroid hormone alteration in women with pre-eclampsia",
+   "year": 2016,
+   "doi": "10.18203/2320-6012.ijrms20163321",
+   "pct": 66.0,
+   "journal": "International Journal of Research in Medical Sciences"
+  },
+  "matched_words": 1255,
+  "runs": 37,
+  "longest": 163
+ },
+ "GI-303": {
+  "file": "GI-303.html",
+  "reported": "2026-10-27",
+  "published": "2026-11-01",
+  "earlier_known": false,
+  "type": "data copying",
+  "data": true,
+  "later": {
+   "title": "Study of Temperature Dependent Dialectical Properties of One System Ceramics using BNT-BZ",
+   "year": null,
+   "doi": "10.21275/art20162979",
+   "pct": 70.0,
+   "journal": "International Journal of Science and Research (IJSR)"
+  },
+  "earlier": {
+   "title": "Crystal structure and electrical properties of bismuth sodium titanate zirconate ceramics",
+   "year": 2012,
+   "doi": "10.1186/1556-276x-7-57",
+   "pct": 51.0,
+   "journal": "Nanoscale Research Letters"
+  },
+  "matched_words": 1070,
+  "runs": 25,
+  "longest": 123
  }
 }
