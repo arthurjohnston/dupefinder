@@ -2716,5 +2716,30 @@
   "matched_words": 1070,
   "runs": 25,
   "longest": 123
+ },
+ "GI-877": {
+  "file": "GI-877.html",
+  "reported": null,
+  "published": "2026-11-01",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "New iteration process for pseudocontractive mappings with convergence analysis",
+   "year": 2015,
+   "doi": "10.1186/s13663-015-0303-8",
+   "pct": 14.0,
+   "journal": "Fixed Point Theory and Applications"
+  },
+  "earlier": {
+   "title": "Convergence theorems of a three-step iteration method for a countable family of pseudocontractive mappings",
+   "year": 2013,
+   "doi": "10.1186/1687-1812-2013-100",
+   "pct": 17.0,
+   "journal": "Fixed Point Theory and Applications"
+  },
+  "matched_words": 526,
+  "runs": 50,
+  "longest": 44
  }
 }
