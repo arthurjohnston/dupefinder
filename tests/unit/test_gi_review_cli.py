@@ -218,6 +218,34 @@ class TestSave(unittest.TestCase):
         self.assertEqual(cli.parse_flags("e m"), ["not qualified", "paper mill"])
 
 
+class TestPaperMill(unittest.TestCase):
+    """' m' on a verdict flags a paper mill; one whose later authors aren't Western isn't reported."""
+
+    def test_suffixes(self):
+        self.assertEqual(cli.split_suffixes("2 m"), ("2", False, True))
+        self.assertEqual(cli.split_suffixes("c m n"), ("c", True, True))
+        self.assertEqual(cli.split_suffixes("c n m"), ("c", True, True))
+        self.assertEqual(cli.split_suffixes("3"), ("3", False, False))
+        self.assertEqual(cli.split_suffixes("m"), ("m", False, False))   # a lone key is never a suffix
+        self.assertEqual(cli.split_note_suffix("3 m n"), ("3", True))
+
+    def test_not_reported_only_when_later_authors_not_western(self):
+        import gi_affiliations as ga
+        shown = {"doi_a": "10.1/early", "doi_b": "10.1/late", "earlier": "a"}
+        flags = ["paper mill"]
+        def scores(rank_b, rank_a=ga.TARGET):
+            return {"10.1/early": (rank_a, [("x", "s", "r")]), "10.1/late": (rank_b, [("y", "s", "r")])}
+        self.assertIn("academic elsewhere", cli.mill_not_reported(scores(ga.ACADEMIC), shown, flags))
+        self.assertIsNotNone(cli.mill_not_reported(scores(ga.OTHER), shown, flags))
+        self.assertIsNone(cli.mill_not_reported(scores(ga.TARGET, ga.ACADEMIC), shown, flags))
+        self.assertIsNone(cli.mill_not_reported(scores(ga.UNKNOWN), shown, flags))   # no data: your call
+        self.assertIsNone(cli.mill_not_reported(scores(ga.ACADEMIC), shown, []))    # not flagged
+        # order unknown: reported if either side is Western
+        unknown = dict(shown, earlier=None)
+        self.assertIsNone(cli.mill_not_reported(scores(ga.ACADEMIC, ga.TARGET), unknown, flags))
+        self.assertIsNotNone(cli.mill_not_reported(scores(ga.ACADEMIC, ga.OTHER), unknown, flags))
+
+
 class TestReportFlow(unittest.TestCase):
     """report_flow(): report files, agent, ticking, PubPeer link, drafts, all in the one tool."""
 

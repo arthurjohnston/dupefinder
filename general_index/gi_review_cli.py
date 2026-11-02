@@ -9,6 +9,10 @@ $GI_REVIEW_OPENER; --pdfs opens both PDFs too, or press p at the prompt), then a
   3. for an unsure verdict, flags: m = you think both papers came from a paper mill, e = not qualified to
      judge it (higher-level math, say);
   4. a note in your own words, only if you added ' n' to the verdict ('3 n', 'c n'; 'e' opens $EDITOR).
+Adding ' m' to any verdict ('2 m', 'c m n') flags the pair a paper mill. A paper mill whose later paper's
+authors aren't at a Western university (gi_affiliations' rank) isn't reported or published, whatever the
+verdict and severity: you don't report those (mill_not_reported()). With no affiliation data cached, the
+report prompt comes up as usual.
 The verdict is saved as soon as it's complete, with no confirmation step (--gi NN --include-reviewed to change
 one). No reasons are asked for: a no-problem type that is its own reason (same paper, boilerplate, shared
 citations, artifact: TYPE_REASON) saves that reason, and a quick key saves its own.
@@ -631,10 +635,34 @@ def ask_severity(pair, decision, type_=None):
 
 def split_note_suffix(ans):
     """'3 n' -> ('3', True), 'c' -> ('c', False): a trailing ' n' on a verdict asks for a note."""
-    head, sep, tail = ans.strip().rpartition(" ")
-    if sep and tail == "n":
-        return head.strip(), True
-    return ans.strip(), False
+    head, want_note, _ = split_suffixes(ans)
+    return head, want_note
+
+
+def split_suffixes(ans):
+    """'3 m n' -> ('3', True, True): trailing ' n' (ask for a note) and ' m' (flag it a paper mill), in either
+    order; 'c' -> ('c', False, False)."""
+    words = ans.strip().split()
+    note = mill = False
+    while len(words) > 1 and words[-1] in ("n", "m"):
+        if words.pop() == "n":
+            note = True
+        else:
+            mill = True
+    return " ".join(words), note, mill
+
+
+def mill_not_reported(scores, shown, flags):
+    """Why a pair flagged paper mill isn't reported, or None: you don't report paper mills whose later paper's
+    authors aren't at a Western university (gi_affiliations' rank; with the order unknown, the better-ranked
+    side counts). None too when nothing is cached for the authors: then it's your call at the report prompt."""
+    import gi_affiliations as ga
+    if FLAGS["m"][0] not in flags:
+        return None
+    rank, _ = ga.pair_rank(scores, shown["doi_a"], shown["doi_b"], shown.get("earlier"))
+    if rank in (ga.TARGET, ga.UNKNOWN):
+        return None
+    return f"paper mill, later paper's authors: {ga.LABELS[rank]}"
 
 
 def orient(pair):
@@ -738,13 +766,14 @@ def review_one(pair, choices, counts, saved_flags=(), prep=None, shown=None, set
         import gi_case_findings
         others = sum(1 for c, _ in gi_case_findings.pending_cases() if c != case)
         print(f"   f  {findings_line(case, prep)}" + (f"; {others} other case(s) have findings to check" if others else ""))
-    print("  add ' n' to a verdict to leave a note (e.g. '3 n', 'c n'); without it you aren't asked for one")
+    print("  add ' n' to a verdict to leave a note (e.g. '3 n', 'c n'); without it you aren't asked for one;"
+          " ' m' flags it a paper mill ('2 m', 'c m n'): not reported when the later authors aren't Western")
     if prep and prep.status():
         print("  " + prep.status())
     quick = agreed = False
     preset = None  # the flag a quick key sets ('e' / 'r'); the flags step is then skipped
     while True:
-        ans, want_note = split_note_suffix(ask("> ").lower())
+        ans, want_note, want_mill = split_suffixes(ask("> ").lower())
         if ans == "g" and prep:
             calls = prep.tool_calls()
             print("  " + prep.status())
@@ -817,6 +846,8 @@ def review_one(pair, choices, counts, saved_flags=(), prep=None, shown=None, set
             break
         print(f"  one of: {', '.join(FLAGS)}")
 
+    if want_mill:
+        flags = sorted(set(flags) | {FLAGS["m"][0]})
     text = ask("Note ('e' for $EDITOR): ") if want_note else ""
     if text.lower() == "e":
         text = edit_note()
@@ -939,13 +970,18 @@ HEADLESS_PROMPT = ("Prep {case}: follow \"Prep a case\" in your instructions. Th
                    "session to talk it through. In this run only these tools work: Read, Glob, Grep, web search "
                    "and fetch, `sqlite3 -readonly` (not python) for the databases, pdftotext and pdfinfo, and "
                    "writing in the case's folder and journal_contacts.json. Don't run gi_report_case.py: the "
-                   "review tool writes the report files when the user confirms. Do look up the later authors' "
+                   "review tool writes the report files when the user confirms. Weigh the case (weigh-case) "
+                   "before any contact lookups. Always look up the journal's contacts. Only when the weighing "
+                   "recommends high, or a finding is tagged [data], and it isn't a paper mill outside the West "
+                   "(weigh-case question 4b), also look up the later authors' "
                    "institutions' research integrity officers (one contacts.json entry per institution, with "
                    "the later authors there), the same for each later author's current institution where it "
                    "differs from the byline (\"current\": true, only on evidence tied to that person, see "
                    "Contacts) and the earlier article's byline names, and write contacts.json "
-                   "(see Contacts): an institution without an address there gets no email. End with one line saying what "
-                   "you concluded, e.g. '4 findings proposed, contacts found' or 'not a case: already "
+                   "(see Contacts): an institution without an address there gets no email. Otherwise note in "
+                   "notes.md that those lookups were skipped because of the recommendation. End with one line "
+                   "saying what you concluded, e.g. '4 findings proposed, recommend high, contacts found', "
+                   "'2 findings proposed, recommend low, institution lookups skipped' or 'not a case: already "
                    "retracted'.")
 
 
@@ -1411,7 +1447,8 @@ def main():
                         discuss(case, prep)
                         continue
                     break
-                reporting = out not in ("quit", "skip") and not {FLAGS["r"][0], FLAGS["w"][0]} & set(out[4]) and (
+                mill = out not in ("quit", "skip") and mill_not_reported(aff_scores, shown, out[4])
+                reporting = out not in ("quit", "skip") and not mill and not {FLAGS["r"][0], FLAGS["w"][0]} & set(out[4]) and (
                     out[1] not in SELF_TYPES) and (out[0] == "problem" or (out[5] and pair["ai_decision"] == "problem"))
                 if prep and not reporting:   # not going to be reported: the analysis isn't needed
                     prep.stop()
@@ -1430,6 +1467,8 @@ def main():
                 # agreeing with the AI's problem call also counts when the same year turned it into unsure
                 if FLAGS["r"][0] in flags:
                     print("  already retracted: no report files (t on this pair still writes them)")
+                elif mill:
+                    print(f"  {mill}: not reported or published (t on this pair still reports it)")
                 elif FLAGS["w"][0] in flags:
                     print("  not worth reporting: no report files; publishing the site page as not reported")
                     publish_only(db, pair)
