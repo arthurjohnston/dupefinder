@@ -56,10 +56,11 @@ SCREEN = Path(__file__).resolve().parent / "data" / "unobtainable_openalex_scree
 # university): confirmed (the author, there now), byline (there on the article; now unknown), moved (the author,
 # now at now_at), untraced, name only (a namesake there, no link), elsewhere (the agent placed the author at
 # another institution: an OpenAlex merge), on earlier paper (the agent read the order the other way, so this
-# academic is a source author), different person. Joined into the cases list as author_check, now_at and
-# check_basis; a case with no findings.md yet is "not prepped".
+# academic is a source author), different person, not on byline (every institution on the copying paper's byline
+# is outside TARGET_COUNTRIES and nothing in the prep notes links the author to the university). Joined into the
+# cases list as author_check, now_at and check_basis; a case with no findings.md yet is "not prepped".
 AUTHOR_CHECKS = Path(__file__).resolve().parent / "data" / "western_author_checks.json"
-NOT_WESTERN = ("elsewhere", "name only", "on earlier paper", "different person")   # cases: rows dropped by default
+NOT_WESTERN = ("elsewhere", "name only", "on earlier paper", "different person", "not on byline")   # cases: rows dropped by default
 # Cases already looked at though the review tool has no decision for them (one GI-NN per line, # comments):
 # left out of the cases list like reviewed ones.
 LOOKED_AT = Path(__file__).resolve().parent / "data" / "western_cases_looked_at.txt"
