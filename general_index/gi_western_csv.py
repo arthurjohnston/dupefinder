@@ -6,7 +6,8 @@ Two lists, both from gi_affiliations' cached OpenAlex/ORCID data (gi.sqlite3; no
                  cross-author copying, ...), copied_pct (the share of that paper's words in shared runs), the
                  agent's decision, overlap_pct (the larger of the two papers' shares) and a health-sciences flag;
                  cases the agent typed as text recycling, legitimate reuse, duplicate publication or an artifact
-                 are left out (--all-types keeps them); author_check / now_at / check_basis say what the case
+                 are left out (--all-types keeps them), and so are cases the agent didn't call a problem (no
+                 problem, unsure, not reviewed; --all-decisions keeps them); author_check / now_at / check_basis say what the case
                  agent found about each academic (AUTHOR_CHECKS); rows the agent found aren't Western (NOT_WESTERN,
                  or moved outside TARGET_COUNTRIES) are left out, and a case with none left drops (--all-authors
                  keeps them), as are the cases in LOOKED_AT (looked at without a decision in the review tool)
@@ -184,6 +185,8 @@ def cmd_cases(db, args):
     for r in queue:
         if r["ai_type"] in NOT_COPYING and not args.all_types:
             continue
+        if r["ai_decision"] != "problem" and not args.all_decisions:
+            continue
         if f"GI-{r['page_number']:02d}" in looked_at:
             continue
         titles = {s: cli.paper_info(r["library"], r[f"paper_{s}"])[0] for s in "ab"}
@@ -260,6 +263,8 @@ def main():
     ap.add_argument("--db", default=str(gi_db.DB_PATH))
     ap.add_argument("--all-types", action="store_true",
                     help="cases: keep the agent types that aren't copying by someone else (NOT_COPYING)")
+    ap.add_argument("--all-decisions", action="store_true",
+                    help="cases: keep cases the agent called no problem or unsure, or hasn't reviewed")
     ap.add_argument("--all-authors", action="store_true",
                     help="cases: keep academics the case agent found aren't Western (NOT_WESTERN)")
     ap.add_argument("--all-tiers", action="store_true", help="unobtainable: keep tier 5 (UNIDENTIFIED_TIER)")
