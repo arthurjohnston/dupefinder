@@ -33,6 +33,19 @@ class TestLoad(unittest.TestCase):
             self.assertEqual([(s["n"], s["title"]) for s in text], [(1, "Text")])
             self.assertEqual([s["n"] for s in other], [2, 3, 4])
 
+    def test_abstract_only_sources_left_off(self):
+        with tempfile.TemporaryDirectory() as d:
+            (Path(d) / "source-1.txt").write_text("words")
+            (Path(d) / "source-2.txt").write_text("abstract words")
+            write_sources(d, [
+                {"title": "Text", "kind": "text", "fulltext": "source-1.txt"},
+                {"title": "Abstract", "kind": "text", "abstract": "source-2.txt"},
+                {"title": "Refs", "kind": ["references"]},
+            ])
+            text, other = gi_sources.load(d)
+            self.assertEqual([s["n"] for s in text], [1])
+            self.assertEqual([s["n"] for s in other], [3])
+
     def test_no_sources_json(self):
         with tempfile.TemporaryDirectory() as d:
             self.assertEqual(gi_sources.load(d), ([], []))

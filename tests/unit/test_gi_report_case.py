@@ -119,7 +119,7 @@ class TestSeverity(unittest.TestCase):
         self.assertNotIn("authors", gi_report.audiences("high", same))
         self.assertIn("authors", gi_report.audiences("high", fd()))
 
-    def test_one_institution_email_each(self):
+    def test_one_email_to_all_institutions(self):
         import gi_pubpeer
         insts = [{"to": "rio@u.example", "authors": ["A. One"]}, {"to": "", "authors": ["B. Two"]},
                  {"to": "rio@w.example", "authors": ["C. Three"]}]
@@ -136,13 +136,12 @@ class TestSeverity(unittest.TestCase):
             paths = gi_report.write_report(None, {}, report_dir=d, site_dir=None, severity="high")
         finally:
             gi_report.case_findings, gi_pubpeer.write_page, gi_pubpeer.publisher_page, gi_pubpeer.case_name = saved
-        self.assertEqual(sorted(k for k in paths if k.startswith("email institution")),
-                         ["email institution", "email institution 2"])
-        self.assertIn("To: rio@w.example", paths["email institution 2"].read_text())
+        self.assertEqual(sorted(k for k in paths if k.startswith("email institution")), ["email institution"])
         import email
         import email.policy
-        msg = email.message_from_bytes(paths["email institution 2"].read_bytes(), policy=email.policy.default)
-        self.assertIn("C. Three, affiliated", msg.get_body(("plain",)).get_content())
+        msg = email.message_from_bytes(paths["email institution"].read_bytes(), policy=email.policy.default)
+        self.assertEqual(msg["Bcc"], "rio@u.example, rio@w.example")
+        self.assertIn("A. One and C. Three, affiliated with your institutions", msg.get_body(("plain",)).get_content())
         self.assertFalse((d / "GI-99" / "GI-99-email-institution-4.eml").exists())
 
     def test_data_finding_gets_every_email(self):
@@ -232,6 +231,13 @@ class TestCompose(unittest.TestCase):
             self.assertIn("to='ed@new.example'", arg)
             self.assertNotIn("cc=", arg)
             self.assertIn(f"attachment='{page.resolve().as_uri()},{jpg.resolve().as_uri()}'", arg)
+            f["case_contacts"] = {"institution": [{"to": "rio@u.example"}, {"to": "rio@v.example"}]}
+            inst = d / "GI-1-email-institution.eml"
+            inst.write_bytes(bytes(gi_contact.email_message(f, [page], audience="institution",
+                                                            sender="me@example.org")))
+            arg = gi_report.compose_arg(inst)
+            self.assertIn("to='me@example.org'", arg)
+            self.assertIn("bcc='rio@u.example, rio@v.example'", arg)
             jpg.unlink()
             with self.assertRaises(FileNotFoundError):
                 gi_report.compose_arg(eml)

@@ -17,14 +17,17 @@ Into data/dupe_publisher/GI-NN/:
   GI-NN-email-*.eml      draft emails (all four for a high-severity case, -publisher, and -institution for
                          medium when 50%+ is shared, only -publisher for low; see
                          audiences()) (RFC 822 .eml with X-Unsent: 1, From your git user.email or --from, To
-                         and Cc from data/journal_contacts.json for the two journal emails, empty otherwise), each with the same findings as the PubPeer Markdown, extracts of the
+                         and Cc from data/journal_contacts.json for the two journal emails; the institution and
+                         authors drafts are To you, the institutions on Bcc and the earlier authors on Cc, from
+                         contacts.json, gi_contact.headers()), each with the same findings as the PubPeer Markdown, extracts of the
                          the comparison page and the image attached, and how much else depends on who it's
                          for (gi_contact.AUDIENCE_LENGTH; the journal's also quotes the EMAIL_PASSAGES (3)
                          longest passages):
                            -publisher         the journal that published the later article
-                           -institution       the later authors' institution; one per institution in
-                                              contacts.json (-institution-2, -3, ...), each naming its authors;
-                                              byline institutions and current ones ("current": true)
+                           -institution       the later authors' institutions: one email with every
+                                              addressed institution in contacts.json on its To line (byline
+                                              institutions and current ones, "current": true), the body
+                                              listing which authors each address is for
                            -authors           the earlier article's authors (not when the bylines share names)
                            -source-publisher  the earlier article's publisher
                          When the publication years are the same, none of them says who copied whom.
@@ -301,7 +304,7 @@ def write_report(db, f, report_dir=REPORT_DIR, site_dir=SITE_DIR, sender=None, s
     attachments = [paths["comparison"]] + ([shot_path] if shot else []) + ([table_path] if table else [])
     for old in out.glob(f"{case}-email-*.txt"):   # the plain-text drafts an earlier version wrote
         old.unlink()
-    for old in out.glob(f"{case}-email-institution-*.eml"):   # one per institution: the count may have changed
+    for old in out.glob(f"{case}-email-institution-*.eml"):   # an earlier version wrote one per institution
         old.unlink()
         (out / "compose" / f"{old.stem}.txt").unlink(missing_ok=True)
     wanted = audiences(severity, fd)
@@ -311,8 +314,7 @@ def write_report(db, f, report_dir=REPORT_DIR, site_dir=SITE_DIR, sender=None, s
             paths["no email authors"] = "the two bylines share names, so there's no one else to tell"
     for audience in gi_contact.EMAIL_AUDIENCES:
         eml = out / f"{case}-email-{audience}.eml"
-        has_to = (any(i.get("to") for i in gi_contact.institutions(fd)) if audience == "institution"
-                  else gi_contact.recipients(audience, fd)[0])
+        has_to = gi_contact.recipients(audience, fd)[0]
         if audience in CASE_AUDIENCES and audience in wanted and not has_to:
             # nobody to send it to: no address found (contacts.json), so no draft
             paths[f"no email {audience}"] = f"no {CASE_AUDIENCES[audience]} in {out / 'contacts.json'}"
@@ -320,14 +322,6 @@ def write_report(db, f, report_dir=REPORT_DIR, site_dir=SITE_DIR, sender=None, s
         if audience not in wanted:   # left from when the case was high: don't leave a draft to send by mistake
             eml.unlink(missing_ok=True)
             (out / "compose" / f"{eml.stem}.txt").unlink(missing_ok=True)
-            continue
-        if audience == "institution":   # one email per institution with an address, naming its authors
-            for k, inst in enumerate([i for i in gi_contact.institutions(fd) if i.get("to")], 1):
-                key, name = ("email institution", eml) if k == 1 else (
-                    f"email institution {k}", out / f"{case}-email-institution-{k}.eml")
-                msg = gi_contact.email_message(fd, attachments, audience=audience, sender=sender, contact=inst)
-                name.write_bytes(bytes(msg))
-                paths[key] = name
             continue
         msg = gi_contact.email_message(fd, attachments, audience=audience, sender=sender)
         paths[f"email {audience}"] = out / f"{case}-email-{audience}.eml"
@@ -355,7 +349,7 @@ def compose_arg(eml_path):
              "format='text'"]
     if msg["From"]:
         parts.append(f"from='{msg['From']}'")
-    for key in ("To", "Cc"):
+    for key in ("To", "Cc", "Bcc"):
         if msg[key]:
             parts.append(f"{key.lower()}='{msg[key]}'")
     if files:

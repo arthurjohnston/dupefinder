@@ -183,7 +183,7 @@ def review(case, ask=input, edit=prefilled_input, report_dir=REPORT_DIR, only_pe
 
 def case_contacts(case, report_dir=REPORT_DIR):
     """contacts.json for the case, {} when there isn't one (or it isn't valid JSON: say so, don't fail).
-    "institution" is one entry or a list (one email per institution, gi_contact.institutions()), each
+    "institution" is one entry or a list (one email to all of them, gi_contact.institutions()), each
     {to, cc, name, authors: [the later authors there], source, checked, notes}; "authors" is the earlier
     article's authors' {to, cc, names: [every author on its byline], source, checked, notes}."""
     import json

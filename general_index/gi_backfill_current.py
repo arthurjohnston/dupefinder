@@ -166,11 +166,11 @@ def emails_page(path=EMAILS_PAGE):
         msg = email.message_from_bytes(eml.read_bytes(), policy=email.policy.default)
         body = msg.get_body(("plain",)).get_content()
         case = eml.parent.name
-        kind = "current" if "now affiliated with your institution" in body else "byline"
+        kind = "current" if "now affiliated" in body else "byline"   # gi_contact: "with your institution" / "there"
         office = "fallback" if "forward this" in body else "integrity"
         cite = re.search(r"^(?:Later|First) article: (.*)$", body, re.M)   # gi_contact._plain_cite()
         cite = cite.group(1).strip() if cite else ""
-        rows.append((case, sev.get(case, "?"), kind, office, msg["To"] or "", str(msg["Subject"] or ""), eml, cite))
+        rows.append((case, sev.get(case, "?"), kind, office, msg["Bcc"] or msg["To"] or "", str(msg["Subject"] or ""), eml, cite))
     has_current = {r[0] for r in rows if r[2] == "current"}
     rows.sort(key=lambda r: (r[0] not in has_current, int(r[0][3:]), r[2] != "current", r[6].name))
     e = html.escape
@@ -224,7 +224,7 @@ downloads it to open in Thunderbird). <b>Thunderbird compose</b> opens it straig
 To, subject, body and attachments filled in. That link only works after
 <code>gi_open_draft.py --install</code> has been run once. Click a case for its comparison page. Cases with a
 current-institution draft come first. Nothing here has been sent. Check the entries in _institutions_review.md first.</p>
-<div class="wrap"><table><thead><tr><th>Case</th><th>Severity</th><th>Institution</th><th>Address</th><th>Open</th><th>To</th>
+<div class="wrap"><table><thead><tr><th>Case</th><th>Severity</th><th>Institution</th><th>Address</th><th>Open</th><th>Sent to (Bcc)</th>
 <th>Subject</th></tr></thead><tbody>
 {chr(10).join(out)}
 </tbody></table></div></body></html>

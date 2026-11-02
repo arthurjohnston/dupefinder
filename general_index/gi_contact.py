@@ -1,5 +1,5 @@
 """The emails about a reported pair: one each to the journal that published the later article, the later
-authors' institution, the earlier article's authors and the earlier article's publisher (EMAIL_AUDIENCES).
+authors' institutions (one email, every institution's address on its To line), the earlier article's authors and the earlier article's publisher (EMAIL_AUDIENCES).
 
 The wording is here: _email_intro() has what differs per recipient (subject, greeting, why I'm writing, the
 request at the end), email_parts() the body they share. email_message() makes a draft .eml of one, with the
@@ -97,7 +97,7 @@ EMAIL_AUDIENCES = ("publisher", "institution", "authors", "source-publisher")
 
 def institutions(fd):
     """The later authors' institutions from the case's contacts.json (fd["case_contacts"]["institution"]): one
-    entry, or a list of them (one email each), each {to, cc, name, authors: [the later article's authors at that
+    entry, or a list of them (one email to all of them, addressed()), each {to, cc, name, authors: [the later article's authors at that
     institution, as printed], source, checked, notes}. An entry with "current": true is where those authors are
     now rather than on the byline, with "published_at" the byline institution; its email says so. [] when
     there's none."""
@@ -105,6 +105,21 @@ def institutions(fd):
     if isinstance(inst, dict):
         return [inst]
     return [i for i in inst if isinstance(i, dict)] if isinstance(inst, list) else []
+
+
+def addressed(fd):
+    """The institutions() entries with an address: the ones the institution email goes to, all on its To line."""
+    return [i for i in institutions(fd) if i.get("to")]
+
+
+def _institution_contacts(fd, contact=None):
+    """The institutions() entries one institution email is for: `contact` (one entry, or a list of them) when
+    given, else every addressed() one, else every one (a draft with nobody on To yet)."""
+    if isinstance(contact, dict):
+        return [contact]
+    if contact:
+        return list(contact)
+    return addressed(fd) or institutions(fd)[:1]
 
 
 # integrity / ethics offices in the languages the cases have met (intégrité, etica, etika, ombudsperson for good
@@ -163,10 +178,49 @@ ABOUT_ME = ("I am an independent researcher, with no connection to either set of
 ABOUT_ME_AUTHORS = "I am an independent researcher, screening published articles for duplicated text."
 
 
+def _institutions_intro(contacts, verb, whose_earlier, known, pair, reported, subject_for):
+    """_email_intro() for one email to several institutions at once (all on its To line): every later author
+    named in the opening, then which institution each address is and whose institution it is (a current one
+    saying where the article was written), so each recipient can see who else has it."""
+    authors = list(dict.fromkeys(a for c in contacts for a in c.get("authors") or [] if a))
+    names = name_list(authors)
+    whose = f"{names}, affiliated with your institutions" if names else "authors affiliated with your institutions"
+    opening = [f"I am writing about an article by {whose}, which appears {verb} an earlier article"
+               f"{whose_earlier}." if known else f"I am writing about {pair} The first is by {whose}."]
+    lines = []
+    for c in contacts:
+        who = name_list(c.get("authors") or [])
+        if c.get("current"):
+            then = c.get("published_at")
+            who = (f"{who or 'an author'}, now affiliated there"
+                   + (f"; the article was published while they were at {then}" if then else ""))
+        lines.append(f"- {c.get('name') or c.get('to')}" + (f": {who}" if who else ""))
+    opening += ["I have written to the journal that published it as well."] if reported else []
+    block = "\nThis email has gone to all of the authors' institutions at once:\n" + "\n".join(lines)
+    subject = subject_for("a paper by authors associated with your institutions")
+    offices = [integrity_office(c) for c in contacts]
+    forward = ("forward this to the people at your institution who handle research integrity or research "
+               "misconduct allegations, and let me know who it has gone to?")
+    if all(offices):
+        return ("", subject, "Dear Research Integrity Officers,", opening + [block],
+                "I would be grateful if you could each look into this under your institution's research integrity "
+                "procedures, and could you let me know that this has reached the right office?")
+    if not any(offices):
+        return ("", subject, "Dear Sir or Madam,",
+                opening + ["I couldn't find a research integrity contact for any of your institutions, so I am "
+                           "writing to these addresses instead.", block],
+                "Could you please " + forward)
+    return ("", subject, "Dear Sir or Madam,",
+            opening + ["For some of your institutions I couldn't find a research integrity contact, so I am "
+                       "writing to a general address instead.", block],
+            "I would be grateful if you could each look into this under your institution's research integrity "
+            "procedures or, where this address isn't the office that handles them, " + forward)
+
+
 def _email_intro(audience, fd, contact=None):
     """(who it goes to, subject, greeting, opening lines, closing request) for one recipient. The journal that
-    published the later article ("publisher"), the later authors' institution (contact: its institutions()
-    entry, whose authors are named), the earlier article's authors (greeted by name when they're one or two,
+    published the later article ("publisher"), the later authors' institutions (_institution_contacts(): one
+    email to all of them, naming each one's authors when there are several), the earlier article's authors (greeted by name when they're one or two,
     victim_names()), and the earlier article's publisher. When the order is unknown, nothing says who
     copied whom. A ticked [data] finding (fd["data_extra"]) leads: the results data, not only the text.
     When the later article's journal has no address (journal_reported()), nobody is told I've written to it."""
@@ -184,8 +238,8 @@ def _email_intro(audience, fd, contact=None):
         verb = "to be largely a republication of" if share >= 50 else "to reuse substantial text from"
     else:
         verb = "to be largely a duplicate of" if share >= 50 else "to reuse substantial text from"
-    distinct = fd["byline"] == "no byline overlap"   # only then say "other authors"
-    whose_earlier = " by other authors" if distinct else " that shares authors with it" if same else ""
+    # no author lists sharing no names / "by other authors": the byline check isn't stated in an email
+    whose_earlier = " that shares authors with it" if same else ""
     pair = ("two articles, published the same year, that share extensive " + ("results data and text" if data
             else "text") + ". Which one came first can't be told from the publication years.")
     def subject_for(paper):
@@ -202,7 +256,10 @@ def _email_intro(audience, fd, contact=None):
                  f"{whose_earlier}." if known else f"I am writing about {pair} The first is in your journal."],
                 "I would be grateful if you could look into this and let me know what you decide.")
     if audience == "institution":
-        contact = contact or {}
+        contacts = _institution_contacts(fd, contact)
+        if len(contacts) > 1:
+            return _institutions_intro(contacts, verb, whose_earlier, known, pair, reported, subject_for)
+        contact = contacts[0] if contacts else {}
         authors = contact.get("authors") or []
         names = name_list(authors)
         if contact.get("current"):   # where the author is now, not where the article was written
@@ -212,12 +269,9 @@ def _email_intro(audience, fd, contact=None):
             then = contact.get("published_at")
             when = (f" It was published while they were at {then}"
                     if then else " It was published before they joined your institution")
-            told = [i.get("name") for i in institutions(fd)
-                    if i.get("to") and not i.get("current") and i.get("name")]
-            opening = ([f"I am writing about an article by {whose}.{when}, and appears {verb} an earlier "
-                        f"article{whose_earlier}." if known else
-                        f"I am writing about {pair} The first is by {whose}.{when}."]
-                       + ([f"I have also written to {name_list(told)}."] if told else []))
+            opening = [f"I am writing about an article by {whose}.{when}, and appears {verb} an earlier "
+                       f"article{whose_earlier}." if known else
+                       f"I am writing about {pair} The first is by {whose}.{when}."]
         else:
             whose = (f"{names}, affiliated with your institution" if names
                      else "authors affiliated with your institution")
@@ -246,9 +300,8 @@ def _email_intro(audience, fd, contact=None):
                 greeting,
                 [("I am writing because the results data of your article appear" if data else
                   "I am writing because your article appears") + " to have been reused in a later article"
-                 f"{' by other authors' if distinct else ''}." if known else
-                 f"I am writing about {pair} The second is yours, and the two author lists share no names."
-                 if distinct else f"I am writing about {pair} The second is yours.",
+                 "." if known else
+                 f"I am writing about {pair} The second is yours.",
                  (f"I have reported this to {journal}. " if reported else "") + tell],
                 "If you weren't aware of it, you may want to contact "
                 + ("that journal " if reported else f"{journal} ") + ("yourself." if one else "yourselves."))
@@ -292,14 +345,18 @@ def email_parts(fd, attachment, shot_name=None, examples=EMAIL_PASSAGES, audienc
     """(subject, body) of a plain-text email about the pair to one of EMAIL_AUDIENCES. The body, in order:
     greeting, who I am (ABOUT_ME) and why I'm writing, the two articles, the findings, what's attached, extracts of the `examples` longest readable passages
     (the journal's email only), the request, and the sign-off with `name` (default your git user.name).
-    The findings run strongest first: the [data] ones, then the text share, then your other ticked findings
-    (before the share when it is under half); the earlier side's emails (AUDIENCE_LENGTH) get only the share
-    and the [data] findings. contact: the institutions() entry an institution email is for."""
+    The findings: the text share (with whether the later article cites the earlier) first, then the [data]
+    ones and your other ticked findings; the earlier side's emails (AUDIENCE_LENGTH) get only the share
+    and the [data] findings. contact: the institutions() entry (or entries) an institution email is for,
+    default every addressed() one."""
     first, second = fd["first"], fd["second"]
     known = fd["earlier_known"]
     length = AUDIENCE_LENGTH.get(audience, FULL)
     _to, subject, greeting, opening, request = _email_intro(audience, fd, contact)
+    blocks = [o.lstrip("\n") for o in opening if o.startswith("\n")]   # a list of its own (_institutions_intro())
+    opening = [o for o in opening if not o.startswith("\n")]
     lines = [greeting, "", " ".join([ABOUT_ME_AUTHORS if audience == "authors" else ABOUT_ME] + opening), ""]
+    lines += [x for b in blocks for x in (b, "")]
     if known:
         lines += ["Later article: " + _plain_cite(second), "", "Earlier article: " + _plain_cite(first), ""]
         share = [f"- About {pct(second['pct'])} of the later article's text is also found in the earlier article "
@@ -312,20 +369,12 @@ def email_parts(fd, attachment, shot_name=None, examples=EMAIL_PASSAGES, audienc
                  f"({fd['matched_words'] or 0:,} matched words in {fd['runs']} passages)."]
     data = [f"- {t}" for t in fd.get("data_extra", ())]   # the [data] findings you ticked (gi_case_findings.py)
     extra = [f"- {t}" for t in fd.get("extra", ())]   # the other findings you ticked
-    checks = []
-    if fd["byline"] == "no byline overlap":
-        checks.append("- The two author lists share no names.")
-    which, other = ("The later", "the earlier article") if known else ("The first", "the second")
-    if fd["later_cites_earlier"] is False:
-        checks.append(f"- {which} article's reference list does not appear to cite {other}.")
-    elif fd["later_cites_earlier"]:
-        checks.append(f"- {which} article's reference list appears to cite {other}.")
-    if length == SHORT:
-        lines += data + share
-    elif (second["pct"] or 0) < 50:
-        lines += data + extra + share + checks
-    else:
-        lines += data + share + checks + extra
+    # the byline check (fd["byline"]) still picks the queue and the wording, but isn't stated in an email
+    if length != SHORT:   # the earlier side's short emails leave the citation check out, as the byline one
+        from gi_pubpeer import cites_clause
+        share = [cites_clause(share[0], fd["later_cites_earlier"],
+                              "the later article" if known else "the first article", known)]
+    lines += share + data + ([] if length == SHORT else extra)   # the share (and whether it's cited) leads
     if whole_document(fd):
         what = "both articles end to end as one diff, the shared text highlighted and the differences marked"
     else:
@@ -358,13 +407,16 @@ def email_parts(fd, attachment, shot_name=None, examples=EMAIL_PASSAGES, audienc
 def recipients(audience, fd, contact=None):
     """(to, cc) for one email from the contacts in fd (gi_report_case.py puts them there): the later article's
     journal for "publisher", the earlier's for "source-publisher", and the case's contacts.json
-    (fd["case_contacts"]) for the institution (contact: which of institutions(), else the first) and the
-    authors; empty when there's none."""
+    (fd["case_contacts"]) for the institutions (every addressed() one, or `contact`: one entry or a list,
+    all on To) and the authors; empty when there's none."""
     side = {"publisher": "second", "source-publisher": "first"}.get(audience)
     if side:
         contact = fd[side].get("contact") or {}
     elif audience == "institution":
-        contact = contact or (institutions(fd) or [{}])[0]
+        contacts = _institution_contacts(fd, contact)
+        join = lambda key: ", ".join(dict.fromkeys(a.strip() for c in contacts for a in (c.get(key) or "").split(",")
+                                                   if a.strip()))
+        return join("to"), join("cc")
     else:
         contact = (fd.get("case_contacts") or {}).get(audience) or {}
     return contact.get("to", "") or "", contact.get("cc", "") or ""
@@ -379,10 +431,30 @@ def report_page(audience, fd):
     return "" if contact.get("to") else (contact.get("page") or "")
 
 
+# the emails addressed To yourself, their recipients on this line instead: the institutions Bcc (they don't see
+# each other's addresses; the body still lists which institutions it went to), the earlier authors Cc (all on
+# one email, each seeing who else has it)
+SELF_ADDRESSED = {"institution": "Bcc", "authors": "Cc"}
+
+
+def headers(audience, fd, sender=None, contact=None):
+    """{To, Cc, Bcc} for one draft, only those with addresses. From recipients(): as they are for the journals;
+    for SELF_ADDRESSED audiences To is you (`sender`, else your git user.email) and every one of its to and cc
+    goes on that audience's line."""
+    to, cc = recipients(audience, fd, contact)
+    line = SELF_ADDRESSED.get(audience)
+    if line:
+        everyone = ", ".join(dict.fromkeys(a.strip() for a in f"{to},{cc}".split(",") if a.strip()))
+        return {k: v for k, v in (("To", (sender or git_config("user.email") or "") if everyone else ""),
+                                  (line, everyone)) if v}
+    return {k: v for k, v in (("To", to), ("Cc", cc)) if v}
+
+
 def email_message(fd, attachments, examples=EMAIL_PASSAGES, audience="publisher", sender=None,
                   name=None, contact=None):
-    """email_parts() as a draft .eml message: To and Cc from recipients() (empty when nobody has filled in
-    the journal's contact yet, and always for the institution and the authors), From `sender` when given,
+    """email_parts() as a draft .eml message: To, Cc and Bcc from headers() (To yourself and the recipients on
+    Bcc for the institutions, Cc for the earlier authors; no To when nobody has filled in an address yet),
+    From `sender` when given,
     X-Unsent: 1 so a mail client opens it as a draft, and `attachments` (paths) attached. The body names
     attachments[0] as the comparison page, one named *-table.jpg as the largest shared table and any other as
     the longest passage's image."""
@@ -392,11 +464,12 @@ def email_message(fd, attachments, examples=EMAIL_PASSAGES, audience="publisher"
     subject, body = email_parts(fd, attachments[0].name, shots[0] if shots else None,
                                 examples=examples, audience=audience, name=name, contact=contact,
                                 table_name=tables[0] if tables else None)
-    to, cc = recipients(audience, fd, contact)
     msg = email.message.EmailMessage()
-    msg["To"] = to
-    if cc:
-        msg["Cc"] = cc
+    lines = headers(audience, fd, sender, contact)
+    msg["To"] = lines.get("To", "")
+    for key in ("Cc", "Bcc"):
+        if key in lines:
+            msg[key] = lines[key]
     if sender:
         msg["From"] = sender
     msg["Subject"] = subject

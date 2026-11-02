@@ -10,8 +10,9 @@ data/dupe_publisher/GI-NN/sources.json), add_sources() puts them all on the one 
     settings (10-word shingles, x-drop 3), run on a scratch library holding the later article and the source.
 
 Only sources whose "kind" includes "text" and whose "fulltext" file is in the case folder are shown; the
-others (references-only, abstract-only, text not saved yet) are listed under the table and reach the reports
-only as ticked findings. A source's text comes from source-N.pdf beside its fulltext file when there is one
+others (references-only, text not saved yet) are listed under the table and reach the reports only as ticked
+findings. A source only its abstract could be compared against (its "abstract" file saved, no "fulltext") is
+left off the page altogether, not even listed: the page shows only works whose whole text was compared. A source's text comes from source-N.pdf beside its fulltext file when there is one
 (extract_papers.py's extraction, so the passages can be shown as printed), else from the text file itself.
 
 sources.json fields used here: "later_title" (optional, top level: the later article's title as printed, for
@@ -58,13 +59,16 @@ def kinds(s):
 
 def load(case_dir):
     """(text sources, other sources) from case_dir/sources.json, each in file order with its "n" (1-based
-    position in the file). A text source is one whose kind includes "text" and whose fulltext file exists."""
+    position in the file). A text source is one whose kind includes "text" and whose fulltext file exists.
+    Abstract-only sources ("abstract" set, no "fulltext") are in neither list."""
     path = Path(case_dir) / "sources.json"
     if not path.exists():
         return [], []
     text, other = [], []
     for n, s in enumerate(json.loads(path.read_text(encoding="utf-8")).get("sources", []), 1):
         s = {**s, "n": n}
+        if s.get("abstract") and not s.get("fulltext"):
+            continue
         full = s.get("fulltext") and Path(case_dir) / s["fulltext"]
         if "text" in kinds(s) and full and full.is_file():
             text.append(s)

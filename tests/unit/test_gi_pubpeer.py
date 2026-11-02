@@ -45,8 +45,10 @@ class TestMarkdown(unittest.TestCase):
         self.assertIn("[Old (paper)](https://doi.org/10.1/old) (2011; doi:10.1/old)", md)
         self.assertIn("About **62%** of this article's text", md)
         self.assertIn("That is 40% of the earlier article's text", md)
-        self.assertIn("share no names", md)
+        self.assertNotIn("share no names", md)   # checked, never stated
         self.assertIn("does not appear to cite", md)
+        cited = pp.markdown({**fd(), "later_cites_earlier": True})
+        self.assertIn("this article's reference list does appear to cite it.", cited)
         self.assertIn("The 2 longest shared passages", md)
         self.assertIn("1. **300 words**: \"passage '0' text\"", md)
 
@@ -92,11 +94,11 @@ class TestMarkdown(unittest.TestCase):
                                     "[Image: GI-1-images.jpg]"))
         self.assertIn("**Passage 1**, 81 words", md)
 
-    def test_findings_strongest_first(self):
+    def test_share_leads(self):
         f = {**fd(pct_later=20.0), "data_extra": ["Table 1 has the same means."], "extra": ["A typo."]}
         md = pp.markdown(f)
         self.assertIn("appears to report the same results data as an earlier article", md)
-        order = [md.index(t) for t in ("Table 1 has", "A typo", "About **20%**", "share no names")]
+        order = [md.index(t) for t in ("About **20%**", "Table 1 has", "A typo")]
         self.assertEqual(order, sorted(order))
 
     def test_order_unknown_makes_no_direction_claim(self):
