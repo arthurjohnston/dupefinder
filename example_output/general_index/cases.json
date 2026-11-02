@@ -2769,5 +2769,33 @@
   "sources": 2,
   "union_words": 773,
   "union_pct": 18.0
+ },
+ "GI-816": {
+  "file": "GI-816.html",
+  "reported": "2026-11-02",
+  "published": "2026-11-02",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Smoking-attributable mortality in Morocco: results of a prevalence-based study in Casablanca",
+   "year": 2014,
+   "doi": "10.1186/2049-3258-72-23",
+   "pct": 23.0,
+   "journal": "Archives of Public Health"
+  },
+  "earlier": {
+   "title": "Smoking-attributable mortality and years of potential life lost in 16 Brazilian capitals, 2003: a prevalence-based study",
+   "year": 2009,
+   "doi": "10.1186/1471-2458-9-206",
+   "pct": 16.0,
+   "journal": "BMC Public Health"
+  },
+  "matched_words": 943,
+  "runs": 36,
+  "longest": 60,
+  "sources": 3,
+  "union_words": 1192,
+  "union_pct": 29.3
  }
 }
