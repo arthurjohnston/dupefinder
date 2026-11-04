@@ -2797,5 +2797,30 @@
   "sources": 3,
   "union_words": 1192,
   "union_pct": 29.3
+ },
+ "GI-300": {
+  "file": "GI-300.html",
+  "reported": "2026-11-04",
+  "published": "2026-11-04",
+  "earlier_known": true,
+  "type": "data copying",
+  "data": true,
+  "later": {
+   "title": "Measuring the effect of e-business on organizational performance in project based organizations",
+   "year": 2017,
+   "doi": "10.5267/j.jpm.2017.9.002",
+   "pct": 52.0,
+   "journal": "Journal of Project Management"
+  },
+  "earlier": {
+   "title": "An empirical study to measure the impact of e-business on organizational performance with an emphasis on integrated production information",
+   "year": 2012,
+   "doi": "10.5267/j.msl.2012.04.011",
+   "pct": 53.0,
+   "journal": "Management Science Letters"
+  },
+  "matched_words": 1086,
+  "runs": 54,
+  "longest": 67
  }
 }
