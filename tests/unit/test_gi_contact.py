@@ -76,6 +76,16 @@ class TestEmail(unittest.TestCase):
         self.assertEqual(gc.recipients("institution", f), ("rio@u.example, rio@v.example", ""))
         self.assertIn("by authors affiliated with your institution", body(audience="institution")[1])
 
+    def test_declined_institution_is_left_out(self):
+        done = {"to": "rio@w.example", "name": "W", "authors": ["A. One"], "current": True,
+                "declined": "2026-11-06: not affiliated when the article was published"}
+        now = {"to": "rio@u.example", "name": "U", "authors": ["A. One"], "current": True}
+        f = {**fd(), "case_contacts": {"institution": [done, now]}}
+        self.assertEqual(gc.institutions(f), [now])
+        self.assertEqual(gc.recipients("institution", f), ("rio@u.example", ""))
+        self.assertNotIn("W", body(f, audience="institution")[1].split("\n- ")[-1])
+        self.assertEqual(gc.institutions({**fd(), "case_contacts": {"institution": done}}), [])
+
     def test_html_entities_in_metadata_are_decoded(self):
         f = fd()
         f["second"] = {**f["second"], "title": "Data &amp; models", "journal": "Computer Science &amp; IT"}

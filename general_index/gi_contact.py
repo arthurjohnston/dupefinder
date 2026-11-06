@@ -99,12 +99,12 @@ def institutions(fd):
     """The later authors' institutions from the case's contacts.json (fd["case_contacts"]["institution"]): one
     entry, or a list of them (one email to all of them, addressed()), each {to, cc, name, authors: [the later article's authors at that
     institution, as printed], source, checked, notes}. An entry with "current": true is where those authors are
-    now rather than on the byline, with "published_at" the byline institution; its email says so. [] when
-    there's none."""
+    now rather than on the byline, with "published_at" the byline institution; its email says so. An entry
+    with "declined" (their reply, dated) has already said it won't look into it: kept in contacts.json for the
+    record, left out here so no later draft goes to it or names it. [] when there's none."""
     inst = (fd.get("case_contacts") or {}).get("institution")
-    if isinstance(inst, dict):
-        return [inst]
-    return [i for i in inst if isinstance(i, dict)] if isinstance(inst, list) else []
+    inst = [inst] if isinstance(inst, dict) else inst if isinstance(inst, list) else []
+    return [i for i in inst if isinstance(i, dict) and not i.get("declined")]
 
 
 def addressed(fd):
