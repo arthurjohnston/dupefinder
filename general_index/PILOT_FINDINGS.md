@@ -631,3 +631,26 @@ The account also ran out of credit after $19.87 (9 pairs unreviewed). Fixes in g
 `--runs` (only those fulltext runs), `--pdf-mirror OLD=NEW` (read PDFs from a local copy; the two runs'
 1.6 GB are mirrored in data/pdf_cache/), `--workers` (4 calls in flight, ~25 min instead of ~1.5 h), and
 a pair whose PDF file isn't found is now skipped, never reviewed blind. Reviews redone with --redo.
+
+## Collaboration papers read as cross-author copying (fixed 2026-11-06)
+
+GI-213 and GI-242 were each a big-physics collaboration's journal paper (JHEP, bylined "The CMS collaboration")
+against a member's conference proceedings of it ("on behalf of the CMS collaboration"). Both came out "no byline
+overlap": the catalogue keeps three of the ~2,000 CMS names, and the speaker is in the author appendix (GI-242:
+page 31 of 45), not on page 1. Both got institution emails (ULB, UCLouvain) although the prep agent had said
+"not a case", because gi_report_case.review_severity() turned a no-problem review's severity 'none' (and GI-213
+had no review at all) into the default medium; at 70%+ of the later article shared, medium writes the
+institution draft.
+
+Fixes: gi_verify.byline_check() (used by `measure` and floor_measure.py) also counts the same collaboration named
+as a byline on both page 1s ("cms collaboration"), and, where one side is bylined by a collaboration, the other
+side's surnames in its full text in author-list form (after an initial, not followed by "et al.", so a citation
+doesn't count: GI-507). review_severity() now returns 'none' for a no-problem review and audiences('none') is
+empty. Pinned in tests/unit/test_gi_verify.py and test_gi_report_case.py.
+
+Rechecked every fulltext row with a page (1,054): 15 change, all collaboration pairs (GI-44, 45, 213, 242, 384,
+392, 420, 497, 584, 727, 796, 803, 806, 818, 878); their byline column was rewritten, which takes the nine
+unreviewed ones out of the review queue. None was on the site. Separately, the stored byline of most other rows
+predates the page-1 search (2026-10-07) and was never refreshed; the current surname check would mark many of
+them "overlap", largely on false hits (a college named after a surname, a cited author), so those were left as
+they are.

@@ -123,6 +123,7 @@ def git_email():
 
 DEFAULT_SEVERITY = "medium"
 ALL_EMAILS_SEVERITY = "high"
+NO_PROBLEM_SEVERITY = "none"   # what gi_review_cli.ask_severity() saves for a no-problem verdict: no emails
 SITE_IMAGES = True   # site pages show the passages as image crops of both PDFs (--site-text: as text)
 SELF_TYPES = ("text recycling", "duplicate publication")   # gi_review_cli.SELF_TYPES: never published by --skipped
 DATA_TYPE = "data copying"
@@ -140,7 +141,9 @@ def audiences(severity, fd=None):
     authors and their publisher too); the later article's journal, plus the later authors' institutions when
     at least MEDIUM_INSTITUTION_PCT% of the later article is shared, when medium; only the journal when low.
     With fd: never the earlier authors when the two bylines share names (they'd be writing to the people who
-    reused it)."""
+    reused it). None at all for NO_PROBLEM_SEVERITY (a no-problem review)."""
+    if severity == NO_PROBLEM_SEVERITY:
+        return ()
     if severity != ALL_EMAILS_SEVERITY:
         share = ((fd or {}).get("second") or {}).get("pct") or 0
         return (("publisher", "institution") if severity == "medium" and share >= MEDIUM_INSTITUTION_PCT
@@ -151,13 +154,15 @@ def audiences(severity, fd=None):
 
 
 def review_severity(db, f):
-    """Your review's severity for the pair, else DEFAULT_SEVERITY (not reviewed, or no severity)."""
+    """Your review's severity for the pair, else DEFAULT_SEVERITY (not reviewed, or no severity).
+    NO_PROBLEM_SEVERITY for a no-problem review, so it gets no emails: it used to fall back to medium, which
+    wrote an institution draft for GI-213 and GI-242 (collaborations, reviewed no problem) and both went out."""
     try:
         row = db.execute("select severity from reviews where pair_lo = ? and pair_hi = ?",
                          (f["pair_lo"], f["pair_hi"])).fetchone()
     except (sqlite3.OperationalError, KeyError, IndexError):   # no reviews table, or no pair key
         row = None
-    return row[0] if row and row[0] in ("low", "medium", "high") else DEFAULT_SEVERITY
+    return row[0] if row and row[0] in ("low", "medium", "high", NO_PROBLEM_SEVERITY) else DEFAULT_SEVERITY
 
 
 def review_type(db, f):

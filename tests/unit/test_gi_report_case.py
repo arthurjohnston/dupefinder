@@ -206,7 +206,10 @@ class TestSeverity(unittest.TestCase):
         self.assertEqual(gi_report.review_severity(db, f), "medium")   # not reviewed
         db.execute("insert into reviews values ('10.1/a', '10.2/b', 'high')")
         self.assertEqual(gi_report.review_severity(db, f), "high")
-        db.execute("update reviews set severity = 'none'")
+        db.execute("update reviews set severity = 'none'")   # a no-problem review: no emails (GI-213, GI-242)
+        self.assertEqual(gi_report.review_severity(db, f), "none")
+        self.assertEqual(gi_report.audiences("none", fd()), ())
+        db.execute("update reviews set severity = 'bogus'")
         self.assertEqual(gi_report.review_severity(db, f), "medium")
 
 

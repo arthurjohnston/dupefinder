@@ -16,8 +16,9 @@
            papers, rank_paper_pairs.text_check() (10-word exact shingles, lockstep X-drop 3) ->
            ft_pct_a/ft_pct_b (% of each paper's words inside a shared run), ft_matched_words,
            ft_longest, ft_runs; wrong_pdf_side(); the verdict ('real overlap' at >= --min-words matched
-           words, 'no real overlap', 'wrong pdf'); and a byline check (any author surname of one side in
-           the first paragraphs of the other's text). --fix-years replaces the library's years (taken
+           words, 'no real overlap', 'wrong pdf'); and a byline check (byline_check(): any author surname
+           of one side in the first paragraphs of the other's text, or in a collaboration paper's full
+           text, or the same collaboration named on both page 1s). --fix-years replaces the library's years (taken
            from the index's metadata, often a PDF date) with OpenAlex's publication_year first.
 
 Usage:
@@ -394,18 +395,72 @@ def surnames(lib, pid):
     return out
 
 
-def pdf_page1(lib, pid):
-    """Page 1 of the retrieved PDF itself (pdftotext), "" if unavailable."""
+def pdf_text(lib, pid, last_page=None):
+    """The retrieved PDF's text (pdftotext), up to last_page (None: all of it), "" if unavailable."""
     row = lib.execute("select file_path from papers where id = ?", (pid,)).fetchone()
     db_file = lib.execute("pragma database_list").fetchone()[2]
     if not row or not row[0] or not db_file:
         return ""
     path = Path(row[0]) if Path(row[0]).is_absolute() else Path(db_file).parent / row[0]
     try:
-        return subprocess.run(["pdftotext", "-l", "1", str(path), "-"], capture_output=True, text=True,
-                              timeout=60).stdout if path.exists() else ""
+        return subprocess.run(["pdftotext", *(["-l", str(last_page)] if last_page else []), str(path), "-"],
+                              capture_output=True, text=True, timeout=120).stdout if path.exists() else ""
     except (OSError, subprocess.TimeoutExpired):
         return ""
+
+
+def pdf_page1(lib, pid):
+    """Page 1 of the retrieved PDF itself (pdftotext), "" if unavailable."""
+    return pdf_text(lib, pid, last_page=1)
+
+
+# A large collaboration's paper (CMS, ATLAS, BaBar, Pierre Auger, ...) is bylined "The CMS collaboration" on
+# page 1 and lists its thousands of authors in an appendix; the catalogue keeps only the first few names. Its
+# members' own conference write-ups say "on behalf of the CMS collaboration". GI-213 and GI-242 (2026-11-06)
+# were both that pair -- a member's proceedings of the collaboration's paper -- and both came out "no byline
+# overlap", since the speaker's name is on page 31 of 45, so both were taken for cross-author copying.
+_COLLAB_NAME = r"([a-z0-9][a-z0-9 .\-]{0,40}?)\s+collaborations?\b"
+COLLAB_ON_BEHALF = re.compile(r"\b(?:on\s+behalf\s+of|for)\s+the\s+" + _COLLAB_NAME)
+COLLAB_BYLINE = re.compile(r"^[ \t]*(?:the[ \t]+)?" + _COLLAB_NAME + r"[ \t]*[*\d,]*[ \t]*$", re.M)
+
+
+# a surname as an author list prints it: after an initial ("d. moran", "d. lopes pegna"), and not a citation
+# ("m. wurm et al." -- "[wurm et al. 2012]" and "wurm, m., et al." have no initial before it)
+AUTHOR_LIST_NAME = r"\b[a-z]\.(?:\s?-?[a-z]\.)*\s+(?:[a-z]+\s+){{0,2}}{}\b(?!\s*,?\s*et\s+al\b)"
+
+
+def collaborations(page1):
+    """The collaborations page 1 names as its byline: {name's last word: 'author' | 'member'}. 'author' is a
+    line that is nothing but "The X collaboration" (the collaboration is the author, its names come later);
+    'member' is "on behalf of / for the X collaboration" (one member writing for it). The last word, so "Pierre
+    Auger Collaboration" and "for the Auger Collaboration" are the same one. A sentence that mentions a
+    collaboration ("the ATLAS collaboration has carried out ...") is neither."""
+    text = PLAIN(page1)
+    out = {}
+    for kind, rx in (("author", COLLAB_BYLINE), ("member", COLLAB_ON_BEHALF)):   # author wins: JHEP prints both
+        for m in rx.finditer(text):
+            words = re.findall(r"[a-z0-9]+", m.group(1))
+            if kind == "author" and {"behalf", "for", "benefit"} & set(words):   # a member's line, whole
+                continue
+            if words and words[-1] not in ("the", "a", "an", "of", "and", "international", "scientific"):
+                out.setdefault(words[-1], kind)
+    return out
+
+
+def byline_check(lib, a, b):
+    """fulltext.byline for a pair: "byline overlap: <names>" or "no byline overlap". A shared name is an author
+    surname of one side in the opening (first paragraphs and page 1) of the other, or -- where a side is a
+    collaboration's paper (collaborations()) -- anywhere in that side's full text, where its author list is;
+    or both sides naming the same collaboration on page 1 ("cms collaboration")."""
+    oa, ob, sa, sb = opening(lib, a), opening(lib, b), surnames(lib, a), surnames(lib, b)
+    hit = {s for s in sa if re.search(r"\b" + s + r"\b", ob)} | {s for s in sb if re.search(r"\b" + s + r"\b", oa)}
+    ca, cb = collaborations(pdf_page1(lib, a)), collaborations(pdf_page1(lib, b))
+    hit |= {f"{c} collaboration" for c in set(ca) & set(cb)}
+    for collab, own, other in ((ca, a, sb), (cb, b, sa)):
+        if "author" in collab.values() and other and not hit:
+            full = PLAIN(pdf_text(lib, own))
+            hit |= {s for s in other if re.search(AUTHOR_LIST_NAME.format(s), full)}
+    return "byline overlap: " + ",".join(sorted(hit)) if hit else "no byline overlap"
 
 
 def opening(lib, pid, n=6):
@@ -457,10 +512,7 @@ def measure(db, args):
                 upd.update(ft_pct_a=0, ft_pct_b=0, ft_matched_words=0, ft_longest=0, ft_runs=0)
             upd["ft_verdict"] = ("wrong pdf" if upd["wrong_pdf"] else
                                  "real overlap" if words >= args.min_words else "no real overlap")
-            oa, ob, sa, sb = opening(lib, a), opening(lib, b), surnames(lib, a), surnames(lib, b)
-            hit = sorted({s for s in sa if re.search(r"\b" + s + r"\b", ob)} |
-                         {s for s in sb if re.search(r"\b" + s + r"\b", oa)})
-            upd["byline"] = "byline overlap: " + ",".join(hit) if hit else "no byline overlap"
+            upd["byline"] = byline_check(lib, a, b)
         counts[upd["ft_verdict"] or f"not both retrieved"] = counts.get(upd["ft_verdict"] or "not both retrieved", 0) + 1
         db.execute("update fulltext set " + ", ".join(f"{k} = :{k}" for k in upd) +
                    " where pair_lo = :lo and pair_hi = :hi", {**upd, "lo": r["pair_lo"], "hi": r["pair_hi"]})
