@@ -2925,5 +2925,30 @@
   "matched_words": 707,
   "runs": 28,
   "longest": 53
+ },
+ "GI-927": {
+  "file": "GI-927.html",
+  "reported": "2026-11-08",
+  "published": "2026-11-08",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": true,
+  "later": {
+   "title": "Acute renal failure after licorice ingestion: A case report",
+   "year": 2010,
+   "doi": "10.2478/s11536-010-0052-3",
+   "pct": 37.0,
+   "journal": "Open Medicine"
+  },
+  "earlier": {
+   "title": "A hypokalemic muscular weakness after licorice ingestion: a case report",
+   "year": 2009,
+   "doi": "10.4076/1757-1626-2-8053",
+   "pct": 43.0,
+   "journal": "Cases Journal"
+  },
+  "matched_words": 675,
+  "runs": 31,
+  "longest": 68
  }
 }
