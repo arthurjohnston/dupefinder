@@ -585,8 +585,9 @@ def show_pair(pair, i, total, titles, flags=(), priority=(0, None), authors=None
         print(f"  AI ({who}): {pair['ai_decision']} / {pair['ai_type']} / {pair['ai_severity']} "
               f"(confidence {pair['ai_confidence'] or '?'})")
         if pair.get("swapped"):
-            print("      (labels reversed: the AI's \"Paper A\" is the paper listed second above, "
-                  "and its \"Paper B\" is the one listed first)")
+            short = lambda t: t if len(t) <= 70 else t[:67].rstrip() + "..."
+            print(wrap("      ", f"(the AI's \"Paper A\" is \"{short(titles[1][0])}\"; its \"Paper B\" is "
+                                 f"\"{short(titles[0][0])}\")"))
         print(wrap("      ", pair["ai_summary"]))
         if pair["ai_checks"]:
             print(wrap("      check: ", pair["ai_checks"]))
