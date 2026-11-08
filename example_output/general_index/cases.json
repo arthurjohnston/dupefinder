@@ -2847,5 +2847,33 @@
   "matched_words": 532,
   "runs": 27,
   "longest": 53
+ },
+ "GI-897": {
+  "file": "GI-897.html",
+  "reported": "2026-11-08",
+  "published": "2026-11-08",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Benefits of reverse engineering technologies in software development makerspace",
+   "year": 2017,
+   "doi": "10.1051/itmconf/20171301028",
+   "pct": 29.0,
+   "journal": "ITM Web of Conferences"
+  },
+  "earlier": {
+   "title": "Reverse Engineering - Recent Advances and Applications || MDA-Based Reverse Engineering",
+   "year": 2012,
+   "doi": "10.5772/32473",
+   "pct": 11.0,
+   "journal": "Reverse Engineering - Recent Advances and Applications"
+  },
+  "matched_words": 1146,
+  "runs": 32,
+  "longest": 146,
+  "sources": 2,
+  "union_words": 2352,
+  "union_pct": 59.7
  }
 }
