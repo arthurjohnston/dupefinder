@@ -3000,5 +3000,30 @@
   "matched_words": 1284,
   "runs": 41,
   "longest": 157
+ },
+ "GI-938": {
+  "file": "GI-938.html",
+  "reported": "2026-11-08",
+  "published": "2026-11-08",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Fabrication and Validation by Micromilling for Bioreactor Prototyping",
+   "year": 2018,
+   "doi": "10.4028/www.scientific.net/msf.941.2448",
+   "pct": 29.0,
+   "journal": "Materials Science Forum"
+  },
+  "earlier": {
+   "title": "Micromilling: a method for ultra-rapid prototyping of plastic microfluidic devices",
+   "year": 2015,
+   "doi": "10.1039/c5lc00234f",
+   "pct": 6.0,
+   "journal": "Lab on a Chip"
+  },
+  "matched_words": 602,
+  "runs": 20,
+  "longest": 75
  }
 }
