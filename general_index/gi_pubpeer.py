@@ -160,9 +160,9 @@ def markdown(fd):
     the other) first, then your [data] findings and your other ticked findings. Then, when there
     are images (fd["images"], write_page()), PASSAGE_IMAGES passages side by side -- the tables first for copied
     data, each with where it is in both PDFs, the passages of text each with a short excerpt of both articles --
-    and an [Image: name] line for where you upload each (PubPeer wants copy and source side by side, marked
-    up); without images, extracts of the longest passages. With
-    fd["stitched"] (stitch()'s file name) the per-image lines give way to one at the end, for that image."""
+    each caption followed by where you upload that image (PubPeer wants copy and source side by side, marked
+    up; no placeholder line to delete first); without images, extracts of the longest passages. With
+    fd["stitched"] (stitch()'s file name) one line at the end introduces that single image instead."""
     first, second = fd["first"], fd["second"]
     known = fd["earlier_known"]
     lines = []
@@ -208,17 +208,12 @@ def markdown(fd):
             quotes = [f"- {label}: \"{excerpt(sides[k]['text'], 20, 8).replace(chr(34), chr(39))}\""
                       for label, k in ((other_name, "other"), ("This article", "this")) if sides.get(k)]
             lines.append("\n\n".join(quotes))   # a blank line between the two, so they don't run together
-        if not fd.get("stitched"):
-            lines.append("")
-            lines.append(f"[Image: {im['name']}]")
     if images and fd.get("stitched"):
         kinds = {im["kind"] for im in images}
         what = " and the ".join(w for k, w in (("titles", "titles"), ("table", "tables"), ("passage", "passages"))
                                 if k in kinds)
         lines.append("")
         lines.append(f"The {what}, in the order above, top to bottom:")
-        lines.append("")
-        lines.append(f"[Image: {fd['stitched']}]")
     if not any(im["kind"] == "passage" for im in images) and fd["passages"]:
         shown = fd["passages"][:TEXT_PASSAGES]
         n = len(shown)
@@ -287,13 +282,13 @@ def stitch(images):
 def images_html(images):
     """The comment's images (write_page()'s fd["images"], each with its JPEG bytes) in the box, in order, each
     with a link that saves it (data: URIs, so the page stays one file). One image (stitch()) is uploaded at
-    the comment's one [Image: …] line."""
+    the end of the comment."""
     if not images:
         return ""
-    out = ['<p><b>Image</b>: save it and upload it with PubPeer\'s image button where the '
-           '<code>[Image: …]</code> line is in the comment.</p>' if len(images) == 1 else
-           '<p><b>Images</b>: save each one and upload it with PubPeer\'s image button where its '
-           '<code>[Image: …]</code> line is in the comment.</p>']
+    out = ['<p><b>Image</b>: save it and upload it with PubPeer\'s image button at the end of the '
+           'comment.</p>' if len(images) == 1 else
+           '<p><b>Images</b>: save each one and upload it with PubPeer\'s image button after its caption '
+           'in the comment.</p>']
     for im in images:
         uri = jpeg_uri(im["jpeg"])
         name = html.escape(im["name"], quote=True)
