@@ -585,7 +585,8 @@ def show_pair(pair, i, total, titles, flags=(), priority=(0, None), authors=None
         print(f"  AI ({who}): {pair['ai_decision']} / {pair['ai_type']} / {pair['ai_severity']} "
               f"(confidence {pair['ai_confidence'] or '?'})")
         if pair.get("swapped"):
-            print("      (the AI's \"Paper A\" is B here and its \"Paper B\" is A: it numbers them the other way)")
+            print("      (labels reversed: the AI's \"Paper A\" is the paper listed second above, "
+                  "and its \"Paper B\" is the one listed first)")
         print(wrap("      ", pair["ai_summary"]))
         if pair["ai_checks"]:
             print(wrap("      check: ", pair["ai_checks"]))
