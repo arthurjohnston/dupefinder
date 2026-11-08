@@ -203,5 +203,43 @@ class TestLookedAt(unittest.TestCase):
         self.assertEqual(cli.looked_at_pairs(db), {("p1", "p2")})
 
 
+class TestDoiCountries(unittest.TestCase):
+    """doi_countries(): the review tool's --country -- the byline's countries, the authors' current universities,
+    and the checks (a disowned university doesn't count, an 'on earlier paper' author counts for nothing)."""
+
+    def setUp(self):
+        self.db = make_db()
+        add_work(self.db, "10.1/x", [("A1", "Asha Rao", [inst("IIT Delhi", "IN")]),
+                                     ("A2", "Ben Ko", [inst("Seoul Natl Univ", "KR"), inst("A Lab", "US", "company")])])
+        self.db.execute("""update oa_authorships set institutions = ? where doi = '10.1/x' and position = 0""",
+                        (json.dumps([inst("Dhaka Univ", "BD")]),))
+
+    def add_check(self, verdict, author, university="", now_country=""):
+        self.db.execute("insert into author_checks (doi, author, university, verdict, now_country, checked_by) "
+                        "values ('10.1/x', ?, ?, ?, ?, 'agent')", (author, university, verdict, now_country))
+
+    def test_byline_and_current_universities(self):
+        self.assertEqual(ga.doi_countries(self.db, ["10.1/X"]), {"10.1/x": {"BD", "IN", "KR"}})
+
+    def test_checks(self):
+        self.add_check("name only", "Ben Ko", "Seoul Natl Univ")
+        self.add_check("on earlier paper", "Asha Rao")
+        self.assertEqual(ga.doi_countries(self.db, ["10.1/x"])["10.1/x"], set())
+        self.add_check("moved", "Ben Ko", now_country="nz")
+        self.assertEqual(ga.doi_countries(self.db, ["10.1/x"])["10.1/x"], {"NZ"})
+
+    def test_no_data(self):
+        self.assertEqual(ga.doi_countries(self.db, ["10.1/none"]), {"10.1/none": set()})
+
+    def test_pair_countries_and_parse(self):
+        c = {"10.1/a": {"US"}, "10.1/b": {"IN"}}
+        self.assertEqual(ga.pair_countries(c, "10.1/a", "10.1/b", "a"), {"IN"})
+        self.assertEqual(ga.pair_countries(c, "10.1/a", "10.1/b", None), {"US", "IN"})
+        self.assertEqual(ga.parse_countries("in, pk"), {"IN", "PK"})
+        self.assertIn("NZ", ga.parse_countries("west"))
+        with self.assertRaises(ValueError):
+            ga.parse_countries("India")
+
+
 if __name__ == "__main__":
     unittest.main()

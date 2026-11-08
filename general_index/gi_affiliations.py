@@ -876,6 +876,81 @@ def doi_scores(db, dois):
     return out
 
 
+# checks that take an author's listed university (or, author-wide, the author) away from them for doi_countries()
+NOT_THEIRS = ("elsewhere", "name only", "different person", "not on byline")
+
+
+def doi_countries(db, dois):
+    """{doi (lower): {country code}} for the given DOIs: the countries of every institution on the paper's byline
+    (oa_authorships.institutions), of each author's current academic institutions (OpenAlex last known typed
+    education, ORCID current jobs with an academic name -- whether or not the author is still publishing), and of
+    a confirmed / moved author check's now_country. A university an author check disowns (NOT_THEIRS) doesn't
+    count; an author checked 'on earlier paper' (not a copying author) counts for nothing. Cache only; a DOI with
+    no data maps to an empty set. Country codes are ISO 3166-1 alpha-2, upper case."""
+    ensure_tables(db)
+    dois = sorted({(d or "").lower() for d in dois if d})
+    out = {d: set() for d in dois}
+    rows = []
+    for i in range(0, len(dois), CHUNK):
+        chunk = dois[i:i + CHUNK]
+        rows += db.execute(f"""select s.doi, s.position, coalesce(s.name, au.name) name,
+                                      s.institutions byline, au.institutions, o.current
+                               from oa_authorships s left join oa_authors au using (author_id)
+                               left join orcid_employments o on o.orcid = au.orcid
+                               where s.doi in ({_qs(chunk)}) order by s.doi, s.position""", chunk).fetchall()
+    checks = load_author_checks(db, dois)
+    by_doi = {}
+    for r in rows:
+        by_doi.setdefault(r["doi"], []).append(r)
+    for d, authors in by_doi.items():
+        assigned = assign_checks(checks.get(d, []), [a["name"] or "" for a in authors])
+        for i, a in enumerate(authors):
+            cs = assigned.get(i, [])
+            wide = pick_check(cs, "")
+            if wide and wide["verdict"] == "on earlier paper":
+                continue
+            places = list(json.loads(a["byline"] or "[]"))
+            if not (wide and wide["verdict"] in NOT_THEIRS):
+                places += [x for x in json.loads(a["institutions"] or "[]") if x.get("type") in ACADEMIC_TYPES]
+                places += [j for j in json.loads(a["current"] or "[]") if ACADEMIC_NAME.search(j.get("name") or "")]
+            for p in places:
+                c = pick_check(cs, p.get("name") or "")
+                if c is not None and c["university"] and c["verdict"] in NOT_THEIRS:
+                    continue
+                if p.get("country"):
+                    out[d].add(p["country"].upper())
+            for c in cs:
+                if c["verdict"] in ("confirmed", "moved") and c["now_country"]:
+                    out[d].add(c["now_country"].upper())
+    return out
+
+
+def pair_countries(countries, doi_a, doi_b, earlier):
+    """The later paper's countries (doi_countries()), both papers' when the order is unknown."""
+    get = lambda d: countries.get((d or "").lower(), set())
+    if earlier == "a":
+        return get(doi_b)
+    if earlier == "b":
+        return get(doi_a)
+    return get(doi_a) | get(doi_b)
+
+
+def parse_countries(spec):
+    """'IN,pk, west' -> {'IN', 'PK', *TARGET_COUNTRIES}: ISO alpha-2 codes, plus 'west' for TARGET_COUNTRIES.
+    Raises ValueError on anything else."""
+    out = set()
+    for part in (p.strip() for p in spec.split(",")):
+        if not part:
+            continue
+        if part.lower() in ("west", "western"):
+            out |= TARGET_COUNTRIES
+        elif re.fullmatch(r"[A-Za-z]{2}", part):
+            out.add(part.upper())
+        else:
+            raise ValueError(f"{part!r}: use two-letter country codes (IN, CN, US, ...) or 'west'")
+    return out
+
+
 def pair_rank(scores, doi_a, doi_b, earlier):
     """(rank, side) for a pair: its later paper's rank ('a'/'b'), or with earlier None the better side's."""
     get = lambda d: scores.get((d or "").lower(), (UNKNOWN, []))[0]

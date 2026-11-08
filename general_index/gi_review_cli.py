@@ -50,7 +50,11 @@ OpenAlex/ORCID data first. --western-only keeps only pairs whose copying (later)
 the order unknown, either paper will do. Both read the author checks too (gi_affiliations' author_checks: what the
 case agent, or you with `gi_affiliations.py check`, established about an author -- an OpenAlex merge, a move, a
 byline outside the West), synced from the case folders when the tool starts, so a case the checks leave without
-a Western academic drops out of --western-only exactly as it drops out of gi_western_csv.py's list. --looked-at
+a Western academic drops out of --western-only exactly as it drops out of gi_western_csv.py's list.
+--country IN,PK (ISO codes; 'west' for the Western set) keeps only pairs whose copying paper has an
+author tied to one of those countries -- an institution on its byline, an author's current university
+(OpenAlex last known / ORCID current), or an author check's now_country -- so the non-Western cases can be
+worked through one country at a time; --countries prints the queue's pairs per country and exits. --looked-at
 GI-NN,... marks pages looked at without a review; the queue skips them like reviewed ones. --no-medical drops pairs where
 either paper's OpenAlex primary topic is in the Health Sciences domain (medicine, nursing, dentistry, health
 professions); a paper with no cached OpenAlex record (gi_metadata.py fetch) doesn't count. --order professor ranks by the
@@ -120,7 +124,7 @@ problem on a pair already reported (--gi NN --include-reviewed) offers t to take
 cases.json entry removed and pushed, the report files moved to GI-NN/withdrawn/ (gi_report_case.take_down());
 emails and a PubPeer post already sent are yours to withdraw.
 
-Usage: gi_review_cli.py [--gi 12,40] [--ai-type cross-author,data] [--ai-decision problem] [--include-reviewed] [--looked-at GI-NN,...] [--order affiliation|professor|publisher|overlap] [--western-only] [--no-medical] [--pdfs] [--no-open] [--no-agent] [--no-lookahead] [--pages-dir data/fulltext_pages_s16] [--sample-rate 8]
+Usage: gi_review_cli.py [--gi 12,40] [--ai-type cross-author,data] [--ai-decision problem] [--include-reviewed] [--looked-at GI-NN,...] [--order affiliation|professor|publisher|overlap] [--western-only] [--country IN,PK|west] [--countries] [--no-medical] [--pdfs] [--no-open] [--no-agent] [--no-lookahead] [--pages-dir data/fulltext_pages_s16] [--sample-rate 8]
                         [--db data/gi.sqlite3]
 """
 import argparse
@@ -321,10 +325,12 @@ def looked_at_pairs(db):
 
 
 def load_queue(db, gi=None, include_reviewed=False, ai_types=None, ai_decisions=None, order="publisher",
-               western_only=False, groups=None, no_medical=False):
+               western_only=False, groups=None, no_medical=False, countries=None):
     """ai_types / ai_decisions: lists of AI_TYPES / AI_DECISIONS names to keep ('none': the agent hasn't
     reviewed the pair). western_only: only pairs whose copying (later) paper has an author active at a Western
-    university (gi_affiliations.py); with the order unknown, either paper. no_medical: drop
+    university (gi_affiliations.py); with the order unknown, either paper. countries: a set of country codes; only
+    pairs whose copying paper has an author tied to one of them (gi_affiliations.doi_countries(): the byline's
+    institutions, the authors' current universities, the author checks), with the order unknown either paper's. no_medical: drop
     pairs with a Health Sciences paper (medical_pairs()). Ignored with gi. Pages sharing a later paper (groups:
     later_paper_groups(), computed when not given) are kept together, where the first of them falls."""
     rows = db.execute(QUEUE_SQL).fetchall()
@@ -346,6 +352,9 @@ def load_queue(db, gi=None, include_reviewed=False, ai_types=None, ai_decisions=
     if no_medical:
         medical = medical_pairs(db, rows)
         rows = [r for r in rows if pair_key(r) not in medical]
+    if countries:
+        found = country_pairs(db, rows)
+        rows = [r for r in rows if found[pair_key(r)] & countries]
     import gi_write_pages
     aff = {}
     profs = {}
@@ -462,6 +471,33 @@ def affiliation_ranks(db, rows):
     return {(r["pair_lo"], r["pair_hi"]): gi_affiliations.pair_rank(scores, r["doi_a"], r["doi_b"],
                                                                     gi_write_pages.earlier_side(r))[0]
             for r in rows}
+
+
+def country_pairs(db, rows):
+    """{(pair_lo, pair_hi): the later paper's countries (gi_affiliations.pair_countries)}, fetching what the cache
+    lacks."""
+    import gi_affiliations
+    import gi_write_pages
+    dois = [d for r in rows for d in (r["doi_a"], r["doi_b"])]
+    print(gi_affiliations.Fetcher(db).ensure(dois))
+    countries = gi_affiliations.doi_countries(db, dois)
+    return {pair_key(r): gi_affiliations.pair_countries(countries, r["doi_a"], r["doi_b"],
+                                                        gi_write_pages.earlier_side(r))
+            for r in rows}
+
+
+def print_country_counts(db, rows):
+    """--countries: how many of the queue's pairs each country's authors are on (a pair counts once for every
+    country of its copying paper), most first; then the pairs with no country data."""
+    found = country_pairs(db, rows)
+    counts = {}
+    for cs in found.values():
+        for c in cs:
+            counts[c] = counts.get(c, 0) + 1
+    print(f"{len(rows)} pairs in the queue; copying paper's authors by country (a pair counts under each):")
+    for c, n in sorted(counts.items(), key=lambda x: (-x[1], x[0])):
+        print(f"  {c}  {n}")
+    print(f"  no country data  {sum(1 for cs in found.values() if not cs)}")
 
 
 def professor_pairs(db, rows):
@@ -1377,6 +1413,14 @@ def main():
                     help="only pairs whose copying (later) paper has an author still at a Western university (US, "
                          "Canada, Europe west of Russia, Japan, Australia, New Zealand); with the order unknown, "
                          "either paper (--us-europe-only: the old name)")
+    ap.add_argument("--country", type=str, default=None,
+                    help="only pairs whose copying (later) paper has an author tied to one of these countries: "
+                         "comma-separated ISO codes (IN,PK,CN), 'west' for the Western set; tied means an "
+                         "institution on the paper's byline, the author's current university (OpenAlex/ORCID) or "
+                         "an author check's now_country. With the order unknown, either paper. Combines with "
+                         "--western-only and the other filters")
+    ap.add_argument("--countries", action="store_true",
+                    help="print how many queue pairs each country has (after the other filters) and exit")
     ap.add_argument("--no-medical", action="store_true",
                     help="skip pairs where either paper's OpenAlex primary topic is in Health Sciences (medicine, "
                          "nursing, dentistry, ...); papers with no cached OpenAlex record are kept")
@@ -1386,6 +1430,11 @@ def main():
                     help="start the agent only on the pair on screen, not also on the next pair in the queue that "
                          "hasn't been prepped")
     args = ap.parse_args()
+    import gi_affiliations
+    try:
+        countries = gi_affiliations.parse_countries(args.country) if args.country else None
+    except ValueError as e:
+        ap.error(f"--country: {e}")
     pages_dir = Path(args.pages_dir)
 
     db = sqlite3.connect(args.db, timeout=300)
@@ -1411,7 +1460,10 @@ def main():
             ap.error(f"{name}: unknown {', '.join(bad)} (use: {', '.join(known)})")
     groups = later_paper_groups(db)
     queue = load_queue(db, args.gi, args.include_reviewed, args.ai_type, args.ai_decision, args.order,
-                       args.western_only, groups, args.no_medical)
+                       args.western_only, groups, args.no_medical, countries)
+    if args.countries:
+        print_country_counts(db, queue)
+        return
     if not queue:
         print("nothing to review")
         return
