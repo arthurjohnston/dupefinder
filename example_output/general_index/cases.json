@@ -3025,5 +3025,30 @@
   "matched_words": 602,
   "runs": 20,
   "longest": 75
+ },
+ "GI-1020": {
+  "file": "GI-1020.html",
+  "reported": null,
+  "published": "2026-11-08",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Design and Implementation of Secure Multi- Authentication Data Storage in Cloud using Machine Learning Data Classification",
+   "year": 2017,
+   "doi": "10.5120/ijca2017913129",
+   "pct": 26.0,
+   "journal": "International Journal of Computer Applications"
+  },
+  "earlier": {
+   "title": "A Secure Data Classification Model in Cloud Computing Using Machine Learning Approach",
+   "year": 2016,
+   "doi": "10.14257/ijgdc.2016.9.8.02",
+   "pct": 26.0,
+   "journal": "International Journal of Grid and Distributed Computing"
+  },
+  "matched_words": 878,
+  "runs": 25,
+  "longest": 131
  }
 }
