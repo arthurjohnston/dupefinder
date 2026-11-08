@@ -3050,5 +3050,30 @@
   "matched_words": 878,
   "runs": 25,
   "longest": 131
+ },
+ "GI-1042": {
+  "file": "GI-1042.html",
+  "reported": "2026-11-08",
+  "published": "2026-11-08",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Infestation of helminth parasites in Gangetic Leaffish Nandus nandus (Hamilton, 1822)",
+   "year": 2015,
+   "doi": "10.3329/bjz.v42i2.23354",
+   "pct": 18.0,
+   "journal": "Bangladesh Journal of Zoology"
+  },
+  "earlier": {
+   "title": "Seasonal prevalence, intensity and organal distribution of Helminth parasites in macrognathus aculeatus",
+   "year": null,
+   "doi": "10.3329/dujbs.v20i2.8971",
+   "pct": 28.0,
+   "journal": "Dhaka University Journal of Biological Sciences"
+  },
+  "matched_words": 534,
+  "runs": 24,
+  "longest": 37
  }
 }
