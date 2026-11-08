@@ -108,9 +108,8 @@ the comparison page and index on the project site, example_output/general_index/
   - the site pages are pushed to main (gi_publish_site.py) in the background as soon as they're written, while
     you write the PubPeer post (neither links the other; the emails don't link the site either: the
     comparison is attached);
-  - you paste your PubPeer post's address once it's up, and the emails are rewritten to link to it (the site
-    folder left alone, so the push isn't racing it);
-  - o opens the drafts as Thunderbird compose windows.
+  - Enter opens the drafts as Thunderbird compose windows (s: not now); a draft with no contact address
+    (nobody found for that journal) isn't opened.
 Before the next pair opens, a prompt: Enter goes on, d talks the pair just finished through with the agent again
 (its session resumed, as d at the menu; as often as you like), q quits.
 After the agent's summary, and again after you talk it through with it (d), v changes your verdict (the
@@ -1245,7 +1244,7 @@ def report_flow(db, pair, open_it=True, severity=None, prep=None, authors_only=F
     """Everything for reporting the pair, in order: the gi-cases agent to prep it (waited for, or Ctrl-C to go
     on without it), ticking its findings, then the report files written and the PubPeer page opened, once,
     with what the agent found and what you ticked; the site page pushed in the background while you post on
-    PubPeer, your PubPeer post's address, and the drafts opened in Thunderbird. Every step but writing the report
+    PubPeer, and the drafts that have someone to go to opened in Thunderbird. Every step but writing the report
     files can be skipped with Enter / s. After the agent's summary, and again after talking it through with
     it, you can change your mind before anything is written: returns 'verdict' (ask the verdict again) or
     'stopped' (not reported), else None. authors_only (a at the report prompt): the finding published and the
@@ -1283,22 +1282,36 @@ def report_flow(db, pair, open_it=True, severity=None, prep=None, authors_only=F
         return
     # the site page doesn't link the PubPeer post, so it goes up while you write the post
     finish_push = publish_site_background(case) if paths.get("site") else None
-    have = gi_case_findings.pubpeer_url(case)
-    url = "" if authors_only else ask(f"PubPeer post's address once it's up [Enter: {'keep ' + have if have else 'later (t asks again)'}] ")
-    if url:
-        try:
-            gi_case_findings.save_pubpeer_url(case, url)
-            paths = pubpeer_page(db, pair, False, severity=severity, site=False) or paths   # the emails now link it
-        except ValueError as e:
-            print(f"  {e}: not saved")
     if finish_push:
         finish_push()
-    emls = [p for k, p in paths.items() if k.startswith("email ")]
-    if emls and ask("[o: open the drafts in Thunderbird, Enter: not now] ").lower().startswith("o"):
+    emls = []
+    for k, p in paths.items():
+        if not k.startswith("email "):
+            continue
+        if has_recipient(p):
+            emls.append(p)
+        else:   # no address found: nothing to send it to, so it isn't opened
+            page = paths.get("page " + k[len("email "):])
+            print(f"  {Path(p).name}: no contact address, not opened" + (f" (report it at {page})" if page else ""))
+    if emls and not ask("[Enter: open the drafts in Thunderbird, s: not now] ").lower().startswith("s"):
         try:
             gi_report_case.open_drafts(emls)
         except Exception as e:
             print(f"  couldn't open the drafts: {e}")
+
+
+def has_recipient(eml):
+    """Whether an .eml draft has anyone to go to: anyone on To, Cc or Bcc, except that for the ones addressed
+    To yourself (gi_contact.SELF_ADDRESSED) To doesn't count. False when it can't be read."""
+    import email
+    import email.policy
+    import gi_contact
+    try:
+        msg = email.message_from_bytes(Path(eml).read_bytes(), policy=email.policy.default)
+    except OSError:
+        return False
+    self_addressed = Path(eml).stem.split("-email-", 1)[-1] in gi_contact.SELF_ADDRESSED
+    return any((msg[k] or "").strip() for k in ("Cc", "Bcc") + (() if self_addressed else ("To",)))
 
 
 def refresh_report(db, case, open_it=True):
