@@ -7,10 +7,12 @@ Two lists, both from gi_affiliations' cached OpenAlex/ORCID data (gi.sqlite3; no
                  agent's decision, overlap_pct (the larger of the two papers' shares) and a health-sciences flag;
                  cases the agent typed as text recycling, legitimate reuse, duplicate publication or an artifact
                  are left out (--all-types keeps them), and so are cases the agent didn't call a problem (no
-                 problem, unsure, not reviewed; --all-decisions keeps them); author_check / now_at / check_basis say what the case
-                 agent found about each academic (AUTHOR_CHECKS); rows the agent found aren't Western (NOT_WESTERN,
-                 or moved outside TARGET_COUNTRIES) are left out, and a case with none left drops (--all-authors
-                 keeps them), as are the cases in LOOKED_AT (looked at without a decision in the review tool)
+                 problem, unsure, not reviewed; --all-decisions keeps them); author_check / now_at / check_basis say what the
+                 author checks found about each academic (gi_affiliations' author_checks: the case agent's and
+                 yours); rows a check says aren't Western are left out, and a case with none left drops, as the
+                 review tool's --western-only drops it too (--all-authors keeps them); cases you marked looked at
+                 in the review tool are left out like reviewed ones (the queue skips them), and so are cases already reported (reported_cases: the site's cases.json or gi_reports.py's record;
+                 --include-reported keeps them). Columns lead with case, title, type, copied_pct, university
   unobtainable   pairs from the pool with no full text (data/unobtainable_openalex_screen.tsv) whose larger GI
                  5-gram share is at least --min-pct (15, the original lead floor), cross-author only (the
                  screen's eliminated pairs dropped), in the n-gram lead ranking (gi_rank_leads.py's lead_rank,
@@ -33,7 +35,7 @@ when that is MERGE_UNIVERSITIES or more and none comes from ORCID (which the per
 a "check first" flag, not a verdict: a merge showing one university, or one with an ORCID job, isn't flagged.
 
 Usage:
-  gi_western_csv.py cases data/western_cases_YYYY-MM-DD.csv [--all-types]
+  gi_western_csv.py cases data/western_cases_YYYY-MM-DD.csv [--all-types] [--include-reported]
   gi_western_csv.py unobtainable data/unobtainable_western_YYYY-MM-DD.csv [--min-pct 15] [--all-tiers]
                        [--keep-proceedings]
 """
@@ -49,26 +51,14 @@ import gi_db
 import gi_preprints
 
 MERGE_UNIVERSITIES = 3
-ORCID_SRC, OPENALEX_SRC = "ORCID current job", "OpenAlex last known"
+ORCID_SRC, OPENALEX_SRC = ga.ORCID_SRC, ga.OPENALEX_SRC
 NOT_COPYING = ("text recycling", "legitimate reuse", "duplicate publication", "artifact")   # cases: dropped by default
 SCREEN = Path(__file__).resolve().parent / "data" / "unobtainable_openalex_screen.tsv"
-# What the case agent (gi_prep_batch) established about each listed academic, classified per (case, author,
-# university): confirmed (the author, there now), byline (there on the article; now unknown), moved (the author,
-# now at now_at), untraced, name only (a namesake there, no link), elsewhere (the agent placed the author at
-# another institution: an OpenAlex merge), on earlier paper (the agent read the order the other way, so this
-# academic is a source author), different person, not on byline (every institution on the copying paper's byline
-# is outside TARGET_COUNTRIES and nothing in the prep notes links the author to the university). Joined into the
-# cases list as author_check, now_at and check_basis; a case with no findings.md yet is "not prepped".
-AUTHOR_CHECKS = Path(__file__).resolve().parent / "data" / "western_author_checks.json"
-NOT_WESTERN = ("elsewhere", "name only", "on earlier paper", "different person", "not on byline")   # cases: rows dropped by default
-# Cases already looked at though the review tool has no decision for them (one GI-NN per line, # comments):
-# left out of the cases list like reviewed ones.
-LOOKED_AT = Path(__file__).resolve().parent / "data" / "western_cases_looked_at.txt"
 
-CASE_FIELDS = ["case", "copying_paper", "title", "subject", "subfield", "type", "copied_pct", "author", "university", "country",
-               "author_check", "now_at", "check_basis", "source",
-               "n_universities", "likely_merge", "orcid_professor_post", "last_published", "agent_decision",
-               "overlap_pct", "health_sciences"]
+CASE_FIELDS = ["case", "title", "type", "copied_pct", "university", "country", "author", "author_check", "now_at",
+               "check_basis", "subject", "subfield", "copying_paper", "overlap_pct", "health_sciences",
+               "agent_decision", "source", "n_universities", "likely_merge", "orcid_professor_post", "last_published"]
+SITE_CASES = Path(__file__).resolve().parent.parent / "example_output" / "general_index" / "cases.json"
 POOL_FIELDS = ["pair_id", "lead_rank", "tier", "copying_paper", "title", "subject", "subfield", "copied_pct", "author", "university",
                "country", "source", "n_universities", "likely_merge", "orcid_professor_post", "last_published",
                "model_score", "gi_pct_a", "gi_pct_b", "venue_record", "same_title", "year_a", "year_b", "doi_a", "doi_b",
@@ -90,32 +80,6 @@ def copying_sides(earlier):
     if earlier:
         return ["b" if earlier == "a" else "a"], ""
     return ["a", "b"], " (order unknown)"
-
-
-def western_academics(db, doi):
-    """(name, last_year, {university: (country, source)}) for each target author of doi with a Western
-    university; a university from both sources gets "OpenAlex last known + ORCID current job"."""
-    out = []
-    for a in db.execute("""select coalesce(s.name, au.name) name, au.*, o.current from oa_authorships s
-                           join oa_authors au using (author_id) left join orcid_employments o on o.orcid = au.orcid
-                           where s.doi = ? order by s.position""", ((doi or "").lower(),)):
-        jobs = json.loads(a["current"]) if a["current"] is not None else None
-        if ga.author_status(a, jobs)[0] != "target":
-            continue
-        insts = [(i, OPENALEX_SRC) for i in json.loads(a["institutions"] or "[]")
-                 if i.get("type") in ga.ACADEMIC_TYPES]
-        insts += [(j, ORCID_SRC) for j in jobs or [] if ga.ACADEMIC_NAME.search(j.get("name") or "")]
-        unis = {}
-        for i, src in insts:
-            if (i.get("country") or "").upper() not in ga.TARGET_COUNTRIES:
-                continue
-            if i["name"] not in unis:
-                unis[i["name"]] = (i.get("country"), src)
-            elif src not in unis[i["name"]][1]:
-                unis[i["name"]] = (unis[i["name"]][0], unis[i["name"]][1] + " + " + src)
-        if unis:
-            out.append((a["name"], a["last_year"], unis))
-    return out
 
 
 def venue_only(title):
@@ -149,59 +113,67 @@ def merge_flag(unis):
     return n, "yes" if n >= MERGE_UNIVERSITIES and not orcid else ""
 
 
-def academic_rows(db, doi_a, doi_b, earlier, profs):
-    """The shared columns (copying_paper .. last_published) for every Western academic on the copying paper."""
+def academic_rows(db, doi_a, doi_b, earlier, profs, all_authors=False):
+    """The shared columns (copying_paper .. last_published, plus the check: author_check, now_at, check_basis
+    when there is one) for every Western academic on the copying paper (gi_affiliations.western_academics());
+    all_authors: also the universities a check says don't count."""
     sides, note = copying_sides(earlier)
     rows, seen = [], set()
     for s in sides:
         doi = doi_a if s == "a" else doi_b
         prof = dict(profs.get((doi or "").lower(), []))
-        for name, last_year, unis in western_academics(db, doi):
-            n, merge = merge_flag(unis)
-            for uni, (country, src) in unis.items():
-                if (name, uni) in seen:      # an author of both papers (order unknown): listed once, under A
-                    continue
+        for name, last_year, unis in ga.western_academics(db, doi):
+            n, merge = merge_flag({u[0]: (u[1], u[2]) for u in unis})
+            for uni, country, src, check, counts in unis:
+                if (name, uni) in seen or not (counts or all_authors):   # an author of both papers (order
+                    continue                                              # unknown): listed once, under A
                 seen.add((name, uni))
                 rows.append({"copying_paper": s.upper() + note, "author": name, "university": uni,
                              "country": country, "source": src, "n_universities": n, "likely_merge": merge,
-                             "orcid_professor_post": prof.get(name, ""), "last_published": last_year or ""})
+                             "orcid_professor_post": prof.get(name, ""), "last_published": last_year or "",
+                             "check": check})
     return rows
+
+
+def reported_cases(db):
+    """GI-NN of every case reported: a "reported" date in the site's cases.json, or a send in Sent Mail / a
+    notes.md ## Sent entry in gi_reports.py's case_reports (as of its last sync)."""
+    out = set()
+    if SITE_CASES.exists():
+        out |= {c for c, e in json.loads(SITE_CASES.read_text(encoding="utf-8")).items() if e.get("reported")}
+    try:
+        out |= {c for c, sends, noted in db.execute("select case_name, sends, noted_audiences from case_reports")
+                if sends or noted}
+    except sqlite3.OperationalError:     # gi_reports.py never synced
+        pass
+    return out
 
 
 def cmd_cases(db, args):
     import gi_review_cli as cli
     import gi_write_pages as pages
-    queue = cli.load_queue(db, order="affiliation", western_only=True)
+    queue = cli.load_queue(db, order="affiliation", western_only=not args.all_authors)
     medical = cli.medical_pairs(db, queue)
     profs = ga.doi_professors(db, [d for r in queue for d in (r["doi_a"], r["doi_b"])])
     import gi_case_findings
-    checks = {}
-    if AUTHOR_CHECKS.exists():
-        for c in json.loads(AUTHOR_CHECKS.read_text(encoding="utf-8")):
-            checks[(c["case"], c["author"], c["university"])] = c
-    looked_at = set()
-    if LOOKED_AT.exists():
-        looked_at = {line.split("#")[0].strip() for line in LOOKED_AT.read_text(encoding="utf-8").splitlines()}
+    reported = reported_cases(db)
     rows = []
     for r in queue:
         if r["ai_type"] in NOT_COPYING and not args.all_types:
             continue
         if r["ai_decision"] != "problem" and not args.all_decisions:
             continue
-        if f"GI-{r['page_number']:02d}" in looked_at:
+        if f"GI-{r['page_number']:02d}" in reported and not args.include_reported:
             continue
         titles = {s: cli.paper_info(r["library"], r[f"paper_{s}"])[0] for s in "ab"}
         case = f"GI-{r['page_number']:02d}"
         prepped = gi_case_findings.findings_path(case).exists()
-        for row in academic_rows(db, r["doi_a"], r["doi_b"], pages.earlier_side(r), profs):
+        for row in academic_rows(db, r["doi_a"], r["doi_b"], pages.earlier_side(r), profs, args.all_authors):
             side = row["copying_paper"][0].lower()
-            check = checks.get((case, row["author"], row["university"]), {})
-            if not args.all_authors and (check.get("verdict") in NOT_WESTERN or (
-                    check.get("verdict") == "moved" and check.get("now_country") not in ga.TARGET_COUNTRIES)):
-                continue
+            check = dict(row.pop("check") or {})
             now_at = ", ".join(x for x in (check.get("now_at"), check.get("now_country")) if x)
             row.update(author_check=check.get("verdict") or ("untraced" if prepped else "not prepped"),
-                       now_at=now_at, check_basis=check.get("basis", ""))
+                       now_at=now_at, check_basis=check.get("basis") or "")
             field, subfield = subject(db, r[f"doi_{side}"])
             rows.append({"case": case, "copying_paper": row["copying_paper"],
                          "title": titles[side], "subject": field, "subfield": subfield, "type": r["ai_type"] or "",
@@ -244,6 +216,7 @@ def cmd_unobtainable(db, args):
         tier, lead_rank = rank.get(int(r["pair_id"]), ("", ""))
         for row in academic_rows(db, r["doi_a"], r["doi_b"], earlier, profs):
             side = row["copying_paper"][0].lower()
+            row.pop("check")
             field, subfield = subject(db, r[f"doi_{side}"])
             rows.append({"pair_id": r["pair_id"], "lead_rank": lead_rank, "tier": tier,
                          "copying_paper": row["copying_paper"], "title": r[f"title_{side}"].strip(),
@@ -267,15 +240,19 @@ def main():
     ap.add_argument("--all-decisions", action="store_true",
                     help="cases: keep cases the agent called no problem or unsure, or hasn't reviewed")
     ap.add_argument("--all-authors", action="store_true",
-                    help="cases: keep academics the case agent found aren't Western (NOT_WESTERN)")
+                    help="cases: keep academics an author check found aren't Western (gi_affiliations.NOT_WESTERN)")
+    ap.add_argument("--include-reported", action="store_true",
+                    help="cases: keep cases already reported (reported_cases)")
     ap.add_argument("--all-tiers", action="store_true", help="unobtainable: keep tier 5 (UNIDENTIFIED_TIER)")
     ap.add_argument("--keep-proceedings", action="store_true",
                     help="unobtainable: keep front-matter and volume-against-volume pairs (proceedings_noise)")
     ap.add_argument("--screen", type=Path, default=SCREEN, help="unobtainable: the screen TSV")
     ap.add_argument("--min-pct", type=float, default=15, help="unobtainable: larger GI 5-gram share at least this")
     args = ap.parse_args()
-    db = sqlite3.connect(f"file:{args.db}?mode=ro", uri=True)
+    db = sqlite3.connect(args.db, timeout=300)      # not read-only: the agent's author checks are synced first
     db.row_factory = sqlite3.Row
+    for p in ga.sync_agent_checks(db):
+        print(f"  ! {p}")
     fields, rows, key = {"cases": cmd_cases, "unobtainable": cmd_unobtainable}[args.command](db, args)
     with open(args.out, "w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fields)

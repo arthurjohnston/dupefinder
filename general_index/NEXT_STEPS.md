@@ -4,6 +4,19 @@ Handoff for the next session, written 2026-10-06 ~05:30 after the overnight run.
 (every measurement, each filter rule and why it exists, dead ends) is in `PILOT_FINDINGS.md`; this
 file is the short version.
 
+## Done: one source of truth for who is Western (2026-11-08)
+
+`author_checks` in gi.sqlite3 holds what a case check established about a copying paper's authors (merge,
+move, byline outside the West, ...), on top of the OpenAlex/ORCID cache. `gi_affiliations.western_universities()`
+is the one rule, applied by `doi_scores()`, so the review tool's `--western-only` and order, the paper-mill
+rule and `gi_western_csv.py` all agree: `gi_review_cli.py --western-only --ai-decision problem --ai-type
+cross-author,data` shows exactly the cases list's cases, in its order. The case agent writes
+`data/dupe_publisher/GI-NN/author_checks.json` (prep step 3 in gi-cases.md); the agent's rows mirror those
+files (synced when the review tool or the CSV starts, or `gi_affiliations.py checks`). Your own:
+`gi_affiliations.py check GI-NN "Author" VERDICT ...`, which win over the agent's. The old
+data/western_author_checks.json was written out as 117 case files and removed; "looked at" is now a review
+flag (`gi_review_cli.py --looked-at GI-NN`; GI-921 moved over, western_cases_looked_at.txt removed).
+
 ## Done: emails to the later authors' current institutions (2026-10-26 to 2026-10-28)
 
 Institution emails now go to both the institution on the copying article's byline and each later author's

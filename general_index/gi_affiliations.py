@@ -37,6 +37,18 @@ Usage:
   gi_affiliations.py raw-strings [--all]                     (oa_authorships.raw_university, offline: see below)
   gi_affiliations.py titles [--max-calls 1000] [--workers 4] [--limit N]   (no-DOI papers: see below)
   gi_affiliations.py coverage                                (how many leads' papers have a university, offline)
+  gi_affiliations.py checks [GI-NN ...]                      (sync the agent's author checks, then list them)
+  gi_affiliations.py check GI-NN "Author" VERDICT [--university U] [--now-at X --now-country CC] [--basis ...]
+                                                             (record your own check of one author)
+
+Author checks (author_checks): the cache says who an author probably is; reading a case can establish otherwise
+(the Western university is an OpenAlex merge, the author moved, the byline is somewhere else entirely). A check
+is per copying paper and author (optionally one of the author's universities), by the case agent or by you, and
+it overrides the cache for that paper: western_universities() is the one rule for who is Western, and
+doi_scores() applies it, so every rank -- the review tool's --western-only and order, gi_western_csv.py, the
+paper-mill rule -- agrees. The agent can't write gi.sqlite3: it writes data/dupe_publisher/GI-NN/
+author_checks.json, which sync_agent_checks() loads (the review tool, gi_prep_batch.py and gi_western_csv.py
+run it); `check` records yours, which win over the agent's.
 
 raw_university: ~9% of the leads' later papers print an affiliation OpenAlex never matched to an institution
 (raw_affiliation_strings only). For an authorship with no institution typed 'education', it holds the first raw
@@ -109,6 +121,17 @@ create table if not exists oa_title_matches (   -- `titles`: an OpenAlex work fo
     query text, n_results integer,
     matched integer,            -- 1: accepted (its authorships are in oa_authorships under `key`), 0: not
     oa_id text, oa_doi text, oa_title text, similarity real, fetched_at text);
+create table if not exists author_checks (   -- what a check of a case established about a copying paper's
+                                            --   author: corrections on top of the cache above, never rebuilt
+    doi text not null,          -- the copying (later) paper, lower case; both papers' when the order is unknown
+    author text not null,       -- as printed (matched to oa_authorships by name: same_name())
+    university text not null default '',   -- '' the author as a whole, or one university the cache lists
+    verdict text not null,      -- CHECK_VERDICTS
+    now_at text, now_country text, basis text,
+    case_name text,             -- GI-NN it was checked for
+    checked_by text not null,   -- 'agent' (synced from the case folder's author_checks.json) or 'you'
+    checked_at text,
+    primary key (doi, author, university, checked_by));
 create table if not exists orcid_employments (
     orcid text primary key,
     current text,               -- json [{name, country}]: employments with no end date
@@ -138,6 +161,26 @@ ACADEMIC_NAME = re.compile(r"univ|college|hochschule|polytechn|politecnic|école
 # emeritus / retired / former one is no longer working
 PROFESSOR_ROLE = re.compile(r"\bprof|lecturer|\breader\b|dozent|docent|catedr|ma[iî]tre de conf", re.I)
 NOT_WORKING = re.compile(r"emerit|retired|former|honorary|visiting", re.I)
+
+# Author checks (author_checks): what reading a case established about one of the copying paper's authors, which
+# overrides the cache for that paper. A row names one university the cache lists, or none (the author as a whole);
+# the more specific row wins, and yours over the agent's.
+CHECK_VERDICTS = {
+    "confirmed": "the author, at a Western university now (now_at / now_country when not the listed one)",
+    "byline": "there on the article; where they are now unknown",
+    "moved": "the author, now at now_at, now_country",
+    "untraced": "nothing established either way",
+    "elsewhere": "the author is at another, non-Western institution: the listed one is an OpenAlex merge",
+    "name only": "a namesake at the listed university, nothing linking them to the author",
+    "on earlier paper": "the order reads the other way: a source author, not a copying one",
+    "different person": "the listed record is someone else",
+    "not on byline": "every byline institution is outside TARGET_COUNTRIES, nothing links the author to the listed one",
+}
+NOT_WESTERN = ("elsewhere", "name only", "on earlier paper", "different person", "not on byline")
+# the status an author takes when checks leave them no Western university
+DROPPED_STATUS = {"elsewhere": "academic", "not on byline": "academic", "moved": "academic"}
+ORCID_SRC, OPENALEX_SRC, CHECK_SRC = "ORCID current job", "OpenAlex last known", "author check"
+CHECKS_FILE = "author_checks.json"     # the case agent's hand-off, in data/dupe_publisher/GI-NN/
 # a university or degree-granting college in a raw affiliation string (raw_university). Checked by hand on samples
 # of the unmatched strings: research institutes, academies of sciences, learned colleges ("College of Physicians")
 # and street names ("College St") stay out; Indian engineering/pharmacy institutes and a professor's or student's
@@ -571,8 +614,231 @@ def author_status(author, current_jobs):
 STATUS_RANK = {"target": TARGET, "academic": ACADEMIC, "unknown": UNKNOWN, "known": OTHER}
 
 
+def name_key(name):
+    """A name's words, lower case, accents off, "Last, First" flipped: 'Rahérison, Chantal' -> ['chantal', 'raherison']."""
+    import unicodedata
+    s = "".join(ch for ch in unicodedata.normalize("NFKD", name or "") if not unicodedata.combining(ch)).lower()
+    if "," in s:
+        last, _, first = s.partition(",")
+        s = f"{first} {last}"
+    return re.findall(r"[a-z]+", s)
+
+
+def same_name(a, b, loose=True):
+    """The same words; loose: or the same surname and first initial ('M. V. Lapresa-Alcalde')."""
+    ka, kb = name_key(a), name_key(b)
+    if not ka or not kb:
+        return False
+    return ka == kb or (loose and ka[-1] == kb[-1] and ka[0][0] == kb[0][0])
+
+
+def assign_checks(checks, names):
+    """{index into names: [checks]}: each check goes to the author of that name -- exact matches, else loose ones
+    (same_name()). OpenAlex sometimes lists one person twice on a paper, so every match takes it as long as the
+    matches are all one name; a check that matches no one, or two different names loosely, is left out."""
+    out = {}
+    for c in checks:
+        hits = [i for i, n in enumerate(names) if same_name(c["author"], n, loose=False)]
+        if not hits:
+            hits = [i for i, n in enumerate(names) if same_name(c["author"], n)]
+        if len({tuple(name_key(names[i])) for i in hits}) == 1:
+            for i in hits:
+                out.setdefault(i, []).append(c)
+    return out
+
+
+def pick_check(checks, university):
+    """The check that applies to one university: the one naming it, else the author-wide one; yours first."""
+    for want in (university, ""):
+        rows = [c for c in checks if (c["university"] or "") == want]
+        if rows:
+            return min(rows, key=lambda c: c["checked_by"] != "you")
+    return None
+
+
+def check_counts(check):
+    """Whether a university still counts as Western under its check (None: no check, it does)."""
+    if check is None:
+        return True
+    if check["verdict"] in NOT_WESTERN:
+        return False
+    if check["verdict"] == "moved":
+        return (check["now_country"] or "").upper() in TARGET_COUNTRIES
+    return True
+
+
+def western_universities(author, jobs, checks=()):
+    """[(university, country, source, check, counts)] for one author: each Western university the cache gives
+    them (an active academic: author_status() 'target'; OpenAlex last known institutions typed education, and
+    current ORCID jobs with an academic name; one from both sources is "OpenAlex last known + ORCID current
+    job"), with the check that applies (pick_check()) and whether it still counts (check_counts()). When none
+    counts and a check confirms the author at a Western university (confirmed / moved with now_country in
+    TARGET_COUNTRIES), that one is added. This is the one rule for who is Western: doi_scores() (so every rank,
+    the review tool's --western-only and its order) and gi_western_csv.py both use it."""
+    unis = {}
+    if author_status(author, jobs)[0] == "target":
+        insts = [(i, OPENALEX_SRC) for i in json.loads(author["institutions"] or "[]")
+                 if i.get("type") in ACADEMIC_TYPES]
+        insts += [(j, ORCID_SRC) for j in jobs or [] if ACADEMIC_NAME.search(j.get("name") or "")]
+        for i, src in insts:
+            if (i.get("country") or "").upper() not in TARGET_COUNTRIES:
+                continue
+            if i["name"] not in unis:
+                unis[i["name"]] = [i.get("country"), src]
+            elif src not in unis[i["name"]][1]:
+                unis[i["name"]][1] += " + " + src
+    out = []
+    for name, (country, src) in unis.items():
+        c = pick_check(checks, name)
+        out.append((name, country, src, c, check_counts(c)))
+    if not any(u[4] for u in out):
+        for c in sorted(checks, key=lambda c: c["checked_by"] != "you"):
+            country = (c["now_country"] or "").upper()
+            if c["verdict"] in ("confirmed", "moved") and country in TARGET_COUNTRIES:
+                out.append((c["now_at"] or c["university"] or "?", country, CHECK_SRC, c, True))
+                break
+    return out
+
+
+def load_author_checks(db, dois):
+    """{doi (lower): [author_checks rows]}."""
+    ensure_tables(db)
+    dois = sorted({(d or "").lower() for d in dois if d})
+    out = {}
+    for i in range(0, len(dois), CHUNK):
+        chunk = dois[i:i + CHUNK]
+        for r in db.execute(f"select * from author_checks where doi in ({_qs(chunk)})", chunk):
+            out.setdefault(r["doi"], []).append(r)
+    return out
+
+
+def checked_status(author, jobs, status, why, checks):
+    """(status, reason) after an author's checks: 'target' when a university still counts (western_universities()),
+    else, for an author the cache had as target, DROPPED_STATUS for the verdict ('known' by default)."""
+    if not checks:
+        return status, why
+    unis = western_universities(author, jobs, checks)
+    keep = [u for u in unis if u[4]]
+    if keep:
+        name, country, src, c, _ = keep[0]
+        if status == "target" and src != CHECK_SRC:
+            return status, why
+        return "target", f"author check: {c['verdict']}, {name}, {country}" + (f" ({c['basis']})" if c["basis"] else "")
+    if status != "target":
+        return status, why
+    c = next((u[3] for u in unis if u[3]), None) or checks[0]
+    return (DROPPED_STATUS.get(c["verdict"], "known"),
+            f"author check: {c['verdict']}" + (f", now {c['now_at']}" if c["now_at"] else "")
+            + (f" ({c['basis']})" if c["basis"] else "") + f"; cache had {why}")
+
+
+def western_academics(db, doi, checks=None):
+    """[(name, last_year, [western_universities() tuples])] for each author of doi with any row (counting or not;
+    callers filter on counts), in byline order. checks: load_author_checks() for doi, loaded when not given."""
+    doi = (doi or "").lower()
+    if checks is None:
+        checks = load_author_checks(db, [doi]).get(doi, [])
+    rows = db.execute("""select coalesce(s.name, au.name) name, au.*, o.current from oa_authorships s
+                         join oa_authors au using (author_id) left join orcid_employments o on o.orcid = au.orcid
+                         where s.doi = ? order by s.position""", (doi,)).fetchall()
+    assigned = assign_checks(checks, [r["name"] for r in rows])
+    out = []
+    for i, a in enumerate(rows):
+        jobs = json.loads(a["current"]) if a["current"] is not None else None
+        unis = western_universities(a, jobs, assigned.get(i, []))
+        if unis:
+            out.append((a["name"], a["last_year"], unis))
+    return out
+
+
+def case_copying_dois(db, case):
+    """(page row, [copying paper DOI(s), lower case]) for GI-NN: the later paper's, both with the order unknown."""
+    import gi_write_pages
+    n = int(case.upper().removeprefix("GI-"))
+    f = db.execute("select * from fulltext where page_number = ?", (n,)).fetchone()
+    if not f:
+        return None, []
+    earlier = gi_write_pages.earlier_side(f)
+    sides = {"a": ["b"], "b": ["a"]}.get(earlier, ["a", "b"])
+    return f, [(f[f"doi_{s}"] or "").lower() for s in sides if f[f"doi_{s}"]]
+
+
+def check_doi(db, dois, author):
+    """The copying DOI an author's check belongs under: the one whose byline has that name, else every one."""
+    for loose in (False, True):
+        hits = [d for d in dois if any(same_name(author, n, loose) for (n,) in db.execute(
+            "select coalesce(s.name, au.name) from oa_authorships s left join oa_authors au using (author_id) "
+            "where s.doi = ?", (d,)))]
+        if hits:
+            return hits
+    return dois
+
+
+def check_rows(db, case, entries):
+    """({(doi, author, university): (verdict, now_at, now_country, basis)}, [problems]) for case's entries
+    ([{author, university?, verdict, now_at?, now_country?, basis?}]), each under its copying DOI (check_doi())."""
+    _, dois = case_copying_dois(db, case)
+    if not dois:
+        return {}, [f"{case}: no result page with a DOI"]
+    rows, problems = {}, []
+    for e in entries:
+        if not isinstance(e, dict) or not (e.get("author") or "").strip():
+            problems.append(f"{case}: an entry with no author: {e!r}")
+            continue
+        if e.get("verdict") not in CHECK_VERDICTS:
+            problems.append(f"{case}: {e['author']}: unknown verdict {e.get('verdict')!r}")
+            continue
+        for d in check_doi(db, dois, e["author"]):
+            rows[(d, e["author"].strip(), (e.get("university") or "").strip())] = (
+                e["verdict"], e.get("now_at") or "", (e.get("now_country") or "").upper(), e.get("basis") or "")
+    return rows, problems
+
+
+def sync_agent_checks(db, report_dir=None):
+    """Make author_checks' agent rows exactly what the case folders' author_checks.json files say (the case
+    agent's hand-off: it can't write gi.sqlite3). A paper shared by two cases takes the first case's entry. Your
+    rows are never touched. Writes only what changed, so it's cheap to run every time. Returns the problems."""
+    import gi_case_findings
+    ensure_tables(db)
+    base = Path(report_dir or gi_case_findings.REPORT_DIR)
+    want, problems = {}, []
+    for path in sorted(base.glob(f"GI-*/{CHECKS_FILE}")):
+        try:
+            entries = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError) as exc:
+            problems.append(f"{path}: {exc}")
+            continue
+        if not isinstance(entries, list):
+            problems.append(f"{path}: not a list")
+            continue
+        rows, probs = check_rows(db, path.parent.name, entries)
+        problems += probs
+        for k, v in rows.items():
+            want.setdefault(k, (*v, path.parent.name))
+    have = {tuple(r[:3]): tuple(r[3:]) for r in db.execute(
+        "select doi, author, university, verdict, now_at, now_country, basis, case_name from author_checks "
+        "where checked_by = 'agent'")}
+    gone = [k for k in have if k not in want]
+    new = [(*k, *v[:4], v[4], "agent", _now()) for k, v in want.items() if have.get(k) != v]
+    if gone or new:
+        db.executemany("delete from author_checks where doi = ? and author = ? and university = ? "
+                       "and checked_by = 'agent'", gone)
+        db.executemany("insert or replace into author_checks values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", new)
+        db.commit()
+    return problems
+
+
+def case_checks(db, case):
+    """author_checks rows for case's copying paper(s), whichever case they were recorded under."""
+    ensure_tables(db)
+    _, dois = case_copying_dois(db, case)
+    return db.execute(f"select * from author_checks where doi in ({_qs(dois)}) order by author, university, "
+                      f"checked_by", dois).fetchall() if dois else []
+
+
 def doi_scores(db, dois):
-    """{doi (lower): (rank, [(name, status, reason)])} for the given DOIs, from the cache only."""
+    """{doi (lower): (rank, [(name, status, reason)])} for the given DOIs, from the cache, with the author checks
+    applied (checked_status())."""
     ensure_tables(db)
     dois = sorted({(d or "").lower() for d in dois if d})
     out = {d: (UNKNOWN, []) for d in dois}
@@ -586,12 +852,20 @@ def doi_scores(db, dois):
                                from oa_authorships s left join oa_authors au using (author_id)
                                left join orcid_employments o on o.orcid = au.orcid
                                where s.doi in ({_qs(chunk)}) order by s.doi, s.position""", chunk).fetchall()
+    checks = load_author_checks(db, dois)
+    assigned = {}
+    for d, cs in checks.items():
+        names = [r["sname"] or r["name"] for r in rows if r["doi"] == d]
+        positions = [r["position"] for r in rows if r["doi"] == d]
+        assigned.update({(d, positions[i]): c for i, c in assign_checks(cs, names).items()})
     by_doi = {}
     for r in rows:
         if r["author_id"] is None:
             st, why = "unknown", "no OpenAlex author record"
         else:
-            st, why = author_status(r, json.loads(r["current"]) if r["current"] is not None else None)
+            jobs = json.loads(r["current"]) if r["current"] is not None else None
+            st, why = author_status(r, jobs)
+            st, why = checked_status(r, jobs, st, why, assigned.get((r["doi"], r["position"]), []))
         by_doi.setdefault(r["doi"], []).append((r["sname"] or r["name"] or "?", st, why))
     for d in dois:
         authors = by_doi.get(d, [])
@@ -961,11 +1235,52 @@ def cmd_backfill(db, args):
              f"; stopped: {fetcher.stopped} (rerun to continue)" if fetcher.stopped else "")
 
 
+def cmd_checks(db, args):
+    """Sync the agent's author_checks.json files, then list the checks (for the given cases, or a count by verdict)."""
+    for p in sync_agent_checks(db):
+        print(f"  ! {p}")
+    if not args.cases:
+        for v, by, n in db.execute("select verdict, checked_by, count(*) from author_checks group by 1, 2 "
+                                   "order by 2, 3 desc"):
+            print(f"  {by:5} {v:17} {n}")
+        return
+    for case in args.cases:
+        case = f"GI-{int(case.upper().removeprefix('GI-')):02d}"
+        print(case)
+        for r in case_checks(db, case):
+            now = ", ".join(x for x in (r["now_at"], r["now_country"]) if x)
+            print(f"  {r['checked_by']:5} {r['verdict']:17} {r['author']}" + (f" @ {r['university']}" if r["university"]
+                  else "") + (f" -> now {now}" if now else "") + (f" -- {r['basis']}" if r["basis"] else ""))
+
+
+def cmd_check(db, args):
+    """Record your own check of one author and university (replacing your earlier one for them)."""
+    if len(args.cases) != 3:
+        sys.exit('usage: gi_affiliations.py check GI-NN "Author Name" VERDICT [--university U] [--now-at X '
+                 '--now-country CC] [--basis "..."]   (VERDICT: ' + ", ".join(CHECK_VERDICTS) + ")")
+    case, name, verdict = args.cases
+    case = f"GI-{int(case.upper().removeprefix('GI-')):02d}"
+    ensure_tables(db)
+    rows, problems = check_rows(db, case, [dict(author=name, university=args.university, verdict=verdict,
+                                                now_at=args.now_at, now_country=args.now_country, basis=args.basis)])
+    if problems:
+        sys.exit("\n".join(problems))
+    db.executemany("insert or replace into author_checks values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                   [(*k, *v, case, "you", _now()) for k, v in rows.items()])
+    db.commit()
+    args.cases = [case]
+    cmd_checks(db, args)
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("command", choices=["fetch", "leads", "backfill", "show", "summary", "raw-strings", "titles",
-                                        "coverage"])
-    ap.add_argument("cases", nargs="*", help="show: GI-NN ...")
+                                        "coverage", "checks", "check"])
+    ap.add_argument("cases", nargs="*", help="show / checks: GI-NN ...; check: GI-NN AUTHOR VERDICT")
+    ap.add_argument("--university", help="check: the one university (as the cache names it) the verdict is about")
+    ap.add_argument("--now-at", help="check: where the author is now (confirmed / moved)")
+    ap.add_argument("--now-country", help="check: its ISO country code (confirmed / moved)")
+    ap.add_argument("--basis", help="check: the evidence")
     ap.add_argument("--db", default=str(gi_db.DB_PATH))
     ap.add_argument("--max-calls", type=int, default=3000,
                     help="fetch / leads / backfill / titles: OpenAlex calls at most (free: 10,000 credits a day; "
@@ -992,7 +1307,7 @@ def main():
         args.max_calls = 1000         # the free day; each search is $0.001 past it
     {"fetch": cmd_fetch, "leads": cmd_leads, "backfill": cmd_backfill, "show": cmd_show,
      "summary": cmd_summary, "raw-strings": cmd_raw_strings, "titles": cmd_titles,
-     "coverage": cmd_coverage}[args.command](db, args)
+     "coverage": cmd_coverage, "checks": cmd_checks, "check": cmd_check}[args.command](db, args)
 
 
 if __name__ == "__main__":

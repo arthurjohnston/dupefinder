@@ -47,7 +47,11 @@ the later paper's authors are now (gi_affiliations.py: an author still
 publishing, at a Western (US, Canadian, European, Japanese, Australian or NZ) university, first; then at a
 university elsewhere; then no data; then no author active in academia), within the agent's problem calls and within the rest separately; it fetches any missing
 OpenAlex/ORCID data first. --western-only keeps only pairs whose copying (later) paper has such an author; with
-the order unknown, either paper will do. --no-medical drops pairs where
+the order unknown, either paper will do. Both read the author checks too (gi_affiliations' author_checks: what the
+case agent, or you with `gi_affiliations.py check`, established about an author -- an OpenAlex merge, a move, a
+byline outside the West), synced from the case folders when the tool starts, so a case the checks leave without
+a Western academic drops out of --western-only exactly as it drops out of gi_western_csv.py's list. --looked-at
+GI-NN,... marks pages looked at without a review; the queue skips them like reviewed ones. --no-medical drops pairs where
 either paper's OpenAlex primary topic is in the Health Sciences domain (medicine, nursing, dentistry, health
 professions); a paper with no cached OpenAlex record (gi_metadata.py fetch) doesn't count. --order professor ranks by the
 authors above everything else: a later paper with an author whose ORCID lists a current (not emeritus)
@@ -117,7 +121,7 @@ problem on a pair already reported (--gi NN --include-reviewed) offers t to take
 cases.json entry removed and pushed, the report files moved to GI-NN/withdrawn/ (gi_report_case.take_down());
 emails and a PubPeer post already sent are yours to withdraw.
 
-Usage: gi_review_cli.py [--gi 12,40] [--ai-type cross-author,data] [--ai-decision problem] [--include-reviewed] [--order affiliation|professor|publisher|overlap] [--western-only] [--no-medical] [--pdfs] [--no-open] [--no-agent] [--no-lookahead] [--pages-dir data/fulltext_pages_s16] [--sample-rate 8]
+Usage: gi_review_cli.py [--gi 12,40] [--ai-type cross-author,data] [--ai-decision problem] [--include-reviewed] [--looked-at GI-NN,...] [--order affiliation|professor|publisher|overlap] [--western-only] [--no-medical] [--pdfs] [--no-open] [--no-agent] [--no-lookahead] [--pages-dir data/fulltext_pages_s16] [--sample-rate 8]
                         [--db data/gi.sqlite3]
 """
 import argparse
@@ -206,6 +210,10 @@ FLAGS = {"m": ("paper mill", "both papers look like paper-mill output"),
          "r": ("already retracted", "the copying paper is already retracted, nothing to report"),
          "w": ("not worth reporting", "real cross-author copying, too minor to complain about")}
 
+# a pair you've looked at without reviewing it (e.g. reported together with another case): --looked-at sets
+# it, and the queue skips it like a reviewed pair (--include-reviewed shows it)
+LOOKED_AT = "looked at"
+
 # the w quick key: problem, this type, this severity; no report, the site page published as not reported
 NOT_WORTH = ("cross-author copying", "low")
 
@@ -214,7 +222,8 @@ FLAGS_DDL = """create table if not exists review_flags (   -- your extra judgeme
     flag text,                    -- 'paper mill': you think both papers came from a paper mill;
                                   -- 'not qualified': you can't judge the content (e.g. higher-level math);
                                   -- 'already retracted': real copying, but the copying paper is retracted;
-                                  -- 'not worth reporting': real copying, too minor to report
+                                  -- 'not worth reporting': real copying, too minor to report;
+                                  -- 'looked at': looked at without a review (--looked-at), skipped by the queue
     flagged_at text,
     primary key (pair_lo, pair_hi, flag)
 );"""
@@ -305,6 +314,13 @@ order by case when r.ai_decision = 'problem' and r.ai_type in ('cross-author cop
 """
 
 
+def looked_at_pairs(db):
+    """{(pair_lo, pair_hi)} of the pairs marked looked at (--looked-at): the queue skips them like reviewed ones."""
+    if not db.execute("select 1 from sqlite_master where name = 'review_flags'").fetchone():
+        return set()
+    return {tuple(x) for x in db.execute("select pair_lo, pair_hi from review_flags where flag = ?", (LOOKED_AT,))}
+
+
 def load_queue(db, gi=None, include_reviewed=False, ai_types=None, ai_decisions=None, order="publisher",
                western_only=False, groups=None, no_medical=False):
     """ai_types / ai_decisions: lists of AI_TYPES / AI_DECISIONS names to keep ('none': the agent hasn't
@@ -325,7 +341,9 @@ def load_queue(db, gi=None, include_reviewed=False, ai_types=None, ai_decisions=
     if ai_decisions:
         keep = {AI_DECISIONS[d] for d in ai_decisions}
         rows = [r for r in rows if r["ai_decision"] in keep]
-    rows = [r for r in rows if include_reviewed or r["human_decision"] is None]
+    if not include_reviewed:
+        looked = looked_at_pairs(db)
+        rows = [r for r in rows if r["human_decision"] is None and pair_key(r) not in looked]
     if no_medical:
         medical = medical_pairs(db, rows)
         rows = [r for r in rows if pair_key(r) not in medical]
@@ -1324,7 +1342,11 @@ def main():
                     help="only pairs the agent gave these types, comma-separated: " + ", ".join(AI_TYPES))
     ap.add_argument("--ai-decision", type=lambda v: v.split(","), default=[],
                     help="only pairs with these agent decisions: " + ", ".join(AI_DECISIONS))
-    ap.add_argument("--include-reviewed", action="store_true", help="also pairs you've already reviewed")
+    ap.add_argument("--include-reviewed", action="store_true",
+                    help="also pairs you've already reviewed or marked looked at")
+    ap.add_argument("--looked-at", type=lambda s: [int(x.strip().upper().removeprefix("GI-")) for x in s.split(",")],
+                    help="mark these pages looked at (GI-921,GI-40) -- the queue then skips them as if reviewed -- "
+                         "and exit")
     ap.add_argument("--pdfs", action="store_true", help="also open both PDFs for every pair (p at the prompt "
                                                         "opens them for one pair)")
     ap.add_argument("--no-open", action="store_true", help="don't open anything automatically")
@@ -1355,6 +1377,19 @@ def main():
     db.row_factory = sqlite3.Row
     if not db.execute("select 1 from sqlite_master where name = 'review_flags'").fetchone():
         db.executescript(FLAGS_DDL)
+    if args.looked_at:
+        for n in args.looked_at:
+            f = db.execute("select pair_lo, pair_hi from fulltext where page_number = ?", (n,)).fetchone()
+            if not f:
+                print(f"GI-{n:02d}: no result page")
+                continue
+            db.execute("insert or ignore into review_flags values (?, ?, ?, datetime('now'))", (*f, LOOKED_AT))
+            print(f"GI-{n:02d}: marked looked at")
+        db.commit()
+        return
+    import gi_affiliations
+    for problem in gi_affiliations.sync_agent_checks(db):   # the case agent's author checks, before any ranking
+        print(f"  ! {problem}")
     for name, value, known in (("--ai-type", args.ai_type, AI_TYPES), ("--ai-decision", args.ai_decision, AI_DECISIONS)):
         bad = [v for v in value if v not in known]
         if bad:
