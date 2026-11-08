@@ -3075,5 +3075,30 @@
   "matched_words": 534,
   "runs": 24,
   "longest": 37
+ },
+ "GI-906": {
+  "file": "GI-906.html",
+  "reported": "2026-11-08",
+  "published": "2026-11-08",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "RAGE and TLRs as Key Targets for Antiatherosclerotic Therapy",
+   "year": 2018,
+   "doi": "10.1155/2018/7675286",
+   "pct": 23.0,
+   "journal": "BioMed Research International"
+  },
+  "earlier": {
+   "title": "The Role of TLR2, TLR4, and TLR9 in the Pathogenesis of Atherosclerosis",
+   "year": 2016,
+   "doi": "10.1155/2016/1532832",
+   "pct": 18.0,
+   "journal": "International Journal of Inflammation"
+  },
+  "matched_words": 923,
+  "runs": 35,
+  "longest": 84
  }
 }
