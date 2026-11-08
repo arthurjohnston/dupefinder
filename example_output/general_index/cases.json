@@ -2900,5 +2900,30 @@
   "matched_words": 1798,
   "runs": 74,
   "longest": 164
+ },
+ "GI-922": {
+  "file": "GI-922.html",
+  "reported": null,
+  "published": "2026-11-08",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Emerging Molecular Targets for Brain Repair after Stroke",
+   "year": 2013,
+   "doi": "10.1155/2013/473416",
+   "pct": 10.0,
+   "journal": "Stroke Research and Treatment"
+  },
+  "earlier": {
+   "title": "Epigenetics: an Expanding New Piece of the Stroke Puzzle",
+   "year": 2011,
+   "doi": "10.1007/s12975-011-0094-0",
+   "pct": 44.0,
+   "journal": "Translational Stroke Research"
+  },
+  "matched_words": 707,
+  "runs": 28,
+  "longest": 53
  }
 }
