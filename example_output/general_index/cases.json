@@ -2875,5 +2875,30 @@
   "sources": 2,
   "union_words": 2352,
   "union_pct": 59.7
+ },
+ "GI-793": {
+  "file": "GI-793.html",
+  "reported": null,
+  "published": "2026-11-08",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Enhancing dissolution profile of diazepam using hydrophilic polymers by solid dispersion technique",
+   "year": 2012,
+   "doi": "10.3329/icpj.v1i12.12453",
+   "pct": 46.0,
+   "journal": "International Current Pharmaceutical Journal"
+  },
+  "earlier": {
+   "title": "Dissolution enhancement of poorly soluble drug by solvent evaporation method using hydrophilic polymer: a solid dispersion technique",
+   "year": 2012,
+   "doi": "10.3329/ijpls.v1i2.12952",
+   "pct": 61.0,
+   "journal": "International Journal of Pharmaceutical and Life Sciences"
+  },
+  "matched_words": 1798,
+  "runs": 74,
+  "longest": 164
  }
 }
