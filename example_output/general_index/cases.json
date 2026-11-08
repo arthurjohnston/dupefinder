@@ -2975,5 +2975,30 @@
   "matched_words": 822,
   "runs": 19,
   "longest": 213
+ },
+ "GI-815": {
+  "file": "GI-815.html",
+  "reported": "2026-11-08",
+  "published": "2026-11-08",
+  "earlier_known": true,
+  "type": "data copying",
+  "data": true,
+  "later": {
+   "title": "Canc Therapy & Oncol Int J Hybrid Approach of Hyperthermia and Controlled Drug Delivery in Cancer: Image Guided Cancer Theranostic Monitoring in Tumor Management",
+   "year": 2018,
+   "doi": "10.19080/ctoij.2018.11.555803",
+   "pct": 30.0,
+   "journal": "Cancer therapy &amp; Oncology International Journal"
+  },
+  "earlier": {
+   "title": "Multifunctional Nanoparticles for Imaging Guided Interventions",
+   "year": 2008,
+   "doi": "10.1038/npre.2008.2190.1",
+   "pct": 30.0,
+   "journal": "Nature Precedings"
+  },
+  "matched_words": 1284,
+  "runs": 41,
+  "longest": 157
  }
 }
