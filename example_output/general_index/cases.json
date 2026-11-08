@@ -2822,5 +2822,30 @@
   "matched_words": 1086,
   "runs": 54,
   "longest": 67
+ },
+ "GI-813": {
+  "file": "GI-813.html",
+  "reported": "2026-11-08",
+  "published": "2026-11-08",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Eosinophilic Colitis: University of Minnesota Experience and Literature Review",
+   "year": 2011,
+   "doi": "10.1155/2011/857508",
+   "pct": 18.0,
+   "journal": "Gastroenterology Research and Practice"
+  },
+  "earlier": {
+   "title": "Eosinophilic colitis",
+   "year": 2009,
+   "doi": "10.3748/wjg.15.2975",
+   "pct": 31.0,
+   "journal": "World Journal of Gastroenterology"
+  },
+  "matched_words": 532,
+  "runs": 27,
+  "longest": 53
  }
 }
