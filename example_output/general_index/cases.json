@@ -2950,5 +2950,30 @@
   "matched_words": 675,
   "runs": 31,
   "longest": 68
+ },
+ "GI-475": {
+  "file": "GI-475.html",
+  "reported": "2026-11-08",
+  "published": "2026-11-08",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Image Fusion || Fusion of Infrared and Visible Images for Robust Person Detection",
+   "year": 2011,
+   "doi": "10.5772/14173",
+   "pct": 9.0,
+   "journal": "Image Fusion"
+  },
+  "earlier": {
+   "title": "Combining Video and Thermal Imagery for Robust Pedestrian Tracking",
+   "year": 2004,
+   "doi": "10.21611/qirt.2004.011",
+   "pct": 41.0,
+   "journal": "Proceedings of the 2004 International Conference on Quantitative InfraRed Thermography"
+  },
+  "matched_words": 822,
+  "runs": 19,
+  "longest": 213
  }
 }
