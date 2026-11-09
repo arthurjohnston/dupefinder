@@ -1635,7 +1635,7 @@
  },
  "GI-50": {
   "file": "GI-50.html",
-  "reported": null,
+  "reported": "2026-10-12",
   "published": "2026-10-30",
   "earlier_known": true,
   "type": "cross-author copying",
@@ -2136,6 +2136,284 @@
   "runs": 58,
   "longest": 244
  },
+ "GI-142": {
+  "file": "GI-142.html",
+  "reported": "2026-11-01",
+  "published": "2026-11-01",
+  "earlier_known": true,
+  "type": "data copying",
+  "data": true,
+  "later": {
+   "title": "Low Cost Synthesis of Single Walled Carbon Nanotubes from Coal Tar Using Arc Discharge Method",
+   "year": 2017,
+   "doi": "10.9790/4861-0901032731",
+   "pct": 72.0,
+   "journal": "IOSR Journal of Applied Physics"
+  },
+  "earlier": {
+   "title": "Optimization of Electrical Parameters for Production of Carbon Nanotubes",
+   "year": 2012,
+   "doi": "10.4236/jmmce.2012.1110095",
+   "pct": 64.0,
+   "journal": "Journal of Minerals and Materials Characterization and Engineering"
+  },
+  "matched_words": 1417,
+  "runs": 43,
+  "longest": 131
+ },
+ "GI-271": {
+  "file": "GI-271.html",
+  "reported": "2026-11-01",
+  "published": "2026-11-01",
+  "earlier_known": true,
+  "type": "data copying",
+  "data": true,
+  "later": {
+   "title": "Mechanical Calculation for Workover String in Highly-Deviated and Horizontal Well",
+   "year": 2015,
+   "doi": "10.3968/8080",
+   "pct": 50.0,
+   "journal": "Advances in Petroleum Exploration and Development"
+  },
+  "earlier": {
+   "title": "Workover String Mechanical Model and Calculation of Slanted and Horizontal Well",
+   "year": 2015,
+   "doi": "10.4236/jamp.2015.35066",
+   "pct": 52.0,
+   "journal": "Journal of Applied Mathematics and Physics"
+  },
+  "matched_words": 1372,
+  "runs": 52,
+  "longest": 161
+ },
+ "GI-247": {
+  "file": "GI-247.html",
+  "reported": "2026-11-01",
+  "published": "2026-11-01",
+  "earlier_known": true,
+  "type": "data copying",
+  "data": true,
+  "later": {
+   "title": "Management of Chest Trauma in Bangladesh Perspective: Experience of a Decade",
+   "year": 2019,
+   "doi": "10.3329/cardio.v12i1.43411",
+   "pct": 51.0,
+   "journal": "Cardiovascular Journal"
+  },
+  "earlier": {
+   "title": "Chest trauma experience over eleven-year period at al-mouassat university teaching hospital-Damascus: a retrospective review of 888 cases",
+   "year": 2012,
+   "doi": "10.1186/1749-8090-7-35",
+   "pct": 48.0,
+   "journal": "Journal of Cardiothoracic Surgery"
+  },
+  "matched_words": 1627,
+  "runs": 62,
+  "longest": 97
+ },
+ "GI-895": {
+  "file": "GI-895.html",
+  "reported": "2026-11-01",
+  "published": "2026-11-01",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Herpes Simplex Virus Infection in Pregnancy",
+   "year": 2012,
+   "doi": "10.1155/2012/385697",
+   "pct": 42.0,
+   "journal": "Infectious Diseases in Obstetrics and Gynecology"
+  },
+  "earlier": {
+   "title": "Herpes simplex virus infection in pregnancy and in neonate: status of art of epidemiology, diagnosis, therapy and prevention",
+   "year": 2009,
+   "doi": "10.1186/1743-422x-6-40",
+   "pct": 24.0,
+   "journal": "Virology Journal"
+  },
+  "matched_words": 1288,
+  "runs": 53,
+  "longest": 73
+ },
+ "GI-259": {
+  "file": "GI-259.html",
+  "reported": "2026-11-01",
+  "published": "2026-11-01",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Radiation-induced effects and the immune system in cancer",
+   "year": 2012,
+   "doi": "10.3389/fonc.2012.00191",
+   "pct": 23.0,
+   "journal": "Frontiers in Oncology"
+  },
+  "earlier": {
+   "title": "The Tumor-Immune Microenvironment and Response to Radiation Therapy",
+   "year": 2010,
+   "doi": "10.1007/s10911-010-9194-9",
+   "pct": 32.0,
+   "journal": "Journal of Mammary Gland Biology and Neoplasia"
+  },
+  "matched_words": 1510,
+  "runs": 59,
+  "longest": 72,
+  "sources": 2,
+  "union_words": 2238,
+  "union_pct": 34.3
+ },
+ "GI-931": {
+  "file": "GI-931.html",
+  "reported": "2026-11-01",
+  "published": "2026-11-01",
+  "earlier_known": true,
+  "type": "data copying",
+  "data": true,
+  "later": {
+   "title": "Vaccination against urinary tract infections caused by E. coli",
+   "year": 2013,
+   "doi": "10.4236/abb.2013.43a064",
+   "pct": 22.0,
+   "journal": "Advances in Bioscience and Biotechnology"
+  },
+  "earlier": {
+   "title": "Uropathogenic Escherichia coli Outer Membrane Antigens Expressed during Urinary Tract Infection",
+   "year": 2007,
+   "doi": "10.1128/iai.00337-07",
+   "pct": 10.0,
+   "journal": "Infection and Immunity"
+  },
+  "matched_words": 648,
+  "runs": 29,
+  "longest": 61
+ },
+ "GI-327": {
+  "file": "GI-327.html",
+  "reported": "2026-11-01",
+  "published": "2026-11-01",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "A Review of Superbug: A Global Threat in Health Care System",
+   "year": 2018,
+   "doi": "10.3329/bjid.v4i1.37678",
+   "pct": 60.0,
+   "journal": "Bangladesh Journal of Infectious Diseases"
+  },
+  "earlier": {
+   "title": "Superbug, an Emerging Global Threat in Current Scenario: A Review",
+   "year": 2016,
+   "doi": "10.20431/2454-9428.0202003",
+   "pct": 69.0,
+   "journal": "International Journal of Research Studies in Microbiology and Biotechnology"
+  },
+  "matched_words": 906,
+  "runs": 22,
+  "longest": 108
+ },
+ "GI-1032": {
+  "file": "GI-1032.html",
+  "reported": "2026-11-01",
+  "published": "2026-11-01",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "A Prospective Twin Registry in Southwestern China (TRiSC): Exploring the Effects of Genetic and Environmental Factors on Cognitive and Behavioral Development and Mental Health Wellbeing in Children and Adolescents",
+   "year": 2009,
+   "doi": "10.1375/twin.12.3.312",
+   "pct": 18.0,
+   "journal": "Twin Research and Human Genetics"
+  },
+  "earlier": {
+   "title": "The Longitudinal Israeli Study of Twins (LIST): Children's Social Development as Influenced by Genetics, Abilities, and Socialization",
+   "year": 2006,
+   "doi": "10.1375/183242706779462660",
+   "pct": 23.0,
+   "journal": "Twin Research and Human Genetics"
+  },
+  "matched_words": 703,
+  "runs": 39,
+  "longest": 54
+ },
+ "GI-869": {
+  "file": "GI-869.html",
+  "reported": null,
+  "published": "2026-11-01",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Hölder mean applied to Anderson localization",
+   "year": 2007,
+   "doi": "10.1103/PhysRevB.76.035111",
+   "pct": 10.0,
+   "journal": "Physical Review B"
+  },
+  "earlier": {
+   "title": "Metal-insulator transitions in the Falicov-Kimball model with disorder",
+   "year": 2005,
+   "doi": "10.1103/PhysRevB.71.205105",
+   "pct": 7.0,
+   "journal": "Physical Review B"
+  },
+  "matched_words": 380,
+  "runs": 23,
+  "longest": 56
+ },
+ "GI-1029": {
+  "file": "GI-1029.html",
+  "reported": null,
+  "published": "2026-11-01",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "High-redshift cosmography: new results and implications for dark energy",
+   "year": 2012,
+   "doi": "10.1111/j.1365-2966.2012.21568.x",
+   "pct": 7.0,
+   "journal": "Monthly Notices of the Royal Astronomical Society"
+  },
+  "earlier": {
+   "title": "Comprehensive cosmographic analysis by Markov chain method",
+   "year": 2011,
+   "doi": "10.1103/PhysRevD.84.124061",
+   "pct": 5.0,
+   "journal": "Physical Review D"
+  },
+  "matched_words": 722,
+  "runs": 41,
+  "longest": 50
+ },
+ "GI-738": {
+  "file": "GI-738.html",
+  "reported": "2026-11-01",
+  "published": "2026-11-01",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Crohn's Disease and Diagnostic Difficulty: A Case Report",
+   "year": 2018,
+   "doi": "10.3329/akmmcj.v9i2.39215",
+   "pct": 61.0,
+   "journal": "Anwer Khan Modern Medical College Journal"
+  },
+  "earlier": {
+   "title": "Crohn’s disease: A case report with literature review",
+   "year": 2015,
+   "doi": "10.1515/arsm-2015-0017",
+   "pct": 58.0,
+   "journal": "ARS Medica Tomitana"
+  },
+  "matched_words": 948,
+  "runs": 34,
+  "longest": 91
+ },
  "GI-947": {
   "file": "GI-947.html",
   "reported": "2026-11-01",
@@ -2163,5 +2441,664 @@
   "sources": 4,
   "union_words": 1465,
   "union_pct": 17.1
+ },
+ "GI-62": {
+  "file": "GI-62.html",
+  "reported": "2026-10-27",
+  "published": "2026-11-01",
+  "earlier_known": false,
+  "type": "data copying",
+  "data": true,
+  "later": {
+   "title": "Research on Data Mining Algorithm based on Business Cloud Platform for Mobile Internet",
+   "year": 2016,
+   "doi": "10.14257/ijunesst.2016.9.2.33",
+   "pct": 86.0,
+   "journal": "International Journal of u- and e- Service, Science and Technology"
+  },
+  "earlier": {
+   "title": "Research on Data Mining Algorithm for Mobile Internet based on Business Cloud Platform",
+   "year": 2016,
+   "doi": "10.14257/ijgdc.2016.9.5.01",
+   "pct": 82.0,
+   "journal": "International Journal of Grid and Distributed Computing"
+  },
+  "matched_words": 3544,
+  "runs": 63,
+  "longest": 209
+ },
+ "GI-88": {
+  "file": "GI-88.html",
+  "reported": "2026-10-27",
+  "published": "2026-11-01",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "NANOPLEX: A REVIEW OF NANOTECHNOLOGY APPROACH FOR SOLUBILITY AND DISSOLUTION RATE ENHANCEMENT",
+   "year": 2018,
+   "doi": "10.22159/ijcpr.2018v10i4.28467",
+   "pct": 86.0,
+   "journal": "International Journal of Current Pharmaceutical Research"
+  },
+  "earlier": {
+   "title": "A review of nanotechnology with an emphasis on Nanoplex",
+   "year": 2015,
+   "doi": "10.1590/S1984-82502015000200002",
+   "pct": 67.0,
+   "journal": "Brazilian Journal of Pharmaceutical Sciences"
+  },
+  "matched_words": 2461,
+  "runs": 68,
+  "longest": 150
+ },
+ "GI-94": {
+  "file": "GI-94.html",
+  "reported": "2026-10-27",
+  "published": "2026-11-01",
+  "earlier_known": false,
+  "type": "data copying",
+  "data": true,
+  "later": {
+   "title": "Computational Fluid Dynamics Analysis and Experimental Investigations of Optimum Geometry for the Cold End Orifice and Snail Entry of Vortex Tube",
+   "year": 2014,
+   "doi": "10.9790/1684-11432431",
+   "pct": 86.0,
+   "journal": "IOSR Journal of Mechanical and Civil Engineering"
+  },
+  "earlier": {
+   "title": "Computational Fluid Dynamics and Experimental Analysis for Optimum Geometry of Vortex Tube",
+   "year": 2014,
+   "doi": "10.15680/ijirset.2014.0308067",
+   "pct": 84.0,
+   "journal": "International Journal of Innovative Research in Science, Engineering and Technology"
+  },
+  "matched_words": 2328,
+  "runs": 46,
+  "longest": 251
+ },
+ "GI-109": {
+  "file": "GI-109.html",
+  "reported": "2026-10-27",
+  "published": "2026-11-01",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Pathogenesis and Factors associated with Insulin Resistance",
+   "year": 2017,
+   "doi": "10.3329/kyamcj.v5i2.32368",
+   "pct": 61.0,
+   "journal": "KYAMC Journal"
+  },
+  "earlier": {
+   "title": "Metabolic Syndrome and Insulin resistance: Etiopathegenesis and influencing factors",
+   "year": 2013,
+   "doi": "10.3329/bjmb.v4i2.13773",
+   "pct": 86.0,
+   "journal": "Bangladesh Journal of Medical Biochemistry"
+  },
+  "matched_words": 2102,
+  "runs": 53,
+  "longest": 152
+ },
+ "GI-121": {
+  "file": "GI-121.html",
+  "reported": "2026-10-27",
+  "published": "2026-11-01",
+  "earlier_known": true,
+  "type": "data copying",
+  "data": true,
+  "later": {
+   "title": "A randomised controlled techniques saphenous vein harvest; morbidity lowering with minimally invasive technique",
+   "year": 2018,
+   "doi": "10.18203/2349-2902.isj20182976",
+   "pct": 71.0,
+   "journal": "International Surgery Journal"
+  },
+  "earlier": {
+   "title": "Decreased morbidity following long saphenous vein harvesting using a minimally invasive technique: a randomised controlled trial comparing two techniques for long saphenous vein harvest",
+   "year": 2006,
+   "doi": "10.1186/1749-8090-1-15",
+   "pct": 85.0,
+   "journal": "Journal of Cardiothoracic Surgery"
+  },
+  "matched_words": 1885,
+  "runs": 60,
+  "longest": 141
+ },
+ "GI-131": {
+  "file": "GI-131.html",
+  "reported": "2026-10-27",
+  "published": "2026-11-01",
+  "earlier_known": false,
+  "type": "data copying",
+  "data": true,
+  "later": {
+   "title": "Low dose aspirin and low-molecular-weight heparin in the treatment of pregnant Libyan women with recurrent miscarriage",
+   "year": 2014,
+   "doi": "10.1186/1756-0500-7-23",
+   "pct": 84.0,
+   "journal": "BMC Research Notes"
+  },
+  "earlier": {
+   "title": "LOW DOSE ASPIRIN IN COMBINATION WITH LOW-MOLECULAR-WEIGHT HEPARIN IS BETTER THAN LOW DOSE ASPIRIN ALONE IN THE TREATMENT OF PREGNANT WOMEN WITH RECURRENT MISCARRIAGES",
+   "year": 2014,
+   "doi": "10.14260/jemds/2014/2660",
+   "pct": 48.0,
+   "journal": "Journal of Evolution of Medical and Dental Sciences"
+  },
+  "matched_words": 1648,
+  "runs": 36,
+  "longest": 175
+ },
+ "GI-137": {
+  "file": "GI-137.html",
+  "reported": "2026-10-27",
+  "published": "2026-11-01",
+  "earlier_known": true,
+  "type": "data copying",
+  "data": true,
+  "later": {
+   "title": "POMPP Score: Evaluation of Mortality and Morbidity in Patients with Secondary Peritonitis",
+   "year": 2018,
+   "doi": "10.23958/ijirms/vol03-i04/01",
+   "pct": 87.0,
+   "journal": "International Journal of Innovative Research in Medical Science"
+  },
+  "earlier": {
+   "title": "Evaluation of mortality and morbidity in patients with secondary peritonitis using predictive score of mortality in perforated peptic ulcer",
+   "year": 2017,
+   "doi": "10.18203/2349-2902.isj20173160",
+   "pct": 85.0,
+   "journal": "International Surgery Journal"
+  },
+  "matched_words": 1544,
+  "runs": 157,
+  "longest": 216
+ },
+ "GI-193": {
+  "file": "GI-193.html",
+  "reported": "2026-10-27",
+  "published": "2026-11-01",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Roadside landscaping with native plants in the Czech Republic: a review Volume 2 Issue 3 -2018 Roadside landscaping with native plants in the Czech Republic: a review 77 Citation: Chowdhury MH, Lasker MS. Roadside landscaping with native plants in the Czech Republic: a review. Citation: Chowdhury MH, Lasker MS. Roadside landscaping with native plants in the Czech Republic: a review",
+   "year": 2018,
+   "doi": "10.15406/hij.2018.02.00030",
+   "pct": 51.0,
+   "journal": "Horticulture International Journal"
+  },
+  "earlier": {
+   "title": "Landscaping with native plants in the UAE: A review",
+   "year": 2017,
+   "doi": "10.9755/ejfa.2017.v29.i10.319",
+   "pct": 37.0,
+   "journal": "Emirates Journal of Food and Agriculture"
+  },
+  "matched_words": 2726,
+  "runs": 119,
+  "longest": 132
+ },
+ "GI-248": {
+  "file": "GI-248.html",
+  "reported": "2026-10-27",
+  "published": "2026-11-01",
+  "earlier_known": false,
+  "type": "data copying",
+  "data": true,
+  "later": {
+   "title": "Hybridization of battery and ultracapacitor for low weight electric vehicle",
+   "year": 2018,
+   "doi": "10.30464/jmee.2018.2.1.43",
+   "pct": 57.0,
+   "journal": "Journal of Mechanical and Energy Engineering"
+  },
+  "earlier": {
+   "title": "Ultra-capacitor based Hybrid Electric Vehicle (Medium) for Developing Countries",
+   "year": 2018,
+   "doi": "10.14710/reaktor.18.2.84-90",
+   "pct": 54.0,
+   "journal": "Reaktor"
+  },
+  "matched_words": 1575,
+  "runs": 68,
+  "longest": 53
+ },
+ "GI-282": {
+  "file": "GI-282.html",
+  "reported": "2026-10-27",
+  "published": "2026-11-01",
+  "earlier_known": false,
+  "type": "data copying",
+  "data": true,
+  "later": {
+   "title": "A Clinical Study on Pre-Eclampsia and Thyroid Hormone Alteration in Women Presenting to Tertiary Care Institute of North India",
+   "year": 2016,
+   "doi": "10.18535/jmscr/v4i10.19",
+   "pct": 85.0,
+   "journal": "Journal of Medical Science And clinical Research"
+  },
+  "earlier": {
+   "title": "Thyroid hormone alteration in women with pre-eclampsia",
+   "year": 2016,
+   "doi": "10.18203/2320-6012.ijrms20163321",
+   "pct": 66.0,
+   "journal": "International Journal of Research in Medical Sciences"
+  },
+  "matched_words": 1255,
+  "runs": 37,
+  "longest": 163
+ },
+ "GI-303": {
+  "file": "GI-303.html",
+  "reported": "2026-10-27",
+  "published": "2026-11-01",
+  "earlier_known": false,
+  "type": "data copying",
+  "data": true,
+  "later": {
+   "title": "Study of Temperature Dependent Dialectical Properties of One System Ceramics using BNT-BZ",
+   "year": null,
+   "doi": "10.21275/art20162979",
+   "pct": 70.0,
+   "journal": "International Journal of Science and Research (IJSR)"
+  },
+  "earlier": {
+   "title": "Crystal structure and electrical properties of bismuth sodium titanate zirconate ceramics",
+   "year": 2012,
+   "doi": "10.1186/1556-276x-7-57",
+   "pct": 51.0,
+   "journal": "Nanoscale Research Letters"
+  },
+  "matched_words": 1070,
+  "runs": 25,
+  "longest": 123
+ },
+ "GI-877": {
+  "file": "GI-877.html",
+  "reported": null,
+  "published": "2026-11-01",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "New iteration process for pseudocontractive mappings with convergence analysis",
+   "year": 2015,
+   "doi": "10.1186/s13663-015-0303-8",
+   "pct": 14.0,
+   "journal": "Fixed Point Theory and Applications"
+  },
+  "earlier": {
+   "title": "Convergence theorems of a three-step iteration method for a countable family of pseudocontractive mappings",
+   "year": 2013,
+   "doi": "10.1186/1687-1812-2013-100",
+   "pct": 17.0,
+   "journal": "Fixed Point Theory and Applications"
+  },
+  "matched_words": 526,
+  "runs": 50,
+  "longest": 44
+ },
+ "GI-573": {
+  "file": "GI-573.html",
+  "reported": "2026-11-01",
+  "published": "2026-11-01",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Modelling Uncertainty of Stream Networks Derived from Elevation Data Using Two Free Softwares: R and SAGA",
+   "year": 2012,
+   "doi": "10.4236/jgis.2012.42020",
+   "pct": 13.0,
+   "journal": "Journal of Geographic Information System"
+  },
+  "earlier": {
+   "title": "On the uncertainty of stream networks derived from elevation data: the error propagation approach",
+   "year": 2010,
+   "doi": "10.5194/hess-14-1153-2010",
+   "pct": 7.0,
+   "journal": "Hydrology and Earth System Sciences"
+  },
+  "matched_words": 541,
+  "runs": 23,
+  "longest": 70,
+  "sources": 2,
+  "union_words": 773,
+  "union_pct": 18.0
+ },
+ "GI-816": {
+  "file": "GI-816.html",
+  "reported": "2026-11-02",
+  "published": "2026-11-02",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Smoking-attributable mortality in Morocco: results of a prevalence-based study in Casablanca",
+   "year": 2014,
+   "doi": "10.1186/2049-3258-72-23",
+   "pct": 23.0,
+   "journal": "Archives of Public Health"
+  },
+  "earlier": {
+   "title": "Smoking-attributable mortality and years of potential life lost in 16 Brazilian capitals, 2003: a prevalence-based study",
+   "year": 2009,
+   "doi": "10.1186/1471-2458-9-206",
+   "pct": 16.0,
+   "journal": "BMC Public Health"
+  },
+  "matched_words": 943,
+  "runs": 36,
+  "longest": 60,
+  "sources": 3,
+  "union_words": 1192,
+  "union_pct": 29.3
+ },
+ "GI-300": {
+  "file": "GI-300.html",
+  "reported": "2026-11-04",
+  "published": "2026-11-04",
+  "earlier_known": true,
+  "type": "data copying",
+  "data": true,
+  "later": {
+   "title": "Measuring the effect of e-business on organizational performance in project based organizations",
+   "year": 2017,
+   "doi": "10.5267/j.jpm.2017.9.002",
+   "pct": 52.0,
+   "journal": "Journal of Project Management"
+  },
+  "earlier": {
+   "title": "An empirical study to measure the impact of e-business on organizational performance with an emphasis on integrated production information",
+   "year": 2012,
+   "doi": "10.5267/j.msl.2012.04.011",
+   "pct": 53.0,
+   "journal": "Management Science Letters"
+  },
+  "matched_words": 1086,
+  "runs": 54,
+  "longest": 67
+ },
+ "GI-813": {
+  "file": "GI-813.html",
+  "reported": "2026-11-08",
+  "published": "2026-11-08",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Eosinophilic Colitis: University of Minnesota Experience and Literature Review",
+   "year": 2011,
+   "doi": "10.1155/2011/857508",
+   "pct": 18.0,
+   "journal": "Gastroenterology Research and Practice"
+  },
+  "earlier": {
+   "title": "Eosinophilic colitis",
+   "year": 2009,
+   "doi": "10.3748/wjg.15.2975",
+   "pct": 31.0,
+   "journal": "World Journal of Gastroenterology"
+  },
+  "matched_words": 532,
+  "runs": 27,
+  "longest": 53
+ },
+ "GI-897": {
+  "file": "GI-897.html",
+  "reported": "2026-11-08",
+  "published": "2026-11-08",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Benefits of reverse engineering technologies in software development makerspace",
+   "year": 2017,
+   "doi": "10.1051/itmconf/20171301028",
+   "pct": 29.0,
+   "journal": "ITM Web of Conferences"
+  },
+  "earlier": {
+   "title": "Reverse Engineering - Recent Advances and Applications || MDA-Based Reverse Engineering",
+   "year": 2012,
+   "doi": "10.5772/32473",
+   "pct": 11.0,
+   "journal": "Reverse Engineering - Recent Advances and Applications"
+  },
+  "matched_words": 1146,
+  "runs": 32,
+  "longest": 146,
+  "sources": 2,
+  "union_words": 2352,
+  "union_pct": 59.7
+ },
+ "GI-793": {
+  "file": "GI-793.html",
+  "reported": null,
+  "published": "2026-11-08",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Enhancing dissolution profile of diazepam using hydrophilic polymers by solid dispersion technique",
+   "year": 2012,
+   "doi": "10.3329/icpj.v1i12.12453",
+   "pct": 46.0,
+   "journal": "International Current Pharmaceutical Journal"
+  },
+  "earlier": {
+   "title": "Dissolution enhancement of poorly soluble drug by solvent evaporation method using hydrophilic polymer: a solid dispersion technique",
+   "year": 2012,
+   "doi": "10.3329/ijpls.v1i2.12952",
+   "pct": 61.0,
+   "journal": "International Journal of Pharmaceutical and Life Sciences"
+  },
+  "matched_words": 1798,
+  "runs": 74,
+  "longest": 164
+ },
+ "GI-922": {
+  "file": "GI-922.html",
+  "reported": null,
+  "published": "2026-11-08",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Emerging Molecular Targets for Brain Repair after Stroke",
+   "year": 2013,
+   "doi": "10.1155/2013/473416",
+   "pct": 10.0,
+   "journal": "Stroke Research and Treatment"
+  },
+  "earlier": {
+   "title": "Epigenetics: an Expanding New Piece of the Stroke Puzzle",
+   "year": 2011,
+   "doi": "10.1007/s12975-011-0094-0",
+   "pct": 44.0,
+   "journal": "Translational Stroke Research"
+  },
+  "matched_words": 707,
+  "runs": 28,
+  "longest": 53
+ },
+ "GI-927": {
+  "file": "GI-927.html",
+  "reported": "2026-11-08",
+  "published": "2026-11-08",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": true,
+  "later": {
+   "title": "Acute renal failure after licorice ingestion: A case report",
+   "year": 2010,
+   "doi": "10.2478/s11536-010-0052-3",
+   "pct": 37.0,
+   "journal": "Open Medicine"
+  },
+  "earlier": {
+   "title": "A hypokalemic muscular weakness after licorice ingestion: a case report",
+   "year": 2009,
+   "doi": "10.4076/1757-1626-2-8053",
+   "pct": 43.0,
+   "journal": "Cases Journal"
+  },
+  "matched_words": 675,
+  "runs": 31,
+  "longest": 68
+ },
+ "GI-475": {
+  "file": "GI-475.html",
+  "reported": "2026-11-08",
+  "published": "2026-11-08",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Image Fusion || Fusion of Infrared and Visible Images for Robust Person Detection",
+   "year": 2011,
+   "doi": "10.5772/14173",
+   "pct": 9.0,
+   "journal": "Image Fusion"
+  },
+  "earlier": {
+   "title": "Combining Video and Thermal Imagery for Robust Pedestrian Tracking",
+   "year": 2004,
+   "doi": "10.21611/qirt.2004.011",
+   "pct": 41.0,
+   "journal": "Proceedings of the 2004 International Conference on Quantitative InfraRed Thermography"
+  },
+  "matched_words": 822,
+  "runs": 19,
+  "longest": 213
+ },
+ "GI-815": {
+  "file": "GI-815.html",
+  "reported": "2026-11-08",
+  "published": "2026-11-08",
+  "earlier_known": true,
+  "type": "data copying",
+  "data": true,
+  "later": {
+   "title": "Canc Therapy & Oncol Int J Hybrid Approach of Hyperthermia and Controlled Drug Delivery in Cancer: Image Guided Cancer Theranostic Monitoring in Tumor Management",
+   "year": 2018,
+   "doi": "10.19080/ctoij.2018.11.555803",
+   "pct": 30.0,
+   "journal": "Cancer therapy &amp; Oncology International Journal"
+  },
+  "earlier": {
+   "title": "Multifunctional Nanoparticles for Imaging Guided Interventions",
+   "year": 2008,
+   "doi": "10.1038/npre.2008.2190.1",
+   "pct": 30.0,
+   "journal": "Nature Precedings"
+  },
+  "matched_words": 1284,
+  "runs": 41,
+  "longest": 157
+ },
+ "GI-938": {
+  "file": "GI-938.html",
+  "reported": "2026-11-08",
+  "published": "2026-11-08",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Fabrication and Validation by Micromilling for Bioreactor Prototyping",
+   "year": 2018,
+   "doi": "10.4028/www.scientific.net/msf.941.2448",
+   "pct": 29.0,
+   "journal": "Materials Science Forum"
+  },
+  "earlier": {
+   "title": "Micromilling: a method for ultra-rapid prototyping of plastic microfluidic devices",
+   "year": 2015,
+   "doi": "10.1039/c5lc00234f",
+   "pct": 6.0,
+   "journal": "Lab on a Chip"
+  },
+  "matched_words": 602,
+  "runs": 20,
+  "longest": 75
+ },
+ "GI-1020": {
+  "file": "GI-1020.html",
+  "reported": null,
+  "published": "2026-11-08",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Design and Implementation of Secure Multi- Authentication Data Storage in Cloud using Machine Learning Data Classification",
+   "year": 2017,
+   "doi": "10.5120/ijca2017913129",
+   "pct": 26.0,
+   "journal": "International Journal of Computer Applications"
+  },
+  "earlier": {
+   "title": "A Secure Data Classification Model in Cloud Computing Using Machine Learning Approach",
+   "year": 2016,
+   "doi": "10.14257/ijgdc.2016.9.8.02",
+   "pct": 26.0,
+   "journal": "International Journal of Grid and Distributed Computing"
+  },
+  "matched_words": 878,
+  "runs": 25,
+  "longest": 131
+ },
+ "GI-1042": {
+  "file": "GI-1042.html",
+  "reported": "2026-11-08",
+  "published": "2026-11-08",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Infestation of helminth parasites in Gangetic Leaffish Nandus nandus (Hamilton, 1822)",
+   "year": 2015,
+   "doi": "10.3329/bjz.v42i2.23354",
+   "pct": 18.0,
+   "journal": "Bangladesh Journal of Zoology"
+  },
+  "earlier": {
+   "title": "Seasonal prevalence, intensity and organal distribution of Helminth parasites in macrognathus aculeatus",
+   "year": null,
+   "doi": "10.3329/dujbs.v20i2.8971",
+   "pct": 28.0,
+   "journal": "Dhaka University Journal of Biological Sciences"
+  },
+  "matched_words": 534,
+  "runs": 24,
+  "longest": 37
+ },
+ "GI-906": {
+  "file": "GI-906.html",
+  "reported": "2026-11-08",
+  "published": "2026-11-08",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "RAGE and TLRs as Key Targets for Antiatherosclerotic Therapy",
+   "year": 2018,
+   "doi": "10.1155/2018/7675286",
+   "pct": 23.0,
+   "journal": "BioMed Research International"
+  },
+  "earlier": {
+   "title": "The Role of TLR2, TLR4, and TLR9 in the Pathogenesis of Atherosclerosis",
+   "year": 2016,
+   "doi": "10.1155/2016/1532832",
+   "pct": 18.0,
+   "journal": "International Journal of Inflammation"
+  },
+  "matched_words": 923,
+  "runs": 35,
+  "longest": 84
  }
 }
