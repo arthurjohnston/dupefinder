@@ -29,6 +29,8 @@ Proposed by the gi-cases agent on 2026-10-15.
 
 ## Questions
 - [ ] Not a finding: questions are never published.
+- Who wrote it first? The dates
+  run the other way.
 """
 
 
@@ -39,6 +41,11 @@ class TestParse(unittest.TestCase):
         self.assertEqual(items[1]["text"], "Table 2 of the later article (p. 6) reports the same sample sizes "
                                            "as Table 3 of the earlier article (p. 5).")
         self.assertEqual(items[1]["evidence"], ["checked: both PDFs, row by row", "second evidence line"])
+
+    def test_questions(self):
+        self.assertEqual(cf.questions(TEXT), ["[ ] Not a finding: questions are never published.",
+                                              "Who wrote it first? The dates run the other way."])
+        self.assertEqual(cf.questions("## Findings\n- [ ] x\n"), [])
 
     def test_update_keeps_evidence_and_rest(self):
         new = cf.update(TEXT, {1: ("include", "Reworded."), 3: ("pending", None)})
@@ -75,8 +82,22 @@ class TestFiles(unittest.TestCase):
         self.assertIn("Edited wording.", cf.included("GI-07", self.dir))
         self.assertEqual(cf.pending_cases(self.dir), [])
 
-    def test_review_enter_and_quit_change_nothing(self):
-        for script in (["", ""], ["q"]):
+    def test_review_prints_questions_first(self):
+        import io, contextlib
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            cf.review("GI-07", ask=lambda p: "k", report_dir=self.dir)
+        text = out.getvalue()
+        self.assertIn("Who wrote it first? The dates run the other way.", text)
+        self.assertLess(text.index("Who wrote it first?"), text.index("finding 1 of"))
+
+    def test_review_enter_leaves_out(self):
+        answers = iter(["", ""])
+        self.assertEqual(cf.review("GI-07", ask=lambda p: next(answers), report_dir=self.dir), 1)
+        self.assertEqual(cf.counts("GI-07", self.dir)["pending"], 0)
+
+    def test_review_keep_and_quit_change_nothing(self):
+        for script in (["k", "k"], ["q"]):
             answers = iter(script)
             self.assertEqual(cf.review("GI-07", ask=lambda p: next(answers), report_dir=self.dir), 0)
         self.assertEqual(cf.findings_path("GI-07", self.dir).read_text(encoding="utf-8"), TEXT)

@@ -102,7 +102,7 @@ step but the report files skippable:
     status` says claude.ai, and API-key variables are removed from its environment. d at the menu talks the
     case through with the agent at any point, verdict or not (discuss()): its session resumed when it has
     one, else a new conversation started from the case's findings.md; /exit comes back to the menu.
-  - you tick its findings (y include, n leave out, e edit, Enter pending, q stop);
+  - you tick its findings (y include, n or Enter leave out, e edit, k keep pending, q stop);
   - the report files, written once the agent is done or skipped, so they have the findings you included
     (PubPeer Markdown, emails) and the contacts it found, and the PubPeer page opened (gi_report_case.py: in data/dupe_publisher/GI-NN/ the PubPeer
 page, with the findings as Markdown and a Copy button, the attachment for the journal, and the draft email

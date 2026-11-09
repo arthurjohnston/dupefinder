@@ -18,7 +18,9 @@ background) and ticked by you. Only [x] items are published, in the PubPeer Mark
     - anything the agent couldn't settle (never published)
 
 An item's text may wrap onto indented lines that don't start with "- ". Items before any "## " heading
-count as findings; everything under another heading (Questions, say) is ignored.
+count as findings; everything under another heading is ignored, except that review() prints the
+Questions (questions()) before you tick, since one of them can change what the case is (who wrote it first,
+a shared source) and none of them is ever a finding you'd see otherwise.
 
 data/dupe_publisher/GI-NN/pubpeer_url.txt: the address of your PubPeer post once it's up
 (gi_report_case.py --pubpeer-url); the emails then point to it.
@@ -88,6 +90,22 @@ def parse(text):
     return items
 
 
+def questions(text):
+    """The items under ## Questions, in file order: each a top-level "- " line, its wrapped lines joined on."""
+    out, section = [], None
+    for line in text.split("\n"):
+        if line.startswith("## "):
+            section = line[3:].strip().lower()
+            continue
+        if section != "questions" or not line.strip():
+            continue
+        if line.startswith("- "):
+            out.append(line[2:].strip())
+        elif line[:1].isspace() and out:
+            out[-1] += " " + line.strip()
+    return out
+
+
 def load(case, report_dir=REPORT_DIR):
     """parse() of the case's findings.md, [] when there isn't one."""
     p = findings_path(case, report_dir)
@@ -145,8 +163,8 @@ def prefilled_input(prompt, text):
 
 
 def review(case, ask=input, edit=prefilled_input, report_dir=REPORT_DIR, only_pending=True):
-    """Go through the case's findings: y include, n leave out, e edit the wording (then include), Enter leave
-    as it is, q stop. Writes findings.md; returns the number of items changed."""
+    """Go through the case's findings: y include, n or Enter leave out, e edit the wording (then include), k keep
+    it as it is, q stop. Writes findings.md; returns the number of items changed."""
     p = findings_path(case, report_dir)
     if not p.exists():
         print(f"  {case}: no findings.md yet")
@@ -157,6 +175,11 @@ def review(case, ask=input, edit=prefilled_input, report_dir=REPORT_DIR, only_pe
     if not todo:
         print(f"  {case}: nothing to check ({len(items)} finding(s), all decided)")
         return 0
+    qs = questions(text)
+    if qs:
+        print(f"\n  {case}: the agent's open questions (never published; the first may change what the case is):")
+        for q in qs:
+            print(f"    - {q}")
     changes = {}
     for n, k in enumerate(todo, 1):
         it = items[k]
@@ -164,14 +187,14 @@ def review(case, ask=input, edit=prefilled_input, report_dir=REPORT_DIR, only_pe
         for ev in it["evidence"]:
             print(f"      - {ev}")
         while True:
-            ans = ask("  y include  n leave out  e edit  Enter as it is  q stop > ").strip().lower()
-            if ans in ("", "y", "n", "e", "q"):
+            ans = ask("  y include  n/Enter leave out  e edit  k keep as it is  q stop > ").strip().lower()
+            if ans in ("", "y", "n", "e", "k", "q"):
                 break
         if ans == "q":
             break
         if ans == "y":
             changes[k] = ("include", None)
-        elif ans == "n":
+        elif ans in ("n", ""):
             changes[k] = ("leave out", None)
         elif ans == "e":
             new = " ".join(edit("  > ", it["text"]).split())
