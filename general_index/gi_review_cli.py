@@ -673,7 +673,7 @@ def edit_note(initial=""):
 
 def ask_severity(pair, decision, type_=None):
     """Enter gives DEFAULT_SEVERITY (SELF_SEVERITY for a SELF_TYPES type), whatever the agent said: medium also
-    writes the emails to the later authors' institutions (when half the later article is shared), high to the victims as well
+    writes the emails to the later authors' institutions (when more than 20% of the later article is shared), high to the victims as well
     (gi_report_case.audiences()), so it has to be chosen.
     "none" for a no-problem verdict."""
     if decision == "no problem":

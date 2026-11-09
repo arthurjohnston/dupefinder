@@ -111,8 +111,8 @@ class TestSeverity(unittest.TestCase):
         import gi_contact
         self.assertEqual(gi_report.audiences("high"), gi_contact.EMAIL_AUDIENCES)
         self.assertEqual(gi_report.audiences("medium"), ("publisher",))   # no share known
-        self.assertEqual(gi_report.audiences("medium", {"second": {"pct": 50}}), ("publisher", "institution"))
-        self.assertEqual(gi_report.audiences("medium", {"second": {"pct": 49.9}}), ("publisher",))
+        self.assertEqual(gi_report.audiences("medium", {"second": {"pct": 20.1}}), ("publisher", "institution"))
+        self.assertEqual(gi_report.audiences("medium", {"second": {"pct": 20}}), ("publisher",))
         for sev in ("low", None):
             self.assertEqual(gi_report.audiences(sev), ("publisher",))
         same = fd(byline="byline overlap: A. One")   # don't write to the authors who reused their own text

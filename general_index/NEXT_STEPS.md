@@ -23,7 +23,8 @@ Institution emails now go to both the institution on the copying article's bylin
 current institution where it differs (the gi-cases agent's Contacts section; `"current": true` entries in
 contacts.json, only on evidence tied to that person). An institution with no integrity-office address gets a
 fallback address, and its email asks to be forwarded (gi_contact.integrity_office()). Medium cases email the
-institutions only when 50%+ of the later article is shared (gi_report_case.MEDIUM_INSTITUTION_PCT); high
+institutions only when more than 20% of the later article is shared (gi_report_case.MEDIUM_INSTITUTION_PCT; 50%+
+until 2026-11-09); high
 cases email everyone. Subjects read "Research integrity concern: a paper you published / a paper by someone
 associated with your institution". The 71 older cases were backfilled with gi_backfill_current.py, and on
 2026-10-28 the user reported every draft sent; each case's notes.md `## Sent` lists them. For later cases

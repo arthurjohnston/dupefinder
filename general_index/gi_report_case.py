@@ -15,7 +15,7 @@ Into data/dupe_publisher/GI-NN/:
                          with a sources.json (the trace-other-sources skill), every other text source's passages too,
                          under an overview of each one's share and the union (gi_sources.add_sources())
   GI-NN-email-*.eml      draft emails (all four for a high-severity case, -publisher, and -institution for
-                         medium when 50%+ is shared, only -publisher for low; see
+                         medium when more than 20% is shared, only -publisher for low; see
                          audiences()) (RFC 822 .eml with X-Unsent: 1, From your git user.email or --from, To
                          and Cc from data/journal_contacts.json for the two journal emails; the institution and
                          authors drafts are To you, the institutions on Bcc and the earlier authors on Cc, from
@@ -69,7 +69,7 @@ Nothing is committed or pushed: the site page goes live once example_output/ is 
 
 Severity decides which emails are written: high (your review's severity in `reviews`, or --severity) gets
 all four; medium or no review (medium is the default) gets the email to the later article's journal, and
-the later authors' institutions' when at least half the later article is shared; low gets only the journal's, alongside the PubPeer page. A ticked [data]
+the later authors' institutions' when more than 20% of the later article is shared; low gets only the journal's, alongside the PubPeer page. A ticked [data]
 finding in findings.md makes a case high. Drafts a case no longer gets (it was high, now isn't) are deleted.
 
 gi_review_cli.py runs this when you save (or agree with) a problem verdict, and on t at its prompt, then
@@ -133,20 +133,20 @@ DATA_TYPE = "data copying"
 CASE_AUDIENCES = {"institution": "research-integrity address", "authors": "address for the earlier authors"}
 
 
-MEDIUM_INSTITUTION_PCT = 50   # a medium case writes to the institutions only when this much of the later article is shared
+MEDIUM_INSTITUTION_PCT = 20   # a medium case writes to the institutions only when more than this much of the later article is shared
 
 
 def audiences(severity, fd=None):
     """The emails a case of this severity gets: all of gi_contact.EMAIL_AUDIENCES when high (the earlier
     authors and their publisher too); the later article's journal, plus the later authors' institutions when
-    at least MEDIUM_INSTITUTION_PCT% of the later article is shared, when medium; only the journal when low.
+    more than MEDIUM_INSTITUTION_PCT% of the later article is shared, when medium; only the journal when low.
     With fd: never the earlier authors when the two bylines share names (they'd be writing to the people who
     reused it). None at all for NO_PROBLEM_SEVERITY (a no-problem review)."""
     if severity == NO_PROBLEM_SEVERITY:
         return ()
     if severity != ALL_EMAILS_SEVERITY:
         share = ((fd or {}).get("second") or {}).get("pct") or 0
-        return (("publisher", "institution") if severity == "medium" and share >= MEDIUM_INSTITUTION_PCT
+        return (("publisher", "institution") if severity == "medium" and share > MEDIUM_INSTITUTION_PCT
                 else ("publisher",))
     if fd and gi_contact.shared_authors(fd):
         return tuple(a for a in gi_contact.EMAIL_AUDIENCES if a != "authors")
