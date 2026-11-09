@@ -3125,5 +3125,30 @@
   "matched_words": 1316,
   "runs": 50,
   "longest": 72
+ },
+ "GI-910": {
+  "file": "GI-910.html",
+  "reported": null,
+  "published": "2026-11-09",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Mind-Body Therapies for African-American Women at Risk for Cardiometabolic Disease: A Systematic Review",
+   "year": 2018,
+   "doi": "10.1155/2018/5123217",
+   "pct": 13.0,
+   "journal": "Evidence-Based Complementary and Alternative Medicine"
+  },
+  "earlier": {
+   "title": "The Metabolic Syndrome and Mind-Body Therapies: A Systematic Review",
+   "year": 2011,
+   "doi": "10.1155/2011/276419",
+   "pct": 22.0,
+   "journal": "Journal of Nutrition and Metabolism"
+  },
+  "matched_words": 852,
+  "runs": 38,
+  "longest": 83
  }
 }
