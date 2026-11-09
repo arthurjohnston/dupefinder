@@ -3100,5 +3100,30 @@
   "matched_words": 923,
   "runs": 35,
   "longest": 84
+ },
+ "GI-873": {
+  "file": "GI-873.html",
+  "reported": "2026-11-09",
+  "published": "2026-11-09",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Breast Cancer - Recent Advances in Biology, Imaging and Therapeutics || Translational Research on Breast Cancer: miRNA, siRNA and Immunoconjugates in Conjugation with Nanotechnology for Clinical Studies",
+   "year": 2011,
+   "doi": "10.5772/21710",
+   "pct": 22.0,
+   "journal": "Breast Cancer - Recent Advances in Biology, Imaging and Therapeutics"
+  },
+  "earlier": {
+   "title": "MicroRNAs and their target gene networks in breast cancer",
+   "year": 2010,
+   "doi": "10.1186/bcr2484",
+   "pct": 23.0,
+   "journal": "Breast Cancer Research"
+  },
+  "matched_words": 1316,
+  "runs": 50,
+  "longest": 72
  }
 }
