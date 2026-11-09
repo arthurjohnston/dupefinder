@@ -30,6 +30,14 @@ associated with your institution". The 71 older cases were backfilled with gi_ba
 this happens during normal prep; `gi_backfill_current.py --review` rebuilds the checking list and the
 links page if they're needed again.
 
+Reported cases are queryable in gi.sqlite3 (`gi_reports.py`, 2026-11-01): `report_sends` (one row per case per
+email, read from Gmail's Sent Mail as Thunderbird keeps it on disk: date, audience from the subject, To/Cc/Bcc),
+`case_reports` and view `case_report_status` (with cases.json's reported date and your review). Every run
+rebuilds them (~7 s). `gi_reports.py status` lists where Gmail, cases.json and notes.md disagree. The
+2026-10-28 note "the user reports every draft sent" was wrong for most of the 71 cases it was written into
+(no publisher email went out for 48 of them); `gi_reports.py fix-notes` replaced it in each notes.md with what
+Gmail shows. Sends by web form aren't in Gmail: add a dated line to the case's ## Sent.
+
 ## Affiliation coverage: state and how to continue (2026-10-28)
 
 Goal: know which leads' papers have a university behind them. `../.venv/bin/python3 gi_affiliations.py coverage`
