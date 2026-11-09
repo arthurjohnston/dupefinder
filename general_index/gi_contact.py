@@ -250,6 +250,15 @@ def _email_intro(audience, fd, contact=None):
         return f"Possible redundant publication: {paper}" if same else f"Research integrity concern: {paper}"
     subject = subject_for("a paper you published")
     if audience == "publisher":
+        # names the journal: "Research integrity concern with a paper you published in <journal>"
+        in_journal = html.unescape(second.get("journal") or "").strip()
+        paper = "a paper you published" + (f" in {in_journal}" if in_journal else "")
+        if data:
+            subject = f"Research integrity concern with results data in {paper}"
+        elif same:
+            subject = f"Possible redundant publication: {paper}"
+        else:
+            subject = f"Research integrity concern with {paper}"
         return ("[the journal's editor, or the publisher's research integrity contact]",
                 subject, "Dear Editor,",
                 [f"I am writing about an article in your journal that appears {verb} an earlier article"

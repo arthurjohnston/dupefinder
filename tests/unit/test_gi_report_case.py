@@ -228,7 +228,7 @@ class TestCompose(unittest.TestCase):
             arg = gi_report.compose_arg(eml)
             body = d / "compose" / "GI-1-email-publisher.txt"
             self.assertTrue(body.read_text().startswith("Dear Editor,"))
-            self.assertIn("subject='Research integrity concern: a paper you published'", arg)
+            self.assertIn("subject='Research integrity concern with a paper you published'", arg)
             self.assertIn(f"message='{body}'", arg)
             self.assertIn("from='me@example.org'", arg)
             self.assertIn("to='ed@new.example'", arg)
