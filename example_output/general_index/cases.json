@@ -3228,5 +3228,33 @@
   "matched_words": 466,
   "runs": 20,
   "longest": 49
+ },
+ "GI-898": {
+  "file": "GI-898.html",
+  "reported": "2026-11-10",
+  "published": "2026-11-10",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Current Evaluation of the Millennium Phytomedicine- Ginseng (II): Collected Chemical Entities, Modern Pharmacology, and Clinical Applications Emanated from Traditional Chinese Medicine",
+   "year": 2009,
+   "doi": "10.2174/092986709788803204",
+   "pct": 14.0,
+   "journal": "Current Medicinal Chemistry"
+  },
+  "earlier": {
+   "title": "Use of Ginseng in Medicine With Emphasis on Neurodegenerative Disorders",
+   "year": 2006,
+   "doi": "10.1254/jphs.crj05010x",
+   "pct": 25.0,
+   "journal": "Journal of Pharmacological Sciences"
+  },
+  "matched_words": 1142,
+  "runs": 46,
+  "longest": 70,
+  "sources": 3,
+  "union_words": 1433,
+  "union_pct": 17.1
  }
 }
