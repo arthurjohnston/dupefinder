@@ -3150,5 +3150,33 @@
   "matched_words": 852,
   "runs": 38,
   "longest": 83
+ },
+ "GI-867": {
+  "file": "GI-867.html",
+  "reported": null,
+  "published": "2026-11-09",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Activity-Based Costing System in the Service Sector: A Strategic Approach for Enhancing Managerial Decision Making and Competitiveness",
+   "year": 2011,
+   "doi": "10.5539/ijbm.v6n11p3",
+   "pct": 7.0,
+   "journal": "International Journal of Business and Management"
+  },
+  "earlier": {
+   "title": "Primary Research of the Advantages and the Cost Control of the ABC & EVA Integrated System",
+   "year": 2010,
+   "doi": "10.5539/ibr.v3n3p141",
+   "pct": 18.0,
+   "journal": "International Business Research"
+  },
+  "matched_words": 423,
+  "runs": 10,
+  "longest": 98,
+  "sources": 2,
+  "union_words": 1124,
+  "union_pct": 17.9
  }
 }
