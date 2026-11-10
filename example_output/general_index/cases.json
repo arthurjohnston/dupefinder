@@ -3203,5 +3203,30 @@
   "matched_words": 769,
   "runs": 34,
   "longest": 39
+ },
+ "GI-171": {
+  "file": "GI-171.html",
+  "reported": null,
+  "published": "2026-11-10",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Study of Prenatal Arsenic Exposure and Reproductive Health Outcome in Bangladesh",
+   "year": 2016,
+   "doi": "10.3329/bjog.v28i2.30094",
+   "pct": 10.0,
+   "journal": "Bangladesh Journal of Obstetrics &amp; Gynaecology"
+  },
+  "earlier": {
+   "title": "Assessment of Prenatal Exposure to Arsenic in Tenerife Island",
+   "year": 2012,
+   "doi": "10.1371/journal.pone.0050463",
+   "pct": 10.0,
+   "journal": "PLoS ONE"
+  },
+  "matched_words": 466,
+  "runs": 20,
+  "longest": 49
  }
 }
