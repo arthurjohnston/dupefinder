@@ -3178,5 +3178,30 @@
   "sources": 2,
   "union_words": 1124,
   "union_pct": 17.9
+ },
+ "GI-916": {
+  "file": "GI-916.html",
+  "reported": null,
+  "published": "2026-11-10",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Animal models on HTLV-1 and related viruses: what did we learn?",
+   "year": 2012,
+   "doi": "10.3389/fmicb.2012.00333",
+   "pct": 7.0,
+   "journal": "Frontiers in Microbiology"
+  },
+  "earlier": {
+   "title": "Mouse Models of Human T Lymphotropic Virus Type-1-Associated Adult T-Cell Leukemia/Lymphoma",
+   "year": 2010,
+   "doi": "10.1177/0300985810370009",
+   "pct": 15.0,
+   "journal": "Veterinary Pathology"
+  },
+  "matched_words": 769,
+  "runs": 34,
+  "longest": 39
  }
 }
