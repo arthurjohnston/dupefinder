@@ -235,15 +235,15 @@ class TestPaperMill(unittest.TestCase):
         flags = ["paper mill"]
         def scores(rank_b, rank_a=ga.TARGET):
             return {"10.1/early": (rank_a, [("x", "s", "r")]), "10.1/late": (rank_b, [("y", "s", "r")])}
-        self.assertIn("academic elsewhere", cli.mill_not_reported(scores(ga.ACADEMIC), shown, flags))
-        self.assertIsNotNone(cli.mill_not_reported(scores(ga.OTHER), shown, flags))
-        self.assertIsNone(cli.mill_not_reported(scores(ga.TARGET, ga.ACADEMIC), shown, flags))
-        self.assertIsNone(cli.mill_not_reported(scores(ga.UNKNOWN), shown, flags))   # no data: your call
-        self.assertIsNone(cli.mill_not_reported(scores(ga.ACADEMIC), shown, []))    # not flagged
+        self.assertIn("academic elsewhere", cli.mill_outside_west(scores(ga.ACADEMIC), shown, flags))
+        self.assertIsNotNone(cli.mill_outside_west(scores(ga.OTHER), shown, flags))
+        self.assertIsNone(cli.mill_outside_west(scores(ga.TARGET, ga.ACADEMIC), shown, flags))
+        self.assertIsNone(cli.mill_outside_west(scores(ga.UNKNOWN), shown, flags))   # no data: your call
+        self.assertIsNone(cli.mill_outside_west(scores(ga.ACADEMIC), shown, []))    # not flagged
         # order unknown: reported if either side is Western
         unknown = dict(shown, earlier=None)
-        self.assertIsNone(cli.mill_not_reported(scores(ga.ACADEMIC, ga.TARGET), unknown, flags))
-        self.assertIsNotNone(cli.mill_not_reported(scores(ga.ACADEMIC, ga.OTHER), unknown, flags))
+        self.assertIsNone(cli.mill_outside_west(scores(ga.ACADEMIC, ga.TARGET), unknown, flags))
+        self.assertIsNotNone(cli.mill_outside_west(scores(ga.ACADEMIC, ga.OTHER), unknown, flags))
 
 
 class TestReportFlow(unittest.TestCase):

@@ -212,6 +212,18 @@ class TestSeverity(unittest.TestCase):
         db.execute("update reviews set severity = 'bogus'")
         self.assertEqual(gi_report.review_severity(db, f), "medium")
 
+    def test_medium_unlikely_gets_only_the_journal(self):
+        """medium-unlikely: medium, nobody expected to act -- the journal's email only, never the institutions'."""
+        import sqlite3
+        db = sqlite3.connect(":memory:")
+        db.execute("create table reviews (pair_lo, pair_hi, severity)")
+        db.execute("insert into reviews values ('10.1/a', '10.2/b', 'medium-unlikely')")
+        f = {"pair_lo": "10.1/a", "pair_hi": "10.2/b"}
+        self.assertEqual(gi_report.review_severity(db, f), "medium-unlikely")
+        big = {"second": {"pct": 90}}
+        self.assertEqual(gi_report.audiences("medium", big), ("publisher", "institution"))
+        self.assertEqual(gi_report.audiences("medium-unlikely", big), ("publisher",))
+
 
 class TestCompose(unittest.TestCase):
     def test_compose_arg(self):

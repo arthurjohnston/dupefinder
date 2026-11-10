@@ -69,8 +69,9 @@ Nothing is committed or pushed: the site page goes live once example_output/ is 
 
 Severity decides which emails are written: high (your review's severity in `reviews`, or --severity) gets
 all four; medium or no review (medium is the default) gets the email to the later article's journal, and
-the later authors' institutions' when more than 20% of the later article is shared; low gets only the journal's, alongside the PubPeer page. A ticked [data]
-finding in findings.md makes a case high. Drafts a case no longer gets (it was high, now isn't) are deleted.
+the later authors' institutions' when more than 20% of the later article is shared; low gets only the journal's, alongside the PubPeer page. medium-unlikely
+(medium, but you don't think anyone will act on it) gets what low gets. A ticked [data]
+finding in findings.md makes a case high, except a medium-unlikely one. Drafts a case no longer gets (it was high, now isn't) are deleted.
 
 gi_review_cli.py runs this when you save (or agree with) a problem verdict, and on t at its prompt, then
 opens the gi-cases agent and asks for the findings, the PubPeer link and whether to open the drafts.
@@ -83,7 +84,7 @@ proposes them, gi_case_prep.py) go into the PubPeer Markdown and every email aft
 your PubPeer post is up, --pubpeer-url URL saves it (pubpeer_url.txt) and the emails then link to it.
 
 Usage: gi_report_case.py GI_NUMBER [GI_NUMBER ...] [--problems] [--no-site] [--from ADDRESS] [--open-drafts]
-                         [--severity low|medium|high] [--pubpeer-url URL] [--publish-only | --authors-only]
+                         [--severity low|medium-unlikely|medium|high] [--pubpeer-url URL] [--publish-only | --authors-only]
                          [--site-text] [--db data/gi.sqlite3]
        gi_report_case.py --skipped | --rebuild-site [--site-text]
        --problems: every pair you've reviewed as a problem
@@ -124,6 +125,11 @@ def git_email():
 DEFAULT_SEVERITY = "medium"
 ALL_EMAILS_SEVERITY = "high"
 NO_PROBLEM_SEVERITY = "none"   # what gi_review_cli.ask_severity() saves for a no-problem verdict: no emails
+# medium, but you don't think anyone (journal, institutions) will act on it: the PubPeer page, the site page and
+# the journal's email only, as low -- never the institutions', whatever the share, and a [data] finding
+# doesn't raise it to high. Recorded as its own level so the severity itself stays medium.
+UNLIKELY_SEVERITY = "medium-unlikely"
+SEVERITY_LEVELS = ("low", UNLIKELY_SEVERITY, "medium", "high")
 SITE_IMAGES = True   # site pages show the passages as image crops of both PDFs (--site-text: as text)
 SELF_TYPES = ("text recycling", "duplicate publication")   # gi_review_cli.SELF_TYPES: never published by --skipped
 DATA_TYPE = "data copying"
@@ -139,7 +145,8 @@ MEDIUM_INSTITUTION_PCT = 20   # a medium case writes to the institutions only wh
 def audiences(severity, fd=None):
     """The emails a case of this severity gets: all of gi_contact.EMAIL_AUDIENCES when high (the earlier
     authors and their publisher too); the later article's journal, plus the later authors' institutions when
-    more than MEDIUM_INSTITUTION_PCT% of the later article is shared, when medium; only the journal when low.
+    more than MEDIUM_INSTITUTION_PCT% of the later article is shared, when medium; only the journal when low or
+    UNLIKELY_SEVERITY (medium, nobody expected to act).
     With fd: never the earlier authors when the two bylines share names (they'd be writing to the people who
     reused it). None at all for NO_PROBLEM_SEVERITY (a no-problem review)."""
     if severity == NO_PROBLEM_SEVERITY:
@@ -162,7 +169,7 @@ def review_severity(db, f):
                          (f["pair_lo"], f["pair_hi"])).fetchone()
     except (sqlite3.OperationalError, KeyError, IndexError):   # no reviews table, or no pair key
         row = None
-    return row[0] if row and row[0] in ("low", "medium", "high", NO_PROBLEM_SEVERITY) else DEFAULT_SEVERITY
+    return row[0] if row and row[0] in SEVERITY_LEVELS + (NO_PROBLEM_SEVERITY,) else DEFAULT_SEVERITY
 
 
 def review_type(db, f):
@@ -279,7 +286,7 @@ def write_report(db, f, report_dir=REPORT_DIR, site_dir=SITE_DIR, sender=None, s
     out = Path(report_dir) / case
     out.mkdir(parents=True, exist_ok=True)
     fd = case_findings(db, f, report_dir)
-    if fd.get("data_extra"):   # copied results data: everyone hears of it
+    if fd.get("data_extra") and severity != UNLIKELY_SEVERITY:   # copied results data: everyone hears of it
         severity = ALL_EMAILS_SEVERITY
     if authors_only:
         fd["journal_told"] = False
@@ -440,8 +447,9 @@ def main():
     ap.add_argument("--from", dest="sender", help="From address for the drafts (default: git config user.email)")
     ap.add_argument("--open-drafts", action="store_true",
                     help="open the drafts as Thunderbird compose windows, attachments included")
-    ap.add_argument("--severity", choices=("low", "medium", "high"),
-                    help="which emails to write: high = all four, otherwise only the later journal's "
+    ap.add_argument("--severity", choices=SEVERITY_LEVELS,
+                    help="which emails to write: high = all four, medium = the journal's (and the institutions' "
+                         "past 20%% shared), low or medium-unlikely = only the later journal's "
                          "(default: your review's severity, else medium)")
     ap.add_argument("--pubpeer-url", help="your PubPeer post for the case (one GI number): saved to "
                                           "pubpeer_url.txt, and the emails point to it")

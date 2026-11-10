@@ -5,14 +5,16 @@ $GI_REVIEW_OPENER; --pdfs opens both PDFs too, or press p at the prompt), then a
   1. what you think of it: decision and type, offered as one numbered list, most common first (counted over
      your reviews and the agent's);
   2. severity (problem / unsure only; Enter gives medium, the agent's is shown; high also writes the emails
-     to the earlier authors, their publisher and the later authors' institution, see below);
+     to the earlier authors, their publisher and the later authors' institution, see below; u is medium
+     when you don't think anyone will act on it: the journal's email only, as low);
   3. for an unsure verdict, flags: m = you think both papers came from a paper mill, e = not qualified to
      judge it (higher-level math, say);
   4. a note in your own words, only if you added ' n' to the verdict ('3 n', 'c n'; 'e' opens $EDITOR).
 Adding ' m' to any verdict ('2 m', 'c m n') flags the pair a paper mill. A paper mill whose later paper's
-authors aren't at a Western university (gi_affiliations' rank) isn't reported or published, whatever the
-verdict and severity: you don't report those (mill_not_reported()). With no affiliation data cached, the
-report prompt comes up as usual.
+authors aren't at a Western university (gi_affiliations' rank) is still reported, but a medium severity on it
+becomes medium-unlikely (gi_report_case.UNLIKELY_SEVERITY: the journal's email only), since you don't expect
+anyone to act on it (mill_outside_west()); low and high are kept. With no affiliation data cached, nothing
+changes.
 The verdict is saved as soon as it's complete, with no confirmation step (--gi NN --include-reviewed to change
 one). No reasons are asked for: a no-problem type that is its own reason (same paper, boilerplate, shared
 citations, artifact: TYPE_REASON) saves that reason, and a quick key saves its own.
@@ -188,7 +190,8 @@ TYPE_REASON = {"same paper": "same work under two DOIs / records",
                "shared citations": "the shared text is boilerplate or references",
                "artifact": "wrong PDF or extraction error"}
 
-SEVERITIES = {"l": "low", "m": "medium", "h": "high"}
+SEVERITIES = {"l": "low", "u": "medium-unlikely", "m": "medium", "h": "high"}   # u: medium, but nobody is expected
+# to act on it (gi_report_case.UNLIKELY_SEVERITY): reported like low, the journal's email only
 
 # the one-key verdict on the first menu: decision, type, severity, reason (skips the severity step)
 QUICK = ("problem", "cross-author copying", "medium", "most of the paper copied")
@@ -681,7 +684,7 @@ def ask_severity(pair, decision, type_=None):
     default = SELF_SEVERITY if type_ in SELF_TYPES else DEFAULT_SEVERITY
     ai = f", AI: {pair['ai_severity']}" if pair["ai_severity"] in SEVERITIES.values() else ""
     while True:
-        ans = ask(f"Severity  l)ow  m)edium  h)igh  [Enter: {default}{ai}] ").lower()
+        ans = ask(f"Severity  l)ow  u) medium, unlikely anyone acts  m)edium  h)igh  [Enter: {default}{ai}] ").lower()
         if not ans:
             return default
         if ans[:1] in SEVERITIES:
@@ -707,10 +710,11 @@ def split_suffixes(ans):
     return " ".join(words), note, mill
 
 
-def mill_not_reported(scores, shown, flags):
-    """Why a pair flagged paper mill isn't reported, or None: you don't report paper mills whose later paper's
-    authors aren't at a Western university (gi_affiliations' rank; with the order unknown, the better-ranked
-    side counts). None too when nothing is cached for the authors: then it's your call at the report prompt."""
+def mill_outside_west(scores, shown, flags):
+    """Why a pair flagged paper mill is reported as medium-unlikely rather than medium, or None: a paper mill
+    whose later paper's authors aren't at a Western university (gi_affiliations' rank; with the order unknown,
+    the better-ranked side counts) is reported, but you don't expect anyone to act on it. None too when nothing
+    is cached for the authors: then the severity you gave stands."""
     import gi_affiliations as ga
     if FLAGS["m"][0] not in flags:
         return None
@@ -822,7 +826,7 @@ def review_one(pair, choices, counts, saved_flags=(), prep=None, shown=None, set
         others = sum(1 for c, _ in gi_case_findings.pending_cases() if c != case)
         print(f"   f  {findings_line(case, prep)}" + (f"; {others} other case(s) have findings to check" if others else ""))
     print("  add ' n' to a verdict to leave a note (e.g. '3 n', 'c n'); without it you aren't asked for one;"
-          " ' m' flags it a paper mill ('2 m', 'c m n'): not reported when the later authors aren't Western")
+          " ' m' flags it a paper mill ('2 m', 'c m n'): medium becomes medium-unlikely when the later authors aren't Western")
     if prep and prep.status():
         print("  " + prep.status())
     quick = agreed = False
@@ -1027,8 +1031,8 @@ HEADLESS_PROMPT = ("Prep {case}: follow \"Prep a case\" in your instructions. Th
                    "writing in the case's folder and journal_contacts.json. Don't run gi_report_case.py: the "
                    "review tool writes the report files when the user confirms. Weigh the case (weigh-case) "
                    "before any contact lookups. Always look up the journal's contacts. Only when the weighing "
-                   "recommends high, or a finding is tagged [data], and it isn't a paper mill outside the West "
-                   "(weigh-case question 4b), also look up the later authors' "
+                   "recommends high, or a finding is tagged [data] and the weighing isn't medium-unlikely (a paper "
+                   "mill outside the West included: weigh-case question 4b), also look up the later authors' "
                    "institutions' research integrity officers (one contacts.json entry per institution, with "
                    "the later authors there), the same for each later author's current institution where it "
                    "differs from the byline (\"current\": true, only on evidence tied to that person, see "
@@ -1549,8 +1553,8 @@ def main():
                         discuss(case, prep)
                         continue
                     break
-                mill = out not in ("quit", "skip") and mill_not_reported(aff_scores, shown, out[4])
-                reporting = out not in ("quit", "skip") and not mill and not {FLAGS["r"][0], FLAGS["w"][0]} & set(out[4]) and (
+                mill = out not in ("quit", "skip") and mill_outside_west(aff_scores, shown, out[4])
+                reporting = out not in ("quit", "skip") and not {FLAGS["r"][0], FLAGS["w"][0]} & set(out[4]) and (
                     out[1] not in SELF_TYPES) and (out[0] == "problem" or (out[5] and pair["ai_decision"] == "problem"))
                 if prep and not reporting:   # not going to be reported: the analysis isn't needed
                     prep.stop()
@@ -1558,6 +1562,9 @@ def main():
                 if out in ("quit", "skip"):
                     break
                 decision, type_, severity, note, flags, agreed = out
+                if mill and severity == "medium":
+                    severity = SEVERITIES["u"]   # gi_report_case.UNLIKELY_SEVERITY
+                    print(f"  {mill}: severity medium-unlikely (the journal's email only)")
                 print(wrap("Save: ", f"{decision} / {type_} / {severity}" + (f" [{', '.join(flags)}]" if flags else "")
                            + (f" -- {note}" if note else "")))
                 save_review(db, pair, decision, type_, severity, note, flags)
@@ -1569,8 +1576,6 @@ def main():
                 # agreeing with the AI's problem call also counts when the same year turned it into unsure
                 if FLAGS["r"][0] in flags:
                     print("  already retracted: no report files (t on this pair still writes them)")
-                elif mill:
-                    print(f"  {mill}: not reported or published (t on this pair still reports it)")
                 elif FLAGS["w"][0] in flags:
                     print("  not worth reporting: no report files; publishing the site page as not reported")
                     publish_only(db, pair)
