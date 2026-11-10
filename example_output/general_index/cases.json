@@ -3256,5 +3256,30 @@
   "sources": 3,
   "union_words": 1433,
   "union_pct": 17.1
+ },
+ "GI-1047": {
+  "file": "GI-1047.html",
+  "reported": null,
+  "published": "2026-11-10",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Effects of epidermal growth factor receptor fusion protein on the cytotoxic activity of SOCS1-silenced dendritic cells in vitro",
+   "year": 2017,
+   "doi": "10.3892/or.2017.6160",
+   "pct": 12.0,
+   "journal": "Oncology Reports"
+  },
+  "earlier": {
+   "title": "Silenced suppressor of cytokine signaling 1 (SOCS1) enhances the maturation and antifungal immunity of dendritic cells in response toCandida albicansin vitro",
+   "year": 2014,
+   "doi": "10.1007/s12026-014-8562-8",
+   "pct": 6.0,
+   "journal": "Immunologic Research"
+  },
+  "matched_words": 449,
+  "runs": 24,
+  "longest": 37
  }
 }
