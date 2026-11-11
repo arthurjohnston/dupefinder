@@ -3309,5 +3309,30 @@
   "sources": 2,
   "union_words": 698,
   "union_pct": 19.2
+ },
+ "GI-970": {
+  "file": "GI-970.html",
+  "reported": null,
+  "published": "2026-11-11",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Successful treatment of anti-NMDA receptor encephalitis with early teratoma removal and plasmapheresis",
+   "year": 2018,
+   "doi": "10.1097/MD.0000000000011325",
+   "pct": 15.0,
+   "journal": "Medicine"
+  },
+  "earlier": {
+   "title": "Successful treatment of anti-NMDA receptor encephalitis with a prompt ovarian tumour removal and prolonged course of plasmapheresis: A case report",
+   "year": 2016,
+   "doi": "10.3892/mco.2016.1054",
+   "pct": 15.0,
+   "journal": "Molecular and Clinical Oncology"
+  },
+  "matched_words": 412,
+  "runs": 21,
+  "longest": 66
  }
 }
