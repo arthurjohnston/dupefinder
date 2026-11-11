@@ -3281,5 +3281,33 @@
   "matched_words": 449,
   "runs": 24,
   "longest": 37
+ },
+ "GI-940": {
+  "file": "GI-940.html",
+  "reported": "2026-11-11",
+  "published": "2026-11-11",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Management of atrial fibrillation-flutter: uptodate guideline paper on the current evidence",
+   "year": 2018,
+   "doi": "10.1080/20009666.2018.1514932",
+   "pct": 16.0,
+   "journal": "Journal of Community Hospital Internal Medicine Perspectives"
+  },
+  "earlier": {
+   "title": "Atrial fibrillation: review of current treatment strategies",
+   "year": 2016,
+   "doi": "10.21037/jtd.2016.09.13",
+   "pct": 8.0,
+   "journal": "Journal of Thoracic Disease"
+  },
+  "matched_words": 569,
+  "runs": 30,
+  "longest": 67,
+  "sources": 2,
+  "union_words": 698,
+  "union_pct": 19.2
  }
 }
