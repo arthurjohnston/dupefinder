@@ -3334,5 +3334,30 @@
   "matched_words": 412,
   "runs": 21,
   "longest": 66
+ },
+ "GI-889": {
+  "file": "GI-889.html",
+  "reported": "2026-11-11",
+  "published": "2026-11-11",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Atomic force microscopy probing in the measurement of cell mechanics",
+   "year": 2010,
+   "doi": "10.2147/ijn.s5787",
+   "pct": 44.0,
+   "journal": "International Journal of Nanomedicine"
+  },
+  "earlier": {
+   "title": "Single-Cell Elastography: Probing for Disease with the Atomic Force Microscope",
+   "year": 2004,
+   "doi": "10.1155/2004/482680",
+   "pct": 23.0,
+   "journal": "Disease Markers"
+  },
+  "matched_words": 1742,
+  "runs": 77,
+  "longest": 93
  }
 }
