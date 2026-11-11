@@ -3359,5 +3359,30 @@
   "matched_words": 1742,
   "runs": 77,
   "longest": 93
+ },
+ "GI-890": {
+  "file": "GI-890.html",
+  "reported": "2026-11-11",
+  "published": "2026-11-11",
+  "earlier_known": true,
+  "type": "data copying",
+  "data": true,
+  "later": {
+   "title": "Relationship of Anthropometric Measures with Cardiovascular Risk Factors in Children and Adolescents",
+   "year": 2014,
+   "doi": "10.5901/ajis.2014.v3n4p145",
+   "pct": 61.0,
+   "journal": "Academic Journal of Interdisciplinary Studies"
+  },
+  "earlier": {
+   "title": "Association of Anthropometric Measures with Cardiovascular Risk Factors and Metabolic Syndrome in Normal-Weight Children and Adolescents: The CASPIAN III Study",
+   "year": 2013,
+   "doi": "10.1159/000356011",
+   "pct": 35.0,
+   "journal": "Obesity Facts"
+  },
+  "matched_words": 1617,
+  "runs": 43,
+  "longest": 146
  }
 }
