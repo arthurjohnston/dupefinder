@@ -491,7 +491,8 @@ def measure(db, args):
         return by_doi.get(side.lower())
     year = lambda pid: (lib.execute("select year from papers where id = ?", (pid,)).fetchone() or [None])[0]
     check_args = argparse.Namespace(min_doc_words=300, shingle_size=10, x_drop=3, gap_open=None,
-                                    gap_extend=ctp.DEFAULT_GAP_EXTEND, max_gap=ctp.DEFAULT_MAX_GAP)
+                                    gap_extend=ctp.DEFAULT_GAP_EXTEND, max_gap=ctp.DEFAULT_MAX_GAP,
+                                    strip_page_furniture=False)   # the check every run so far was measured with
     rows = db.execute("select * from fulltext where run = ?", (args.run,)).fetchall()
     counts = {}
     for r in rows:

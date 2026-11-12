@@ -19,7 +19,8 @@ Two lists, both from gi_affiliations' cached OpenAlex/ORCID data (gi.sqlite3; no
                  with its tier), with the title of the academic's paper and copied_pct (that paper's GI 5-gram
                  share); tier 5 (a side with no metadata, or one PDF held twice) is left out (--all-tiers keeps it),
                  and so are pairs with a front-matter side or two proceedings-volume records
-                 (proceedings_noise; --keep-proceedings keeps them); venue_record names a side that is a
+                 (proceedings_noise; --keep-proceedings keeps them), and so are pairs with a template placeholder
+                 DOI on either side (PLACEHOLDER_DOIS); venue_record names a side that is a
                  volume record facing a real paper (A or B), which may be that paper inside the volume
 
 The copying paper is the later one (gi_write_pages.earlier_side / gi_preprints.earlier_by_year); with the order
@@ -64,6 +65,10 @@ POOL_FIELDS = ["pair_id", "lead_rank", "tier", "copying_paper", "title", "subjec
                "model_score", "gi_pct_a", "gi_pct_b", "venue_record", "same_title", "year_a", "year_b", "doi_a", "doi_b",
                "title_a", "title_b"]
 UNIDENTIFIED_TIER = 5    # gi_rank_leads: a side with no metadata, or one PDF held twice; unobtainable drops it
+# Template placeholder DOIs: RSC's article template prints 10.1039/x0xx00000x, so the index files template text
+# under it, and it "matches" every real RSC paper written from that template (41 unobtainable pairs on
+# 2026-11-10, none of them copying). Unobtainable drops any pair with one on either side.
+PLACEHOLDER_DOIS = {"10.1039/x0xx00000x"}
 
 # Proceedings records: Crossref titles like "[IEEE 2009 Chinese Control and Decision Conference (CCDC) - Guilin,
 # China (2009.6.17-2009.6.19)] 2009 Chinese Control and Decision Conference" name a volume, not a paper. Two of
@@ -200,7 +205,8 @@ def cmd_unobtainable(db, args):
             rank[pid] = (tier, lead_rank)
     pool = [r for r in pool if max(pct.get(int(r["pair_id"]), (0, 0))) >= args.min_pct
             and (args.all_tiers or rank.get(int(r["pair_id"]), (None,))[0] != UNIDENTIFIED_TIER)
-            and (args.keep_proceedings or not proceedings_noise(r["title_a"], r["title_b"]))]
+            and (args.keep_proceedings or not proceedings_noise(r["title_a"], r["title_b"]))
+            and not {r["doi_a"].lower(), r["doi_b"].lower()} & PLACEHOLDER_DOIS]
     dois = [d for r in pool for d in (r["doi_a"], r["doi_b"])]
     scores = ga.doi_scores(db, dois)
     profs = ga.doi_professors(db, dois)

@@ -26,6 +26,7 @@ upload after the rest, all tagged (gi_preprints.pair_priority()).
 pair must already have a page_number); --index-only rewrites index.html from the existing pages.
 
 Usage: gi_write_pages.py [OUT_DIR] [--db data/gi.sqlite3] [--sample-rate 4] [--no-db-writes] [--index-only] [--text-pages]
+                         [--run RUN]
                          [--pages 10,40,44]
 OUT_DIR defaults to data/fulltext_pages_s0123.
 """
@@ -318,6 +319,8 @@ def main():
                     help="open gi.sqlite3 read-only; don't update fulltext.page / page_number")
     ap.add_argument("--pages", type=lambda s: {int(x) for x in s.split(",")},
                     help="only (re)write these page numbers, e.g. 10,40,44 (index.html is still rebuilt)")
+    ap.add_argument("--run", help="only this fulltext run's pairs (numbering new ones), e.g. manual_s16; a partial "
+                                  "run like --pages, so _index.tsv is left as it is")
     ap.add_argument("--index-only", action="store_true", help="only rewrite OUT_DIR/index.html")
     ap.add_argument("--text-pages", action="store_true",
                     help="write the old text-diff pages (write_dupe_reports_html.py) instead of the default "
@@ -343,6 +346,8 @@ def main():
         if key in same_paper:
             continue
         n = res["page_number"]
+        if args.run and res["run"] != args.run:
+            continue
         if args.pages is not None and n not in args.pages:
             continue
         if n is None and args.no_db_writes:
@@ -401,7 +406,7 @@ def main():
     if not args.no_db_writes:
         db.commit()
     index_rows.sort(key=lambda r: r["n"])
-    if args.pages is not None:  # a partial run: don't overwrite _index.tsv with just these rows
+    if args.pages is not None or args.run:  # a partial run: don't overwrite _index.tsv with just these rows
         print(f"{written} pages written to {args.out_dir}")
         write_index(db, args.out_dir, pages_written)
         return

@@ -364,6 +364,12 @@ cd general_index
 # 2026-10-25: gi_metadata.py fetch (log data/metadata_fetch.log): whole OpenAlex/Crossref/Europe PMC records for the 39,230 DOIs of the useu/top30 runs + every real-overlap pair, OpenAlex author and institution records, and ~78k ORCID records (employments, educations, ...). gi_metadata.py show GI-N | pair_id | DOI prints it per paper and author, and whether either side cites the other.
 # 2026-10-27: the unobtainable pool (62,237 attempted pairs whose missing side has no reachable copy) screened from OpenAlex alone: affiliation_hunt/unobtainable_{fetch,screen,coauthors}.py (README there) -> data/unobtainable_openalex_screen.tsv. Before the co-author check: of 11,227 pairs scoring >= 0.3, 2,496 eliminated (same author, incl. name-order variants OpenAlex splits; or a JPT synopsis), 0 of 793 confirmed cross-author cases lost in calibration. 340 high-scoring pairs share a TITLE but not authors: some are whole papers republished under other names (IEEE 2016 vs IJARCCE 2017 'Efficient Digital Baseband Encoder'; INFOCOM 2004 vs IJCES 'Efficient String Matching'), so read those as leads. Co-author check done (22,741 calls, paid credit; log data/unobtainable_coauthors.log): 3,044 of 39,814 survivors have 2+ joint works (621 of them scoring >= 0.3). Final: 3,117 of 11,227 pairs scoring >= 0.3 eliminated (28%), 13,409 of 62,237 overall. The co-author signal is not calibrated against confirmed cases yet (~800 calls would do it).
 ../.venv/bin/python3 gi_write_pages.py      # pages for full-text-confirmed, unreviewed pairs
+# 2026-11-10: hand downloads for the unobtainable list (data/unobtainable_western_2026-10-30.csv; data/unobtainable_western_2026-10-30_by_band_prestige.csv is
+#   gi_unobtainable_sort.py's worklist (UNOBTAINABLE_WORKLIST.md): copying papers with 6+ authors left out, ordered by gi_lead_score.py's score, then the copying side's best university (OpenAlex institution h-index); --top30 --min-score 0.5 for the short list;
+#   doi/copied_doi first, blank where we hold that PDF -- re-run it after importing). Open the .xlsx beside it: DOIs and still-needed titles are clickable links.
+#   Save PDFs under any name in data/unobtainable_downloads/, then:
+../.venv/bin/python3 gi_manual_import.py    # match each PDF to a needed paper (DOI, else title near the top of page 1 + an author), import, measure every pair that now has both PDFs (run manual_s16), write their pages. Unmatched files stay put, listed in _unmatched.md. --dry-run to preview
+#   Matching measured on 300 held PDFs among the 38,682 needed papers: 253 right, 45 left for you, 2 wrong (a same-author near-identical title; a held PDF that was itself the wrong paper)
 ```
 
 After changing `gi_filters.py`, rerun from `gi_report.py` (then `gi_rank_leads.py`, `gi_recall.py`) so a
@@ -383,6 +389,8 @@ is meant to move it. Twice in the pilot a rule that looked right hid a known pla
 | `gi_abstract_check.py` | OpenAlex abstracts for both sides, shared-run verdict |
 | `gi_rank_leads.py` | tiers 1-5, two-sided before one-sided |
 | `gi_verify.sh` / `gi_verify.py` | select -> retrieve -> extract -> embed -> measure, into `fulltext` |
+| `gi_unobtainable_sort.py` / `gi_lead_score.py` | the unobtainable list as a scored download worklist (.csv + .xlsx with links); see UNOBTAINABLE_WORKLIST.md |
+| `gi_manual_import.py` | hand-downloaded PDFs (any filename) -> matched to the unobtainable list's needed papers -> run `manual_s16` -> measure -> pages |
 | `gi_resolve_titles.py` | title -> DOI via Crossref (not yet run on text-extracted titles) |
 | `gi_db.py` | the database: schema, views, `import-documents`, `import-rw`, `migrate` (one-off from the TSV era) |
 | `gi_recall.py` | Retraction Watch recall from the `rw_recall` view |
