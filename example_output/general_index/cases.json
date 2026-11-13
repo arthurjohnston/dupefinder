@@ -3384,5 +3384,30 @@
   "matched_words": 1617,
   "runs": 43,
   "longest": 146
+ },
+ "GI-778": {
+  "file": "GI-778.html",
+  "reported": null,
+  "published": "2026-11-13",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Outcome of dual column fixation for intra articular distal humerus fracture",
+   "year": 2018,
+   "doi": "10.22271/ortho.2018.v4.i2k.103",
+   "pct": 24.0,
+   "journal": "International Journal of Orthopaedics Sciences"
+  },
+  "earlier": {
+   "title": "Study of clinical outcome in intra articular distal humerus fractures treated with dual plating",
+   "year": 2017,
+   "doi": "10.18203/2320-6012.ijrms20172425",
+   "pct": 23.0,
+   "journal": "International Journal of Research in Medical Sciences"
+  },
+  "matched_words": 498,
+  "runs": 12,
+  "longest": 231
  }
 }
