@@ -57,6 +57,14 @@ def kinds(s):
     return [k] if isinstance(k, str) else list(k)
 
 
+def read(case_dir):
+    """case_dir/sources.json as {"sources": [...], ...}. A bare list of sources is accepted too: the skill only
+    implied the object form, and 16 cases were written as a list (GI-1008 failed with "'list' object has no
+    attribute 'get'")."""
+    data = json.loads((Path(case_dir) / "sources.json").read_text(encoding="utf-8"))
+    return {"sources": data} if isinstance(data, list) else data
+
+
 def load(case_dir):
     """(text sources, other sources) from case_dir/sources.json, each in file order with its "n" (1-based
     position in the file). A text source is one whose kind includes "text" and whose fulltext file exists.
@@ -65,7 +73,7 @@ def load(case_dir):
     if not path.exists():
         return [], []
     text, other = [], []
-    for n, s in enumerate(json.loads(path.read_text(encoding="utf-8")).get("sources", []), 1):
+    for n, s in enumerate(read(case_dir).get("sources", []), 1):
         s = {**s, "n": n}
         if s.get("abstract") and not s.get("fulltext"):
             continue
@@ -358,7 +366,7 @@ def add_sources(page, f, fd, case_dir):
         return page, None
     later_id, earlier_id = order
     case = Path(case_dir).name
-    later_title = json.loads((Path(case_dir) / "sources.json").read_text(encoding="utf-8")).get("later_title")
+    later_title = read(case_dir).get("later_title")
     with tempfile.TemporaryDirectory() as d:
         scratch = Path(d) / "library.sqlite3"
         ids = scratch_library(scratch, f["library"], later_id, case_dir, text_sources)

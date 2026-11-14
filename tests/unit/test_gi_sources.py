@@ -130,6 +130,20 @@ class TestCards(unittest.TestCase):
         self.assertEqual(gi_sources.cards_html([("A", "<p>no card</p>", "31%")], None, "31%"), "")
 
 
+class TestBareList(unittest.TestCase):
+    def test_list_form_loads_like_object_form(self):
+        """GI-1008: sources.json written as a bare list failed with "'list' object has no attribute 'get'"."""
+        src = [{"title": "Earlier", "kind": "text", "fulltext": "source-1.txt"}]
+        loaded = []
+        for data in (src, {"sources": src}):
+            with tempfile.TemporaryDirectory() as d:
+                (Path(d) / "source-1.txt").write_text("some text", encoding="utf-8")
+                (Path(d) / "sources.json").write_text(json.dumps(data), encoding="utf-8")
+                loaded.append(gi_sources.load(d))
+        self.assertEqual(loaded[0], loaded[1])
+        self.assertEqual([s["n"] for s in loaded[0][0]], [1])
+
+
 class TestNoSources(unittest.TestCase):
     def test_page_unchanged(self):
         with tempfile.TemporaryDirectory() as d:
