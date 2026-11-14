@@ -3459,5 +3459,30 @@
   "matched_words": 737,
   "runs": 18,
   "longest": 114
+ },
+ "GI-975": {
+  "file": "GI-975.html",
+  "reported": null,
+  "published": "2026-11-14",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "The accuracy of clinical symptoms in detecting cauda equina syndrome in patients undergoing acute MRI of the spine",
+   "year": 2015,
+   "doi": "10.1177/1971400915598074",
+   "pct": 14.0,
+   "journal": "The Neuroradiology Journal"
+  },
+  "earlier": {
+   "title": "Today or tomorrow? A retrospective analysis of the clinical indications used to request urgent magnetic resonance imaging of the spine",
+   "year": 2010,
+   "doi": "10.1308/003588411X12851639107278",
+   "pct": 13.0,
+   "journal": "The Annals of The Royal College of Surgeons of England"
+  },
+  "matched_words": 391,
+  "runs": 20,
+  "longest": 60
  }
 }
