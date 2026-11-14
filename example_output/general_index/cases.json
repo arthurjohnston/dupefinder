@@ -3534,5 +3534,30 @@
   "matched_words": 321,
   "runs": 16,
   "longest": 43
+ },
+ "GI-325": {
+  "file": "GI-325.html",
+  "reported": null,
+  "published": "2026-11-14",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "COMPARATIVE STUDY FOR THE USE OF DIFFERENT TECHNIQUES IN SEROUS FLUID CYTOLOGY",
+   "year": 2015,
+   "doi": "10.14260/jemds/2015/456",
+   "pct": 37.0,
+   "journal": "Journal of Evolution of Medical and Dental Sciences"
+  },
+  "earlier": {
+   "title": "Diagnostic utility of various techniques used in body fluid cytology",
+   "year": 2014,
+   "doi": "10.9790/0853-13151318",
+   "pct": 34.0,
+   "journal": "IOSR Journal of Dental and Medical Sciences"
+  },
+  "matched_words": 922,
+  "runs": 37,
+  "longest": 81
  }
 }
