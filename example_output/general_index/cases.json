@@ -3484,5 +3484,30 @@
   "matched_words": 391,
   "runs": 20,
   "longest": 60
+ },
+ "GI-952": {
+  "file": "GI-952.html",
+  "reported": null,
+  "published": "2026-11-14",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Anal Fissure",
+   "year": 2016,
+   "doi": "10.1055/s-0035-1570390",
+   "pct": 11.0,
+   "journal": "Clinics in Colon and Rectal Surgery"
+  },
+  "earlier": {
+   "title": "Anal Fissure",
+   "year": 2011,
+   "doi": "10.1055/s-0031-1272820",
+   "pct": 11.0,
+   "journal": "Clinics in Colon and Rectal Surgery"
+  },
+  "matched_words": 523,
+  "runs": 26,
+  "longest": 46
  }
 }
