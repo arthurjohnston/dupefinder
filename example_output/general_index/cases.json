@@ -3584,5 +3584,33 @@
   "matched_words": 4123,
   "runs": 187,
   "longest": 71
+ },
+ "GI-807": {
+  "file": "GI-807.html",
+  "reported": "2026-11-14",
+  "published": "2026-11-14",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Hepatitis C virus and hepatocarcinogenesis",
+   "year": 2012,
+   "doi": "10.3350/cmh.2012.18.4.347",
+   "pct": 16.0,
+   "journal": "Clinical and Molecular Hepatology"
+  },
+  "earlier": {
+   "title": "Molecular mechanisms of hepatocarcinogenesis in chronic hepatitis C virus infection",
+   "year": 2011,
+   "doi": "10.1111/j.1440-1746.2011.06723.x",
+   "pct": 29.0,
+   "journal": "Journal of Gastroenterology and Hepatology"
+  },
+  "matched_words": 546,
+  "runs": 32,
+  "longest": 52,
+  "sources": 2,
+  "union_words": 1225,
+  "union_pct": 33.2
  }
 }
