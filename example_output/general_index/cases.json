@@ -3434,5 +3434,30 @@
   "matched_words": 388,
   "runs": 13,
   "longest": 70
+ },
+ "GI-776": {
+  "file": "GI-776.html",
+  "reported": "2026-11-13",
+  "published": "2026-11-13",
+  "earlier_known": true,
+  "type": "data copying",
+  "data": true,
+  "later": {
+   "title": "Etiological and Clinical Spectrum of Pancytopenia Based on Bone Marrow Examination",
+   "year": 2019,
+   "doi": "10.3329/jom.v20i2.42005",
+   "pct": 36.0,
+   "journal": "Journal of Medicine"
+  },
+  "earlier": {
+   "title": "Bone marrow examination in cases of pancytopenia",
+   "year": 2017,
+   "doi": "10.18203/2320-6012.ijrms20171253",
+   "pct": 35.0,
+   "journal": "International Journal of Research in Medical Sciences"
+  },
+  "matched_words": 737,
+  "runs": 18,
+  "longest": 114
  }
 }
