@@ -904,7 +904,7 @@
  },
  "GI-874": {
   "file": "GI-874.html",
-  "reported": null,
+  "reported": "2026-11-14",
   "published": "2026-10-25",
   "earlier_known": true,
   "type": "cross-author copying",
@@ -1132,7 +1132,7 @@
  },
  "GI-881": {
   "file": "GI-881.html",
-  "reported": null,
+  "reported": "2026-11-14",
   "published": "2026-10-27",
   "earlier_known": true,
   "type": "cross-author copying",
@@ -3612,5 +3612,30 @@
   "sources": 2,
   "union_words": 1225,
   "union_pct": 33.2
+ },
+ "GI-803": {
+  "file": "GI-803.html",
+  "reported": "2026-11-14",
+  "published": "2026-11-14",
+  "earlier_known": false,
+  "type": "shared third source",
+  "data": false,
+  "later": {
+   "title": "Directed flow of quarks from the RHIC Beam Energy Scan measured by STAR",
+   "year": 2019,
+   "doi": "10.1016/j.nuclphysa.2018.08.036",
+   "pct": 18.0,
+   "journal": "Nuclear Physics A"
+  },
+  "earlier": {
+   "title": "Recent flow and femtoscopy results from STAR",
+   "year": 2019,
+   "doi": "10.1051/epjconf/201920403010",
+   "pct": 18.0,
+   "journal": "EPJ Web of Conferences"
+  },
+  "matched_words": 375,
+  "runs": 18,
+  "longest": 47
  }
 }
