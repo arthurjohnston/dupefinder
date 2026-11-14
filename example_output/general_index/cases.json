@@ -3409,5 +3409,30 @@
   "matched_words": 498,
   "runs": 12,
   "longest": 231
+ },
+ "GI-662": {
+  "file": "GI-662.html",
+  "reported": null,
+  "published": "2026-11-13",
+  "earlier_known": true,
+  "type": "data copying",
+  "data": true,
+  "later": {
+   "title": "Surgical treatment of advanced endometrial carcinoma: multivisceral resection -literature review",
+   "year": 2015,
+   "doi": "10.21614/jtmr-20-1-25",
+   "pct": 22.0,
+   "journal": "Journal of Translational Medicine and Research"
+  },
+  "earlier": {
+   "title": "Total Pelvic Exenteration for Primary and Recurrent Malignancies",
+   "year": 2009,
+   "doi": "10.1007/s00268-009-0066-7",
+   "pct": 12.0,
+   "journal": "World Journal of Surgery"
+  },
+  "matched_words": 388,
+  "runs": 13,
+  "longest": 70
  }
 }
