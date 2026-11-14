@@ -3665,5 +3665,30 @@
   "sources": 2,
   "union_words": 1436,
   "union_pct": 36.4
+ },
+ "GI-957": {
+  "file": "GI-957.html",
+  "reported": null,
+  "published": "2026-11-14",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Cooperative Approaches to Bacterial Foraging Algorithm for Clustering",
+   "year": 2015,
+   "doi": "10.14257/ijdta.2015.8.4.09",
+   "pct": 16.0,
+   "journal": "International Journal of Database Theory and Application"
+  },
+  "earlier": {
+   "title": "Cooperative Bacterial Foraging Optimization",
+   "year": 2009,
+   "doi": "10.1155/2009/815247",
+   "pct": 9.0,
+   "journal": "Discrete Dynamics in Nature and Society"
+  },
+  "matched_words": 486,
+  "runs": 24,
+  "longest": 44
  }
 }
