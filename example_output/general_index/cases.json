@@ -3637,5 +3637,33 @@
   "matched_words": 375,
   "runs": 18,
   "longest": 47
+ },
+ "GI-1008": {
+  "file": "GI-1008.html",
+  "reported": "2026-11-14",
+  "published": "2026-11-14",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Are Radiopharmaceuticals Safe? The Case of FDG-18",
+   "year": 2012,
+   "doi": "10.4172/2167-1052.1000102",
+   "pct": 32.0,
+   "journal": "Advances in Pharmacoepidemiology &amp; Drug Safety"
+  },
+  "earlier": {
+   "title": "Systematic reviews of adverse effects: framework for a structured approach",
+   "year": 2007,
+   "doi": "10.1186/1471-2288-7-32",
+   "pct": 23.0,
+   "journal": "BMC Medical Research Methodology"
+  },
+  "matched_words": 1279,
+  "runs": 45,
+  "longest": 168,
+  "sources": 2,
+  "union_words": 1436,
+  "union_pct": 36.4
  }
 }
