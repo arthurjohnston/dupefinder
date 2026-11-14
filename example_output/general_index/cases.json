@@ -3509,5 +3509,30 @@
   "matched_words": 523,
   "runs": 26,
   "longest": 46
+ },
+ "GI-986": {
+  "file": "GI-986.html",
+  "reported": null,
+  "published": "2026-11-14",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Pyogenic brain abscess, ventriculitis and diffuse meningitis with fatal outcome in an adult: Radiologic–pathologic correlation ☆,#",
+   "year": 2018,
+   "doi": "10.1016/j.radcr.2018.04.019",
+   "pct": 11.0,
+   "journal": "Radiology Case Reports"
+  },
+  "earlier": {
+   "title": "Pyogenic brain abscess with atypical features resembling glioblastoma in advanced MRI imaging",
+   "year": 2017,
+   "doi": "10.1016/j.radcr.2016.12.007",
+   "pct": 10.0,
+   "journal": "Radiology Case Reports"
+  },
+  "matched_words": 321,
+  "runs": 16,
+  "longest": 43
  }
 }
