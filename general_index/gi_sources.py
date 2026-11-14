@@ -298,18 +298,35 @@ CARDS_STYLE = """<style>
 </style>"""
 
 
-def _card(section, role):
-    """The paper card with this role (its .role text, e.g. "EARLIER / SOURCE") in a section's top box."""
-    return next((c for c in CARD.findall(section) if f">{role}</p>" in c), None)
+ROLE = re.compile(r'<p class="role[^"]*">[^<]*</p>')
 
 
-def cards_html(sections, later_card, union_txt):
+def _card(section, role, later_doi=None):
+    """The paper card with this role (its .role text, e.g. "EARLIER / SOURCE") in a section's top box.
+    With later_doi, a section written --neutral (cards "PAPER A" / "PAPER B", which say nothing about
+    direction) is read by DOI instead: the later article's card for a "LATER ..." role, the other one for
+    an "EARLIER ..." role, relabelled with `role`. Matching the labels alone dropped the whole box from
+    every page once the sections went neutral (GI-807, GI-897)."""
+    cards = CARD.findall(section)
+    found = next((c for c in cards if f">{role}</p>" in c), None)
+    if found or not later_doi:
+        return found
+    key = f'href="https://doi.org/{later_doi.lower()}"'
+    later = [c for c in cards if key in c.lower()]
+    if len(later) != 1 or len(cards) != 2:   # can't tell the two apart: no box rather than a wrong one
+        return None
+    c = later[0] if role.startswith("LATER") else next(c for c in cards if c is not later[0])
+    cls = "later" if role.startswith("LATER") else ""
+    return ROLE.sub(lambda _: f'<p class="role {cls}">{html.escape(role)}</p>', c, count=1)
+
+
+def cards_html(sections, later_card, union_txt, later_doi=None):
     """The overview's top box: every earlier work's card (as its own section shows it: role "EARLIER / SOURCE
     A", its share and a link to its passages) stacked on the left, the later article's card on the right, as in
     the single-pair box. sections: [(letter, section html, share text)]."""
     left = []
     for letter, sec, share in sections:
-        c = _card(sec, f"EARLIER / SOURCE {letter}")
+        c = _card(sec, f"EARLIER / SOURCE {letter}", later_doi)
         if not c:
             continue
         left.append(c[:-len("</div>")] + f'<p class="share"><strong>{share}</strong> of the later article &middot; '
@@ -361,7 +378,8 @@ def add_sources(page, f, fd, case_dir):
     paired = _tag(page[i:], "A", fd["first"]["year"])
     union = set().union(*(m[k]["covered"] for k in ["paired", *ids]))
     cards = cards_html([("A", paired, _pct(len(m["paired"]["covered"]), m["words"])), *sections],
-                       _card(paired, "LATER / FLAGGED"), _pct(len(union), m["words"]))
+                       _card(paired, "LATER / FLAGGED", fd["second"].get("doi")), _pct(len(union), m["words"]),
+                       fd["second"].get("doi"))
     page = page[:i] + overview_html(fd, text_sources, other, m, later_title, cards) + paired
     k = page.rfind("<footer")
     k = k if k >= 0 else page.rfind("</div>")

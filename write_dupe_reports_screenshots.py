@@ -502,6 +502,12 @@ class PdfSide:
         except Exception as exc:  # a damaged PDF must not take the page down with it
             self.doc, self.error = None, f"PDF could not be read ({exc.__class__.__name__})"
             return
+        # PyMuPDF also opens plain text (a source known only from its saved full text, e.g. a PMC
+        # manuscript's .txt) and lays it out as pages, so the passage is found -- but highlight
+        # annotations are PDF-only, and every crop then failed with "is no PDF" (GI-807).
+        if not self.doc.is_pdf:
+            self.doc, self.error = None, TEXT_ONLY
+            return
         self.tokens = build_pdf_tokens(pages)
         if not self.tokens:
             self.error = "PDF has no text layer (scanned?)"
@@ -620,10 +626,16 @@ EXTRA_STYLE = """
 """
 
 
+TEXT_ONLY = "no PDF of this article, only its text"   # PdfSide.error for a source saved as text
+
+
 def _fallback_html(reason, match_words):
+    """The passage as text, after a note saying why there's no image -- except for a source that only
+    exists as text, where there was never going to be one and the note is just noise."""
     text = html.escape(" ".join(match_words))
-    return (f'<p class="locate-note">{html.escape(reason)} &mdash; showing the extracted '
-            f'text instead.</p><p class="shot-text"><mark class="match">{text}</mark></p>')
+    note = ("" if reason == TEXT_ONLY else
+            f'<p class="locate-note">{html.escape(reason)} &mdash; showing the extracted text instead.</p>')
+    return f'{note}<p class="shot-text"><mark class="match">{text}</mark></p>'
 
 
 class ScreenshotExhibits:
