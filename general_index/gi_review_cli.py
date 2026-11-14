@@ -52,7 +52,10 @@ OpenAlex/ORCID data first. --western-only keeps only pairs whose copying (later)
 the order unknown, either paper will do. Both read the author checks too (gi_affiliations' author_checks: what the
 case agent, or you with `gi_affiliations.py check`, established about an author -- an OpenAlex merge, a move, a
 byline outside the West), synced from the case folders when the tool starts, so a case the checks leave without
-a Western academic drops out of --western-only exactly as it drops out of gi_western_csv.py's list.
+a Western academic drops out of --western-only exactly as it drops out of gi_western_csv.py's list. An author
+no check covers (or only 'untraced' ones) gets the automatic one (gi_affiliations.byline_checks()): institutions
+on the paper all outside the West means their current Western university is a namesake merged in by OpenAlex,
+not theirs -- unless their ORCID record shows the byline institution and a current Western academic job.
 --country IN,PK (ISO codes; 'west' for the Western set) keeps only pairs whose copying paper has an
 author tied to one of those countries -- an institution on its byline, an author's current university
 (OpenAlex last known / ORCID current), or an author check's now_country -- so the non-Western cases can be

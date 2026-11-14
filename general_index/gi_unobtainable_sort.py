@@ -27,6 +27,40 @@ prestigious university first. The score is a ranking, not a calibrated probabili
 picked by earlier runs, not at random from this list. (The order before 2026-11-11 was abstract check, then
 20% bands of copied_pct: wrong outside "shared text", where high index overlap is almost always a dud.)
 
+Author check (byline_check column): the list says an academic is Western from OpenAlex's last known institution
+or a current ORCID job, not from the paper, and OpenAlex merges namesakes, so an author of a Chinese conference
+paper can show up "at" Oxford. Each row is checked against the copying paper's own byline in the cached OpenAlex
+record (oa_authorships: the institutions OpenAlex matched for that author on that paper), the test the case agent
+applies to every case (author_checks, gi_affiliations.CHECK_VERDICTS):
+  byline           a Western institution (TARGET_COUNTRIES) for this author on this paper
+  not on byline    institutions on this paper, every one outside the West: dropped, as the case agent's
+                   "not on byline" verdict drops an author (the commonest false positive among the checked cases)
+  no affiliation   OpenAlex matched no institution for the author on this paper (or none with a country): kept,
+                   unverified
+  not found        no author of that name on the paper's OpenAlex record: kept, unverified
+  moved            institutions on this paper all outside the West, but the author's ORCID record lists that
+                   byline institution (a job or a degree) AND a current Western job (not visiting, emeritus or
+                   honorary): the same person, now in the West: kept. ORCID records are the person's own; a
+                   namesake merged into the OpenAlex profile brings an ORCID whose history doesn't match the
+                   byline. (The byline's country alone was tried and is noise: see mover().)
+                   Records not cached are listed at the end of a run; --fetch-orcids fetches them first.
+  on earlier paper the pair's order was unknown (a year missing from the index), the cached OpenAlex/Crossref
+                   records give both years, and the academic is only on the earlier paper: a source author, not
+                   a copying one (a reputable 2003 conference paper against a 2010 predatory-journal one): dropped
+CHECKS (data/unobtainable_author_checks.tsv: doi, author, university ('' = every row of that author), verdict,
+basis, checked) holds verdicts reached by reading, mostly for "no affiliation" rows (OpenAlex's raw
+affiliation string, the venue, the co-authors); it overrides the automatic one, and a verdict in
+gi_affiliations.NOT_WESTERN drops the row. So do the case agent's and your own author_checks for that paper,
+where there are any. byline_institutions lists what OpenAlex has for the author on the paper, to eyeball a "byline" row whose
+listed university isn't there (often the author moved there later; sometimes a namesake: record those in CHECKS
+with the university filled in). A paper with no row left drops; under --top30, a paper with no top-30 row left drops.
+--keep-unverified-authors keeps every row and only fills the column.
+
+Also left out: pairs between two issues of one recurring column (SERIES_COLUMNS, both titles starting with
+it). NeoReviews' "Strip of the Month" (64 pairs on 2026-11-13; 16 of the 42 top-30 papers scoring 0.5+) is a
+monthly fetal-heart-rate case written to a fixed format by rotating authors, so every issue shares the column's
+standard text with every other.
+
 --top30: keep only copying papers with at least one academic at one of the 27 Western universities on the
 top-30 list (affiliation_hunt/top30_find.py's TOP30, less Tsinghua, Peking and NUS), matched on the university
 column's OpenAlex name, including the medical-school/health-system variants in TOP30_NAMES. The paper's other
@@ -41,13 +75,17 @@ import argparse
 import collections
 import csv
 import html
+import json
 import re
 import urllib.parse
 import sqlite3
 from pathlib import Path
 
+import gi_affiliations as ga
 import gi_db
 import gi_lead_score
+import gi_metadata
+import gi_preprints
 
 SCORE_BAND = 0.1
 
@@ -69,7 +107,9 @@ TOP30_NAMES = {n.lower() for n in [
 
 IN = gi_db.DATA / "unobtainable_western_2026-10-30.csv"
 OUT = gi_db.DATA / "unobtainable_western_2026-10-30_by_band_prestige.csv"
-LEAD = ["doi", "copied_doi", "score", "abstract_check", "title", "university", "copied_pct", "title_a", "title_b", "have_pdf",
+SERIES_COLUMNS = ("strip of the month:",)
+CHECKS = gi_db.DATA / "unobtainable_author_checks.tsv"
+LEAD = ["doi", "copied_doi", "score", "abstract_check", "title", "university", "byline_check", "byline_institutions", "copied_pct", "title_a", "title_b", "have_pdf",
         "n_authors",
         "uni_h_index", "author", "country", "pair_id"]
 
@@ -152,6 +192,100 @@ def author_counts(db, dois, pair_ids):
     return n
 
 
+def load_checks(db, dois):
+    """{(doi, author lower): [(university, verdict, basis)]}: CHECKS, then the agent's and your author_checks."""
+    out = collections.defaultdict(list)
+    if CHECKS.exists():
+        with open(CHECKS, newline="", encoding="utf-8") as f:
+            for c in csv.DictReader(f, delimiter="\t"):
+                if c["verdict"] not in ga.CHECK_VERDICTS:
+                    raise SystemExit(f"{CHECKS}: unknown verdict {c['verdict']!r} for {c['author']}")
+                out[(c["doi"].lower(), c["author"].lower())].append((c["university"], c["verdict"], c["basis"]))
+    rdb = sqlite3.connect(f"file:{gi_db.DB_PATH}?mode=ro", uri=True)
+    rdb.row_factory = sqlite3.Row
+    for c in ga.load_author_checks(rdb, dois, auto=False).values():
+        for r in sorted(c, key=lambda r: r["checked_by"] == "you"):     # yours last, so they win
+            out[(r["doi"], r["author"].lower())].append((r["university"], r["verdict"], r["basis"] or ""))
+    return out
+
+
+def pub_years(db, dois):
+    """doi (lower) -> publication year from the cached OpenAlex work record, else Crossref's issued date."""
+    out = {}
+    dois = sorted(dois)
+    for i in range(0, len(dois), 900):
+        ch = dois[i:i + 900]
+        qs = ",".join("?" * len(ch))
+        for d, y in db.execute(f"select doi, json_extract(raw, '$.\"issued\".\"date-parts\"[0][0]') "
+                               f"from crossref_works where doi in ({qs})", ch):
+            if y:
+                out[d.lower()] = int(y)
+        for d, y in db.execute(f"select doi, json_extract(raw, '$.publication_year') from oa_work_records "
+                               f"where doi in ({qs})", ch):
+            if y:
+                out[d.lower()] = int(y)
+    return out
+
+
+def byline_checks(db, rows, papers):
+    """Each row's byline_check (see the docstring): CHECKS / author_checks for that author and paper, else the
+    cached OpenAlex byline, with the author's ORCID record to tell a mover from a namesake. papers(r): the DOIs
+    the academic may be on (both when the order is unknown). Returns the ORCID iDs of "not on byline" authors
+    whose record isn't cached (--fetch-orcids fetches them)."""
+    dois = {d.lower() for r in rows for d in papers(r) if d and not d.startswith("gi:")}
+    by_doi = collections.defaultdict(list)
+    ds = sorted(dois)
+    for i in range(0, len(ds), 900):
+        ch = ds[i:i + 900]
+        for d, name, insts, orcid in db.execute(
+                f"select s.doi, s.name, s.institutions, a.orcid from oa_authorships s left join oa_authors a "
+                f"using (author_id) where s.doi in ({','.join('?' * len(ch))})", ch):
+            by_doi[d].append((name, json.loads(insts or "[]"), orcid))
+    checks = load_checks(db, dois)
+    years = pub_years(db, {r[f"doi_{x}"].lower() for r in rows if "unknown" in r["copying_paper"] for x in "ab"})
+    histories, need = {}, set()
+    for r in rows:
+        verdict = None
+        if "unknown" in r["copying_paper"]:
+            ya, yb = (str(r[f"year_{x}"] or years.get(r[f"doi_{x}"].lower(), "")) for x in "ab")
+            earlier = gi_preprints.earlier_by_year(ya, yb)
+            on = {x for x in "ab" for name, _, _ in by_doi.get(r[f"doi_{x}"].lower(), [])
+                  if ga.same_name(name, r["author"])}
+            r["_earlier_only"] = bool(earlier and on == {earlier})
+        for d in (x.lower() for x in papers(r)):
+            for uni, v, basis in checks.get((d, r["author"].lower()), []):
+                if uni in ("", r["university"]):
+                    verdict = v
+        found = [(insts, orcid) for d in papers(r) for name, insts, orcid in by_doi.get(d.lower(), [])
+                 if ga.same_name(name, r["author"])]
+        r["byline_institutions"] = "; ".join(dict.fromkeys(f"{i.get('name')} ({i.get('country') or '?'})"
+                                                           for insts, _ in found for i in insts))
+        if verdict is None and r.get("_earlier_only"):
+            verdict = "on earlier paper"
+        if verdict is None:
+            countries = {(i.get("country") or "").upper() for insts, _ in found for i in insts} - {""}
+            verdict = ("not found" if not found else "no affiliation" if not countries
+                       else "byline" if countries & ga.TARGET_COUNTRIES else "not on byline")
+            if verdict == "not on byline":
+                verdict = mover(db, r, found, histories, need) or verdict
+        r["byline_check"] = verdict
+    return need
+
+
+def mover(db, r, found, histories, need):
+    """'moved' when the author's ORCID record shows the paper's author since moved to the West
+    (gi_affiliations.moved_to_west()); None otherwise. Uncached records go in need."""
+    byline = [i.get("name") for insts, _ in found for i in insts]
+    for orcid in dict.fromkeys(o for _, o in found if o):
+        if orcid not in histories:
+            histories[orcid] = ga.orcid_history(db, orcid)
+        if histories[orcid] is None:
+            need.add(orcid)
+        elif ga.moved_to_west(histories[orcid], byline):
+            return "moved"
+    return None
+
+
 def pair_features(db, pair_ids):
     """pair_id -> the inputs gi_lead_score.features() needs."""
     out = {}
@@ -173,6 +307,10 @@ def main():
     ap.add_argument("out", nargs="?", type=Path, default=OUT)
     ap.add_argument("--max-authors", type=int, default=5)
     ap.add_argument("--top30", action="store_true", help="only papers with an academic at a Western top-30 university")
+    ap.add_argument("--fetch-orcids", action="store_true",
+                    help="first fetch the ORCID records the author check needs (public API, free)")
+    ap.add_argument("--keep-unverified-authors", action="store_true",
+                    help="keep rows the author check says aren't Western (only fill byline_check)")
     ap.add_argument("--min-score", type=float, default=0.0, help="only pairs scoring at least this")
     args = ap.parse_args()
     if args.top30:
@@ -191,6 +329,10 @@ def main():
     ids = sorted(feats)
     scores = dict(zip(ids, gi_lead_score.fit().predict_proba(gi_lead_score.features([feats[i] for i in ids]))[:, 1]))
     kept, dropped = [], set()
+    series = {r["pair_id"] for r in rows
+              if any(r["title_a"].lower().startswith(c) and r["title_b"].lower().startswith(c) for c in SERIES_COLUMNS)}
+    rows_in = len(rows)
+    rows = [r for r in rows if r["pair_id"] not in series]
     for r in rows:
         n = counts.get(copying(r).lower())
         if n is not None and n > args.max_authors:
@@ -220,11 +362,28 @@ def main():
         v = h.get((r["university"], r["country"]), h.get((r["university"], None)))
         r["uni_h_index"] = "" if v is None else v
         kept.append(r)
+    papers = lambda r: [r["doi_a"], r["doi_b"]] if "unknown" in r["copying_paper"] else [copying(r)]
+    need = byline_checks(db, kept, papers)
+    if need and args.fetch_orcids:
+        wdb = sqlite3.connect(gi_db.DB_PATH, timeout=300, check_same_thread=False)
+        gi_metadata.Metadata(wdb, argparse.Namespace(max_calls=0, workers=6, email=gi_metadata.CONTACT_EMAIL)
+                             ).orcid_records(sorted(need))
+        wdb.close()
+        need = byline_checks(db, kept, papers)
+    if need:
+        print(f"{len(need)} 'not on byline' authors have an ORCID iD whose record isn't cached "
+              "(--fetch-orcids fetches them, free, to tell movers from namesakes)")
+    before = {(r["pair_id"], copying(r)) for r in kept}
+    not_western = [r for r in kept if r["byline_check"] in ga.NOT_WESTERN]
+    if not args.keep_unverified_authors:
+        kept = [r for r in kept if r["byline_check"] not in ga.NOT_WESTERN]
     groups = collections.defaultdict(list)
     for r in kept:
         groups[(r["pair_id"], copying(r))].append(r)
+    groups_all = set(groups)
     if args.top30:
-        groups = {g: rs for g, rs in groups.items() if any(r["university"].lower() in TOP30_NAMES for r in rs)}
+        groups = {g: rs for g, rs in groups.items() if any(r["university"].lower() in TOP30_NAMES
+                                                           and r["byline_check"] not in ga.NOT_WESTERN for r in rs)}
         kept = [r for rs in groups.values() for r in rs]
     if args.min_score:
         groups = {g: rs for g, rs in groups.items() if float(rs[0]["score"]) >= args.min_score}
@@ -241,8 +400,13 @@ def main():
         w.writerows(out_rows)
     write_xlsx(args.out.with_suffix(".xlsx"), fields, out_rows)
     tally = collections.Counter(r["have_pdf"] for r in kept)
-    print(f"{len(rows)} rows in; {len(dropped)} copying papers with more than {args.max_authors} authors left out; "
+    print(f"{rows_in} rows in; {len(series)} pairs within a recurring column left out; "
+          f"{len(dropped)} copying papers with more than {args.max_authors} authors left out; "
           f"{len(kept)} rows ({len(groups)} copying papers) -> {args.out} and .xlsx")
+    print(f"author check: {len(not_western)} rows not Western on the paper "
+          + ("kept (--keep-unverified-authors)" if args.keep_unverified_authors else
+             f"left out, and with them {len(before - set(groups_all))} copying papers with no Western academic left")
+          + "; " + ", ".join(f"{k} {v}" for k, v in collections.Counter(r["byline_check"] for r in kept).most_common()))
     print("abstract_check: " + ", ".join(f"{k or '(none)'} {v}" for k, v in
                                          collections.Counter(r["abstract_check"] for r in kept).most_common()))
     print("have_pdf: " + ", ".join(f"{k} {v}" for k, v in tally.most_common()))

@@ -219,7 +219,21 @@ class TestDoiCountries(unittest.TestCase):
                         "values ('10.1/x', ?, ?, ?, ?, 'agent')", (author, university, verdict, now_country))
 
     def test_byline_and_current_universities(self):
-        self.assertEqual(ga.doi_countries(self.db, ["10.1/X"]), {"10.1/x": {"BD", "IN", "KR"}})
+        # Asha Rao's byline is all outside the West, so the automatic check takes her current university (IN)
+        # away and leaves the byline (BD); Ben Ko has no byline institution and keeps his current one
+        self.assertEqual(ga.doi_countries(self.db, ["10.1/X"]), {"10.1/x": {"BD", "KR"}})
+
+    def test_untraced_doesnt_stop_the_byline_check(self):
+        self.add_check("untraced", "Asha Rao", "IIT Delhi")
+        self.assertEqual(ga.doi_countries(self.db, ["10.1/x"])["10.1/x"], {"BD", "KR"})
+
+    def test_hand_check_overrides_the_byline_check(self):
+        self.add_check("confirmed", "Asha Rao", "IIT Delhi")
+        self.assertEqual(ga.doi_countries(self.db, ["10.1/x"])["10.1/x"], {"BD", "IN", "KR"})
+
+    def test_on_earlier_paper_naming_a_university_drops_the_author(self):
+        self.add_check("on earlier paper", "Ben Ko", "Seoul Natl Univ")
+        self.assertEqual(ga.doi_countries(self.db, ["10.1/x"])["10.1/x"], {"BD"})
 
     def test_checks(self):
         self.add_check("name only", "Ben Ko", "Seoul Natl Univ")
@@ -239,6 +253,50 @@ class TestDoiCountries(unittest.TestCase):
         self.assertIn("NZ", ga.parse_countries("west"))
         with self.assertRaises(ValueError):
             ga.parse_countries("India")
+
+
+class TestBylineChecks(unittest.TestCase):
+    """byline_checks(): an author whose institutions on the paper are all outside the West is 'not on byline'
+    -- unless their ORCID record lists that byline institution and a current Western academic job ('moved')."""
+
+    def setUp(self):
+        self.db = make_db()
+        add_work(self.db, "10.1/y", [("A1", "Li Wei", [inst("Univ of Toronto", "CA")]),
+                                     ("A2", "Ann Bo", [inst("Oxford", "GB")])])
+        self.db.execute("update oa_authorships set institutions = ? where doi = '10.1/y'",
+                        (json.dumps([inst("Yunnan Univ", "CN")]),))
+        self.db.execute("update oa_authors set orcid = '0000-1' where author_id = 'A1'")
+
+    def jobs(self, *jobs):
+        self.db.execute("insert into orcid_employments (orcid, current, raw) values ('0000-1', '[]', ?)",
+                        (json.dumps([{"name": n, "country": c, "role": r, "end": e} for n, c, r, e in jobs]),))
+
+    def verdicts(self):
+        return {c["author"]: c["verdict"] for c in ga.byline_checks(self.db, ["10.1/y"]).get("10.1/y", [])}
+
+    def test_namesake(self):
+        self.assertEqual(self.verdicts(), {"Li Wei": "not on byline", "Ann Bo": "not on byline"})
+        self.assertEqual(ga.doi_scores(self.db, ["10.1/y"])["10.1/y"][0], ga.ACADEMIC)
+
+    def test_mover(self):
+        self.jobs(("Yunnan Univ", "CN", "lecturer", "2019"), ("University of Toronto", "CA", "professor", ""))
+        self.assertEqual(self.verdicts()["Li Wei"], "moved")
+        self.assertEqual(ga.doi_scores(self.db, ["10.1/y"])["10.1/y"][0], ga.TARGET)
+
+    def test_not_a_mover(self):
+        for jobs in [(("Yunnan Univ", "CN", "lecturer", "2019"), ("University of Toronto", "CA", "professor", "2022")),
+                     (("Yunnan Univ", "CN", "lecturer", "2019"), ("University of Toronto", "CA", "visiting professor", "")),
+                     (("Yunnan Univ", "CN", "lecturer", "2019"), ("Acme Corp", "CA", "engineer", "")),
+                     (("Beijing Univ", "CN", "lecturer", "2019"), ("University of Toronto", "CA", "professor", ""))]:
+            self.db.execute("delete from orcid_employments")
+            self.jobs(*jobs)
+            self.assertEqual(self.verdicts()["Li Wei"], "not on byline", jobs)
+
+    def test_western_or_empty_byline_left_alone(self):
+        self.db.execute("update oa_authorships set institutions = ? where position = 1",
+                        (json.dumps([inst("Yunnan Univ", "CN"), inst("Oxford", "GB")]),))
+        self.db.execute("update oa_authorships set institutions = ? where position = 0", (json.dumps([inst("X", "")]),))
+        self.assertEqual(self.verdicts(), {})
 
 
 if __name__ == "__main__":

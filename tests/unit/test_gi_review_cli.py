@@ -257,6 +257,9 @@ class TestReportFlow(unittest.TestCase):
         self.cf = gi_case_findings
         self.saved = (gi_case_findings.REPORT_DIR, cli.ask, cli.pubpeer_page, cli.run_agent)
         self.calls = []
+        import gi_report_case   # never start Thunderbird: tests that check the drafts replace this themselves
+        real_open, gi_report_case.open_drafts = gi_report_case.open_drafts, lambda emls: None
+        self.addCleanup(setattr, gi_report_case, "open_drafts", real_open)
         for fn in ("findings_path", "pubpeer_url_path"):   # point the defaults at the temp dir
             orig = getattr(gi_case_findings, fn)
             setattr(self, "_" + fn, orig)

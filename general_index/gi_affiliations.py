@@ -648,11 +648,13 @@ def assign_checks(checks, names):
 
 
 def pick_check(checks, university):
-    """The check that applies to one university: the one naming it, else the author-wide one; yours first."""
-    for want in (university, ""):
-        rows = [c for c in checks if (c["university"] or "") == want]
-        if rows:
-            return min(rows, key=lambda c: c["checked_by"] != "you")
+    """The check that applies to one university: the one naming it, else the author-wide one; yours first. An
+    'untraced' check (nothing established) gives way to any other verdict, e.g. byline_checks()' author-wide one."""
+    for traced in (True, False):
+        for want in (university, ""):
+            rows = [c for c in checks if (c["university"] or "") == want and (c["verdict"] != "untraced") == traced]
+            if rows:
+                return min(rows, key=lambda c: c["checked_by"] != "you")
     return None
 
 
@@ -700,8 +702,8 @@ def western_universities(author, jobs, checks=()):
     return out
 
 
-def load_author_checks(db, dois):
-    """{doi (lower): [author_checks rows]}."""
+def load_author_checks(db, dois, auto=True):
+    """{doi (lower): [author_checks rows]}. auto: plus byline_checks() for every author none of those rows covers."""
     ensure_tables(db)
     dois = sorted({(d or "").lower() for d in dois if d})
     out = {}
@@ -709,6 +711,87 @@ def load_author_checks(db, dois):
         chunk = dois[i:i + CHUNK]
         for r in db.execute(f"select * from author_checks where doi in ({_qs(chunk)})", chunk):
             out.setdefault(r["doi"], []).append(r)
+    if auto:
+        for d, cs in byline_checks(db, dois, out).items():
+            out.setdefault(d, []).extend(cs)
+    return out
+
+
+def org_key(name):
+    return " ".join((name or "").lower().replace("\u2013", "-").split())
+
+
+def orcid_history(db, orcid):
+    """[(section, organisation, role, country, end)] from the cached ORCID record (employments, educations,
+    ...), else the cached employments; None when neither is cached. end '' = current."""
+    import gi_metadata
+    has_records = db.execute("select 1 from sqlite_master where name = 'orcid_records'").fetchone()
+    rec = db.execute("select raw from orcid_records where orcid = ?", (orcid,)).fetchone() if has_records else None
+    if rec and rec[0]:
+        return [(sec, org, role or "", (country or "").upper(), end or "") for sec, org, role, _, end, country in
+                gi_metadata.orcid_affiliations(json.loads(rec[0]))]
+    if rec:
+        return []                                       # fetched: no public record
+    emp = db.execute("select raw from orcid_employments where orcid = ?", (orcid,)).fetchone()
+    if emp and emp[0]:
+        return [("employments", e.get("name"), e.get("role") or "", (e.get("country") or "").upper(),
+                 e.get("end") or "") for e in json.loads(emp[0])]
+    return None
+
+
+def moved_to_west(history, byline_orgs):
+    """The current Western job (organisation, country) when an ORCID history lists one of the paper's byline
+    institutions (a job or a degree) AND a current job in TARGET_COUNTRIES that isn't visiting / emeritus /
+    honorary, at an academic-sounding organisation (ACADEMIC_NAME): the paper's author, since moved to the West. None otherwise. Matching the byline's country instead
+    of the institution lets namesakes through: most Chinese-born Western academics list a Chinese degree."""
+    if not history or not ({org_key(o) for o in byline_orgs} & {org_key(h[1]) for h in history}):
+        return None
+    return next(((org, c) for sec, org, role, c, end in history if sec == "employments" and not end
+                 and c in TARGET_COUNTRIES and not NOT_WORKING.search(role) and ACADEMIC_NAME.search(org or "")),
+                None)
+
+
+def byline_checks(db, dois, checks=None):
+    """{doi (lower): [check dicts, checked_by 'auto']} -- the automatic author check, for authors no author_checks
+    row covers but 'untraced' (checks: load_author_checks(auto=False) for these DOIs). An author whose institutions on this
+    paper (oa_authorships.institutions) all have a country, and none in TARGET_COUNTRIES, gets 'not on byline'
+    (author-wide): their current Western university is a namesake merged in by OpenAlex, or a later move. A move
+    is told apart by moved_to_west() and gets 'moved' with now_country instead. Authors with no institution on
+    the paper are left alone. Measured against the case agent's checks (683): where this says 'not on byline'
+    the agent found the author not Western 215 times in 234."""
+    dois = sorted({(d or "").lower() for d in dois if d})
+    if checks is None:
+        checks = load_author_checks(db, dois, auto=False)
+    rows = []
+    for i in range(0, len(dois), CHUNK):
+        chunk = dois[i:i + CHUNK]
+        rows += db.execute(f"""select s.doi, s.position, coalesce(s.name, au.name) name, s.institutions, au.orcid
+                               from oa_authorships s left join oa_authors au using (author_id)
+                               where s.doi in ({_qs(chunk)}) order by s.doi, s.position""", chunk).fetchall()
+    by_doi = {}
+    for r in rows:
+        by_doi.setdefault(r[0], []).append(r)
+    out, histories = {}, {}
+    for d, authors in by_doi.items():
+        covered = assign_checks([c for c in checks.get(d, []) if c["verdict"] != "untraced"],
+                                [a[2] or "" for a in authors])
+        for i, (_, _, name, insts, orcid) in enumerate(authors):
+            insts = json.loads(insts or "[]")
+            countries = {(x.get("country") or "").upper() for x in insts} - {""}
+            if i in covered or not name or not countries or countries & TARGET_COUNTRIES:
+                continue
+            check = {"doi": d, "author": name, "university": "", "verdict": "not on byline", "now_at": None,
+                     "now_country": None, "case_name": None, "checked_by": "auto", "checked_at": None,
+                     "basis": "byline: " + "; ".join(dict.fromkeys(f"{x.get('name')} ({x.get('country')})"
+                                                                   for x in insts))}
+            if orcid:
+                if orcid not in histories:
+                    histories[orcid] = orcid_history(db, orcid)
+                now = moved_to_west(histories[orcid], [x.get("name") for x in insts])
+                if now:
+                    check.update(verdict="moved", now_at=now[0], now_country=now[1],
+                                 basis=check["basis"] + f"; ORCID lists it and a current job at {now[0]}")
+            out.setdefault(d, []).append(check)
     return out
 
 
@@ -907,7 +990,7 @@ def doi_countries(db, dois):
         for i, a in enumerate(authors):
             cs = assigned.get(i, [])
             wide = pick_check(cs, "")
-            if wide and wide["verdict"] == "on earlier paper":
+            if any(c["verdict"] == "on earlier paper" for c in cs):     # about the person, whatever university it names
                 continue
             places = list(json.loads(a["byline"] or "[]"))
             if not (wide and wide["verdict"] in NOT_THEIRS):
