@@ -3559,5 +3559,30 @@
   "matched_words": 922,
   "runs": 37,
   "longest": 81
+ },
+ "GI-885": {
+  "file": "GI-885.html",
+  "reported": null,
+  "published": "2026-11-14",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Breast Cancer - Carcinogenesis, Cell Growth and Signalling Pathways || Signal Transduction Pathways in Breast Cancer – Drug Targets and Challenges",
+   "year": 2011,
+   "doi": "10.5772/23855",
+   "pct": 27.0,
+   "journal": "Breast Cancer - Carcinogenesis, Cell Growth and Signalling Pathways"
+  },
+  "earlier": {
+   "title": "Targeting Signal Transduction Pathways in Metastatic Breast Cancer: A Comprehensive Review",
+   "year": 2010,
+   "doi": "10.1634/theoncologist.2009-0145",
+   "pct": 34.0,
+   "journal": "The Oncologist"
+  },
+  "matched_words": 4123,
+  "runs": 187,
+  "longest": 71
  }
 }

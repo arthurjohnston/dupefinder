@@ -1,0 +1,2311 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Targeting Signal Transduction Pathways i (187 shingle matches)</title>
+<style>
+:root {
+  --bg: #f2f4ef; --surface: #ffffff; --surface-2: #eceee7;
+  --ink: #1a1f1a; --ink-muted: #565f57; --border: #d7dbd0;
+  --accent: #a8641f; --accent-strong: #7c4a15;
+  --diff-a: #b6472f; --diff-a-bg: #fbe9e4;
+  --diff-b: #2f7a4a; --diff-b-bg: #e6f3e9;
+  --match-ink: #6b5600; --match-bg: #fdeaa0;
+  --match-diff-ink: #7a1710; --match-diff-bg: #f6c9c0;
+  --font-display: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --font-body: "Source Sans 3", -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #14170f; --surface: #1c2016; --surface-2: #242a1c;
+    --ink: #e9ede4; --ink-muted: #a2ab98; --border: #333a29;
+    --accent: #d99a4e; --accent-strong: #f0b46a;
+    --diff-a: #e2897a; --diff-a-bg: #3a221e;
+    --diff-b: #83c99a; --diff-b-bg: #1c3323;
+    --match-ink: #f0d878; --match-bg: #4a3d10;
+    --match-diff-ink: #f5b3a4; --match-diff-bg: #4a1e17;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #14170f; --surface: #1c2016; --surface-2: #242a1c;
+  --ink: #e9ede4; --ink-muted: #a2ab98; --border: #333a29;
+  --accent: #d99a4e; --accent-strong: #f0b46a;
+  --diff-a: #e2897a; --diff-a-bg: #3a221e;
+  --diff-b: #83c99a; --diff-b-bg: #1c3323;
+  --match-ink: #f0d878; --match-bg: #4a3d10;
+  --match-diff-ink: #f5b3a4; --match-diff-bg: #4a1e17;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font-family: var(--font-body); line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+.page { max-width: 1180px; margin: 0 auto; padding: 4rem 1.5rem 6rem; }
+.lede { max-width: 760px; margin: 0 auto; }
+.eyebrow {
+  font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--accent-strong); margin: 0 0 0.9rem;
+}
+.classification {
+  display: inline-block; font-family: var(--font-mono); font-size: 0.72rem;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent);
+  background: var(--surface-2); border: 1px solid var(--border); border-radius: 999px;
+  padding: 0.3rem 0.85rem; margin: 0 0 1.1rem;
+}
+h1 {
+  font-family: var(--font-display); font-weight: 600; font-size: clamp(1.9rem, 4vw, 2.6rem);
+  line-height: 1.15; margin: 0 0 1rem; text-wrap: balance;
+}
+.dek {
+  font-size: 1.05rem; color: var(--ink-muted); max-width: 62ch; margin: 0 0 2.5rem;
+}
+.dek a { color: var(--accent-strong); }
+.source-note {
+  font-size: 0.85rem; color: var(--ink-muted); margin: 0.9rem 0 2.5rem;
+  border-left: 2px solid var(--border); padding-left: 0.9rem;
+}
+.source-note a { color: var(--accent-strong); }
+
+/* --whole-document: one continuous diff of both papers, not N per-run exhibits. */
+.wdd {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 3px;
+  padding: 1.5rem 1.7rem; font-size: 0.94rem; line-height: 1.75;
+  overflow-wrap: break-word;
+}
+.wdd p { margin: 0 0 0.95rem; }
+.wdd p:last-child { margin-bottom: 0; }
+.wdd .same { background: var(--match-bg); color: var(--match-ink); }
+.wdd .shared-weak { background: var(--surface-2); color: var(--ink-muted); }
+.wdd del { background: var(--diff-a-bg); color: var(--diff-a); text-decoration: line-through; }
+.wdd ins { background: var(--diff-b-bg); color: var(--diff-b); text-decoration: none; }
+.wdd details { margin: 0 0 0.95rem; }
+.wdd summary {
+  cursor: pointer; font-family: var(--font-mono); font-size: 0.78rem;
+  color: var(--ink-muted); padding: 0.2rem 0;
+}
+.wdd-legend {
+  display: flex; flex-wrap: wrap; gap: 0.5rem 1.4rem; margin: 0 0 1.1rem;
+  font-family: var(--font-mono); font-size: 0.74rem; color: var(--ink-muted);
+}
+.wdd-legend b { font-weight: 400; padding: 0 0.35em; }
+.wdd-legend .same-key { background: var(--match-bg); color: var(--match-ink); }
+.wdd-legend .weak-key { background: var(--surface-2); color: var(--ink-muted); }
+.wdd-legend .del-key { background: var(--diff-a-bg); color: var(--diff-a); text-decoration: line-through; }
+.wdd-legend .ins-key { background: var(--diff-b-bg); color: var(--diff-b); }
+.wdd-caveat {
+  font-size: 0.85rem; color: var(--ink-muted); margin: 1.1rem 0 0;
+  border-left: 2px solid var(--border); padding-left: 0.9rem;
+}
+
+.comparison {
+  display: grid; grid-template-columns: 1fr auto 1fr; gap: 1.1rem; align-items: stretch;
+  margin-bottom: 2.75rem;
+}
+@media (max-width: 640px) { .comparison { grid-template-columns: 1fr; } .connector { display: none; } }
+.paper-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 3px;
+  padding: 1.25rem 1.35rem;
+}
+.paper-card .role {
+  font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--ink-muted); margin: 0 0 0.55rem;
+}
+.paper-card .role.later { color: var(--diff-a); }
+.paper-card h2 {
+  font-family: var(--font-display); font-weight: 600; font-size: 1.08rem;
+  line-height: 1.3; margin: 0 0 0.5rem; text-wrap: balance;
+}
+.paper-card .meta {
+  font-size: 0.85rem; color: var(--ink-muted); margin: 0 0 0.35rem;
+}
+.paper-card a.doi {
+  font-family: var(--font-mono); font-size: 0.78rem; color: var(--accent-strong);
+  word-break: break-all;
+}
+.connector {
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-mono); color: var(--ink-muted); font-size: 1.3rem;
+}
+
+.summary-bar {
+  display: flex; flex-wrap: wrap; gap: 0.5rem 1.6rem; align-items: baseline;
+  font-family: var(--font-mono); font-size: 0.85rem; color: var(--ink-muted);
+  border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+  padding: 0.9rem 0; margin-bottom: 2.75rem;
+}
+.summary-bar strong { color: var(--ink); font-variant-numeric: tabular-nums; font-weight: 600; }
+
+.actions {
+  margin-bottom: 2.75rem;
+}
+.actions .actions-label {
+  font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--ink-muted); margin: 0 0 0.6rem;
+}
+.actions pre {
+  background: var(--surface-2); border: 1px solid var(--border); border-radius: 3px;
+  padding: 0.7rem 0.9rem; margin: 0 0 0.6rem; overflow-x: auto;
+  font-family: var(--font-mono); font-size: 0.8rem; line-height: 1.5;
+}
+.actions pre .comment { color: var(--ink-muted); }
+
+.exhibit { margin-bottom: 2.75rem; }
+.exhibit-head {
+  display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap;
+  gap: 0.4rem 1.2rem; margin-bottom: 0.9rem; max-width: 760px; margin-inline: auto;
+}
+.exhibit-head h3 {
+  font-family: var(--font-display); font-size: 1.05rem; font-weight: 600; margin: 0;
+}
+.metrics {
+  font-family: var(--font-mono); font-size: 0.78rem; color: var(--ink-muted);
+  display: flex; gap: 1rem; font-variant-numeric: tabular-nums;
+}
+.metrics b { color: var(--ink); font-weight: 600; }
+
+.passage-pair {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; align-items: start;
+}
+@media (max-width: 760px) { .passage-pair { grid-template-columns: 1fr; } }
+.passage {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 3px;
+  padding: 1.1rem 1.25rem; min-width: 0;
+}
+.passage .label {
+  font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--ink-muted); margin: 0 0 0.5rem;
+  display: flex; justify-content: space-between; gap: 1rem;
+}
+.passage .label .idx { font-variant-numeric: tabular-nums; }
+.passage p { margin: 0; font-size: 0.97rem; overflow-wrap: break-word; }
+.passage.earlier { border-top: 3px solid var(--diff-a); }
+.passage.later { border-top: 3px solid var(--diff-b); }
+mark.match { background: var(--match-bg); color: var(--match-ink); padding: 0.03em 0.1em; border-radius: 2px; font-weight: 600; }
+mark.match-diff { background: var(--match-diff-bg); color: var(--match-diff-ink); padding: 0.03em 0.1em; border-radius: 2px; font-weight: 600; text-decoration: underline; text-decoration-thickness: 0.08em; }
+
+footer {
+  margin-top: 3.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border);
+  font-size: 0.78rem; color: var(--ink-muted); font-family: var(--font-mono);
+}
+
+.shots { display: flex; flex-direction: column; gap: 0.35rem; }
+.shots a { display: contents; }
+.shots img { display: block; max-width: 100%; height: auto; border: 1px solid var(--border);
+  background: #fff; }
+.shot-break { font-family: var(--font-mono); font-size: 0.7rem; color: var(--ink-muted);
+  margin: 0.15rem 0; text-align: center; }
+.locate-note { font-size: 0.8rem; color: var(--ink-muted); margin: 0.55rem 0 0;
+  border-left: 2px solid var(--border); padding-left: 0.6rem; }
+.passage .shot-text { font-size: 0.92rem; margin-top: 0.5rem; }
+.title-shots { margin-bottom: 2.75rem; }
+.passage-pair.stacked { grid-template-columns: 1fr; gap: 1rem; }
+.omitted-note { font-family: var(--font-mono); font-size: 0.8rem; color: var(--ink-muted);
+  text-align: center; margin: 0 0 2.75rem; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="lede">
+    
+    <p class="eyebrow">Text-overlap comparison</p>
+    <h1>Targeting Signal Transduction Pathways in Metastatic Breast Cancer: A Comprehensive Review &harr; Breast Cancer - Carcinogenesis, Cell Growth and Signalling Pathways || Signal Transduction Pathways in Breast Cancer – Drug Targets and Challenges</h1>
+    
+    
+    <div class="comparison">
+      <div class="paper-card"><p class="role ">PAPER A</p><h2>Targeting Signal Transduction Pathways in Metastatic Breast Cancer: A Comprehensive Review</h2><p class="meta">Rosen, L. S., Ashurst, H. L., Chap, L. &middot; 2010</p><a class="doi" href="https://doi.org/10.1634/theoncologist.2009-0145">doi.org/10.1634/theoncologist.2009-0145</a></div>
+      <div class="connector">&harr;</div>
+      <div class="paper-card"><p class="role ">PAPER B</p><h2>Breast Cancer - Carcinogenesis, Cell Growth and Signalling Pathways || Signal Transduction Pathways in Breast Cancer – Drug Targets and Challenges</h2><p class="meta">Gunduz, Mehmet &middot; 2011</p><a class="doi" href="https://doi.org/10.5772/23855">doi.org/10.5772/23855</a></div>
+    </div>
+    <div class="summary-bar"><span>shared text <strong>27%</strong> of the later article (2011) &middot; <strong>34%</strong> of the earlier (2010)</span> <span>matched words <strong>4,123</strong></span> 
+      
+      <span>near-exact shingle runs (10+ words) <strong>187</strong></span>
+    </div>
+    
+  </div>
+  
+<style>
+.pubpeer-box { border: 2px solid var(--accent, #2b6cb0); border-radius: 8px; padding: 12px 16px; margin: 16px auto;
+  max-width: 760px; box-sizing: border-box; }
+.pubpeer-box h3 { margin: 0 0 6px; }
+.pubpeer-box p { margin: 4px 0; }
+.pubpeer-box textarea { width: 100%; box-sizing: border-box; min-height: 16em; font: 13px/1.4 ui-monospace, monospace;
+  background: inherit; color: inherit; border: 1px solid #8888; border-radius: 4px; padding: 8px; }
+.pubpeer-box button { margin-top: 6px; padding: 6px 14px; font-size: 14px; cursor: pointer; }
+.pubpeer-box #pp-copied { margin-left: 8px; }
+.pubpeer-box .pp-shot { display: block; max-width: 100%; height: auto; margin-top: 6px; border: 1px solid #8888;
+  background: #fff; }
+</style>
+<section class="exhibit">
+  <div class="exhibit-head"><h3>Longest shared passage of running text, as printed (earlier article left, later right)</h3></div>
+  <img class="pp-shot" style="max-width:100%;height:auto" loading="lazy" src="img/GI-885/b4f4d40ec65bc874.jpg" alt="The longest shared passage in both PDFs, the shared words highlighted">
+</section>
+<div class="exhibit-head" style="margin-top:0.5rem;">
+  <h3>Near-exact word-shingle matches (10+ consecutive words, allowing substituted words within a run)</h3>
+  <div class="metrics"><span><b>187</b> runs found</span></div>
+</div>
+  
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 1 of 187</h3>
+    <div class="metrics"><span>exact run <b>14 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 1</span></p><div class="shots"><img loading="lazy" src="img/GI-885/d4d139e9cfff8880.jpg" width="605" height="86" style="width:78.6%" alt="EARLIER, PDF page 1"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 1</span></p><div class="shots"><img loading="lazy" src="img/GI-885/f82ed1c710eb2808.jpg" width="769" height="132" style="width:100.0%" alt="LATER, PDF page 1"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 2 of 187</h3>
+    <div class="metrics"><span>exact run <b>23 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 2</span></p><div class="shots"><img loading="lazy" src="img/GI-885/2df96b8b27bec34d.jpg" width="600" height="60" style="width:78.0%" alt="EARLIER, PDF page 2"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 1</span></p><div class="shots"><img loading="lazy" src="img/GI-885/6b82ce5a8e824da4.jpg" width="769" height="133" style="width:100.0%" alt="LATER, PDF page 1"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 3 of 187</h3>
+    <div class="metrics"><span>exact run <b>15 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 1</span></p><div class="shots"><img loading="lazy" src="img/GI-885/156e9ddce63947af.jpg" width="581" height="69" style="width:75.5%" alt="EARLIER, PDF page 1"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 3</span></p><div class="shots"><img loading="lazy" src="img/GI-885/34d45df52fa727e3.jpg" width="769" height="140" style="width:100.0%" alt="LATER, PDF page 3"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 4 of 187</h3>
+    <div class="metrics"><span>exact run <b>12 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF pp. 1&ndash;2</span></p><div class="shots"><img loading="lazy" src="img/GI-885/3545865c14fb427c.jpg" width="577" height="75" style="width:75.1%" alt="EARLIER, PDF page 1"><p class="shot-break">&darr; continues on PDF p. 2</p><img loading="lazy" src="img/GI-885/6e45c941fa677c20.jpg" width="602" height="78" style="width:78.2%" alt="EARLIER, PDF page 2"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 3</span></p><div class="shots"><img loading="lazy" src="img/GI-885/8247ded952955dbd.jpg" width="769" height="125" style="width:100.0%" alt="LATER, PDF page 3"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 5 of 187</h3>
+    <div class="metrics"><span>exact run <b>36 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 2</span></p><div class="shots"><img loading="lazy" src="img/GI-885/62017a90330a3ace.jpg" width="602" height="73" style="width:78.2%" alt="EARLIER, PDF page 2"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 3</span></p><div class="shots"><img loading="lazy" src="img/GI-885/df3ec58f63926b26.jpg" width="769" height="157" style="width:100.0%" alt="LATER, PDF page 3"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 6 of 187</h3>
+    <div class="metrics"><span>exact run <b>12 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 2</span></p><div class="shots"><img loading="lazy" src="img/GI-885/7276b58cff8cf3ce.jpg" width="600" height="51" style="width:78.0%" alt="EARLIER, PDF page 2"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 3</span></p><div class="shots"><img loading="lazy" src="img/GI-885/dd519b43cfdd6a79.jpg" width="769" height="135" style="width:100.0%" alt="LATER, PDF page 3"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 7 of 187</h3>
+    <div class="metrics"><span>exact run <b>15 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 2</span></p><div class="shots"><img loading="lazy" src="img/GI-885/348261c3b06b83d8.jpg" width="600" height="29" style="width:78.0%" alt="EARLIER, PDF page 2"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 3</span></p><div class="shots"><img loading="lazy" src="img/GI-885/d1ad1bf40c586952.jpg" width="769" height="139" style="width:100.0%" alt="LATER, PDF page 3"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 8 of 187</h3>
+    <div class="metrics"><span>exact run <b>13 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 2</span></p><div class="shots"><img loading="lazy" src="img/GI-885/a30131adc7e0a1a1.jpg" width="602" height="61" style="width:78.2%" alt="EARLIER, PDF page 2"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 3</span></p><div class="shots"><img loading="lazy" src="img/GI-885/46483ab0e8af6539.jpg" width="769" height="145" style="width:100.0%" alt="LATER, PDF page 3"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 9 of 187</h3>
+    <div class="metrics"><span>exact run <b>19 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 2</span></p><div class="shots"><img loading="lazy" src="img/GI-885/c2e907eca1ec6dc5.jpg" width="604" height="92" style="width:78.5%" alt="EARLIER, PDF page 2"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 4</span></p><div class="shots"><img loading="lazy" src="img/GI-885/0d844bdd4549dc18.jpg" width="769" height="164" style="width:100.0%" alt="LATER, PDF page 4"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 10 of 187</h3>
+    <div class="metrics"><span>exact run <b>11 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 2</span></p><div class="shots"><img loading="lazy" src="img/GI-885/68b04f830d433a38.jpg" width="604" height="46" style="width:78.5%" alt="EARLIER, PDF page 2"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 4</span></p><div class="shots"><img loading="lazy" src="img/GI-885/ca821226635b4922.jpg" width="769" height="142" style="width:100.0%" alt="LATER, PDF page 4"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 11 of 187</h3>
+    <div class="metrics"><span>exact run <b>15 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 2</span></p><div class="shots"><img loading="lazy" src="img/GI-885/74a273eb4d720fe5.jpg" width="602" height="66" style="width:78.3%" alt="EARLIER, PDF page 2"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 4</span></p><div class="shots"><img loading="lazy" src="img/GI-885/6f2bf737e3a3bea4.jpg" width="769" height="138" style="width:100.0%" alt="LATER, PDF page 4"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 12 of 187</h3>
+    <div class="metrics"><span>exact run <b>19 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 2</span></p><div class="shots"><img loading="lazy" src="img/GI-885/689cbae4be77570c.jpg" width="604" height="75" style="width:78.5%" alt="EARLIER, PDF page 2"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 4</span></p><div class="shots"><img loading="lazy" src="img/GI-885/84d418d2372be8bf.jpg" width="769" height="138" style="width:100.0%" alt="LATER, PDF page 4"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 13 of 187</h3>
+    <div class="metrics"><span>exact run <b>20 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 2</span></p><div class="shots"><img loading="lazy" src="img/GI-885/3f4589d26c8d7ccd.jpg" width="604" height="66" style="width:78.5%" alt="EARLIER, PDF page 2"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 4</span></p><div class="shots"><img loading="lazy" src="img/GI-885/9ce7c41ed27e6dae.jpg" width="769" height="160" style="width:100.0%" alt="LATER, PDF page 4"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 14 of 187</h3>
+    <div class="metrics"><span>exact run <b>14 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 2</span></p><div class="shots"><img loading="lazy" src="img/GI-885/5a384533e926b322.jpg" width="604" height="66" style="width:78.5%" alt="EARLIER, PDF page 2"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 4</span></p><div class="shots"><img loading="lazy" src="img/GI-885/ee0fef7fcadbdae9.jpg" width="769" height="138" style="width:100.0%" alt="LATER, PDF page 4"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 15 of 187</h3>
+    <div class="metrics"><span>exact run <b>21 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF pp. 2&ndash;3</span></p><div class="shots"><img loading="lazy" src="img/GI-885/ce05abd7b4cd1200.jpg" width="604" height="51" style="width:78.5%" alt="EARLIER, PDF page 2"><p class="shot-break">&darr; continues on PDF p. 3</p><img loading="lazy" src="img/GI-885/d27660b6a44b547e.jpg" width="350" height="75" style="width:45.5%" alt="EARLIER, PDF page 3"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 4</span></p><div class="shots"><img loading="lazy" src="img/GI-885/fbf4c463f237b86d.jpg" width="769" height="138" style="width:100.0%" alt="LATER, PDF page 4"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 16 of 187</h3>
+    <div class="metrics"><span>exact run <b>12 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 3</span></p><div class="shots"><img loading="lazy" src="img/GI-885/d9b85edc592f9719.jpg" width="599" height="92" style="width:77.9%" alt="EARLIER, PDF page 3"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 4</span></p><div class="shots"><img loading="lazy" src="img/GI-885/5ba352065d3fedd4.jpg" width="769" height="138" style="width:100.0%" alt="LATER, PDF page 4"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 17 of 187</h3>
+    <div class="metrics"><span>exact run <b>34 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 3</span></p><div class="shots"><img loading="lazy" src="img/GI-885/a0d8579a1b3ee56f.jpg" width="599" height="113" style="width:77.9%" alt="EARLIER, PDF page 3"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 4</span></p><div class="shots"><img loading="lazy" src="img/GI-885/530ba60604ca75be.jpg" width="769" height="160" style="width:100.0%" alt="LATER, PDF page 4"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 18 of 187</h3>
+    <div class="metrics"><span>exact run <b>22 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 3</span></p><div class="shots"><img loading="lazy" src="img/GI-885/a155a83ccd9b164d.jpg" width="600" height="92" style="width:78.1%" alt="EARLIER, PDF page 3"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 4</span></p><div class="shots"><img loading="lazy" src="img/GI-885/8049be4433300457.jpg" width="769" height="159" style="width:100.0%" alt="LATER, PDF page 4"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 19 of 187</h3>
+    <div class="metrics"><span>exact run <b>34 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 3</span></p><div class="shots"><img loading="lazy" src="img/GI-885/b6e0da0f8accf300.jpg" width="600" height="89" style="width:78.1%" alt="EARLIER, PDF page 3"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 4</span></p><div class="shots"><img loading="lazy" src="img/GI-885/a3df9a7b49def160.jpg" width="769" height="160" style="width:100.0%" alt="LATER, PDF page 4"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 20 of 187</h3>
+    <div class="metrics"><span>near-exact run <b>35 words</b></span>
+      <span>substitutions <b>1</b></span></div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 3</span></p><div class="shots"><img loading="lazy" src="img/GI-885/764c3def225d5f12.jpg" width="600" height="75" style="width:78.1%" alt="EARLIER, PDF page 3"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 4</span></p><div class="shots"><img loading="lazy" src="img/GI-885/a1870d689bd1d8b2.jpg" width="769" height="160" style="width:100.0%" alt="LATER, PDF page 4"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 21 of 187</h3>
+    <div class="metrics"><span>exact run <b>34 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 3</span></p><div class="shots"><img loading="lazy" src="img/GI-885/9cc862fc1c59e349.jpg" width="600" height="74" style="width:78.1%" alt="EARLIER, PDF page 3"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 4</span></p><div class="shots"><img loading="lazy" src="img/GI-885/7c74f7bb4ca26dd4.jpg" width="769" height="182" style="width:100.0%" alt="LATER, PDF page 4"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 22 of 187</h3>
+    <div class="metrics"><span>exact run <b>20 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 3</span></p><div class="shots"><img loading="lazy" src="img/GI-885/1bff5ecbb89b7477.jpg" width="603" height="71" style="width:78.5%" alt="EARLIER, PDF page 3"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 5</span></p><div class="shots"><img loading="lazy" src="img/GI-885/d456de2ff5f6d792.jpg" width="769" height="128" style="width:100.0%" alt="LATER, PDF page 5"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 23 of 187</h3>
+    <div class="metrics"><span>exact run <b>10 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 3</span></p><div class="shots"><img loading="lazy" src="img/GI-885/e0d9f72507fb99a8.jpg" width="603" height="78" style="width:78.5%" alt="EARLIER, PDF page 3"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 5</span></p><div class="shots"><img loading="lazy" src="img/GI-885/59e7e266f3398305.jpg" width="769" height="131" style="width:100.0%" alt="LATER, PDF page 5"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 24 of 187</h3>
+    <div class="metrics"><span>exact run <b>50 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 3</span></p><div class="shots"><img loading="lazy" src="img/GI-885/e49f158ec3bc795a.jpg" width="603" height="137" style="width:78.5%" alt="EARLIER, PDF page 3"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 5</span></p><div class="shots"><img loading="lazy" src="img/GI-885/e47041fac8e2a12e.jpg" width="769" height="180" style="width:100.0%" alt="LATER, PDF page 5"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 25 of 187</h3>
+    <div class="metrics"><span>exact run <b>31 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 3</span></p><div class="shots"><img loading="lazy" src="img/GI-885/0357e86715b77b10.jpg" width="603" height="75" style="width:78.5%" alt="EARLIER, PDF page 3"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 5</span></p><div class="shots"><img loading="lazy" src="img/GI-885/2d5db150162fa341.jpg" width="769" height="165" style="width:100.0%" alt="LATER, PDF page 5"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 26 of 187</h3>
+    <div class="metrics"><span>exact run <b>17 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 4</span></p><div class="shots"><img loading="lazy" src="img/GI-885/a15527501976c409.jpg" width="582" height="56" style="width:75.7%" alt="EARLIER, PDF page 4"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 5</span></p><div class="shots"><img loading="lazy" src="img/GI-885/3f6dff39f6f1d209.jpg" width="769" height="142" style="width:100.0%" alt="LATER, PDF page 5"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 27 of 187</h3>
+    <div class="metrics"><span>exact run <b>18 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 4</span></p><div class="shots"><img loading="lazy" src="img/GI-885/409a1c3904c33ff1.jpg" width="582" height="93" style="width:75.7%" alt="EARLIER, PDF page 4"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 5</span></p><div class="shots"><img loading="lazy" src="img/GI-885/834c35e414dc70a4.jpg" width="769" height="166" style="width:100.0%" alt="LATER, PDF page 5"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 28 of 187</h3>
+    <div class="metrics"><span>near-exact run <b>18 words</b></span>
+      <span>substitutions <b>1</b></span></div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 4</span></p><div class="shots"><img loading="lazy" src="img/GI-885/60a0fd771777fb9a.jpg" width="582" height="72" style="width:75.7%" alt="EARLIER, PDF page 4"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 5</span></p><div class="shots"><img loading="lazy" src="img/GI-885/4f9b24a353dab31b.jpg" width="769" height="165" style="width:100.0%" alt="LATER, PDF page 5"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 29 of 187</h3>
+    <div class="metrics"><span>exact run <b>24 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 5</span></p><div class="shots"><img loading="lazy" src="img/GI-885/31faa8d2c8a5f26c.jpg" width="602" height="75" style="width:78.3%" alt="EARLIER, PDF page 5"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 6</span></p><div class="shots"><img loading="lazy" src="img/GI-885/2bd2f95f499b86cd.jpg" width="769" height="163" style="width:100.0%" alt="LATER, PDF page 6"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 30 of 187</h3>
+    <div class="metrics"><span>exact run <b>16 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 4</span></p><div class="shots"><img loading="lazy" src="img/GI-885/05605f6e53f285b3.jpg" width="576" height="66" style="width:74.9%" alt="EARLIER, PDF page 4"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 6</span></p><div class="shots"><img loading="lazy" src="img/GI-885/54b0c5502b76b877.jpg" width="769" height="140" style="width:100.0%" alt="LATER, PDF page 6"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 31 of 187</h3>
+    <div class="metrics"><span>exact run <b>17 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 4</span></p><div class="shots"><img loading="lazy" src="img/GI-885/9432f1d392a9420c.jpg" width="576" height="81" style="width:74.9%" alt="EARLIER, PDF page 4"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 6</span></p><div class="shots"><img loading="lazy" src="img/GI-885/155da9c859f6e2cf.jpg" width="769" height="136" style="width:100.0%" alt="LATER, PDF page 6"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 32 of 187</h3>
+    <div class="metrics"><span>exact run <b>23 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 4</span></p><div class="shots"><img loading="lazy" src="img/GI-885/7395adbd3fad3582.jpg" width="605" height="69" style="width:78.7%" alt="EARLIER, PDF page 4"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 6</span></p><div class="shots"><img loading="lazy" src="img/GI-885/edafe87fa9d29343.jpg" width="769" height="158" style="width:100.0%" alt="LATER, PDF page 6"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 33 of 187</h3>
+    <div class="metrics"><span>exact run <b>26 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 4</span></p><div class="shots"><img loading="lazy" src="img/GI-885/3e34f3280f6741bf.jpg" width="605" height="60" style="width:78.7%" alt="EARLIER, PDF page 4"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 6</span></p><div class="shots"><img loading="lazy" src="img/GI-885/6f9811c8b7914ce2.jpg" width="769" height="158" style="width:100.0%" alt="LATER, PDF page 6"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 34 of 187</h3>
+    <div class="metrics"><span>exact run <b>11 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 3</span></p><div class="shots"><img loading="lazy" src="img/GI-885/79923a8c0ee7e851.jpg" width="599" height="30" style="width:77.9%" alt="EARLIER, PDF page 3"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 6</span></p><div class="shots"><img loading="lazy" src="img/GI-885/bf78d2333aef76e8.jpg" width="769" height="114" style="width:100.0%" alt="LATER, PDF page 6"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 35 of 187</h3>
+    <div class="metrics"><span>exact run <b>22 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 4</span></p><div class="shots"><img loading="lazy" src="img/GI-885/13cf3d163945cf66.jpg" width="605" height="75" style="width:78.7%" alt="EARLIER, PDF page 4"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 6</span></p><div class="shots"><img loading="lazy" src="img/GI-885/05a550cf12d4b196.jpg" width="769" height="158" style="width:100.0%" alt="LATER, PDF page 6"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 36 of 187</h3>
+    <div class="metrics"><span>exact run <b>17 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 4</span></p><div class="shots"><img loading="lazy" src="img/GI-885/928a9e39af8bc079.jpg" width="605" height="73" style="width:78.7%" alt="EARLIER, PDF page 4"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 6</span></p><div class="shots"><img loading="lazy" src="img/GI-885/d6609f08286f69c6.jpg" width="769" height="158" style="width:100.0%" alt="LATER, PDF page 6"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 37 of 187</h3>
+    <div class="metrics"><span>exact run <b>35 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 5</span></p><div class="shots"><img loading="lazy" src="img/GI-885/825a16ed8952d3c2.jpg" width="601" height="113" style="width:78.1%" alt="EARLIER, PDF page 5"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 6</span></p><div class="shots"><img loading="lazy" src="img/GI-885/2bc4f5c628e85b08.jpg" width="769" height="185" style="width:100.0%" alt="LATER, PDF page 6"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 38 of 187</h3>
+    <div class="metrics"><span>exact run <b>17 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 5</span></p><div class="shots"><img loading="lazy" src="img/GI-885/ba03fe50c179e59a.jpg" width="601" height="58" style="width:78.1%" alt="EARLIER, PDF page 5"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 6</span></p><div class="shots"><img loading="lazy" src="img/GI-885/1967e7d2f42ce1ce.jpg" width="769" height="129" style="width:100.0%" alt="LATER, PDF page 6"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 39 of 187</h3>
+    <div class="metrics"><span>exact run <b>22 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 5</span></p><div class="shots"><img loading="lazy" src="img/GI-885/52a8fd06569c90e5.jpg" width="602" height="99" style="width:78.3%" alt="EARLIER, PDF page 5"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 6</span></p><div class="shots"><img loading="lazy" src="img/GI-885/ec0ff9692e13426d.jpg" width="769" height="163" style="width:100.0%" alt="LATER, PDF page 6"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 40 of 187</h3>
+    <div class="metrics"><span>exact run <b>63 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 5</span></p><div class="shots"><img loading="lazy" src="img/GI-885/b007d7a964250f8c.jpg" width="602" height="104" style="width:78.3%" alt="EARLIER, PDF page 5"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 6</span></p><div class="shots"><img loading="lazy" src="img/GI-885/e81eccc178bfe705.jpg" width="769" height="203" style="width:100.0%" alt="LATER, PDF page 6"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 41 of 187</h3>
+    <div class="metrics"><span>exact run <b>19 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 5</span></p><div class="shots"><img loading="lazy" src="img/GI-885/637bd25dca2e42ac.jpg" width="600" height="69" style="width:78.1%" alt="EARLIER, PDF page 5"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 6</span></p><div class="shots"><img loading="lazy" src="img/GI-885/f28a533071af5a65.jpg" width="769" height="159" style="width:100.0%" alt="LATER, PDF page 6"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 42 of 187</h3>
+    <div class="metrics"><span>exact run <b>22 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 5</span></p><div class="shots"><img loading="lazy" src="img/GI-885/248e7e30a046651d.jpg" width="600" height="93" style="width:78.1%" alt="EARLIER, PDF page 5"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 6</span></p><div class="shots"><img loading="lazy" src="img/GI-885/185d55cb817a2a32.jpg" width="769" height="159" style="width:100.0%" alt="LATER, PDF page 6"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 43 of 187</h3>
+    <div class="metrics"><span>exact run <b>21 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 5</span></p><div class="shots"><img loading="lazy" src="img/GI-885/547799067e69644e.jpg" width="600" height="73" style="width:78.1%" alt="EARLIER, PDF page 5"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 6</span></p><div class="shots"><img loading="lazy" src="img/GI-885/eba6ee3ba457f692.jpg" width="769" height="158" style="width:100.0%" alt="LATER, PDF page 6"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 44 of 187</h3>
+    <div class="metrics"><span>near-exact run <b>20 words</b></span>
+      <span>substitutions <b>1</b></span></div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 5</span></p><div class="shots"><img loading="lazy" src="img/GI-885/8d4dc9aba5f2b0f9.jpg" width="600" height="58" style="width:78.1%" alt="EARLIER, PDF page 5"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 6</span></p><div class="shots"><img loading="lazy" src="img/GI-885/9597770b927a65fa.jpg" width="769" height="137" style="width:100.0%" alt="LATER, PDF page 6"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 45 of 187</h3>
+    <div class="metrics"><span>exact run <b>27 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 5</span></p><div class="shots"><img loading="lazy" src="img/GI-885/4deeb47c379bb6e9.jpg" width="601" height="84" style="width:78.2%" alt="EARLIER, PDF page 5"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 6</span></p><div class="shots"><img loading="lazy" src="img/GI-885/fc0066c750906873.jpg" width="769" height="158" style="width:100.0%" alt="LATER, PDF page 6"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 46 of 187</h3>
+    <div class="metrics"><span>exact run <b>22 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 5</span></p><div class="shots"><img loading="lazy" src="img/GI-885/be6a722400583ffa.jpg" width="601" height="93" style="width:78.2%" alt="EARLIER, PDF page 5"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 6</span></p><div class="shots"><img loading="lazy" src="img/GI-885/613aed0f160cc296.jpg" width="769" height="162" style="width:100.0%" alt="LATER, PDF page 6"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 47 of 187</h3>
+    <div class="metrics"><span>exact run <b>15 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 5</span></p><div class="shots"><img loading="lazy" src="img/GI-885/7ebdff7e39534b7d.jpg" width="601" height="75" style="width:78.2%" alt="EARLIER, PDF page 5"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 6</span></p><div class="shots"><img loading="lazy" src="img/GI-885/426a75515733f5ea.jpg" width="769" height="140" style="width:100.0%" alt="LATER, PDF page 6"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 48 of 187</h3>
+    <div class="metrics"><span>exact run <b>14 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 5</span></p><div class="shots"><img loading="lazy" src="img/GI-885/81167a2c82909593.jpg" width="602" height="45" style="width:78.2%" alt="EARLIER, PDF page 5"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 7</span></p><div class="shots"><img loading="lazy" src="img/GI-885/493dd834ce1d18e8.jpg" width="769" height="140" style="width:100.0%" alt="LATER, PDF page 7"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 49 of 187</h3>
+    <div class="metrics"><span>exact run <b>14 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 5</span></p><div class="shots"><img loading="lazy" src="img/GI-885/1ceb17e9ce2362de.jpg" width="602" height="60" style="width:78.2%" alt="EARLIER, PDF page 5"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 7</span></p><div class="shots"><img loading="lazy" src="img/GI-885/dca1fb24dd817580.jpg" width="769" height="139" style="width:100.0%" alt="LATER, PDF page 7"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 50 of 187</h3>
+    <div class="metrics"><span>near-exact run <b>27 words</b></span>
+      <span>substitutions <b>1</b></span></div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 5</span></p><div class="shots"><img loading="lazy" src="img/GI-885/71188edf6c7e2676.jpg" width="602" height="72" style="width:78.2%" alt="EARLIER, PDF page 5"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 7</span></p><div class="shots"><img loading="lazy" src="img/GI-885/d06eda01a303b29b.jpg" width="769" height="164" style="width:100.0%" alt="LATER, PDF page 7"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 51 of 187</h3>
+    <div class="metrics"><span>exact run <b>19 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 5</span></p><div class="shots"><img loading="lazy" src="img/GI-885/c8ffdfdf3ed60361.jpg" width="602" height="58" style="width:78.2%" alt="EARLIER, PDF page 5"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 7</span></p><div class="shots"><img loading="lazy" src="img/GI-885/aee3189dceeefe5a.jpg" width="769" height="139" style="width:100.0%" alt="LATER, PDF page 7"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 52 of 187</h3>
+    <div class="metrics"><span>exact run <b>10 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 3</span></p><div class="shots"><img loading="lazy" src="img/GI-885/8413068800e4a778.jpg" width="603" height="46" style="width:78.5%" alt="EARLIER, PDF page 3"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 7</span></p><div class="shots"><img loading="lazy" src="img/GI-885/860711d6724baea1.jpg" width="769" height="110" style="width:100.0%" alt="LATER, PDF page 7"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 53 of 187</h3>
+    <div class="metrics"><span>near-exact run <b>51 words</b></span>
+      <span>substitutions <b>2</b></span></div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 3</span></p><div class="shots"><img loading="lazy" src="img/GI-885/71f2d78cc388b145.jpg" width="603" height="89" style="width:78.5%" alt="EARLIER, PDF page 3"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 7</span></p><div class="shots"><img loading="lazy" src="img/GI-885/c13d67a6fd0bb51d.jpg" width="769" height="221" style="width:100.0%" alt="LATER, PDF page 7"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 54 of 187</h3>
+    <div class="metrics"><span>near-exact run <b>50 words</b></span>
+      <span>substitutions <b>1</b></span></div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 5</span></p><div class="shots"><img loading="lazy" src="img/GI-885/ed33f344ec7fbe14.jpg" width="570" height="98" style="width:74.1%" alt="EARLIER, PDF page 5"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 7</span></p><div class="shots"><img loading="lazy" src="img/GI-885/2b419785fb2791b1.jpg" width="769" height="206" style="width:100.0%" alt="LATER, PDF page 7"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 55 of 187</h3>
+    <div class="metrics"><span>exact run <b>20 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 5</span></p><div class="shots"><img loading="lazy" src="img/GI-885/244959725c8f4396.jpg" width="604" height="58" style="width:78.6%" alt="EARLIER, PDF page 5"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 7</span></p><div class="shots"><img loading="lazy" src="img/GI-885/b46407c4fea72cf0.jpg" width="769" height="138" style="width:100.0%" alt="LATER, PDF page 7"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 56 of 187</h3>
+    <div class="metrics"><span>near-exact run <b>42 words</b></span>
+      <span>substitutions <b>1</b></span></div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 6</span></p><div class="shots"><img loading="lazy" src="img/GI-885/64937fbeee88b9d3.jpg" width="604" height="126" style="width:78.6%" alt="EARLIER, PDF page 6"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 7</span></p><div class="shots"><img loading="lazy" src="img/GI-885/c2328d6cd9f34393.jpg" width="769" height="182" style="width:100.0%" alt="LATER, PDF page 7"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 57 of 187</h3>
+    <div class="metrics"><span>exact run <b>67 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 6</span></p><div class="shots"><img loading="lazy" src="img/GI-885/08ae8c568b48aa16.jpg" width="604" height="117" style="width:78.6%" alt="EARLIER, PDF page 6"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 7</span></p><div class="shots"><img loading="lazy" src="img/GI-885/232088035a5afdb7.jpg" width="769" height="252" style="width:100.0%" alt="LATER, PDF page 7"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 58 of 187</h3>
+    <div class="metrics"><span>exact run <b>26 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 6</span></p><div class="shots"><img loading="lazy" src="img/GI-885/c695f5077881b668.jpg" width="600" height="60" style="width:78.0%" alt="EARLIER, PDF page 6"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 8</span></p><div class="shots"><img loading="lazy" src="img/GI-885/43e43b4cb84eca33.jpg" width="769" height="167" style="width:100.0%" alt="LATER, PDF page 8"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 59 of 187</h3>
+    <div class="metrics"><span>exact run <b>36 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 6</span></p><div class="shots"><img loading="lazy" src="img/GI-885/7490f3558833cba8.jpg" width="600" height="72" style="width:78.0%" alt="EARLIER, PDF page 6"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 8</span></p><div class="shots"><img loading="lazy" src="img/GI-885/f6e63b5c87c06952.jpg" width="769" height="190" style="width:100.0%" alt="LATER, PDF page 8"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 60 of 187</h3>
+    <div class="metrics"><span>exact run <b>10 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 6</span></p><div class="shots"><img loading="lazy" src="img/GI-885/16ae7559275eb9d9.jpg" width="604" height="55" style="width:78.6%" alt="EARLIER, PDF page 6"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 8</span></p><div class="shots"><img loading="lazy" src="img/GI-885/b12f4ac06f87db6e.jpg" width="769" height="120" style="width:100.0%" alt="LATER, PDF page 8"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 61 of 187</h3>
+    <div class="metrics"><span>near-exact run <b>42 words</b></span>
+      <span>substitutions <b>1</b></span></div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 6</span></p><div class="shots"><img loading="lazy" src="img/GI-885/4624d0f7e9bc512c.jpg" width="604" height="99" style="width:78.6%" alt="EARLIER, PDF page 6"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 8</span></p><div class="shots"><img loading="lazy" src="img/GI-885/d474b8315e180a9a.jpg" width="769" height="211" style="width:100.0%" alt="LATER, PDF page 8"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 62 of 187</h3>
+    <div class="metrics"><span>exact run <b>13 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 6</span></p><div class="shots"><img loading="lazy" src="img/GI-885/dab214729e077246.jpg" width="604" height="60" style="width:78.6%" alt="EARLIER, PDF page 6"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 8</span></p><div class="shots"><img loading="lazy" src="img/GI-885/0d63e6cc9060a373.jpg" width="769" height="121" style="width:100.0%" alt="LATER, PDF page 8"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 63 of 187</h3>
+    <div class="metrics"><span>exact run <b>16 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 6</span></p><div class="shots"><img loading="lazy" src="img/GI-885/49b27f68976f6587.jpg" width="604" height="60" style="width:78.6%" alt="EARLIER, PDF page 6"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 8</span></p><div class="shots"><img loading="lazy" src="img/GI-885/7ec9525e4cd40dd6.jpg" width="769" height="144" style="width:100.0%" alt="LATER, PDF page 8"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 64 of 187</h3>
+    <div class="metrics"><span>exact run <b>35 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 7</span></p><div class="shots"><img loading="lazy" src="img/GI-885/27e88d4c5a96addc.jpg" width="601" height="84" style="width:78.1%" alt="EARLIER, PDF page 7"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 12</span></p><div class="shots"><img loading="lazy" src="img/GI-885/1c321696e4ea689e.jpg" width="769" height="170" style="width:100.0%" alt="LATER, PDF page 12"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 65 of 187</h3>
+    <div class="metrics"><span>exact run <b>29 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 7</span></p><div class="shots"><img loading="lazy" src="img/GI-885/99f4c9bfc960d543.jpg" width="605" height="71" style="width:78.7%" alt="EARLIER, PDF page 7"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 12</span></p><div class="shots"><img loading="lazy" src="img/GI-885/be37756f5689907a.jpg" width="769" height="168" style="width:100.0%" alt="LATER, PDF page 12"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 66 of 187</h3>
+    <div class="metrics"><span>near-exact run <b>24 words</b></span>
+      <span>substitutions <b>2</b></span></div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 7</span></p><div class="shots"><img loading="lazy" src="img/GI-885/a68dc6c3cee68697.jpg" width="605" height="101" style="width:78.7%" alt="EARLIER, PDF page 7"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 12</span></p><div class="shots"><img loading="lazy" src="img/GI-885/756afbdd692cf698.jpg" width="769" height="168" style="width:100.0%" alt="LATER, PDF page 12"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 67 of 187</h3>
+    <div class="metrics"><span>exact run <b>20 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 7</span></p><div class="shots"><img loading="lazy" src="img/GI-885/d4fe75465ac672e1.jpg" width="605" height="81" style="width:78.7%" alt="EARLIER, PDF page 7"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 12</span></p><div class="shots"><img loading="lazy" src="img/GI-885/eb963a8fc1467675.jpg" width="769" height="146" style="width:100.0%" alt="LATER, PDF page 12"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 68 of 187</h3>
+    <div class="metrics"><span>exact run <b>24 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 7</span></p><div class="shots"><img loading="lazy" src="img/GI-885/e953968015d33bd4.jpg" width="605" height="72" style="width:78.7%" alt="EARLIER, PDF page 7"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 12</span></p><div class="shots"><img loading="lazy" src="img/GI-885/12a5fef5cb4cea29.jpg" width="769" height="169" style="width:100.0%" alt="LATER, PDF page 12"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 69 of 187</h3>
+    <div class="metrics"><span>exact run <b>25 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 7</span></p><div class="shots"><img loading="lazy" src="img/GI-885/ffc67770d093ab89.jpg" width="595" height="69" style="width:77.4%" alt="EARLIER, PDF page 7"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 12</span></p><div class="shots"><img loading="lazy" src="img/GI-885/f15b03de767f7154.jpg" width="769" height="170" style="width:100.0%" alt="LATER, PDF page 12"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 70 of 187</h3>
+    <div class="metrics"><span>exact run <b>14 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 7</span></p><div class="shots"><img loading="lazy" src="img/GI-885/d37d81e8a4e2ac38.jpg" width="595" height="78" style="width:77.4%" alt="EARLIER, PDF page 7"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 12</span></p><div class="shots"><img loading="lazy" src="img/GI-885/5659d4ff51027a40.jpg" width="769" height="123" style="width:100.0%" alt="LATER, PDF page 12"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 71 of 187</h3>
+    <div class="metrics"><span>exact run <b>12 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 7</span></p><div class="shots"><img loading="lazy" src="img/GI-885/51fb0c57a581c40f.jpg" width="595" height="93" style="width:77.4%" alt="EARLIER, PDF page 7"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 13</span></p><div class="shots"><img loading="lazy" src="img/GI-885/4b7220d439aee0ff.jpg" width="769" height="146" style="width:100.0%" alt="LATER, PDF page 13"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 72 of 187</h3>
+    <div class="metrics"><span>exact run <b>12 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 7</span></p><div class="shots"><img loading="lazy" src="img/GI-885/fce007e9133b17fb.jpg" width="595" height="66" style="width:77.4%" alt="EARLIER, PDF page 7"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 13</span></p><div class="shots"><img loading="lazy" src="img/GI-885/5a8fb1287037e9d8.jpg" width="769" height="147" style="width:100.0%" alt="LATER, PDF page 13"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 73 of 187</h3>
+    <div class="metrics"><span>near-exact run <b>25 words</b></span>
+      <span>substitutions <b>2</b></span></div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 7</span></p><div class="shots"><img loading="lazy" src="img/GI-885/01b0a26077be49d9.jpg" width="595" height="72" style="width:77.4%" alt="EARLIER, PDF page 7"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 13</span></p><div class="shots"><img loading="lazy" src="img/GI-885/89a934310d3bd2eb.jpg" width="769" height="169" style="width:100.0%" alt="LATER, PDF page 13"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 74 of 187</h3>
+    <div class="metrics"><span>near-exact run <b>71 words</b></span>
+      <span>substitutions <b>1</b></span></div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 7</span></p><div class="shots"><img loading="lazy" src="img/GI-885/25704f39128783f6.jpg" width="601" height="158" style="width:78.1%" alt="EARLIER, PDF page 7"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 13</span></p><div class="shots"><img loading="lazy" src="img/GI-885/07a635ca775f47a8.jpg" width="769" height="215" style="width:100.0%" alt="LATER, PDF page 13"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 75 of 187</h3>
+    <div class="metrics"><span>exact run <b>24 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 7</span></p><div class="shots"><img loading="lazy" src="img/GI-885/b52e5649fe167562.jpg" width="601" height="60" style="width:78.1%" alt="EARLIER, PDF page 7"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 13</span></p><div class="shots"><img loading="lazy" src="img/GI-885/284a7334ca564d6b.jpg" width="769" height="169" style="width:100.0%" alt="LATER, PDF page 13"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 76 of 187</h3>
+    <div class="metrics"><span>exact run <b>32 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 7</span></p><div class="shots"><img loading="lazy" src="img/GI-885/0bd93bbb3470386a.jpg" width="596" height="103" style="width:77.5%" alt="EARLIER, PDF page 7"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 13</span></p><div class="shots"><img loading="lazy" src="img/GI-885/f5a9244aeb9ac980.jpg" width="769" height="193" style="width:100.0%" alt="LATER, PDF page 13"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 77 of 187</h3>
+    <div class="metrics"><span>exact run <b>31 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 7</span></p><div class="shots"><img loading="lazy" src="img/GI-885/923e63f4e9a1a769.jpg" width="596" height="73" style="width:77.5%" alt="EARLIER, PDF page 7"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 13</span></p><div class="shots"><img loading="lazy" src="img/GI-885/93b8d71bc1da4343.jpg" width="769" height="161" style="width:100.0%" alt="LATER, PDF page 13"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 78 of 187</h3>
+    <div class="metrics"><span>exact run <b>26 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 8</span></p><div class="shots"><img loading="lazy" src="img/GI-885/df55c466ae038e2c.jpg" width="605" height="85" style="width:78.7%" alt="EARLIER, PDF page 8"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 13</span></p><div class="shots"><img loading="lazy" src="img/GI-885/4bae5a941c606185.jpg" width="769" height="170" style="width:100.0%" alt="LATER, PDF page 13"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 79 of 187</h3>
+    <div class="metrics"><span>exact run <b>28 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 8</span></p><div class="shots"><img loading="lazy" src="img/GI-885/14cdbc4e0be1d15e.jpg" width="603" height="84" style="width:78.5%" alt="EARLIER, PDF page 8"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 13</span></p><div class="shots"><img loading="lazy" src="img/GI-885/2335e4ffacc8fcd3.jpg" width="769" height="170" style="width:100.0%" alt="LATER, PDF page 13"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 80 of 187</h3>
+    <div class="metrics"><span>exact run <b>64 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 8</span></p><div class="shots"><img loading="lazy" src="img/GI-885/51e18da6bb3c498d.jpg" width="603" height="137" style="width:78.5%" alt="EARLIER, PDF page 8"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 13</span></p><div class="shots"><img loading="lazy" src="img/GI-885/e2aa1cbfe2d14c1f.jpg" width="769" height="263" style="width:100.0%" alt="LATER, PDF page 13"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 81 of 187</h3>
+    <div class="metrics"><span>exact run <b>35 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 8</span></p><div class="shots"><img loading="lazy" src="img/GI-885/af76cf84ec77c86c.jpg" width="603" height="90" style="width:78.5%" alt="EARLIER, PDF page 8"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 13</span></p><div class="shots"><img loading="lazy" src="img/GI-885/f57773924f3ccdef.jpg" width="769" height="170" style="width:100.0%" alt="LATER, PDF page 13"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 82 of 187</h3>
+    <div class="metrics"><span>exact run <b>50 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 8</span></p><div class="shots"><img loading="lazy" src="img/GI-885/f7a4bf3ecc374d48.jpg" width="603" height="74" style="width:78.5%" alt="EARLIER, PDF page 8"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 13</span></p><div class="shots"><img loading="lazy" src="img/GI-885/fe0e35b15b8b61dd.jpg" width="769" height="194" style="width:100.0%" alt="LATER, PDF page 13"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 83 of 187</h3>
+    <div class="metrics"><span>near-exact run <b>33 words</b></span>
+      <span>substitutions <b>1</b></span></div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 2</span></p><div class="shots"><img loading="lazy" src="img/GI-885/3d60229d94407c14.jpg" width="600" height="60" style="width:78.1%" alt="EARLIER, PDF page 2"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 14</span></p><div class="shots"><img loading="lazy" src="img/GI-885/5e9b79d75ae8638b.jpg" width="769" height="167" style="width:100.0%" alt="LATER, PDF page 14"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 84 of 187</h3>
+    <div class="metrics"><span>near-exact run <b>43 words</b></span>
+      <span>substitutions <b>1</b></span></div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 7</span></p><div class="shots"><img loading="lazy" src="img/GI-885/86d2a59eb1403210.jpg" width="599" height="84" style="width:77.9%" alt="EARLIER, PDF page 7"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 14</span></p><div class="shots"><img loading="lazy" src="img/GI-885/ec4f514ae04bd8a0.jpg" width="769" height="215" style="width:100.0%" alt="LATER, PDF page 14"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 85 of 187</h3>
+    <div class="metrics"><span>near-exact run <b>20 words</b></span>
+      <span>substitutions <b>1</b></span></div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 7</span></p><div class="shots"><img loading="lazy" src="img/GI-885/06add93eb550f48e.jpg" width="599" height="66" style="width:77.9%" alt="EARLIER, PDF page 7"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 14</span></p><div class="shots"><img loading="lazy" src="img/GI-885/62e4544c7e8525b0.jpg" width="769" height="146" style="width:100.0%" alt="LATER, PDF page 14"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 86 of 187</h3>
+    <div class="metrics"><span>exact run <b>12 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF pp. 7&ndash;8</span></p><div class="shots"><img loading="lazy" src="img/GI-885/f2f338df70ed1761.jpg" width="599" height="51" style="width:77.9%" alt="EARLIER, PDF page 7"><p class="shot-break">&darr; continues on PDF p. 8</p><img loading="lazy" src="img/GI-885/d700b4dc0ab6a170.jpg" width="605" height="78" style="width:78.7%" alt="EARLIER, PDF page 8"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 14</span></p><div class="shots"><img loading="lazy" src="img/GI-885/c980dd396f3abf83.jpg" width="769" height="169" style="width:100.0%" alt="LATER, PDF page 14"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 87 of 187</h3>
+    <div class="metrics"><span>exact run <b>23 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 8</span></p><div class="shots"><img loading="lazy" src="img/GI-885/2c983373d8cc2585.jpg" width="593" height="77" style="width:77.1%" alt="EARLIER, PDF page 8"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 14</span></p><div class="shots"><img loading="lazy" src="img/GI-885/105b467435abfff1.jpg" width="769" height="169" style="width:100.0%" alt="LATER, PDF page 14"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 88 of 187</h3>
+    <div class="metrics"><span>exact run <b>20 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF pp. 8&ndash;9</span></p><div class="shots"><img loading="lazy" src="img/GI-885/7af2200cb8b3bc40.jpg" width="593" height="77" style="width:77.1%" alt="EARLIER, PDF page 8"><p class="shot-break">&darr; continues on PDF p. 9</p><img loading="lazy" src="img/GI-885/8d43b2933a74f3a1.jpg" width="604" height="78" style="width:78.5%" alt="EARLIER, PDF page 9"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 14</span></p><div class="shots"><img loading="lazy" src="img/GI-885/f70fbcf90a9951d3.jpg" width="769" height="145" style="width:100.0%" alt="LATER, PDF page 14"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 89 of 187</h3>
+    <div class="metrics"><span>exact run <b>25 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 9</span></p><div class="shots"><img loading="lazy" src="img/GI-885/2f12fbe42a9b5fb4.jpg" width="604" height="107" style="width:78.5%" alt="EARLIER, PDF page 9"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 14</span></p><div class="shots"><img loading="lazy" src="img/GI-885/8acbbec9973e8bfd.jpg" width="769" height="169" style="width:100.0%" alt="LATER, PDF page 14"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 90 of 187</h3>
+    <div class="metrics"><span>exact run <b>22 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 9</span></p><div class="shots"><img loading="lazy" src="img/GI-885/b4569516e7e62599.jpg" width="598" height="70" style="width:77.7%" alt="EARLIER, PDF page 9"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 14</span></p><div class="shots"><img loading="lazy" src="img/GI-885/de69594a390de14f.jpg" width="769" height="164" style="width:100.0%" alt="LATER, PDF page 14"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 91 of 187</h3>
+    <div class="metrics"><span>near-exact run <b>58 words</b></span>
+      <span>substitutions <b>1</b></span></div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 8</span></p><div class="shots"><img loading="lazy" src="img/GI-885/751d2074380df9f3.jpg" width="605" height="90" style="width:78.7%" alt="EARLIER, PDF page 8"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 14</span></p><div class="shots"><img loading="lazy" src="img/GI-885/39895d9fef71ac42.jpg" width="769" height="216" style="width:100.0%" alt="LATER, PDF page 14"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 92 of 187</h3>
+    <div class="metrics"><span>exact run <b>12 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 9</span></p><div class="shots"><img loading="lazy" src="img/GI-885/8a161d6908a06a2a.jpg" width="601" height="54" style="width:78.1%" alt="EARLIER, PDF page 9"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 14</span></p><div class="shots"><img loading="lazy" src="img/GI-885/211151b64160e49e.jpg" width="769" height="122" style="width:100.0%" alt="LATER, PDF page 14"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 93 of 187</h3>
+    <div class="metrics"><span>exact run <b>13 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 9</span></p><div class="shots"><img loading="lazy" src="img/GI-885/edbf51dadd9e36a6.jpg" width="601" height="69" style="width:78.1%" alt="EARLIER, PDF page 9"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 14</span></p><div class="shots"><img loading="lazy" src="img/GI-885/e95e2bdd43eeae7c.jpg" width="769" height="145" style="width:100.0%" alt="LATER, PDF page 14"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 94 of 187</h3>
+    <div class="metrics"><span>exact run <b>21 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 9</span></p><div class="shots"><img loading="lazy" src="img/GI-885/db35d6e12d603baf.jpg" width="601" height="66" style="width:78.1%" alt="EARLIER, PDF page 9"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 14</span></p><div class="shots"><img loading="lazy" src="img/GI-885/b158888dad9048a4.jpg" width="769" height="146" style="width:100.0%" alt="LATER, PDF page 14"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 95 of 187</h3>
+    <div class="metrics"><span>exact run <b>27 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 9</span></p><div class="shots"><img loading="lazy" src="img/GI-885/7eb244ab42669ef9.jpg" width="601" height="72" style="width:78.1%" alt="EARLIER, PDF page 9"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 14</span></p><div class="shots"><img loading="lazy" src="img/GI-885/c5c05f158df57ed2.jpg" width="769" height="169" style="width:100.0%" alt="LATER, PDF page 14"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 96 of 187</h3>
+    <div class="metrics"><span>near-exact run <b>30 words</b></span>
+      <span>substitutions <b>1</b></span></div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 8</span></p><div class="shots"><img loading="lazy" src="img/GI-885/026434d25754a045.jpg" width="605" height="59" style="width:78.7%" alt="EARLIER, PDF page 8"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 14</span></p><div class="shots"><img loading="lazy" src="img/GI-885/cd8effa54ecd40e4.jpg" width="769" height="169" style="width:100.0%" alt="LATER, PDF page 14"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 97 of 187</h3>
+    <div class="metrics"><span>exact run <b>23 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 9</span></p><div class="shots"><img loading="lazy" src="img/GI-885/229afb6d3ea342d9.jpg" width="606" height="69" style="width:78.8%" alt="EARLIER, PDF page 9"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 14</span></p><div class="shots"><img loading="lazy" src="img/GI-885/1f4a53010fcced24.jpg" width="769" height="145" style="width:100.0%" alt="LATER, PDF page 14"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 98 of 187</h3>
+    <div class="metrics"><span>near-exact run <b>24 words</b></span>
+      <span>substitutions <b>1</b></span></div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 9</span></p><div class="shots"><img loading="lazy" src="img/GI-885/e38ce89b091803ad.jpg" width="606" height="98" style="width:78.8%" alt="EARLIER, PDF page 9"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 14</span></p><div class="shots"><img loading="lazy" src="img/GI-885/bf6287d0095ba5ce.jpg" width="769" height="169" style="width:100.0%" alt="LATER, PDF page 14"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 99 of 187</h3>
+    <div class="metrics"><span>near-exact run <b>29 words</b></span>
+      <span>substitutions <b>2</b></span></div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 9</span></p><div class="shots"><img loading="lazy" src="img/GI-885/393bc062b19e5cba.jpg" width="597" height="75" style="width:77.6%" alt="EARLIER, PDF page 9"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 14</span></p><div class="shots"><img loading="lazy" src="img/GI-885/66d0e80d7a54860b.jpg" width="769" height="145" style="width:100.0%" alt="LATER, PDF page 14"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 100 of 187</h3>
+    <div class="metrics"><span>near-exact run <b>43 words</b></span>
+      <span>substitutions <b>1</b></span></div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF pp. 9&ndash;10</span></p><div class="shots"><img loading="lazy" src="img/GI-885/f0a27ecd7fadf9a2.jpg" width="597" height="105" style="width:77.6%" alt="EARLIER, PDF page 9"><p class="shot-break">&darr; continues on PDF p. 10</p><img loading="lazy" src="img/GI-885/e27452918ad0789c.jpg" width="572" height="75" style="width:74.3%" alt="EARLIER, PDF page 10"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 15</span></p><div class="shots"><img loading="lazy" src="img/GI-885/863b44cf42c4d7bf.jpg" width="769" height="190" style="width:100.0%" alt="LATER, PDF page 15"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 101 of 187</h3>
+    <div class="metrics"><span>exact run <b>19 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 2</span></p><div class="shots"><img loading="lazy" src="img/GI-885/97d9b88744f0a621.jpg" width="602" height="92" style="width:78.2%" alt="EARLIER, PDF page 2"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 15</span></p><div class="shots"><img loading="lazy" src="img/GI-885/29e12a6c62064048.jpg" width="769" height="142" style="width:100.0%" alt="LATER, PDF page 15"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 102 of 187</h3>
+    <div class="metrics"><span>exact run <b>14 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 2</span></p><div class="shots"><img loading="lazy" src="img/GI-885/87eb6e5dcc813de3.jpg" width="602" height="60" style="width:78.2%" alt="EARLIER, PDF page 2"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 15</span></p><div class="shots"><img loading="lazy" src="img/GI-885/0c49c94d3d588078.jpg" width="769" height="143" style="width:100.0%" alt="LATER, PDF page 15"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 103 of 187</h3>
+    <div class="metrics"><span>exact run <b>15 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 2</span></p><div class="shots"><img loading="lazy" src="img/GI-885/5d9c2d85ddc04ec4.jpg" width="602" height="60" style="width:78.2%" alt="EARLIER, PDF page 2"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 15</span></p><div class="shots"><img loading="lazy" src="img/GI-885/b61526d367ea38c3.jpg" width="769" height="142" style="width:100.0%" alt="LATER, PDF page 15"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 104 of 187</h3>
+    <div class="metrics"><span>exact run <b>66 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 10</span></p><div class="shots"><img loading="lazy" src="img/GI-885/0caf54c57438eced.jpg" width="596" height="115" style="width:77.5%" alt="EARLIER, PDF page 10"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 18</span></p><div class="shots"><img loading="lazy" src="img/GI-885/3864628b4bc4c063.jpg" width="769" height="209" style="width:100.0%" alt="LATER, PDF page 18"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 105 of 187</h3>
+    <div class="metrics"><span>exact run <b>13 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 10</span></p><div class="shots"><img loading="lazy" src="img/GI-885/0b2f463a5a5b9055.jpg" width="600" height="59" style="width:78.0%" alt="EARLIER, PDF page 10"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 18</span></p><div class="shots"><img loading="lazy" src="img/GI-885/96bec61adaaaa148.jpg" width="769" height="139" style="width:100.0%" alt="LATER, PDF page 18"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 106 of 187</h3>
+    <div class="metrics"><span>exact run <b>35 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 1</span></p><div class="shots"><img loading="lazy" src="img/GI-885/a80175da95f1e58b.jpg" width="605" height="80" style="width:78.6%" alt="EARLIER, PDF page 1"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 18</span></p><div class="shots"><img loading="lazy" src="img/GI-885/277e5fa22c196d6d.jpg" width="769" height="161" style="width:100.0%" alt="LATER, PDF page 18"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 107 of 187</h3>
+    <div class="metrics"><span>near-exact run <b>45 words</b></span>
+      <span>substitutions <b>3</b></span></div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 6</span></p><div class="shots"><img loading="lazy" src="img/GI-885/5be07cdf50a22860.jpg" width="605" height="96" style="width:78.7%" alt="EARLIER, PDF page 6"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 19</span></p><div class="shots"><img loading="lazy" src="img/GI-885/1164934d8d8fd400.jpg" width="769" height="187" style="width:100.0%" alt="LATER, PDF page 19"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 108 of 187</h3>
+    <div class="metrics"><span>exact run <b>20 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 1</span></p><div class="shots"><img loading="lazy" src="img/GI-885/62bae90e2af2d7d5.jpg" width="605" height="60" style="width:78.6%" alt="EARLIER, PDF page 1"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 19</span></p><div class="shots"><img loading="lazy" src="img/GI-885/2ae22adb6c461e24.jpg" width="769" height="139" style="width:100.0%" alt="LATER, PDF page 19"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 109 of 187</h3>
+    <div class="metrics"><span>exact run <b>15 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 10</span></p><div class="shots"><img loading="lazy" src="img/GI-885/5ea57b3fdc7073b2.jpg" width="600" height="66" style="width:78.0%" alt="EARLIER, PDF page 10"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 19</span></p><div class="shots"><img loading="lazy" src="img/GI-885/5e6b8c6d9238df5b.jpg" width="769" height="138" style="width:100.0%" alt="LATER, PDF page 19"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 110 of 187</h3>
+    <div class="metrics"><span>exact run <b>12 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 10</span></p><div class="shots"><img loading="lazy" src="img/GI-885/98e6531456562fa4.jpg" width="600" height="44" style="width:78.0%" alt="EARLIER, PDF page 10"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 19</span></p><div class="shots"><img loading="lazy" src="img/GI-885/f7867ae2ce2ab1f2.jpg" width="769" height="138" style="width:100.0%" alt="LATER, PDF page 19"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 111 of 187</h3>
+    <div class="metrics"><span>exact run <b>15 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 6</span></p><div class="shots"><img loading="lazy" src="img/GI-885/d7ec8ddbc2672960.jpg" width="605" height="66" style="width:78.7%" alt="EARLIER, PDF page 6"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 19</span></p><div class="shots"><img loading="lazy" src="img/GI-885/9c0e188c0f26f83b.jpg" width="769" height="138" style="width:100.0%" alt="LATER, PDF page 19"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 112 of 187</h3>
+    <div class="metrics"><span>exact run <b>10 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 1</span></p><div class="shots"><img loading="lazy" src="img/GI-885/70a701adaea88822.jpg" width="423" height="78" style="width:54.9%" alt="EARLIER, PDF page 1"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 20</span></p><div class="shots"><img loading="lazy" src="img/GI-885/d5248bed04b80c33.jpg" width="769" height="139" style="width:100.0%" alt="LATER, PDF page 20"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 113 of 187</h3>
+    <div class="metrics"><span>exact run <b>10 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 11</span></p><div class="shots"><img loading="lazy" src="img/GI-885/2aae5f50e984272b.jpg" width="552" height="51" style="width:71.7%" alt="EARLIER, PDF page 11"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 20</span></p><div class="shots"><img loading="lazy" src="img/GI-885/db802ca92ccbf861.jpg" width="769" height="117" style="width:100.0%" alt="LATER, PDF page 20"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 114 of 187</h3>
+    <div class="metrics"><span>exact run <b>15 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 11</span></p><div class="shots"><img loading="lazy" src="img/GI-885/d030a654ac17ab69.jpg" width="598" height="67" style="width:77.7%" alt="EARLIER, PDF page 11"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 20</span></p><div class="shots"><img loading="lazy" src="img/GI-885/9acd53f2bb05e257.jpg" width="769" height="139" style="width:100.0%" alt="LATER, PDF page 20"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 115 of 187</h3>
+    <div class="metrics"><span>exact run <b>14 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 11</span></p><div class="shots"><img loading="lazy" src="img/GI-885/5ed82662b1af42a1.jpg" width="585" height="67" style="width:76.0%" alt="EARLIER, PDF page 11"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 20</span></p><div class="shots"><img loading="lazy" src="img/GI-885/c4f75e6e2a1b782e.jpg" width="769" height="139" style="width:100.0%" alt="LATER, PDF page 20"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 116 of 187</h3>
+    <div class="metrics"><span>exact run <b>14 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 11</span></p><div class="shots"><img loading="lazy" src="img/GI-885/e1254a5f33364fa3.jpg" width="599" height="67" style="width:77.8%" alt="EARLIER, PDF page 11"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 20</span></p><div class="shots"><img loading="lazy" src="img/GI-885/5a91c9614e91f4c6.jpg" width="769" height="143" style="width:100.0%" alt="LATER, PDF page 20"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 117 of 187</h3>
+    <div class="metrics"><span>exact run <b>10 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 11</span></p><div class="shots"><img loading="lazy" src="img/GI-885/4d844e921eafde71.jpg" width="589" height="59" style="width:76.6%" alt="EARLIER, PDF page 11"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 21</span></p><div class="shots"><img loading="lazy" src="img/GI-885/ef8ffaee6a45efb4.jpg" width="769" height="120" style="width:100.0%" alt="LATER, PDF page 21"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 118 of 187</h3>
+    <div class="metrics"><span>exact run <b>10 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 11</span></p><div class="shots"><img loading="lazy" src="img/GI-885/0ef962d542dc156c.jpg" width="589" height="67" style="width:76.5%" alt="EARLIER, PDF page 11"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 21</span></p><div class="shots"><img loading="lazy" src="img/GI-885/a563d0f9bebc4ccd.jpg" width="769" height="119" style="width:100.0%" alt="LATER, PDF page 21"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 119 of 187</h3>
+    <div class="metrics"><span>exact run <b>13 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 11</span></p><div class="shots"><img loading="lazy" src="img/GI-885/37cdda227f1cf16b.jpg" width="601" height="66" style="width:78.1%" alt="EARLIER, PDF page 11"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 21</span></p><div class="shots"><img loading="lazy" src="img/GI-885/024b389f48912813.jpg" width="769" height="139" style="width:100.0%" alt="LATER, PDF page 21"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 120 of 187</h3>
+    <div class="metrics"><span>exact run <b>10 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 11</span></p><div class="shots"><img loading="lazy" src="img/GI-885/d45dd708a6c9bb58.jpg" width="567" height="51" style="width:73.7%" alt="EARLIER, PDF page 11"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 21</span></p><div class="shots"><img loading="lazy" src="img/GI-885/c469948b677c6996.jpg" width="769" height="140" style="width:100.0%" alt="LATER, PDF page 21"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 121 of 187</h3>
+    <div class="metrics"><span>exact run <b>13 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 11</span></p><div class="shots"><img loading="lazy" src="img/GI-885/39e73d08ef561f2f.jpg" width="571" height="66" style="width:74.1%" alt="EARLIER, PDF page 11"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 21</span></p><div class="shots"><img loading="lazy" src="img/GI-885/b24dfed6f36d4fd7.jpg" width="769" height="139" style="width:100.0%" alt="LATER, PDF page 21"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 122 of 187</h3>
+    <div class="metrics"><span>exact run <b>21 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 12</span></p><div class="shots"><img loading="lazy" src="img/GI-885/f766c213ff192d12.jpg" width="581" height="66" style="width:75.5%" alt="EARLIER, PDF page 12"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 21</span></p><div class="shots"><img loading="lazy" src="img/GI-885/f8e6bde57e3075af.jpg" width="769" height="139" style="width:100.0%" alt="LATER, PDF page 21"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 123 of 187</h3>
+    <div class="metrics"><span>exact run <b>13 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 12</span></p><div class="shots"><img loading="lazy" src="img/GI-885/df25d4f5f225b7d2.jpg" width="595" height="67" style="width:77.3%" alt="EARLIER, PDF page 12"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 21</span></p><div class="shots"><img loading="lazy" src="img/GI-885/48a20a35db2bb51b.jpg" width="769" height="139" style="width:100.0%" alt="LATER, PDF page 21"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 124 of 187</h3>
+    <div class="metrics"><span>exact run <b>11 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 12</span></p><div class="shots"><img loading="lazy" src="img/GI-885/81815cef11c2ab46.jpg" width="592" height="66" style="width:76.9%" alt="EARLIER, PDF page 12"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 21</span></p><div class="shots"><img loading="lazy" src="img/GI-885/1d4b6d3e811e6689.jpg" width="769" height="140" style="width:100.0%" alt="LATER, PDF page 21"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 125 of 187</h3>
+    <div class="metrics"><span>exact run <b>25 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 11</span></p><div class="shots"><img loading="lazy" src="img/GI-885/77972d80a7e114e5.jpg" width="603" height="66" style="width:78.4%" alt="EARLIER, PDF page 11"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 21</span></p><div class="shots"><img loading="lazy" src="img/GI-885/be6c9600cf391d37.jpg" width="769" height="162" style="width:100.0%" alt="LATER, PDF page 21"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 126 of 187</h3>
+    <div class="metrics"><span>exact run <b>16 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF pp. 11&ndash;12</span></p><div class="shots"><img loading="lazy" src="img/GI-885/1d2b2fa8240e796c.jpg" width="597" height="60" style="width:77.5%" alt="EARLIER, PDF page 11"><p class="shot-break">&darr; continues on PDF p. 12</p><img loading="lazy" src="img/GI-885/f84f9685239476ed.jpg" width="501" height="75" style="width:65.0%" alt="EARLIER, PDF page 12"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 21</span></p><div class="shots"><img loading="lazy" src="img/GI-885/ed3be86994bdb872.jpg" width="769" height="139" style="width:100.0%" alt="LATER, PDF page 21"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 127 of 187</h3>
+    <div class="metrics"><span>exact run <b>19 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 3</span></p><div class="shots"><img loading="lazy" src="img/GI-885/edfad89993f2908b.jpg" width="600" height="57" style="width:77.9%" alt="EARLIER, PDF page 3"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 21</span></p><div class="shots"><img loading="lazy" src="img/GI-885/d41ac27d14315153.jpg" width="769" height="139" style="width:100.0%" alt="LATER, PDF page 21"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 128 of 187</h3>
+    <div class="metrics"><span>exact run <b>19 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 12</span></p><div class="shots"><img loading="lazy" src="img/GI-885/c30c590c28a0803a.jpg" width="586" height="67" style="width:76.1%" alt="EARLIER, PDF page 12"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 21</span></p><div class="shots"><img loading="lazy" src="img/GI-885/d41ac27d14315153.jpg" width="769" height="139" style="width:100.0%" alt="LATER, PDF page 21"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 129 of 187</h3>
+    <div class="metrics"><span>exact run <b>16 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 12</span></p><div class="shots"><img loading="lazy" src="img/GI-885/e3f28d9743a53a16.jpg" width="602" height="66" style="width:78.2%" alt="EARLIER, PDF page 12"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 21</span></p><div class="shots"><img loading="lazy" src="img/GI-885/9e0195e12d51891d.jpg" width="769" height="139" style="width:100.0%" alt="LATER, PDF page 21"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 130 of 187</h3>
+    <div class="metrics"><span>exact run <b>18 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 12</span></p><div class="shots"><img loading="lazy" src="img/GI-885/dc3c0e351f0915e8.jpg" width="603" height="66" style="width:78.3%" alt="EARLIER, PDF page 12"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 21</span></p><div class="shots"><img loading="lazy" src="img/GI-885/2262ef9173343480.jpg" width="769" height="140" style="width:100.0%" alt="LATER, PDF page 21"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 131 of 187</h3>
+    <div class="metrics"><span>exact run <b>15 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 12</span></p><div class="shots"><img loading="lazy" src="img/GI-885/b7af919e94f1a272.jpg" width="557" height="67" style="width:72.4%" alt="EARLIER, PDF page 12"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 22</span></p><div class="shots"><img loading="lazy" src="img/GI-885/f404af146ac85d81.jpg" width="769" height="139" style="width:100.0%" alt="LATER, PDF page 22"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 132 of 187</h3>
+    <div class="metrics"><span>exact run <b>19 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 12</span></p><div class="shots"><img loading="lazy" src="img/GI-885/b618f17522b74cdd.jpg" width="588" height="66" style="width:76.4%" alt="EARLIER, PDF page 12"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 22</span></p><div class="shots"><img loading="lazy" src="img/GI-885/ce4fe7d858a8bd30.jpg" width="769" height="139" style="width:100.0%" alt="LATER, PDF page 22"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 133 of 187</h3>
+    <div class="metrics"><span>exact run <b>30 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 12</span></p><div class="shots"><img loading="lazy" src="img/GI-885/881f23fdb2213eda.jpg" width="596" height="81" style="width:77.4%" alt="EARLIER, PDF page 12"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 22</span></p><div class="shots"><img loading="lazy" src="img/GI-885/ccec4e572729b199.jpg" width="769" height="161" style="width:100.0%" alt="LATER, PDF page 22"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 134 of 187</h3>
+    <div class="metrics"><span>exact run <b>36 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 12</span></p><div class="shots"><img loading="lazy" src="img/GI-885/0c4275ecc3e0a4a6.jpg" width="600" height="81" style="width:78.0%" alt="EARLIER, PDF page 12"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 22</span></p><div class="shots"><img loading="lazy" src="img/GI-885/1683dc312eeceddc.jpg" width="769" height="183" style="width:100.0%" alt="LATER, PDF page 22"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 135 of 187</h3>
+    <div class="metrics"><span>exact run <b>14 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 15</span></p><div class="shots"><img loading="lazy" src="img/GI-885/f78dcbe43fa83512.jpg" width="598" height="67" style="width:77.6%" alt="EARLIER, PDF page 15"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 22</span></p><div class="shots"><img loading="lazy" src="img/GI-885/08a48b66d00e13df.jpg" width="769" height="139" style="width:100.0%" alt="LATER, PDF page 22"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 136 of 187</h3>
+    <div class="metrics"><span>exact run <b>11 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 15</span></p><div class="shots"><img loading="lazy" src="img/GI-885/095c98f776e2cae7.jpg" width="586" height="67" style="width:76.2%" alt="EARLIER, PDF page 15"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 22</span></p><div class="shots"><img loading="lazy" src="img/GI-885/765747b5d4aca62d.jpg" width="769" height="140" style="width:100.0%" alt="LATER, PDF page 22"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 137 of 187</h3>
+    <div class="metrics"><span>exact run <b>10 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 15</span></p><div class="shots"><img loading="lazy" src="img/GI-885/01cfe374fa2aebb7.jpg" width="590" height="66" style="width:76.6%" alt="EARLIER, PDF page 15"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 22</span></p><div class="shots"><img loading="lazy" src="img/GI-885/0558751e8515ee87.jpg" width="769" height="142" style="width:100.0%" alt="LATER, PDF page 22"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 138 of 187</h3>
+    <div class="metrics"><span>exact run <b>18 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 13</span></p><div class="shots"><img loading="lazy" src="img/GI-885/53a9d94a64226c42.jpg" width="585" height="66" style="width:76.0%" alt="EARLIER, PDF page 13"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 23</span></p><div class="shots"><img loading="lazy" src="img/GI-885/00771f3b55f1dd10.jpg" width="769" height="141" style="width:100.0%" alt="LATER, PDF page 23"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 139 of 187</h3>
+    <div class="metrics"><span>exact run <b>34 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 13</span></p><div class="shots"><img loading="lazy" src="img/GI-885/d337c5e88cffe839.jpg" width="603" height="95" style="width:78.3%" alt="EARLIER, PDF page 13"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 23</span></p><div class="shots"><img loading="lazy" src="img/GI-885/83e33e664f7d8534.jpg" width="769" height="182" style="width:100.0%" alt="LATER, PDF page 23"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 140 of 187</h3>
+    <div class="metrics"><span>near-exact run <b>30 words</b></span>
+      <span>substitutions <b>1</b></span></div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 13</span></p><div class="shots"><img loading="lazy" src="img/GI-885/b836e7603663d6ef.jpg" width="596" height="89" style="width:77.5%" alt="EARLIER, PDF page 13"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 23</span></p><div class="shots"><img loading="lazy" src="img/GI-885/0be4bb6849945b3c.jpg" width="769" height="161" style="width:100.0%" alt="LATER, PDF page 23"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 141 of 187</h3>
+    <div class="metrics"><span>exact run <b>11 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 14</span></p><div class="shots"><img loading="lazy" src="img/GI-885/798ec1d739ba19fe.jpg" width="595" height="66" style="width:77.3%" alt="EARLIER, PDF page 14"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 23</span></p><div class="shots"><img loading="lazy" src="img/GI-885/6d3735eb9fb4d9e0.jpg" width="769" height="138" style="width:100.0%" alt="LATER, PDF page 23"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 142 of 187</h3>
+    <div class="metrics"><span>exact run <b>18 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 14</span></p><div class="shots"><img loading="lazy" src="img/GI-885/2d13639826d18b62.jpg" width="600" height="67" style="width:77.9%" alt="EARLIER, PDF page 14"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 23</span></p><div class="shots"><img loading="lazy" src="img/GI-885/3a816a40a15b1113.jpg" width="769" height="139" style="width:100.0%" alt="LATER, PDF page 23"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 143 of 187</h3>
+    <div class="metrics"><span>exact run <b>10 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 14</span></p><div class="shots"><img loading="lazy" src="img/GI-885/35c5597baa72349c.jpg" width="600" height="60" style="width:77.9%" alt="EARLIER, PDF page 14"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 23</span></p><div class="shots"><img loading="lazy" src="img/GI-885/47ed69f4ede6c1c5.jpg" width="769" height="117" style="width:100.0%" alt="LATER, PDF page 23"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 144 of 187</h3>
+    <div class="metrics"><span>near-exact run <b>19 words</b></span>
+      <span>substitutions <b>1</b></span></div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 14</span></p><div class="shots"><img loading="lazy" src="img/GI-885/96d92274a399feac.jpg" width="596" height="90" style="width:77.4%" alt="EARLIER, PDF page 14"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 23</span></p><div class="shots"><img loading="lazy" src="img/GI-885/dca12187e318abbe.jpg" width="769" height="139" style="width:100.0%" alt="LATER, PDF page 23"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 145 of 187</h3>
+    <div class="metrics"><span>exact run <b>10 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 14</span></p><div class="shots"><img loading="lazy" src="img/GI-885/35c5597baa72349c.jpg" width="600" height="60" style="width:77.9%" alt="EARLIER, PDF page 14"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 23</span></p><div class="shots"><img loading="lazy" src="img/GI-885/47ed69f4ede6c1c5.jpg" width="769" height="117" style="width:100.0%" alt="LATER, PDF page 23"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 146 of 187</h3>
+    <div class="metrics"><span>exact run <b>15 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 14</span></p><div class="shots"><img loading="lazy" src="img/GI-885/b53d4d5653e0aa23.jpg" width="581" height="66" style="width:75.4%" alt="EARLIER, PDF page 14"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 23</span></p><div class="shots"><img loading="lazy" src="img/GI-885/6cea634c589873d4.jpg" width="769" height="138" style="width:100.0%" alt="LATER, PDF page 23"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 147 of 187</h3>
+    <div class="metrics"><span>exact run <b>22 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 14</span></p><div class="shots"><img loading="lazy" src="img/GI-885/5e90dd9a5cea0eb2.jpg" width="592" height="66" style="width:76.9%" alt="EARLIER, PDF page 14"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 23</span></p><div class="shots"><img loading="lazy" src="img/GI-885/d79a3b9d543ccefa.jpg" width="769" height="139" style="width:100.0%" alt="LATER, PDF page 23"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 148 of 187</h3>
+    <div class="metrics"><span>exact run <b>16 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 14</span></p><div class="shots"><img loading="lazy" src="img/GI-885/5b27c1109117b880.jpg" width="587" height="67" style="width:76.2%" alt="EARLIER, PDF page 14"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 23</span></p><div class="shots"><img loading="lazy" src="img/GI-885/50c46c4614eab788.jpg" width="769" height="139" style="width:100.0%" alt="LATER, PDF page 23"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 149 of 187</h3>
+    <div class="metrics"><span>exact run <b>11 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 14</span></p><div class="shots"><img loading="lazy" src="img/GI-885/13b1eae30cabb632.jpg" width="591" height="66" style="width:76.7%" alt="EARLIER, PDF page 14"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 23</span></p><div class="shots"><img loading="lazy" src="img/GI-885/b2dcf0b645001a93.jpg" width="769" height="139" style="width:100.0%" alt="LATER, PDF page 23"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 150 of 187</h3>
+    <div class="metrics"><span>exact run <b>17 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 16</span></p><div class="shots"><img loading="lazy" src="img/GI-885/ba3a4c13d9fe4e80.jpg" width="591" height="67" style="width:76.8%" alt="EARLIER, PDF page 16"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 23</span></p><div class="shots"><img loading="lazy" src="img/GI-885/7343d9b562e0cf5d.jpg" width="769" height="139" style="width:100.0%" alt="LATER, PDF page 23"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 151 of 187</h3>
+    <div class="metrics"><span>exact run <b>22 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 14</span></p><div class="shots"><img loading="lazy" src="img/GI-885/3a2792457a810fc6.jpg" width="596" height="67" style="width:77.4%" alt="EARLIER, PDF page 14"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 23</span></p><div class="shots"><img loading="lazy" src="img/GI-885/076378a64f290165.jpg" width="769" height="160" style="width:100.0%" alt="LATER, PDF page 23"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 152 of 187</h3>
+    <div class="metrics"><span>exact run <b>25 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 14</span></p><div class="shots"><img loading="lazy" src="img/GI-885/ed6ff4cd86dc94b3.jpg" width="600" height="81" style="width:78.0%" alt="EARLIER, PDF page 14"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 23</span></p><div class="shots"><img loading="lazy" src="img/GI-885/2f5629488185a451.jpg" width="769" height="161" style="width:100.0%" alt="LATER, PDF page 23"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 153 of 187</h3>
+    <div class="metrics"><span>exact run <b>10 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 14</span></p><div class="shots"><img loading="lazy" src="img/GI-885/03662b5615bc365a.jpg" width="591" height="52" style="width:76.8%" alt="EARLIER, PDF page 14"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 23</span></p><div class="shots"><img loading="lazy" src="img/GI-885/de80ed446058b137.jpg" width="769" height="117" style="width:100.0%" alt="LATER, PDF page 23"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 154 of 187</h3>
+    <div class="metrics"><span>exact run <b>19 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 14</span></p><div class="shots"><img loading="lazy" src="img/GI-885/dd121573cec39de6.jpg" width="567" height="66" style="width:73.7%" alt="EARLIER, PDF page 14"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 23</span></p><div class="shots"><img loading="lazy" src="img/GI-885/312a01a3248de1e9.jpg" width="769" height="140" style="width:100.0%" alt="LATER, PDF page 23"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 155 of 187</h3>
+    <div class="metrics"><span>exact run <b>17 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 15</span></p><div class="shots"><img loading="lazy" src="img/GI-885/8d10084dfa0db5e6.jpg" width="582" height="90" style="width:75.6%" alt="EARLIER, PDF page 15"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 24</span></p><div class="shots"><img loading="lazy" src="img/GI-885/cac7477b95a3ca9d.jpg" width="769" height="142" style="width:100.0%" alt="LATER, PDF page 24"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 156 of 187</h3>
+    <div class="metrics"><span>exact run <b>17 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 15</span></p><div class="shots"><img loading="lazy" src="img/GI-885/63bd25e876bc6243.jpg" width="583" height="66" style="width:75.8%" alt="EARLIER, PDF page 15"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 24</span></p><div class="shots"><img loading="lazy" src="img/GI-885/37668cfbf169fcf7.jpg" width="769" height="143" style="width:100.0%" alt="LATER, PDF page 24"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 157 of 187</h3>
+    <div class="metrics"><span>exact run <b>10 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 15</span></p><div class="shots"><img loading="lazy" src="img/GI-885/c925f0d74a88c31c.jpg" width="549" height="67" style="width:71.3%" alt="EARLIER, PDF page 15"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 24</span></p><div class="shots"><img loading="lazy" src="img/GI-885/4fc4d80d5120d8b9.jpg" width="769" height="139" style="width:100.0%" alt="LATER, PDF page 24"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 158 of 187</h3>
+    <div class="metrics"><span>exact run <b>16 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 12</span></p><div class="shots"><img loading="lazy" src="img/GI-885/f151b90fd2a11744.jpg" width="582" height="90" style="width:75.5%" alt="EARLIER, PDF page 12"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 24</span></p><div class="shots"><img loading="lazy" src="img/GI-885/2735d52b510c316c.jpg" width="769" height="139" style="width:100.0%" alt="LATER, PDF page 24"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 159 of 187</h3>
+    <div class="metrics"><span>exact run <b>11 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 15</span></p><div class="shots"><img loading="lazy" src="img/GI-885/ccac7eb4bdad90c7.jpg" width="595" height="90" style="width:77.3%" alt="EARLIER, PDF page 15"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 24</span></p><div class="shots"><img loading="lazy" src="img/GI-885/b258bce4adc56ba1.jpg" width="769" height="139" style="width:100.0%" alt="LATER, PDF page 24"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 160 of 187</h3>
+    <div class="metrics"><span>exact run <b>17 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 16</span></p><div class="shots"><img loading="lazy" src="img/GI-885/1db25f59983470cb.jpg" width="544" height="66" style="width:70.6%" alt="EARLIER, PDF page 16"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 24</span></p><div class="shots"><img loading="lazy" src="img/GI-885/498306140a2c71d0.jpg" width="769" height="140" style="width:100.0%" alt="LATER, PDF page 24"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 161 of 187</h3>
+    <div class="metrics"><span>exact run <b>15 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 16</span></p><div class="shots"><img loading="lazy" src="img/GI-885/e6ea2cdef99bf188.jpg" width="565" height="67" style="width:73.4%" alt="EARLIER, PDF page 16"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 24</span></p><div class="shots"><img loading="lazy" src="img/GI-885/e05eb2084931de37.jpg" width="769" height="139" style="width:100.0%" alt="LATER, PDF page 24"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 162 of 187</h3>
+    <div class="metrics"><span>near-exact run <b>26 words</b></span>
+      <span>substitutions <b>1</b></span></div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 16</span></p><div class="shots"><img loading="lazy" src="img/GI-885/bc2fc64c760a9f00.jpg" width="599" height="81" style="width:77.8%" alt="EARLIER, PDF page 16"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 24</span></p><div class="shots"><img loading="lazy" src="img/GI-885/d8fe8a403f082e14.jpg" width="769" height="161" style="width:100.0%" alt="LATER, PDF page 24"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 163 of 187</h3>
+    <div class="metrics"><span>exact run <b>10 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 16</span></p><div class="shots"><img loading="lazy" src="img/GI-885/f5d24ec242d4e46d.jpg" width="595" height="60" style="width:77.3%" alt="EARLIER, PDF page 16"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 24</span></p><div class="shots"><img loading="lazy" src="img/GI-885/93223f4b85f8bdca.jpg" width="769" height="116" style="width:100.0%" alt="LATER, PDF page 24"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 164 of 187</h3>
+    <div class="metrics"><span>exact run <b>11 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 16</span></p><div class="shots"><img loading="lazy" src="img/GI-885/eaa7a8a584e3bb38.jpg" width="556" height="66" style="width:72.2%" alt="EARLIER, PDF page 16"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 24</span></p><div class="shots"><img loading="lazy" src="img/GI-885/52f6cc7224966abf.jpg" width="769" height="139" style="width:100.0%" alt="LATER, PDF page 24"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 165 of 187</h3>
+    <div class="metrics"><span>exact run <b>16 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 16</span></p><div class="shots"><img loading="lazy" src="img/GI-885/28a523a516f96ea1.jpg" width="590" height="67" style="width:76.6%" alt="EARLIER, PDF page 16"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 24</span></p><div class="shots"><img loading="lazy" src="img/GI-885/fa766f103ea07128.jpg" width="769" height="139" style="width:100.0%" alt="LATER, PDF page 24"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 166 of 187</h3>
+    <div class="metrics"><span>exact run <b>12 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 17</span></p><div class="shots"><img loading="lazy" src="img/GI-885/d882adf5fe69ea61.jpg" width="576" height="90" style="width:74.8%" alt="EARLIER, PDF page 17"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 24</span></p><div class="shots"><img loading="lazy" src="img/GI-885/149700902fadf755.jpg" width="769" height="139" style="width:100.0%" alt="LATER, PDF page 24"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 167 of 187</h3>
+    <div class="metrics"><span>exact run <b>24 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 17</span></p><div class="shots"><img loading="lazy" src="img/GI-885/da5742fd2bdf224d.jpg" width="575" height="66" style="width:74.6%" alt="EARLIER, PDF page 17"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 24</span></p><div class="shots"><img loading="lazy" src="img/GI-885/66ec660f6e1407c9.jpg" width="769" height="138" style="width:100.0%" alt="LATER, PDF page 24"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 168 of 187</h3>
+    <div class="metrics"><span>near-exact run <b>27 words</b></span>
+      <span>substitutions <b>1</b></span></div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 17</span></p><div class="shots"><img loading="lazy" src="img/GI-885/44916fe33e95368a.jpg" width="601" height="81" style="width:78.1%" alt="EARLIER, PDF page 17"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 24</span></p><div class="shots"><img loading="lazy" src="img/GI-885/f78cb2ad54f3ea66.jpg" width="769" height="164" style="width:100.0%" alt="LATER, PDF page 24"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 169 of 187</h3>
+    <div class="metrics"><span>exact run <b>24 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 17</span></p><div class="shots"><img loading="lazy" src="img/GI-885/8d2bf463d359adc5.jpg" width="587" height="81" style="width:76.3%" alt="EARLIER, PDF page 17"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 25</span></p><div class="shots"><img loading="lazy" src="img/GI-885/5ded22fc79781ec4.jpg" width="769" height="164" style="width:100.0%" alt="LATER, PDF page 25"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 170 of 187</h3>
+    <div class="metrics"><span>exact run <b>11 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 17</span></p><div class="shots"><img loading="lazy" src="img/GI-885/5a225f422da7c764.jpg" width="572" height="66" style="width:74.3%" alt="EARLIER, PDF page 17"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 25</span></p><div class="shots"><img loading="lazy" src="img/GI-885/a894a9d0e075565f.jpg" width="769" height="140" style="width:100.0%" alt="LATER, PDF page 25"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 171 of 187</h3>
+    <div class="metrics"><span>exact run <b>24 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 17</span></p><div class="shots"><img loading="lazy" src="img/GI-885/5e7902bd870fb771.jpg" width="601" height="67" style="width:78.1%" alt="EARLIER, PDF page 17"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 25</span></p><div class="shots"><img loading="lazy" src="img/GI-885/93603e056fc4b3e9.jpg" width="769" height="139" style="width:100.0%" alt="LATER, PDF page 25"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 172 of 187</h3>
+    <div class="metrics"><span>exact run <b>14 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 17</span></p><div class="shots"><img loading="lazy" src="img/GI-885/713bb0cab935ffb7.jpg" width="589" height="67" style="width:76.6%" alt="EARLIER, PDF page 17"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 26</span></p><div class="shots"><img loading="lazy" src="img/GI-885/1d89d37f0ce7f8bd.jpg" width="769" height="143" style="width:100.0%" alt="LATER, PDF page 26"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 173 of 187</h3>
+    <div class="metrics"><span>exact run <b>20 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 17</span></p><div class="shots"><img loading="lazy" src="img/GI-885/9c784d894d74c2c2.jpg" width="591" height="66" style="width:76.7%" alt="EARLIER, PDF page 17"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 26</span></p><div class="shots"><img loading="lazy" src="img/GI-885/03d68e93f222d67f.jpg" width="769" height="142" style="width:100.0%" alt="LATER, PDF page 26"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 174 of 187</h3>
+    <div class="metrics"><span>exact run <b>10 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 17</span></p><div class="shots"><img loading="lazy" src="img/GI-885/349bc19f0d01d8df.jpg" width="592" height="66" style="width:76.9%" alt="EARLIER, PDF page 17"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 27</span></p><div class="shots"><img loading="lazy" src="img/GI-885/bab9c8a47f937140.jpg" width="769" height="142" style="width:100.0%" alt="LATER, PDF page 27"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 175 of 187</h3>
+    <div class="metrics"><span>exact run <b>13 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 18</span></p><div class="shots"><img loading="lazy" src="img/GI-885/e1a9e93cfb81126c.jpg" width="597" height="66" style="width:77.6%" alt="EARLIER, PDF page 18"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 27</span></p><div class="shots"><img loading="lazy" src="img/GI-885/44eaf03b374aa2ce.jpg" width="769" height="140" style="width:100.0%" alt="LATER, PDF page 27"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 176 of 187</h3>
+    <div class="metrics"><span>exact run <b>21 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 18</span></p><div class="shots"><img loading="lazy" src="img/GI-885/f4fb691e5f9de2c3.jpg" width="593" height="67" style="width:77.1%" alt="EARLIER, PDF page 18"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 27</span></p><div class="shots"><img loading="lazy" src="img/GI-885/59c04f8fa4c0b104.jpg" width="769" height="143" style="width:100.0%" alt="LATER, PDF page 27"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 177 of 187</h3>
+    <div class="metrics"><span>exact run <b>20 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 18</span></p><div class="shots"><img loading="lazy" src="img/GI-885/8e7ececaf67010fb.jpg" width="584" height="66" style="width:75.9%" alt="EARLIER, PDF page 18"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 28</span></p><div class="shots"><img loading="lazy" src="img/GI-885/9f6ab53a0caf2a01.jpg" width="769" height="138" style="width:100.0%" alt="LATER, PDF page 28"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 178 of 187</h3>
+    <div class="metrics"><span>near-exact run <b>29 words</b></span>
+      <span>substitutions <b>2</b></span></div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 18</span></p><div class="shots"><img loading="lazy" src="img/GI-885/a71a9723e559510f.jpg" width="554" height="89" style="width:71.9%" alt="EARLIER, PDF page 18"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 28</span></p><div class="shots"><img loading="lazy" src="img/GI-885/e8f87586798bdedf.jpg" width="769" height="160" style="width:100.0%" alt="LATER, PDF page 28"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 179 of 187</h3>
+    <div class="metrics"><span>exact run <b>28 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 18</span></p><div class="shots"><img loading="lazy" src="img/GI-885/5f7bad572d8a9acc.jpg" width="585" height="81" style="width:75.9%" alt="EARLIER, PDF page 18"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 28</span></p><div class="shots"><img loading="lazy" src="img/GI-885/d684b1465c7ded61.jpg" width="769" height="160" style="width:100.0%" alt="LATER, PDF page 28"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 180 of 187</h3>
+    <div class="metrics"><span>exact run <b>18 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 18</span></p><div class="shots"><img loading="lazy" src="img/GI-885/bac58bc4d0f9c3e2.jpg" width="600" height="90" style="width:77.9%" alt="EARLIER, PDF page 18"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 28</span></p><div class="shots"><img loading="lazy" src="img/GI-885/9f89aab2f3d6c14c.jpg" width="769" height="138" style="width:100.0%" alt="LATER, PDF page 28"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 181 of 187</h3>
+    <div class="metrics"><span>exact run <b>28 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 19</span></p><div class="shots"><img loading="lazy" src="img/GI-885/29e73ac573000801.jpg" width="562" height="104" style="width:73.0%" alt="EARLIER, PDF page 19"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 28</span></p><div class="shots"><img loading="lazy" src="img/GI-885/fb03f712424e65b8.jpg" width="769" height="160" style="width:100.0%" alt="LATER, PDF page 28"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 182 of 187</h3>
+    <div class="metrics"><span>exact run <b>17 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 19</span></p><div class="shots"><img loading="lazy" src="img/GI-885/91f073fd8d56f5fe.jpg" width="570" height="66" style="width:74.0%" alt="EARLIER, PDF page 19"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 28</span></p><div class="shots"><img loading="lazy" src="img/GI-885/d8613542ca6b3570.jpg" width="769" height="139" style="width:100.0%" alt="LATER, PDF page 28"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 183 of 187</h3>
+    <div class="metrics"><span>exact run <b>13 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 19</span></p><div class="shots"><img loading="lazy" src="img/GI-885/ba5a137c7d43c984.jpg" width="603" height="66" style="width:78.3%" alt="EARLIER, PDF page 19"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 28</span></p><div class="shots"><img loading="lazy" src="img/GI-885/a3529c1b86baaa93.jpg" width="769" height="139" style="width:100.0%" alt="LATER, PDF page 28"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 184 of 187</h3>
+    <div class="metrics"><span>exact run <b>18 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 18</span></p><div class="shots"><img loading="lazy" src="img/GI-885/68e927b3ff2e60d7.jpg" width="594" height="104" style="width:77.2%" alt="EARLIER, PDF page 18"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 28</span></p><div class="shots"><img loading="lazy" src="img/GI-885/bb5b88adca6f2368.jpg" width="769" height="160" style="width:100.0%" alt="LATER, PDF page 28"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 185 of 187</h3>
+    <div class="metrics"><span>exact run <b>22 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 18</span></p><div class="shots"><img loading="lazy" src="img/GI-885/1b840fced52777b8.jpg" width="594" height="81" style="width:77.1%" alt="EARLIER, PDF page 18"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 28</span></p><div class="shots"><img loading="lazy" src="img/GI-885/528a6384bdb56841.jpg" width="769" height="160" style="width:100.0%" alt="LATER, PDF page 28"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 186 of 187</h3>
+    <div class="metrics"><span>near-exact run <b>27 words</b></span>
+      <span>substitutions <b>1</b></span></div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 19</span></p><div class="shots"><img loading="lazy" src="img/GI-885/4c903a44d0ef3d66.jpg" width="581" height="81" style="width:75.5%" alt="EARLIER, PDF page 19"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 28</span></p><div class="shots"><img loading="lazy" src="img/GI-885/5a27de9aba6f4d43.jpg" width="769" height="160" style="width:100.0%" alt="LATER, PDF page 28"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Shingle match 187 of 187</h3>
+    <div class="metrics"><span>exact run <b>20 words</b></span>
+      </div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>EARLIER</span><span class="idx">PDF p. 11</span></p><div class="shots"><img loading="lazy" src="img/GI-885/0f92eceda4704f98.jpg" width="599" height="67" style="width:77.8%" alt="EARLIER, PDF page 11"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 28</span></p><div class="shots"><img loading="lazy" src="img/GI-885/20e6c19a64d07030.jpg" width="769" height="139" style="width:100.0%" alt="LATER, PDF page 28"></div></div>
+  </div>
+</section>
+  <footer>Generated by write_dupe_reports_screenshots.py from library.sqlite3&rsquo;s potential_dupes table
+    (grouping/stats only) and a 10+-word word-shingle scan, extended with X-drop 3 &mdash; so a run may contain substituted words, but no insertions or deletions.</footer>
+</div>
+</body>
+</html>
