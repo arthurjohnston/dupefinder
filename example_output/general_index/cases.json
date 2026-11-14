@@ -3690,5 +3690,33 @@
   "matched_words": 486,
   "runs": 24,
   "longest": 44
+ },
+ "GI-1018": {
+  "file": "GI-1018.html",
+  "reported": null,
+  "published": "2026-11-14",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "[ASEE Conferences 2015 ASEE Annual Conference and Exposition - Seattle, Washington (2015.06.14-2015.06.17)] 2015 ASEE Annual Conference and Exposition Proceedings - Integration of Project Management Course to Satisfy ABETâs Requirements",
+   "year": 2015,
+   "doi": "10.18260/p.24338",
+   "pct": 27.0,
+   "journal": "2015 ASEE Annual Conference and Exposition Proceedings"
+  },
+  "earlier": {
+   "title": "Educating the Master Builder of the 21st Century Strategically",
+   "year": 2011,
+   "doi": "10.1061/(asce)lm.1943-5630.0000109",
+   "pct": 15.0,
+   "journal": "Leadership and Management in Engineering"
+  },
+  "matched_words": 948,
+  "runs": 33,
+  "longest": 69,
+  "sources": 2,
+  "union_words": 1165,
+  "union_pct": 34.4
  }
 }
