@@ -79,7 +79,8 @@ record of the paper. The result goes in the `byline_check` column, next to `byli
 | `not on byline` | institutions on this paper, all outside the West, and nothing shows the author is the Western academic | dropped |
 | `moved` | institutions on this paper all outside the West, but the author's ORCID record lists that byline institution (a job or a degree) **and** a current Western job (not visiting, emeritus or honorary): the same person, now in the West | kept |
 | `on earlier paper` | the pair's order was unknown, the cached OpenAlex/Crossref years settle it, and the academic is only on the earlier (copied) paper | dropped |
-| `no affiliation` / `not found` | OpenAlex has no institution for them on the paper / no author of that name | kept, unverified |
+| `name only` | no institution for them on the paper, and no co-author has a Western one: the Western university is a name match (99 of 99 agent-checked authors like this were not Western) | dropped |
+| `no affiliation` / `not found` | no institution for them on the paper but a Western co-author / no author of that name | kept, unverified |
 | any `gi_affiliations.CHECK_VERDICTS` verdict | from `data/unobtainable_author_checks.tsv` (verdicts reached by reading) or the case agent's / your `author_checks` for that paper | dropped if not Western |
 
 A paper with no academic left drops out. Under `--top30`, a paper drops out when none of its top-30 rows
@@ -99,14 +100,15 @@ lacked. `--fetch-orcids` fetches them first from ORCID's public API (free, about
 
 How well the automatic rule agrees with the case agent, on the 683 author checks the agent has written:
 when the rule says `not on byline`, the agent found the author not Western 215 times in 234 (92%). Of the
-other 19, most were `untraced` and two had moved to a Western university. `no affiliation` rows were also
-mostly false (103 of 115 not Western) among the checked cases, so treat them with suspicion. They are kept
-only because there's nothing to decide on.
+other 19, most were `untraced` and two had moved to a Western university. Authors with no institution on the
+paper were also mostly false (103 of 115 not Western), and all 99 of those with no Western co-author were,
+hence `name only`. The 7 of 11 with a Western co-author who were Western are why `no affiliation` is kept.
 
 The same rule (`not on byline` / `moved`) is in `gi_affiliations.byline_checks()` and applies everywhere
 the author checks do, for every author no agent or hand check covers: the review tool's `--western-only`,
 `--country` and affiliation order, and `gi_western_csv.py`. On 2026-11-13 it took `--western-only` from 145
-unreviewed pages to 133 and `--country US` from 57 to 52.
+unreviewed pages to 133 and `--country US` from 57 to 52; `name only` (2026-11-14) took out three more US
+pages (GI-325, GI-790, GI-16).
 
 `data/unobtainable_author_checks.tsv` (tab-separated: `doi`, `author`, `university`, `verdict`, `basis`,
 `checked`) holds judgments the rule can't make. Most come from OpenAlex's raw affiliation string, the
@@ -121,6 +123,9 @@ top-30, score 0.5+ list went from 107 papers to 26:
 - 14 were reputable papers whose academic was on the copied side;
 - 4 had a top-30 namesake;
 - 16 were "Strip of the Month" columns.
+
+With `name only` added (2026-11-14) the check drops 4,759 rows and 2,816 copying papers from the whole list
+(17,316 left), the top-30 list is 3,041 papers and the short list 22.
 
 **`--top30`** keeps a paper if any of its academics is at one of the 27 Western universities in
 `affiliation_hunt/top30_find.py`'s list (Tsinghua, Peking and NUS are on that list but never in a Western

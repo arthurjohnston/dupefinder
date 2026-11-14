@@ -42,11 +42,11 @@ def make_db():
 
 
 def add_work(db, doi, authors):
-    """authors: [(author_id, name, insts)]."""
+    """authors: [(author_id, name, insts)]. The byline shows each author at insts."""
     db.execute("insert into oa_works values (?, 1, 'x')", (doi,))
     for n, (aid, name, insts) in enumerate(authors):
-        db.execute("insert into oa_authorships (doi, position, author_id, name, institutions) values (?, ?, ?, ?, '[]')",
-                   (doi, n, aid, name))
+        db.execute("insert into oa_authorships (doi, position, author_id, name, institutions) values (?, ?, ?, ?, ?)",
+                   (doi, n, aid, name, json.dumps(insts)))
         db.execute("insert or replace into oa_authors values (?, ?, null, 1, ?, ?, 'x', null)",
                    (aid, name, NOW, json.dumps(insts)))
 
@@ -213,6 +213,8 @@ class TestDoiCountries(unittest.TestCase):
                                      ("A2", "Ben Ko", [inst("Seoul Natl Univ", "KR"), inst("A Lab", "US", "company")])])
         self.db.execute("""update oa_authorships set institutions = ? where doi = '10.1/x' and position = 0""",
                         (json.dumps([inst("Dhaka Univ", "BD")]),))
+        self.db.execute("""update oa_authorships set institutions = ? where doi = '10.1/x' and position = 1""",
+                        (json.dumps([inst("Seoul Natl Univ", "KR")]),))
 
     def add_check(self, verdict, author, university="", now_country=""):
         self.db.execute("insert into author_checks (doi, author, university, verdict, now_country, checked_by) "
@@ -292,10 +294,20 @@ class TestBylineChecks(unittest.TestCase):
             self.jobs(*jobs)
             self.assertEqual(self.verdicts()["Li Wei"], "not on byline", jobs)
 
-    def test_western_or_empty_byline_left_alone(self):
-        self.db.execute("update oa_authorships set institutions = ? where position = 1",
+    def test_western_byline_left_alone(self):
+        self.db.execute("update oa_authorships set institutions = ?",
                         (json.dumps([inst("Yunnan Univ", "CN"), inst("Oxford", "GB")]),))
-        self.db.execute("update oa_authorships set institutions = ? where position = 0", (json.dumps([inst("X", "")]),))
+        self.assertEqual(self.verdicts(), {})
+
+    def test_no_institution_on_the_paper(self):
+        # no Western co-author: the Western university is a name match only
+        self.db.execute("update oa_authorships set institutions = '[]' where position = 0")
+        self.assertEqual(self.verdicts(), {"Li Wei": "name only", "Ann Bo": "not on byline"})
+        self.db.execute("update oa_authorships set institutions = '[]'")
+        self.assertEqual(self.verdicts(), {"Li Wei": "name only", "Ann Bo": "name only"})
+        self.assertEqual(ga.doi_countries(self.db, ["10.1/y"])["10.1/y"], set())
+        # a Western co-author: left alone
+        self.db.execute("update oa_authorships set institutions = ? where position = 1", (json.dumps([inst("Oxford", "GB")]),))
         self.assertEqual(self.verdicts(), {})
 
 

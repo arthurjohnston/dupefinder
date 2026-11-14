@@ -756,9 +756,12 @@ def byline_checks(db, dois, checks=None):
     row covers but 'untraced' (checks: load_author_checks(auto=False) for these DOIs). An author whose institutions on this
     paper (oa_authorships.institutions) all have a country, and none in TARGET_COUNTRIES, gets 'not on byline'
     (author-wide): their current Western university is a namesake merged in by OpenAlex, or a later move. A move
-    is told apart by moved_to_west() and gets 'moved' with now_country instead. Authors with no institution on
-    the paper are left alone. Measured against the case agent's checks (683): where this says 'not on byline'
-    the agent found the author not Western 215 times in 234."""
+    is told apart by moved_to_west() and gets 'moved' with now_country instead. Measured against the case
+    agent's checks (683): where this says 'not on byline' the agent found the author not Western 215 times in 234.
+    An author with no institution on the paper gets 'name only' when no other author on it has a Western one:
+    the Western university comes from OpenAlex matching the name alone. Measured the same way: 99 of 99 such
+    authors the agent checked were not Western (84 on papers with no institutions at all, 15 with only
+    non-Western ones), while 7 of the 11 with a Western co-author were Western -- those are left alone."""
     dois = sorted({(d or "").lower() for d in dois if d})
     if checks is None:
         checks = load_author_checks(db, dois, auto=False)
@@ -775,16 +778,22 @@ def byline_checks(db, dois, checks=None):
     for d, authors in by_doi.items():
         covered = assign_checks([c for c in checks.get(d, []) if c["verdict"] != "untraced"],
                                 [a[2] or "" for a in authors])
-        for i, (_, _, name, insts, orcid) in enumerate(authors):
-            insts = json.loads(insts or "[]")
-            countries = {(x.get("country") or "").upper() for x in insts} - {""}
-            if i in covered or not name or not countries or countries & TARGET_COUNTRIES:
+        bylines = [json.loads(a[3] or "[]") for a in authors]
+        countries_of = [{(x.get("country") or "").upper() for x in b} - {""} for b in bylines]
+        for i, (_, _, name, _, orcid) in enumerate(authors):
+            insts, countries = bylines[i], countries_of[i]
+            if i in covered or not name or countries & TARGET_COUNTRIES:
                 continue
             check = {"doi": d, "author": name, "university": "", "verdict": "not on byline", "now_at": None,
                      "now_country": None, "case_name": None, "checked_by": "auto", "checked_at": None,
                      "basis": "byline: " + "; ".join(dict.fromkeys(f"{x.get('name')} ({x.get('country')})"
                                                                    for x in insts))}
-            if orcid:
+            if not countries:
+                if any(c & TARGET_COUNTRIES for j, c in enumerate(countries_of)
+                       if j != i and not same_name(authors[j][2] or "", name)):
+                    continue
+                check.update(verdict="name only", basis="no institution on the paper, none Western for a co-author")
+            elif orcid:
                 if orcid not in histories:
                     histories[orcid] = orcid_history(db, orcid)
                 now = moved_to_west(histories[orcid], [x.get("name") for x in insts])

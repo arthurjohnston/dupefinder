@@ -268,6 +268,11 @@ def byline_checks(db, rows, papers):
                        else "byline" if countries & ga.TARGET_COUNTRIES else "not on byline")
             if verdict == "not on byline":
                 verdict = mover(db, r, found, histories, need) or verdict
+            elif verdict == "no affiliation" and not any(
+                    {(i.get("country") or "").upper() for i in insts} & ga.TARGET_COUNTRIES
+                    for d in papers(r) for name, insts, _ in by_doi.get(d.lower(), [])
+                    if not ga.same_name(name, r["author"])):
+                verdict = "name only"           # no Western co-author either: gi_affiliations.byline_checks()
         r["byline_check"] = verdict
     return need
 
