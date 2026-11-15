@@ -3899,5 +3899,30 @@
   "matched_words": 1348,
   "runs": 44,
   "longest": 103
+ },
+ "GI-866": {
+  "file": "GI-866.html",
+  "reported": "2026-11-15",
+  "published": "2026-11-15",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "An Update on Glomerulopathies - Clinical and Treatment Aspects || Focal Segmental Glomerulosclerosis",
+   "year": 2011,
+   "doi": "10.5772/33110",
+   "pct": 6.0,
+   "journal": "An Update on Glomerulopathies - Clinical and Treatment Aspects"
+  },
+  "earlier": {
+   "title": "Pathophysiology of focal segmental glomerulosclerosis",
+   "year": 2007,
+   "doi": "10.1007/s00467-006-0357-2",
+   "pct": 21.0,
+   "journal": "Pediatric Nephrology"
+  },
+  "matched_words": 497,
+  "runs": 25,
+  "longest": 34
  }
 }
