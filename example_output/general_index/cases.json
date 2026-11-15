@@ -3824,5 +3824,30 @@
   "sources": 2,
   "union_words": 1794,
   "union_pct": 18.9
+ },
+ "GI-496": {
+  "file": "GI-496.html",
+  "reported": null,
+  "published": "2026-11-15",
+  "earlier_known": false,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Med One A Possible Risk Gene for B-Cell Chronic Lymphocytic Leukemia: NRIP1 Corresponding to",
+   "year": 2017,
+   "doi": "10.20900/mo.20170005",
+   "pct": 32.0,
+   "journal": "Med One"
+  },
+  "earlier": {
+   "title": "Three Potential Risk Genes for Bipolar Disorder: MT1E, MT1X and CX3CR1",
+   "year": 2017,
+   "doi": "10.20900/jpbs.20170004",
+   "pct": 31.0,
+   "journal": "Journal of Psychiatry and Brain Science"
+  },
+  "matched_words": 743,
+  "runs": 38,
+  "longest": 51
  }
 }
