@@ -116,7 +116,7 @@ class TestPreprintStatusFollowsThePage(unittest.TestCase):
         lib = self.library({5: 2012, 9: 2016})   # the SSRN side (9) is later
         self.assertEqual(gwp.priority_status(self.row(lib, "2020", "2010"))[0], gp.LATER)
         lib = self.library({5: 2016, 9: 2012})   # the SSRN side was copied from, by an Elsevier paper
-        self.assertEqual(gwp.priority_status(self.row(lib, "2010", "2020"))[0], gp.PROMOTED)
+        self.assertEqual(gwp.priority_status(self.row(lib, "2010", "2020"))[0], gp.TOP)
 
     def test_library_same_year_is_unknown_even_if_fulltext_years_differ(self):
         lib = self.library({5: 2016, 9: 2016})
@@ -203,21 +203,25 @@ class TestMajorPublisher(unittest.TestCase):
 
 class TestPairPriority(unittest.TestCase):
     ELS, WILEY, OTHER, PRE = "10.1016/j.x.2019.1", "10.1002/x.1", "10.9999/x.1", "10.2139/ssrn.1"
+    OUP = "10.1093/x/1"   # a major publisher, not one of TOP_PUBLISHERS
     MILL, MDPI = "10.1088/1742-6596/1168/3/032004", "10.3390/su12010001"
 
     def test_order_of_the_ranks(self):
-        self.assertTrue(gp.PROMOTED < gp.POSSIBLY_PROMOTED < gp.ORDINARY < gp.POSSIBLY < gp.LATER)
+        self.assertTrue(gp.TOP < gp.PROMOTED < gp.POSSIBLY_PROMOTED < gp.ORDINARY < gp.POSSIBLY < gp.LATER)
 
     def test_later_side_major_is_promoted(self):
-        self.assertEqual(gp.pair_priority(self.OTHER, self.ELS, "a"), (gp.PROMOTED, "later paper: Elsevier"))
+        self.assertEqual(gp.pair_priority(self.OTHER, self.OUP, "a"), (gp.PROMOTED, "later paper: Oxford University Press"))
+        self.assertEqual(gp.pair_priority(self.OTHER, self.ELS, "a"), (gp.TOP, "later paper: Elsevier (top publisher)"))
         self.assertEqual(gp.pair_priority(self.ELS, self.OTHER, "a"), (gp.ORDINARY, None))  # copied FROM Elsevier
-        self.assertEqual(gp.pair_priority(self.PRE, self.ELS, "a")[0], gp.PROMOTED)        # a journal copying a preprint
+        self.assertEqual(gp.pair_priority(self.ELS, self.OUP, "a")[0], gp.PROMOTED)   # only the copying side counts
+        self.assertEqual(gp.pair_priority(self.PRE, self.ELS, "a")[0], gp.TOP)        # a journal copying a preprint
 
     def test_unknown_order(self):
         rank, note = gp.pair_priority(self.OTHER, self.ELS, None)
         self.assertEqual(rank, gp.POSSIBLY_PROMOTED)
         self.assertIn("Elsevier", note)
-        self.assertEqual(gp.pair_priority(self.WILEY, self.ELS, None)[0], gp.PROMOTED)  # either way a major
+        self.assertEqual(gp.pair_priority(self.WILEY, self.ELS, None)[0], gp.TOP)       # either way a top publisher
+        self.assertEqual(gp.pair_priority(self.OUP, self.ELS, None)[0], gp.PROMOTED)    # either way a major
         # a preprint on a side wins: most often the authors' own preprint of the journal paper
         self.assertEqual(gp.pair_priority(self.PRE, self.ELS, None)[0], gp.POSSIBLY)
 
