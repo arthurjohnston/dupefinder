@@ -3771,5 +3771,30 @@
   "matched_words": 351,
   "runs": 21,
   "longest": 31
+ },
+ "GI-551": {
+  "file": "GI-551.html",
+  "reported": null,
+  "published": "2026-11-15",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Autogenous Tooth Transplantation as a Treatment Option",
+   "year": 2012,
+   "doi": "10.5005/jp-journals-10005-1142",
+   "pct": 26.0,
+   "journal": "International Journal of Clinical Pediatric Dentistry"
+  },
+  "earlier": {
+   "title": "Autogenous Tooth Transplantation from Ectopic Position: A Case Report and Review of Literature",
+   "year": null,
+   "doi": "10.3329/jbcps.v24i2.153",
+   "pct": 30.0,
+   "journal": "Journal of Bangladesh College of Physicians and Surgeons"
+  },
+  "matched_words": 605,
+  "runs": 20,
+  "longest": 86
  }
 }
