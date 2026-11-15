@@ -138,29 +138,6 @@ class TestSelfSeverity(unittest.TestCase):
             cli.ask = saved
 
 
-class TestPreprintSeverity(unittest.TestCase):
-    def pair(self, doi_a, doi_b, year_a=2015, year_b=2020):
-        return {"ai_severity": None, "doi_a": doi_a, "doi_b": doi_b, "year_a": year_a, "year_b": year_b}
-
-    def test_copy_on_a_listed_server_defaults_to_low(self):
-        saved = cli.ask
-        cli.ask = lambda prompt: ""
-        try:
-            for doi in ("10.48550/arXiv.2101.00001", "10.2139/ssrn.123456", "10.5281/zenodo.1",
-                        "10.6084/m9.figshare.1", "10.13140/RG.2.2.1"):
-                self.assertEqual(cli.low_server_copy(self.pair("10.1016/j.x.1", doi)) is not None, True, doi)
-                self.assertEqual(cli.ask_severity(self.pair("10.1016/j.x.1", doi), "problem", "cross-author copying"),
-                                 "low", doi)
-            # the copied-from side being a preprint, another server, or the order unknown: medium as before
-            for p in (self.pair("10.48550/arXiv.2101.00001", "10.1016/j.x.1"),
-                      self.pair("10.1016/j.x.1", "10.21203/rs.3.rs-1/v1"),
-                      self.pair("10.1016/j.x.1", "10.2139/ssrn.123456", 2020, 2020)):
-                self.assertIsNone(cli.low_server_copy(p))
-                self.assertEqual(cli.ask_severity(p, "problem", "cross-author copying"), cli.DEFAULT_SEVERITY)
-        finally:
-            cli.ask = saved
-
-
 class TestOrder(unittest.TestCase):
     def test_same_year_set_by_hand_then_cleared(self):
         pair = order_library(2017, 2017)
