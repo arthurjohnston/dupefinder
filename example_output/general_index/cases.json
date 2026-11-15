@@ -3746,5 +3746,30 @@
   "sources": 2,
   "union_words": 1187,
   "union_pct": 42.5
+ },
+ "GI-982": {
+  "file": "GI-982.html",
+  "reported": null,
+  "published": "2026-11-15",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Pelvic Vascular Malformations",
+   "year": 2013,
+   "doi": "10.1055/s-0033-1359730",
+   "pct": 10.0,
+   "journal": "Seminars in Interventional Radiology"
+  },
+  "earlier": {
+   "title": "Vascular Malformations Involving the Female Pelvis",
+   "year": 2008,
+   "doi": "10.1055/s-0028-1102993",
+   "pct": 10.0,
+   "journal": "Seminars in Interventional Radiology"
+  },
+  "matched_words": 351,
+  "runs": 21,
+  "longest": 31
  }
 }
