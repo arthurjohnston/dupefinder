@@ -138,6 +138,15 @@ class TestSelfSeverity(unittest.TestCase):
             cli.ask = saved
 
 
+class TestPublisherFilter(unittest.TestCase):
+    def test_major_and_top(self):
+        import gi_preprints as gp
+        self.assertIsNone(cli.publisher_priorities())
+        self.assertEqual(cli.publisher_priorities(major=True), {gp.TOP, gp.PROMOTED})
+        self.assertEqual(cli.publisher_priorities(top=True), {gp.TOP})
+        self.assertEqual(cli.publisher_priorities(major=True, top=True), {gp.TOP})
+
+
 class TestOrder(unittest.TestCase):
     def test_same_year_set_by_hand_then_cleared(self):
         pair = order_library(2017, 2017)

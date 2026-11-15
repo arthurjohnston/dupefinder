@@ -130,7 +130,7 @@ problem on a pair already reported (--gi NN --include-reviewed) offers t to take
 cases.json entry removed and pushed, the report files moved to GI-NN/withdrawn/ (gi_report_case.take_down());
 emails and a PubPeer post already sent are yours to withdraw.
 
-Usage: gi_review_cli.py [--gi 12,40] [--ai-type cross-author,data] [--ai-decision problem] [--include-reviewed] [--looked-at GI-NN,...] [--order affiliation|professor|publisher|overlap] [--western-only] [--country IN,PK|west] [--countries] [--no-medical] [--pdfs] [--no-open] [--no-agent] [--no-lookahead] [--pages-dir data/fulltext_pages_s16] [--sample-rate 8]
+Usage: gi_review_cli.py [--gi 12,40] [--ai-type cross-author,data] [--ai-decision problem] [--include-reviewed] [--looked-at GI-NN,...] [--order affiliation|professor|publisher|overlap] [--western-only] [--major | --top] [--country IN,PK|west] [--countries] [--no-medical] [--pdfs] [--no-open] [--no-agent] [--no-lookahead] [--pages-dir data/fulltext_pages_s16] [--sample-rate 8]
                         [--db data/gi.sqlite3]
 """
 import argparse
@@ -331,14 +331,24 @@ def looked_at_pairs(db):
     return {tuple(x) for x in db.execute("select pair_lo, pair_hi from review_flags where flag = ?", (LOOKED_AT,))}
 
 
+def publisher_priorities(major=False, top=False):
+    """The gi_preprints ranks --major / --top keep: top publishers only, or top and other major publishers (not the
+    order-unclear "possibly" rank); None (no filter) for neither."""
+    import gi_preprints
+    if top:
+        return {gi_preprints.TOP}
+    return {gi_preprints.TOP, gi_preprints.PROMOTED} if major else None
+
+
 def load_queue(db, gi=None, include_reviewed=False, ai_types=None, ai_decisions=None, order="publisher",
-               western_only=False, groups=None, no_medical=False, countries=None):
+               western_only=False, groups=None, no_medical=False, countries=None, priorities=None):
     """ai_types / ai_decisions: lists of AI_TYPES / AI_DECISIONS names to keep ('none': the agent hasn't
     reviewed the pair). western_only: only pairs whose copying (later) paper has an author active at a Western
     university (gi_affiliations.py); with the order unknown, either paper. countries: a set of country codes; only
     pairs whose copying paper has an author tied to one of them (gi_affiliations.doi_countries(): the byline's
     institutions, the authors' current universities, the author checks), with the order unknown either paper's. no_medical: drop
-    pairs with a Health Sciences paper (medical_pairs()). Ignored with gi. Pages sharing a later paper (groups:
+    pairs with a Health Sciences paper (medical_pairs()). priorities: only pairs whose gi_preprints rank
+    (gi_write_pages.priority_status(), the queue's own) is one of these (--major: TOP and PROMOTED). Ignored with gi. Pages sharing a later paper (groups:
     later_paper_groups(), computed when not given) are kept together, where the first of them falls."""
     rows = db.execute(QUEUE_SQL).fetchall()
     if gi:
@@ -363,6 +373,8 @@ def load_queue(db, gi=None, include_reviewed=False, ai_types=None, ai_decisions=
         found = country_pairs(db, rows)
         rows = [r for r in rows if found[pair_key(r)] & countries]
     import gi_write_pages
+    if priorities:
+        rows = [r for r in rows if gi_write_pages.priority_status(r)[0] in priorities]
     aff = {}
     profs = {}
     if order in ("affiliation", "professor") or western_only:
@@ -1429,6 +1441,12 @@ def main():
                          "--western-only and the other filters")
     ap.add_argument("--countries", action="store_true",
                     help="print how many queue pairs each country has (after the other filters) and exit")
+    ap.add_argument("--major", action="store_true",
+                    help="only pairs whose copying (later) paper is from a major publisher: the top publishers "
+                         "(Elsevier, IOP, PLOS, SAGE, Springer Nature, Taylor & Francis, Wiley) and the other major "
+                         "ones (gi_preprints.TOP and PROMOTED); not those where the order is unclear")
+    ap.add_argument("--top", action="store_true",
+                    help="only pairs whose copying (later) paper is from a top publisher (gi_preprints.TOP_PUBLISHERS)")
     ap.add_argument("--no-medical", action="store_true",
                     help="skip pairs where either paper's OpenAlex primary topic is in Health Sciences (medicine, "
                          "nursing, dentistry, ...); papers with no cached OpenAlex record are kept")
@@ -1467,8 +1485,9 @@ def main():
         if bad:
             ap.error(f"{name}: unknown {', '.join(bad)} (use: {', '.join(known)})")
     groups = later_paper_groups(db)
+    priorities = publisher_priorities(args.major, args.top)
     queue = load_queue(db, args.gi, args.include_reviewed, args.ai_type, args.ai_decision, args.order,
-                       args.western_only, groups, args.no_medical, countries)
+                       args.western_only, groups, args.no_medical, countries, priorities)
     if args.countries:
         print_country_counts(db, queue)
         return
