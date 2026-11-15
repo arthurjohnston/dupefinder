@@ -3718,5 +3718,33 @@
   "sources": 2,
   "union_words": 1165,
   "union_pct": 34.4
+ },
+ "GI-924": {
+  "file": "GI-924.html",
+  "reported": "2026-11-15",
+  "published": "2026-11-15",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Role of probiotics, prebiotics and synbiotics in chemoprevention for colorectal cancer",
+   "year": 2008,
+   "doi": "10.3748/wjg.14.6453",
+   "pct": 24.0,
+   "journal": "World Journal of Gastroenterology"
+  },
+  "earlier": {
+   "title": "The effects of probiotics on colon cancer development",
+   "year": 2004,
+   "doi": "10.1079/nrr200484",
+   "pct": 15.0,
+   "journal": "Nutrition Research Reviews"
+  },
+  "matched_words": 685,
+  "runs": 35,
+  "longest": 53,
+  "sources": 2,
+  "union_words": 1187,
+  "union_pct": 42.5
  }
 }
