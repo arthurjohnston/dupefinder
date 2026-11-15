@@ -541,6 +541,30 @@ def _overlaps(a, b):
     return a[0] < b[2] and b[0] < a[2] and a[1] < b[3] and b[1] < a[3]
 
 
+def merge_overlapping_crops(crops):
+    """crops [(page, clip, highlights)] with any two on the same page whose clips overlap replaced by one crop of
+    both (their union, highlights combined), until none overlap; kept in the order each first appears. Without
+    it a table or an equation block showed the same lines in several crops: highlights there jump between
+    columns and lines in reading order, so group_regions() makes several regions whose clips cover the same
+    rows (GI-248: one table's rows 3-4 times over, GI-74: each equation twice), which reads as more overlap
+    than there is."""
+    out = list(crops)
+    changed = True
+    while changed:
+        changed = False
+        for i in range(len(out)):
+            for j in range(i + 1, len(out)):
+                (pi, ci, hi), (pj, cj, hj) = out[i], out[j]
+                if pi == pj and _overlaps(ci, cj):
+                    out[i] = (pi, _union(ci, cj), hi + hj)
+                    del out[j]
+                    changed = True
+                    break
+            if changed:
+                break
+    return out
+
+
 class ImageWriter:
     """Renders page clips to JPEG, either as files under `img_dir` (returned as paths relative to
     the page) or as data: URIs. Highlights are drawn as real PDF highlight annotations on the
@@ -657,33 +681,39 @@ class ScreenshotExhibits:
         self.table_crops = False   # widen each crop to the whole of any table its highlights sit in
         self.plans = []            # the last exhibit's two plans, left side then right
 
-    def _plan_side(self, side, words, start, match_words, diff_idx, display=None):
+    def _plan_side(self, side, words, start, match_words, diff_idx, display=None, pieces=None):
         """Locate one side of one run (or of a merged group's runs, their words concatenated: the words
         between them aren't in the needle, so they sit in the crop unhighlighted) and lay out its crops.
-        Returns a dict with `status` ('located', 'partial' or 'missing'), and either `html` (a text fallback,
+        `pieces`: [(document start, offset in match_words, length)] per run of a merged group, each located
+        separately. Returns a dict with `status` ('located', 'partial' or 'missing'), and either `html` (a text fallback,
         `display` when given) or `crops` [(page, clip, highlights), ...], `share` and `text_h` (median word
         height, points)."""
         if side.error:
             return {"status": "missing", "html": _fallback_html(side.error, match_words, display)}
-        needle, needle_src = [], []
-        for k, w in enumerate(match_words):
-            n = norm_token(w)
-            if n:
-                needle.append(n)
-                needle_src.append(k)
-        expected = start / max(1, len(words)) * len(side.norms)
-        try:
-            pairs = locate_sequence(needle, side.norms, side.index, expected_start=expected)
-        except Exception as exc:
-            return {"status": "missing",
-                    "html": _fallback_html(f"locating failed ({exc.__class__.__name__})", match_words, display)}
-        share = len(pairs) / max(1, len(needle))
+        # each run located on its own (a merged group's runs are pieces of match_words): searched as one
+        # sequence, the words between them push the later runs out of the window locate_sequence() aligns in
+        placed, needed, found = {}, 0, 0
+        for doc_start, off, length in (pieces or [(start, 0, len(match_words))]):
+            needle, needle_src = [], []
+            for k in range(off, off + length):
+                n = norm_token(match_words[k])
+                if n:
+                    needle.append(n)
+                    needle_src.append(k)
+            expected = doc_start / max(1, len(words)) * len(side.norms)
+            try:
+                pairs = locate_sequence(needle, side.norms, side.index, expected_start=expected)
+            except Exception as exc:
+                return {"status": "missing",
+                        "html": _fallback_html(f"locating failed ({exc.__class__.__name__})", match_words, display)}
+            needed += len(needle)
+            found += len(pairs)
+            for i, j in pairs:
+                placed[j] = placed.get(j, False) or needle_src[i] in diff_idx
+        share = found / max(1, needed)
         if share < PARTIAL_MIN:
             return {"status": "missing", "html": _fallback_html(
                 "This run could not be found in the PDF's text layer", match_words, display)}
-        placed = {}
-        for i, j in pairs:
-            placed[j] = placed.get(j, False) or needle_src[i] in diff_idx
         placed = sorted(placed.items())
         crops = []
         for reg in group_regions(line_highlights(side.tokens, placed), side.extents):
@@ -702,6 +732,7 @@ class ScreenshotExhibits:
                     page_no, prev, items = crops.pop()
                     clip, reg["items"] = _union(prev, clip), items + reg["items"]
             crops.append((reg["page"], clip, reg["items"]))
+        crops = merge_overlapping_crops(crops)
         boxes = {}
         if _digit_share(" ".join(match_words)) >= TABLE_DIGITS:
             boxes = {pg: side.tables(pg) for pg in {side.tokens[j].page for j, _ in placed}}
@@ -779,6 +810,7 @@ class ScreenshotExhibits:
                     side_in["diff"].update(off + k for k in d)
                     side_in["match"].extend(m)
                     side_in["segs"].append((a, b, d))
+                    side_in.setdefault("pieces", []).append((a, off, len(m)))
             for side_in in sides_in:   # the text fallback shows what the text page shows
                 side_in["display"] = (wdr.render_side(side_in["words"], sorted(side_in["segs"], key=lambda t: t[0]))[0]
                                       if len(group) > 1 else None)
@@ -786,8 +818,8 @@ class ScreenshotExhibits:
             if swap:
                 left, right = right, left
             sides = ((self.sides[left["pid"]], left), (self.sides[right["pid"]], right))
-            plans = [self._plan_side(side, d["words"], d["segs"][0][0], d["match"], d["diff"], d["display"])
-                     for side, d in sides]
+            plans = [self._plan_side(side, d["words"], d["segs"][0][0], d["match"], d["diff"], d["display"],
+                                     d["pieces"]) for side, d in sides]
             self.plans = plans
             scales, column_px, stacked = choose_layout(
                 [(pl.get("text_h"), max((c[2] - c[0] for _, c, _ in pl["crops"]), default=None)
