@@ -3849,5 +3849,30 @@
   "matched_words": 743,
   "runs": 38,
   "longest": 51
+ },
+ "GI-487": {
+  "file": "GI-487.html",
+  "reported": "2026-11-15",
+  "published": "2026-11-15",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": true,
+  "later": {
+   "title": "A Study of Evaluation for the Management of Diabetes in Bangladesh",
+   "year": 2013,
+   "doi": "10.4236/pp.2013.43051",
+   "pct": 19.0,
+   "journal": "Pharmacology & Pharmacy"
+  },
+  "earlier": {
+   "title": "Evaluation of management, control, complications and psychosocial aspects of diabetics in Bangladesh: DiabCare Bangladesh 2008",
+   "year": 2011,
+   "doi": "10.3329/bmrcb.v37i1.7793",
+   "pct": 21.0,
+   "journal": "Bangladesh Medical Research Council Bulletin"
+  },
+  "matched_words": 775,
+  "runs": 28,
+  "longest": 85
  }
 }
