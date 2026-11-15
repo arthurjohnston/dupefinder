@@ -3796,5 +3796,33 @@
   "matched_words": 605,
   "runs": 20,
   "longest": 86
+ },
+ "GI-892": {
+  "file": "GI-892.html",
+  "reported": "2026-11-15",
+  "published": "2026-11-15",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Membranous Nephropathy",
+   "year": 2011,
+   "doi": "10.5772/38946",
+   "pct": 16.0,
+   "journal": "An Update on Glomerulopathies - Clinical and Treatment Aspects"
+  },
+  "earlier": {
+   "title": "Controversies in the treatment of idiopathic membranous nephropathy",
+   "year": 2009,
+   "doi": "10.1038/nrneph.2009.101",
+   "pct": 27.0,
+   "journal": "Nature Reviews Nephrology"
+  },
+  "matched_words": 1503,
+  "runs": 46,
+  "longest": 91,
+  "sources": 2,
+  "union_words": 1794,
+  "union_pct": 18.9
  }
 }
