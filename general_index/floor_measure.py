@@ -117,10 +117,7 @@ def main():
             upd["wrong_pdf"] = rpp.wrong_pdf_side(lib, a, b) or None
             upd["ft_verdict"] = ("wrong pdf" if upd["wrong_pdf"] else
                                  "real overlap" if words >= args.min_words else "no real overlap")
-            oa, ob, sa, sb = gv.opening(lib, a), gv.opening(lib, b), gv.surnames(lib, a), gv.surnames(lib, b)
-            hit = sorted({s for s in sa if re.search(r"\b" + s + r"\b", ob)} |
-                         {s for s in sb if re.search(r"\b" + s + r"\b", oa)})
-            upd["byline"] = "byline overlap: " + ",".join(hit) if hit else "no byline overlap"
+            upd["byline"] = gv.byline_check(lib, a, b)
         v = upd.get("ft_verdict") or "not both retrieved"
         counts[v] = counts.get(v, 0) + 1
         cols = list(upd)

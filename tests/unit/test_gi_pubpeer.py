@@ -68,15 +68,14 @@ class TestMarkdown(unittest.TestCase):
                  "right": {"doi": "10.2/NEW", "pages": [4, 5], "text": "new wording here"}}]
         md = pp.markdown({**fd(passages=5), "images": imgs, "site_url": "https://x.example/GI-1.html"})
         self.assertIn("**Shared table 1** (earlier article PDF p. 5, this article PDF p. 3), as printed in both articles. "
-                      "Shared words and values are highlighted yellow, those that differ pink:\n\n"
-                      "[Image: GI-1-table-1.jpg]", md)
+                      "Shared words and values are highlighted yellow, those that differ pink:", md)
         self.assertNotIn("1.9 (0.9)", md)   # a table's numbers aren't quoted
         self.assertLess(md.index("**Shared table 1**"), md.index("**Passage 1**"))
         self.assertIn("**Passage 1**, 81 words (earlier article PDF p. 3, this article PDF p. 4-5).", md)
-        self.assertIn('- Earlier article: "old wording here"\n\n- This article: "new wording here"\n\n'
-                      '[Image: GI-1-passage-1.jpg]', md)
+        self.assertIn('- Earlier article: "old wording here"\n\n- This article: "new wording here"', md)
         self.assertNotIn("longest shared passages", md)   # the images replace the text extracts
-        self.assertTrue(md.endswith("[Image: GI-1-passage-1.jpg]"))   # no link to the project site
+        self.assertTrue(md.endswith('- This article: "new wording here"'))   # no link to the project site
+        self.assertNotIn("[Image", md)   # nothing to delete before uploading
         self.assertIn("The 5 longest shared passages", pp.markdown(fd(passages=5)))   # no images: extracts
         self.assertIn("The 10 longest", pp.markdown(fd(passages=30)))
         self.assertNotIn("[Image", pp.markdown(fd()))
@@ -89,9 +88,8 @@ class TestMarkdown(unittest.TestCase):
                  "left": {"doi": "10.1/old", "pages": [3], "text": "old wording here"},
                  "right": {"doi": "10.2/NEW", "pages": [4], "text": "new wording here"}}]
         md = pp.markdown({**fd(), "images": imgs, "stitched": "GI-1-images.jpg"})
-        self.assertEqual(md.count("[Image:"), 1)
-        self.assertTrue(md.endswith("The tables and the passages, in the order above, top to bottom:\n\n"
-                                    "[Image: GI-1-images.jpg]"))
+        self.assertNotIn("[Image", md)
+        self.assertTrue(md.endswith("The tables and the passages, in the order above, top to bottom:"))
         self.assertIn("**Passage 1**, 81 words", md)
 
     def test_share_leads(self):

@@ -406,3 +406,15 @@ class TestRotatedPage(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TestMergeOverlappingCrops(unittest.TestCase):
+    def test_overlapping_crops_on_a_page_become_one(self):
+        from write_dupe_reports_screenshots import merge_overlapping_crops
+        crops = [(2, (0, 0, 100, 50), ["a"]), (2, (300, 0, 400, 50), ["b"]),   # two columns: kept apart
+                 (2, (50, 40, 150, 90), ["c"]),                                 # overlaps the first
+                 (3, (0, 0, 100, 50), ["d"]),                                   # another page
+                 (2, (120, 80, 200, 120), ["e"])]                               # overlaps the first's union
+        self.assertEqual(merge_overlapping_crops(crops),
+                         [(2, (0, 0, 200, 120), ["a", "c", "e"]), (2, (300, 0, 400, 50), ["b"]),
+                          (3, (0, 0, 100, 50), ["d"])])

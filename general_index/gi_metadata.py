@@ -58,6 +58,7 @@ create table if not exists oa_institutions (inst_id text primary key, name text,
 """
 CROSSREF_API = "https://api.crossref.org/works"
 EPMC_SEARCH = "https://www.ebi.ac.uk/europepmc/webservices/rest/search"
+CONTACT_EMAIL = "arthur.j.johnston@gmail.com"   # Crossref/OpenAlex polite pool (NEXT_STEPS.md)
 ORCID_RECORD = "https://pub.orcid.org/v3.0/{}/record"
 INSTITUTIONS_API = "https://api.openalex.org/institutions"
 CROSSREF_BATCH, EPMC_BATCH = 50, 25
@@ -228,7 +229,10 @@ class Metadata:
             ids.update(r[0] for r in self.db.execute(f"""select distinct a.orcid from oa_authorships s
                        join oa_authors a using (author_id) where s.doi in ({ga._qs(chunk)})
                        and a.orcid is not null""", chunk))
-        need = missing(self.db, "orcid_records", "orcid", sorted(ids))
+        self.orcid_records(missing(self.db, "orcid_records", "orcid", sorted(ids)))
+
+    def orcid_records(self, need):
+        """Fetch these ORCID iDs' whole records (into orcid_records, employments also into orcid_employments)."""
         log.info("ORCID: %d people to fetch", len(need))
         osession = requests.Session()
         osession.headers["Accept"] = "application/json"
@@ -390,7 +394,7 @@ def main():
     ap.add_argument("--no-cases", action="store_true", help="fetch: leave out the real-overlap pairs of other runs")
     ap.add_argument("--max-calls", type=int, default=50_000, help="fetch: OpenAlex calls at most")
     ap.add_argument("--workers", type=int, default=6, help="fetch: parallel ORCID requests")
-    ap.add_argument("--email", default="arthur.j.johnston@gmail.com")
+    ap.add_argument("--email", default=CONTACT_EMAIL)
     args = ap.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s", datefmt="%H:%M:%S")
     db = sqlite3.connect(args.db, timeout=300, check_same_thread=False)

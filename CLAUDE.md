@@ -594,6 +594,19 @@ duplicating either. `--ids`/`--status`/`--title`/`--source-note` let a single sp
 proper short page name and an external citation (e.g. a RetractionWatch link) — see the Saxby/Taro
 case for the intended usage.
 
+**Text exhibits: short context, close runs merged.** Each per-run exhibit shows `CONTEXT_WORDS` (20) words
+either side of the match, stopping at the paragraph's edge ("…" where it cuts mid-paragraph), and runs
+within `MERGE_GAP` (30) words of each other in *both* papers are one exhibit, the reworded words between
+them unhighlighted (`group_runs()`). Before 2026-11-15 an exhibit showed two whole paragraphs either side
+(`CONTEXT_PARAGRAPHS`), which on short runs buried the finding: GI-924's attachment showed 51,316 words
+around 1,422 highlighted ones, under 3%, and now shows 44-47% highlighted in 21 + 13 exhibits instead of
+35 + 28. `--context-words 0` / `--merge-gap 0` (on this script and `write_dupe_reports_screenshots.py`)
+bring the old view back. Run counts and coverage figures are unchanged: merging is display only.
+`write_dupe_reports_screenshots.py`'s image exhibits merge by the same rule (`select_groups()`, shared), so
+a case's site page and its emailed text page number the same passages the same way: a merged exhibit is
+located in the PDF as its runs' words in one sequence, so the words between them sit in the crop
+unhighlighted. The single-run images (longest passage, PubPeer passages) are not merged.
+
 **`--whole-document`**: renders both papers end to end as ONE continuous word-level diff instead of a
 list of per-run exhibits — shared verbatim text highlighted, everything that differs marked inline
 where it falls. For a pair that is substantially the same document (the paper-mill republication

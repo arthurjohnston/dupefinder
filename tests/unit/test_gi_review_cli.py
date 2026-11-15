@@ -218,6 +218,34 @@ class TestSave(unittest.TestCase):
         self.assertEqual(cli.parse_flags("e m"), ["not qualified", "paper mill"])
 
 
+class TestPaperMill(unittest.TestCase):
+    """' m' on a verdict flags a paper mill; one whose later authors aren't Western isn't reported."""
+
+    def test_suffixes(self):
+        self.assertEqual(cli.split_suffixes("2 m"), ("2", False, True))
+        self.assertEqual(cli.split_suffixes("c m n"), ("c", True, True))
+        self.assertEqual(cli.split_suffixes("c n m"), ("c", True, True))
+        self.assertEqual(cli.split_suffixes("3"), ("3", False, False))
+        self.assertEqual(cli.split_suffixes("m"), ("m", False, False))   # a lone key is never a suffix
+        self.assertEqual(cli.split_note_suffix("3 m n"), ("3", True))
+
+    def test_not_reported_only_when_later_authors_not_western(self):
+        import gi_affiliations as ga
+        shown = {"doi_a": "10.1/early", "doi_b": "10.1/late", "earlier": "a"}
+        flags = ["paper mill"]
+        def scores(rank_b, rank_a=ga.TARGET):
+            return {"10.1/early": (rank_a, [("x", "s", "r")]), "10.1/late": (rank_b, [("y", "s", "r")])}
+        self.assertIn("academic elsewhere", cli.mill_outside_west(scores(ga.ACADEMIC), shown, flags))
+        self.assertIsNotNone(cli.mill_outside_west(scores(ga.OTHER), shown, flags))
+        self.assertIsNone(cli.mill_outside_west(scores(ga.TARGET, ga.ACADEMIC), shown, flags))
+        self.assertIsNone(cli.mill_outside_west(scores(ga.UNKNOWN), shown, flags))   # no data: your call
+        self.assertIsNone(cli.mill_outside_west(scores(ga.ACADEMIC), shown, []))    # not flagged
+        # order unknown: reported if either side is Western
+        unknown = dict(shown, earlier=None)
+        self.assertIsNone(cli.mill_outside_west(scores(ga.ACADEMIC, ga.TARGET), unknown, flags))
+        self.assertIsNotNone(cli.mill_outside_west(scores(ga.ACADEMIC, ga.OTHER), unknown, flags))
+
+
 class TestReportFlow(unittest.TestCase):
     """report_flow(): report files, agent, ticking, PubPeer link, drafts, all in the one tool."""
 
@@ -229,17 +257,23 @@ class TestReportFlow(unittest.TestCase):
         self.cf = gi_case_findings
         self.saved = (gi_case_findings.REPORT_DIR, cli.ask, cli.pubpeer_page, cli.run_agent)
         self.calls = []
+        import gi_report_case   # never start Thunderbird: tests that check the drafts replace this themselves
+        real_open, gi_report_case.open_drafts = gi_report_case.open_drafts, lambda emls: None
+        self.addCleanup(setattr, gi_report_case, "open_drafts", real_open)
         for fn in ("findings_path", "pubpeer_url_path"):   # point the defaults at the temp dir
             orig = getattr(gi_case_findings, fn)
             setattr(self, "_" + fn, orig)
             setattr(gi_case_findings, fn, lambda case, report_dir=None, o=orig: o(case, self.dir))
         self.site = False   # pubpeer_page() reports a site page, so the push runs
+        self.extra = {}   # more paths pubpeer_page() reports
+        (self.dir / "GI-07-email-authors.eml").write_text("To: me@x.org\nCc: earlier@uni.edu\nSubject: s\n\nb\n")
+        (self.dir / "GI-07-email-publisher.eml").write_text("To: editor@journal.org\nSubject: s\n\nb\n")
         cli.pubpeer_page = lambda db, pair, open_it=True, severity=None, authors_only=False, site=True: (
             self.calls.append(("report", open_it) + (("authors only",) if authors_only else ())
                               + (() if site else ("no site",))) or
-            ({"email authors": self.dir / "a.eml"} if authors_only else
-             {"pubpeer": self.dir / "p.html", "email publisher": self.dir / "e.eml",
-              **({"site": self.dir / "s.html"} if self.site else {})}))
+            ({"email authors": self.dir / "GI-07-email-authors.eml"} if authors_only else
+             {"pubpeer": self.dir / "p.html", "email publisher": self.dir / "GI-07-email-publisher.eml",
+              **({"site": self.dir / "s.html"} if self.site else {}), **self.extra}))
 
         def agent(case):
             self.calls.append(("agent", case))
@@ -268,44 +302,65 @@ class TestReportFlow(unittest.TestCase):
             gi_report_case.open_drafts = orig
         return opened
 
-    def test_site_pushed_while_you_post(self):
-        """The site push starts as soon as the files are written, before the PubPeer address is asked for, and
-        the rewrite for the address leaves the site folder alone."""
+    def test_site_pushed_before_drafts(self):
+        """The site push starts as soon as the files are written, and nothing asks for the PubPeer post's
+        address: the files are written once."""
         import threading
         self.site = True
-        started, release = threading.Event(), threading.Event()
+        started = threading.Event()
         orig = cli.publish_site_message
 
         def push(case):
             started.set()
-            release.wait(5)
             return "  site: pushed abc to main"
         cli.publish_site_message = push
+        prompts = []
         answers = iter(["", "y", "n"])
 
         def ask(prompt):
-            if prompt.startswith("PubPeer post"):
-                self.assertTrue(started.wait(5))   # already pushing while the prompt is up
-                release.set()
-                return "https://pubpeer.com/publications/X1"
+            prompts.append(prompt)
             return next(answers, "s")
         try:
             cli.ask = ask
             cli.report_flow(None, {"page_number": 7}, open_it=True)
         finally:
             cli.publish_site_message = orig
-        self.assertEqual(self.calls[-1], ("report", False, "no site"))
+        self.assertTrue(started.is_set())
+        self.assertFalse([p for p in prompts if "PubPeer" in p])
+        self.assertEqual(self.calls, [("agent", "GI-07"), ("report", True)])
 
     def test_whole_flow(self):
-        opened = self.run_flow(["", "y", "n", "https://pubpeer.com/publications/X1", "o"])
-        # the agent, then the files written and the PubPeer page opened once, then rewritten for the URL
-        self.assertEqual(self.calls, [("agent", "GI-07"), ("report", True), ("report", False, "no site")])
+        opened = self.run_flow(["", "y", "n", ""])
+        # the agent, then the files written and the PubPeer page opened once
+        self.assertEqual(self.calls, [("agent", "GI-07"), ("report", True)])
         self.assertEqual(self.cf.included("GI-07", self.dir), ["One."])
-        self.assertEqual(self.cf.pubpeer_url("GI-07", self.dir), "https://pubpeer.com/publications/X1")
-        self.assertEqual(len(opened), 1)
+        self.assertIsNone(self.cf.pubpeer_url("GI-07", self.dir))
+        self.assertEqual(opened, [[self.dir / "GI-07-email-publisher.eml"]])
+
+    def test_draft_without_contact_not_opened(self):
+        """A journal draft with no To (no address found for it) is written but not opened."""
+        (self.dir / "GI-07-email-source-publisher.eml").write_text("From: me@x.org\nSubject: s\n\nb\n")
+        (self.dir / "GI-07-email-institution.eml").write_text("To: me@x.org\nSubject: s\n\nb\n")
+        self.extra = {"email source-publisher": self.dir / "GI-07-email-source-publisher.eml",
+                      "email institution": self.dir / "GI-07-email-institution.eml",
+                      "page source-publisher": "https://journal.example/contact"}
+        opened = self.run_flow(["", "y", "n", ""])
+        self.assertEqual(opened, [[self.dir / "GI-07-email-publisher.eml"]])
+
+    def test_bcc_only_draft_opened(self):
+        (self.dir / "GI-07-email-publisher.eml").write_text("Bcc: editor@journal.org\nSubject: s\n\nb\n")
+        (self.dir / "GI-07-email-institution.eml").write_text("To: me@x.org\nBcc: ri@uni.edu\nSubject: s\n\nb\n")
+        self.extra = {"email institution": self.dir / "GI-07-email-institution.eml"}
+        opened = self.run_flow(["", "y", "n", ""])
+        self.assertEqual(opened, [[self.dir / "GI-07-email-publisher.eml", self.dir / "GI-07-email-institution.eml"]])
+
+    def test_no_drafts_with_contacts_no_prompt(self):
+        (self.dir / "GI-07-email-publisher.eml").write_text("Subject: s\n\nb\n")
+        opened = self.run_flow(["", "y", "n"])   # a fourth ask would raise StopIteration
+        self.assertEqual(opened, [])
 
     def test_skip_everything(self):
-        opened = self.run_flow(["s", "", ""])
+        opened = self.run_flow(["s", "s"])
         self.assertEqual(self.calls, [("report", True)])
         self.assertEqual(opened, [])
 
@@ -320,7 +375,7 @@ class TestReportFlow(unittest.TestCase):
         finally:
             gi_report_case.open_drafts = orig
         self.assertEqual(self.calls, [("agent", "GI-07"), ("report", True, "authors only")])
-        self.assertEqual(opened, [[self.dir / "a.eml"]])
+        self.assertEqual(opened, [[self.dir / "GI-07-email-authors.eml"]])
         self.assertIsNone(self.cf.pubpeer_url("GI-07", self.dir))
 
     def test_agent_stopped_reports_without_it(self):
@@ -329,7 +384,7 @@ class TestReportFlow(unittest.TestCase):
 
             def wait(self):
                 return False
-        it = iter(["", ""])
+        it = iter(["", "s"])
         cli.ask = lambda prompt: next(it)
         cli.report_flow(None, {"page_number": 7}, open_it=True, prep=Stopped())
         self.assertEqual(self.calls, [("report", True)])   # no offer to open the agent instead
@@ -370,17 +425,13 @@ class TestReportFlow(unittest.TestCase):
         import subprocess
         orig = subprocess.run
         subprocess.run = lambda cmd, **kw: None
-        it = iter(["d", "", "", ""])
+        it = iter(["d", "", "", "s"])
         cli.ask = lambda prompt: next(it)
         try:
             self.assertIsNone(cli.report_flow(None, {"page_number": 7}, prep=self.finished(self.dir)))
         finally:
             subprocess.run = orig
         self.assertEqual(self.calls, [("report", True)])
-
-    def test_bad_url_not_saved(self):
-        self.run_flow(["s", "https://example.com/x", ""])
-        self.assertIsNone(self.cf.pubpeer_url("GI-07", self.dir))
 
     def test_findings_already_there_no_agent_prompt(self):
         (self.dir / "GI-07").mkdir()

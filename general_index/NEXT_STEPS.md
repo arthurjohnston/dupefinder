@@ -4,18 +4,40 @@ Handoff for the next session, written 2026-10-06 ~05:30 after the overnight run.
 (every measurement, each filter rule and why it exists, dead ends) is in `PILOT_FINDINGS.md`; this
 file is the short version.
 
+## Done: one source of truth for who is Western (2026-11-08)
+
+`author_checks` in gi.sqlite3 holds what a case check established about a copying paper's authors (merge,
+move, byline outside the West, ...), on top of the OpenAlex/ORCID cache. `gi_affiliations.western_universities()`
+is the one rule, applied by `doi_scores()`, so the review tool's `--western-only` and order, the paper-mill
+rule and `gi_western_csv.py` all agree: `gi_review_cli.py --western-only --ai-decision problem --ai-type
+cross-author,data` shows exactly the cases list's cases, in its order. The case agent writes
+`data/dupe_publisher/GI-NN/author_checks.json` (prep step 3 in gi-cases.md); the agent's rows mirror those
+files (synced when the review tool or the CSV starts, or `gi_affiliations.py checks`). Your own:
+`gi_affiliations.py check GI-NN "Author" VERDICT ...`, which win over the agent's. The old
+data/western_author_checks.json was written out as 117 case files and removed; "looked at" is now a review
+flag (`gi_review_cli.py --looked-at GI-NN`; GI-921 moved over, western_cases_looked_at.txt removed).
+
 ## Done: emails to the later authors' current institutions (2026-10-26 to 2026-10-28)
 
 Institution emails now go to both the institution on the copying article's byline and each later author's
 current institution where it differs (the gi-cases agent's Contacts section; `"current": true` entries in
 contacts.json, only on evidence tied to that person). An institution with no integrity-office address gets a
 fallback address, and its email asks to be forwarded (gi_contact.integrity_office()). Medium cases email the
-institutions only when 50%+ of the later article is shared (gi_report_case.MEDIUM_INSTITUTION_PCT); high
+institutions only when more than 20% of the later article is shared (gi_report_case.MEDIUM_INSTITUTION_PCT; 50%+
+until 2026-11-09); high
 cases email everyone. Subjects read "Research integrity concern: a paper you published / a paper by someone
 associated with your institution". The 71 older cases were backfilled with gi_backfill_current.py, and on
 2026-10-28 the user reported every draft sent; each case's notes.md `## Sent` lists them. For later cases
 this happens during normal prep; `gi_backfill_current.py --review` rebuilds the checking list and the
 links page if they're needed again.
+
+Reported cases are queryable in gi.sqlite3 (`gi_reports.py`, 2026-11-01): `report_sends` (one row per case per
+email, read from Gmail's Sent Mail as Thunderbird keeps it on disk: date, audience from the subject, To/Cc/Bcc),
+`case_reports` and view `case_report_status` (with cases.json's reported date and your review). Every run
+rebuilds them (~7 s). `gi_reports.py status` lists where Gmail, cases.json and notes.md disagree. The
+2026-10-28 note "the user reports every draft sent" was wrong for most of the 71 cases it was written into
+(no publisher email went out for 48 of them); `gi_reports.py fix-notes` replaced it in each notes.md with what
+Gmail shows. Sends by web form aren't in Gmail: add a dated line to the case's ## Sent.
 
 ## Affiliation coverage: state and how to continue (2026-10-28)
 
@@ -342,6 +364,12 @@ cd general_index
 # 2026-10-25: gi_metadata.py fetch (log data/metadata_fetch.log): whole OpenAlex/Crossref/Europe PMC records for the 39,230 DOIs of the useu/top30 runs + every real-overlap pair, OpenAlex author and institution records, and ~78k ORCID records (employments, educations, ...). gi_metadata.py show GI-N | pair_id | DOI prints it per paper and author, and whether either side cites the other.
 # 2026-10-27: the unobtainable pool (62,237 attempted pairs whose missing side has no reachable copy) screened from OpenAlex alone: affiliation_hunt/unobtainable_{fetch,screen,coauthors}.py (README there) -> data/unobtainable_openalex_screen.tsv. Before the co-author check: of 11,227 pairs scoring >= 0.3, 2,496 eliminated (same author, incl. name-order variants OpenAlex splits; or a JPT synopsis), 0 of 793 confirmed cross-author cases lost in calibration. 340 high-scoring pairs share a TITLE but not authors: some are whole papers republished under other names (IEEE 2016 vs IJARCCE 2017 'Efficient Digital Baseband Encoder'; INFOCOM 2004 vs IJCES 'Efficient String Matching'), so read those as leads. Co-author check done (22,741 calls, paid credit; log data/unobtainable_coauthors.log): 3,044 of 39,814 survivors have 2+ joint works (621 of them scoring >= 0.3). Final: 3,117 of 11,227 pairs scoring >= 0.3 eliminated (28%), 13,409 of 62,237 overall. The co-author signal is not calibrated against confirmed cases yet (~800 calls would do it).
 ../.venv/bin/python3 gi_write_pages.py      # pages for full-text-confirmed, unreviewed pairs
+# 2026-11-10: hand downloads for the unobtainable list (data/unobtainable_western_2026-10-30.csv; data/unobtainable_western_2026-10-30_by_band_prestige.csv is
+#   gi_unobtainable_sort.py's worklist (UNOBTAINABLE_WORKLIST.md): copying papers with 6+ authors left out, ordered by gi_lead_score.py's score, then the copying side's best university (OpenAlex institution h-index); --top30 --min-score 0.5 for the short list;
+#   doi/copied_doi first, blank where we hold that PDF -- re-run it after importing). Open the .xlsx beside it: DOIs and still-needed titles are clickable links.
+#   Save PDFs under any name in data/unobtainable_downloads/, then:
+../.venv/bin/python3 gi_manual_import.py    # match each PDF to a needed paper (DOI, else title near the top of page 1 + an author), import, measure every pair that now has both PDFs (run manual_s16), write their pages. Unmatched files stay put, listed in _unmatched.md. --dry-run to preview
+#   Matching measured on 300 held PDFs among the 38,682 needed papers: 253 right, 45 left for you, 2 wrong (a same-author near-identical title; a held PDF that was itself the wrong paper)
 ```
 
 After changing `gi_filters.py`, rerun from `gi_report.py` (then `gi_rank_leads.py`, `gi_recall.py`) so a
@@ -361,6 +389,8 @@ is meant to move it. Twice in the pilot a rule that looked right hid a known pla
 | `gi_abstract_check.py` | OpenAlex abstracts for both sides, shared-run verdict |
 | `gi_rank_leads.py` | tiers 1-5, two-sided before one-sided |
 | `gi_verify.sh` / `gi_verify.py` | select -> retrieve -> extract -> embed -> measure, into `fulltext` |
+| `gi_unobtainable_sort.py` / `gi_lead_score.py` | the unobtainable list as a scored download worklist (.csv + .xlsx with links); see UNOBTAINABLE_WORKLIST.md |
+| `gi_manual_import.py` | hand-downloaded PDFs (any filename) -> matched to the unobtainable list's needed papers -> run `manual_s16` -> measure -> pages |
 | `gi_resolve_titles.py` | title -> DOI via Crossref (not yet run on text-extracted titles) |
 | `gi_db.py` | the database: schema, views, `import-documents`, `import-rw`, `migrate` (one-off from the TSV era) |
 | `gi_recall.py` | Retraction Watch recall from the `rw_recall` view |

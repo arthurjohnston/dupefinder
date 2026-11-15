@@ -111,8 +111,8 @@ class TestSeverity(unittest.TestCase):
         import gi_contact
         self.assertEqual(gi_report.audiences("high"), gi_contact.EMAIL_AUDIENCES)
         self.assertEqual(gi_report.audiences("medium"), ("publisher",))   # no share known
-        self.assertEqual(gi_report.audiences("medium", {"second": {"pct": 50}}), ("publisher", "institution"))
-        self.assertEqual(gi_report.audiences("medium", {"second": {"pct": 49.9}}), ("publisher",))
+        self.assertEqual(gi_report.audiences("medium", {"second": {"pct": 20.1}}), ("publisher", "institution"))
+        self.assertEqual(gi_report.audiences("medium", {"second": {"pct": 20}}), ("publisher",))
         for sev in ("low", None):
             self.assertEqual(gi_report.audiences(sev), ("publisher",))
         same = fd(byline="byline overlap: A. One")   # don't write to the authors who reused their own text
@@ -127,7 +127,7 @@ class TestSeverity(unittest.TestCase):
         saved = gi_report.case_findings, gi_pubpeer.write_page, gi_pubpeer.publisher_page, gi_pubpeer.case_name
         gi_report.case_findings = lambda db, row, report_dir: f
         gi_pubpeer.write_page = lambda db, row, out, fd, name: (Path(out) / name, None)
-        gi_pubpeer.publisher_page = lambda row, fd: ("<p>page</p>", None, None)
+        gi_pubpeer.publisher_page = lambda row, fd, **k: ("<p>page</p>", None, None)
         gi_pubpeer.case_name = lambda row: "GI-99"
         try:
             d = Path(tempfile.mkdtemp())
@@ -151,7 +151,7 @@ class TestSeverity(unittest.TestCase):
         saved = gi_report.case_findings, gi_pubpeer.write_page, gi_pubpeer.publisher_page, gi_pubpeer.case_name
         gi_report.case_findings = lambda db, row, report_dir: f
         gi_pubpeer.write_page = lambda db, row, out, fd, name: (Path(out) / name, None)
-        gi_pubpeer.publisher_page = lambda row, fd: ("<p>page</p>", None, None)
+        gi_pubpeer.publisher_page = lambda row, fd, **k: ("<p>page</p>", None, None)
         gi_pubpeer.case_name = lambda row: "GI-99"
         try:
             d = Path(tempfile.mkdtemp())
@@ -172,7 +172,7 @@ class TestSeverity(unittest.TestCase):
         saved = gi_report.case_findings, gi_pubpeer.write_page, gi_pubpeer.publisher_page, gi_pubpeer.case_name
         gi_report.case_findings = lambda db, row, report_dir: dict(f)
         gi_pubpeer.write_page = lambda *a, **k: self.fail("authors only: no PubPeer page")
-        gi_pubpeer.publisher_page = lambda row, fd: ("<p>page</p>", b"\xff\xd8\xff\xd9", None)
+        gi_pubpeer.publisher_page = lambda row, fd, **k: ("<p>page</p>", b"\xff\xd8\xff\xd9", None)
         gi_pubpeer.case_name = lambda row: "GI-99"
         try:
             d = Path(tempfile.mkdtemp())
@@ -206,8 +206,54 @@ class TestSeverity(unittest.TestCase):
         self.assertEqual(gi_report.review_severity(db, f), "medium")   # not reviewed
         db.execute("insert into reviews values ('10.1/a', '10.2/b', 'high')")
         self.assertEqual(gi_report.review_severity(db, f), "high")
-        db.execute("update reviews set severity = 'none'")
+        db.execute("update reviews set severity = 'none'")   # a no-problem review: no emails (GI-213, GI-242)
+        self.assertEqual(gi_report.review_severity(db, f), "none")
+        self.assertEqual(gi_report.audiences("none", fd()), ())
+        db.execute("update reviews set severity = 'bogus'")
         self.assertEqual(gi_report.review_severity(db, f), "medium")
+
+    def test_medium_unlikely_gets_only_the_journal(self):
+        """medium-unlikely: medium, nobody expected to act -- the journal's email only, never the institutions'."""
+        import sqlite3
+        db = sqlite3.connect(":memory:")
+        db.execute("create table reviews (pair_lo, pair_hi, severity)")
+        db.execute("insert into reviews values ('10.1/a', '10.2/b', 'medium-unlikely')")
+        f = {"pair_lo": "10.1/a", "pair_hi": "10.2/b"}
+        self.assertEqual(gi_report.review_severity(db, f), "medium-unlikely")
+        big = {"second": {"pct": 90}}
+        self.assertEqual(gi_report.audiences("medium", big), ("publisher", "institution"))
+        self.assertEqual(gi_report.audiences("medium-unlikely", big), ("publisher",))
+
+
+class TestUnreviewed(unittest.TestCase):
+    def test_no_site_page_until_reviewed(self):
+        """An unjudged case (an agent regenerating it) gets its files but no site page or "reported" entry."""
+        import sqlite3
+        import gi_pubpeer
+        db = sqlite3.connect(":memory:")
+        db.execute("create table reviews (pair_lo, pair_hi, decision, severity)")
+        row = {"pair_lo": "10.1/a", "pair_hi": "10.2/b"}
+        saved = gi_report.case_findings, gi_pubpeer.write_page, gi_pubpeer.publisher_page, gi_pubpeer.case_name, \
+            gi_report.site_page
+        gi_report.case_findings = lambda db, row, report_dir: fd()
+        gi_pubpeer.write_page = lambda db, row, out, fd, name: (Path(out) / name, None)
+        gi_pubpeer.publisher_page = lambda row, fd, **k: ("<p>page</p>", None, None)
+        gi_pubpeer.case_name = lambda row: "GI-99"
+        gi_report.site_page = lambda *a, **k: "<p>site</p>"
+        try:
+            d, site = Path(tempfile.mkdtemp()), Path(tempfile.mkdtemp())
+            paths = gi_report.write_report(db, row, report_dir=d, site_dir=site, severity="low")
+            self.assertIn("no site", paths)
+            self.assertTrue(paths["comparison"].exists())
+            self.assertFalse((site / "cases.json").exists())
+            self.assertFalse((site / "GI-99.html").exists())
+            db.execute("insert into reviews values ('10.1/a', '10.2/b', 'problem', 'low')")
+            paths = gi_report.write_report(db, row, report_dir=d, site_dir=site, severity="low")
+            self.assertNotIn("no site", paths)
+            self.assertIn("GI-99", json.loads((site / "cases.json").read_text()))
+        finally:
+            (gi_report.case_findings, gi_pubpeer.write_page, gi_pubpeer.publisher_page, gi_pubpeer.case_name,
+             gi_report.site_page) = saved
 
 
 class TestCompose(unittest.TestCase):
@@ -225,7 +271,7 @@ class TestCompose(unittest.TestCase):
             arg = gi_report.compose_arg(eml)
             body = d / "compose" / "GI-1-email-publisher.txt"
             self.assertTrue(body.read_text().startswith("Dear Editor,"))
-            self.assertIn("subject='Research integrity concern: a paper you published'", arg)
+            self.assertIn("subject='Research integrity concern with a paper you published'", arg)
             self.assertIn(f"message='{body}'", arg)
             self.assertIn("from='me@example.org'", arg)
             self.assertIn("to='ed@new.example'", arg)

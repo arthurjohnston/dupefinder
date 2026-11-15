@@ -5,10 +5,16 @@ $GI_REVIEW_OPENER; --pdfs opens both PDFs too, or press p at the prompt), then a
   1. what you think of it: decision and type, offered as one numbered list, most common first (counted over
      your reviews and the agent's);
   2. severity (problem / unsure only; Enter gives medium, the agent's is shown; high also writes the emails
-     to the earlier authors, their publisher and the later authors' institution, see below);
+     to the earlier authors, their publisher and the later authors' institution, see below; u is medium
+     when you don't think anyone will act on it: the journal's email only, as low);
   3. for an unsure verdict, flags: m = you think both papers came from a paper mill, e = not qualified to
      judge it (higher-level math, say);
   4. a note in your own words, only if you added ' n' to the verdict ('3 n', 'c n'; 'e' opens $EDITOR).
+Adding ' m' to any verdict ('2 m', 'c m n') flags the pair a paper mill. A paper mill whose later paper's
+authors aren't at a Western university (gi_affiliations' rank) is still reported, but a medium severity on it
+becomes medium-unlikely (gi_report_case.UNLIKELY_SEVERITY: the journal's email only), since you don't expect
+anyone to act on it (mill_outside_west()); low and high are kept. With no affiliation data cached, nothing
+changes.
 The verdict is saved as soon as it's complete, with no confirmation step (--gi NN --include-reviewed to change
 one). No reasons are asked for: a no-problem type that is its own reason (same paper, boilerplate, shared
 citations, artifact: TYPE_REASON) saves that reason, and a quick key saves its own.
@@ -43,7 +49,19 @@ the later paper's authors are now (gi_affiliations.py: an author still
 publishing, at a Western (US, Canadian, European, Japanese, Australian or NZ) university, first; then at a
 university elsewhere; then no data; then no author active in academia), within the agent's problem calls and within the rest separately; it fetches any missing
 OpenAlex/ORCID data first. --western-only keeps only pairs whose copying (later) paper has such an author; with
-the order unknown, either paper will do. --no-medical drops pairs where
+the order unknown, either paper will do. Both read the author checks too (gi_affiliations' author_checks: what the
+case agent, or you with `gi_affiliations.py check`, established about an author -- an OpenAlex merge, a move, a
+byline outside the West), synced from the case folders when the tool starts, so a case the checks leave without
+a Western academic drops out of --western-only exactly as it drops out of gi_western_csv.py's list. An author
+no check covers (or only 'untraced' ones) gets the automatic one (gi_affiliations.byline_checks()): institutions
+on the paper all outside the West means their current Western university is a namesake merged in by OpenAlex,
+not theirs -- unless their ORCID record shows the byline institution and a current Western academic job; no
+institution on the paper and no Western one for any co-author means the same (a name match only).
+--country IN,PK (ISO codes; 'west' for the Western set) keeps only pairs whose copying paper has an
+author tied to one of those countries -- an institution on its byline, an author's current university
+(OpenAlex last known / ORCID current), or an author check's now_country -- so the non-Western cases can be
+worked through one country at a time; --countries prints the queue's pairs per country and exits. --looked-at
+GI-NN,... marks pages looked at without a review; the queue skips them like reviewed ones. --no-medical drops pairs where
 either paper's OpenAlex primary topic is in the Health Sciences domain (medicine, nursing, dentistry, health
 professions); a paper with no cached OpenAlex record (gi_metadata.py fetch) doesn't count. --order professor ranks by the
 authors above everything else: a later paper with an author whose ORCID lists a current (not emeritus)
@@ -90,7 +108,7 @@ step but the report files skippable:
     status` says claude.ai, and API-key variables are removed from its environment. d at the menu talks the
     case through with the agent at any point, verdict or not (discuss()): its session resumed when it has
     one, else a new conversation started from the case's findings.md; /exit comes back to the menu.
-  - you tick its findings (y include, n leave out, e edit, Enter pending, q stop);
+  - you tick its findings (y include, n or Enter leave out, e edit, k keep pending, q stop);
   - the report files, written once the agent is done or skipped, so they have the findings you included
     (PubPeer Markdown, emails) and the contacts it found, and the PubPeer page opened (gi_report_case.py: in data/dupe_publisher/GI-NN/ the PubPeer
 page, with the findings as Markdown and a Copy button, the attachment for the journal, and the draft email
@@ -100,9 +118,8 @@ the comparison page and index on the project site, example_output/general_index/
   - the site pages are pushed to main (gi_publish_site.py) in the background as soon as they're written, while
     you write the PubPeer post (neither links the other; the emails don't link the site either: the
     comparison is attached);
-  - you paste your PubPeer post's address once it's up, and the emails are rewritten to link to it (the site
-    folder left alone, so the push isn't racing it);
-  - o opens the drafts as Thunderbird compose windows.
+  - Enter opens the drafts as Thunderbird compose windows (s: not now); a draft with no contact address
+    (nobody found for that journal) isn't opened.
 Before the next pair opens, a prompt: Enter goes on, d talks the pair just finished through with the agent again
 (its session resumed, as d at the menu; as often as you like), q quits.
 After the agent's summary, and again after you talk it through with it (d), v changes your verdict (the
@@ -113,7 +130,7 @@ problem on a pair already reported (--gi NN --include-reviewed) offers t to take
 cases.json entry removed and pushed, the report files moved to GI-NN/withdrawn/ (gi_report_case.take_down());
 emails and a PubPeer post already sent are yours to withdraw.
 
-Usage: gi_review_cli.py [--gi 12,40] [--ai-type cross-author,data] [--ai-decision problem] [--include-reviewed] [--order affiliation|professor|publisher|overlap] [--western-only] [--no-medical] [--pdfs] [--no-open] [--no-agent] [--no-lookahead] [--pages-dir data/fulltext_pages_s16] [--sample-rate 8]
+Usage: gi_review_cli.py [--gi 12,40] [--ai-type cross-author,data] [--ai-decision problem] [--include-reviewed] [--looked-at GI-NN,...] [--order affiliation|professor|publisher|overlap] [--western-only] [--country IN,PK|west] [--countries] [--no-medical] [--pdfs] [--no-open] [--no-agent] [--no-lookahead] [--pages-dir data/fulltext_pages_s16] [--sample-rate 8]
                         [--db data/gi.sqlite3]
 """
 import argparse
@@ -177,7 +194,8 @@ TYPE_REASON = {"same paper": "same work under two DOIs / records",
                "shared citations": "the shared text is boilerplate or references",
                "artifact": "wrong PDF or extraction error"}
 
-SEVERITIES = {"l": "low", "m": "medium", "h": "high"}
+SEVERITIES = {"l": "low", "u": "medium-unlikely", "m": "medium", "h": "high"}   # u: medium, but nobody is expected
+# to act on it (gi_report_case.UNLIKELY_SEVERITY): reported like low, the journal's email only
 
 # the one-key verdict on the first menu: decision, type, severity, reason (skips the severity step)
 QUICK = ("problem", "cross-author copying", "medium", "most of the paper copied")
@@ -202,6 +220,10 @@ FLAGS = {"m": ("paper mill", "both papers look like paper-mill output"),
          "r": ("already retracted", "the copying paper is already retracted, nothing to report"),
          "w": ("not worth reporting", "real cross-author copying, too minor to complain about")}
 
+# a pair you've looked at without reviewing it (e.g. reported together with another case): --looked-at sets
+# it, and the queue skips it like a reviewed pair (--include-reviewed shows it)
+LOOKED_AT = "looked at"
+
 # the w quick key: problem, this type, this severity; no report, the site page published as not reported
 NOT_WORTH = ("cross-author copying", "low")
 
@@ -210,7 +232,8 @@ FLAGS_DDL = """create table if not exists review_flags (   -- your extra judgeme
     flag text,                    -- 'paper mill': you think both papers came from a paper mill;
                                   -- 'not qualified': you can't judge the content (e.g. higher-level math);
                                   -- 'already retracted': real copying, but the copying paper is retracted;
-                                  -- 'not worth reporting': real copying, too minor to report
+                                  -- 'not worth reporting': real copying, too minor to report;
+                                  -- 'looked at': looked at without a review (--looked-at), skipped by the queue
     flagged_at text,
     primary key (pair_lo, pair_hi, flag)
 );"""
@@ -301,11 +324,20 @@ order by case when r.ai_decision = 'problem' and r.ai_type in ('cross-author cop
 """
 
 
+def looked_at_pairs(db):
+    """{(pair_lo, pair_hi)} of the pairs marked looked at (--looked-at): the queue skips them like reviewed ones."""
+    if not db.execute("select 1 from sqlite_master where name = 'review_flags'").fetchone():
+        return set()
+    return {tuple(x) for x in db.execute("select pair_lo, pair_hi from review_flags where flag = ?", (LOOKED_AT,))}
+
+
 def load_queue(db, gi=None, include_reviewed=False, ai_types=None, ai_decisions=None, order="publisher",
-               western_only=False, groups=None, no_medical=False):
+               western_only=False, groups=None, no_medical=False, countries=None):
     """ai_types / ai_decisions: lists of AI_TYPES / AI_DECISIONS names to keep ('none': the agent hasn't
     reviewed the pair). western_only: only pairs whose copying (later) paper has an author active at a Western
-    university (gi_affiliations.py); with the order unknown, either paper. no_medical: drop
+    university (gi_affiliations.py); with the order unknown, either paper. countries: a set of country codes; only
+    pairs whose copying paper has an author tied to one of them (gi_affiliations.doi_countries(): the byline's
+    institutions, the authors' current universities, the author checks), with the order unknown either paper's. no_medical: drop
     pairs with a Health Sciences paper (medical_pairs()). Ignored with gi. Pages sharing a later paper (groups:
     later_paper_groups(), computed when not given) are kept together, where the first of them falls."""
     rows = db.execute(QUEUE_SQL).fetchall()
@@ -321,10 +353,15 @@ def load_queue(db, gi=None, include_reviewed=False, ai_types=None, ai_decisions=
     if ai_decisions:
         keep = {AI_DECISIONS[d] for d in ai_decisions}
         rows = [r for r in rows if r["ai_decision"] in keep]
-    rows = [r for r in rows if include_reviewed or r["human_decision"] is None]
+    if not include_reviewed:
+        looked = looked_at_pairs(db)
+        rows = [r for r in rows if r["human_decision"] is None and pair_key(r) not in looked]
     if no_medical:
         medical = medical_pairs(db, rows)
         rows = [r for r in rows if pair_key(r) not in medical]
+    if countries:
+        found = country_pairs(db, rows)
+        rows = [r for r in rows if found[pair_key(r)] & countries]
     import gi_write_pages
     aff = {}
     profs = {}
@@ -441,6 +478,33 @@ def affiliation_ranks(db, rows):
     return {(r["pair_lo"], r["pair_hi"]): gi_affiliations.pair_rank(scores, r["doi_a"], r["doi_b"],
                                                                     gi_write_pages.earlier_side(r))[0]
             for r in rows}
+
+
+def country_pairs(db, rows):
+    """{(pair_lo, pair_hi): the later paper's countries (gi_affiliations.pair_countries)}, fetching what the cache
+    lacks."""
+    import gi_affiliations
+    import gi_write_pages
+    dois = [d for r in rows for d in (r["doi_a"], r["doi_b"])]
+    print(gi_affiliations.Fetcher(db).ensure(dois))
+    countries = gi_affiliations.doi_countries(db, dois)
+    return {pair_key(r): gi_affiliations.pair_countries(countries, r["doi_a"], r["doi_b"],
+                                                        gi_write_pages.earlier_side(r))
+            for r in rows}
+
+
+def print_country_counts(db, rows):
+    """--countries: how many of the queue's pairs each country's authors are on (a pair counts once for every
+    country of its copying paper), most first; then the pairs with no country data."""
+    found = country_pairs(db, rows)
+    counts = {}
+    for cs in found.values():
+        for c in cs:
+            counts[c] = counts.get(c, 0) + 1
+    print(f"{len(rows)} pairs in the queue; copying paper's authors by country (a pair counts under each):")
+    for c, n in sorted(counts.items(), key=lambda x: (-x[1], x[0])):
+        print(f"  {c}  {n}")
+    print(f"  no country data  {sum(1 for cs in found.values() if not cs)}")
 
 
 def professor_pairs(db, rows):
@@ -563,7 +627,9 @@ def show_pair(pair, i, total, titles, flags=(), priority=(0, None), authors=None
         print(f"  AI ({who}): {pair['ai_decision']} / {pair['ai_type']} / {pair['ai_severity']} "
               f"(confidence {pair['ai_confidence'] or '?'})")
         if pair.get("swapped"):
-            print("      (the AI's \"Paper A\" is B here and its \"Paper B\" is A: it numbers them the other way)")
+            short = lambda t: t if len(t) <= 70 else t[:67].rstrip() + "..."
+            print(wrap("      ", f"(the AI's \"Paper A\" is \"{short(titles[1][0])}\"; its \"Paper B\" is "
+                                 f"\"{short(titles[0][0])}\")"))
         print(wrap("      ", pair["ai_summary"]))
         if pair["ai_checks"]:
             print(wrap("      check: ", pair["ai_checks"]))
@@ -614,7 +680,7 @@ def edit_note(initial=""):
 
 def ask_severity(pair, decision, type_=None):
     """Enter gives DEFAULT_SEVERITY (SELF_SEVERITY for a SELF_TYPES type), whatever the agent said: medium also
-    writes the emails to the later authors' institutions (when half the later article is shared), high to the victims as well
+    writes the emails to the later authors' institutions (when more than 20% of the later article is shared), high to the victims as well
     (gi_report_case.audiences()), so it has to be chosen.
     "none" for a no-problem verdict."""
     if decision == "no problem":
@@ -622,7 +688,7 @@ def ask_severity(pair, decision, type_=None):
     default = SELF_SEVERITY if type_ in SELF_TYPES else DEFAULT_SEVERITY
     ai = f", AI: {pair['ai_severity']}" if pair["ai_severity"] in SEVERITIES.values() else ""
     while True:
-        ans = ask(f"Severity  l)ow  m)edium  h)igh  [Enter: {default}{ai}] ").lower()
+        ans = ask(f"Severity  l)ow  u) medium, unlikely anyone acts  m)edium  h)igh  [Enter: {default}{ai}] ").lower()
         if not ans:
             return default
         if ans[:1] in SEVERITIES:
@@ -631,10 +697,35 @@ def ask_severity(pair, decision, type_=None):
 
 def split_note_suffix(ans):
     """'3 n' -> ('3', True), 'c' -> ('c', False): a trailing ' n' on a verdict asks for a note."""
-    head, sep, tail = ans.strip().rpartition(" ")
-    if sep and tail == "n":
-        return head.strip(), True
-    return ans.strip(), False
+    head, want_note, _ = split_suffixes(ans)
+    return head, want_note
+
+
+def split_suffixes(ans):
+    """'3 m n' -> ('3', True, True): trailing ' n' (ask for a note) and ' m' (flag it a paper mill), in either
+    order; 'c' -> ('c', False, False)."""
+    words = ans.strip().split()
+    note = mill = False
+    while len(words) > 1 and words[-1] in ("n", "m"):
+        if words.pop() == "n":
+            note = True
+        else:
+            mill = True
+    return " ".join(words), note, mill
+
+
+def mill_outside_west(scores, shown, flags):
+    """Why a pair flagged paper mill is reported as medium-unlikely rather than medium, or None: a paper mill
+    whose later paper's authors aren't at a Western university (gi_affiliations' rank; with the order unknown,
+    the better-ranked side counts) is reported, but you don't expect anyone to act on it. None too when nothing
+    is cached for the authors: then the severity you gave stands."""
+    import gi_affiliations as ga
+    if FLAGS["m"][0] not in flags:
+        return None
+    rank, _ = ga.pair_rank(scores, shown["doi_a"], shown["doi_b"], shown.get("earlier"))
+    if rank in (ga.TARGET, ga.UNKNOWN):
+        return None
+    return f"paper mill, later paper's authors: {ga.LABELS[rank]}"
 
 
 def orient(pair):
@@ -738,13 +829,14 @@ def review_one(pair, choices, counts, saved_flags=(), prep=None, shown=None, set
         import gi_case_findings
         others = sum(1 for c, _ in gi_case_findings.pending_cases() if c != case)
         print(f"   f  {findings_line(case, prep)}" + (f"; {others} other case(s) have findings to check" if others else ""))
-    print("  add ' n' to a verdict to leave a note (e.g. '3 n', 'c n'); without it you aren't asked for one")
+    print("  add ' n' to a verdict to leave a note (e.g. '3 n', 'c n'); without it you aren't asked for one;"
+          " ' m' flags it a paper mill ('2 m', 'c m n'): medium becomes medium-unlikely when the later authors aren't Western")
     if prep and prep.status():
         print("  " + prep.status())
     quick = agreed = False
     preset = None  # the flag a quick key sets ('e' / 'r'); the flags step is then skipped
     while True:
-        ans, want_note = split_note_suffix(ask("> ").lower())
+        ans, want_note, want_mill = split_suffixes(ask("> ").lower())
         if ans == "g" and prep:
             calls = prep.tool_calls()
             print("  " + prep.status())
@@ -817,6 +909,8 @@ def review_one(pair, choices, counts, saved_flags=(), prep=None, shown=None, set
             break
         print(f"  one of: {', '.join(FLAGS)}")
 
+    if want_mill:
+        flags = sorted(set(flags) | {FLAGS["m"][0]})
     text = ask("Note ('e' for $EDITOR): ") if want_note else ""
     if text.lower() == "e":
         text = edit_note()
@@ -939,13 +1033,18 @@ HEADLESS_PROMPT = ("Prep {case}: follow \"Prep a case\" in your instructions. Th
                    "session to talk it through. In this run only these tools work: Read, Glob, Grep, web search "
                    "and fetch, `sqlite3 -readonly` (not python) for the databases, pdftotext and pdfinfo, and "
                    "writing in the case's folder and journal_contacts.json. Don't run gi_report_case.py: the "
-                   "review tool writes the report files when the user confirms. Do look up the later authors' "
+                   "review tool writes the report files when the user confirms. Weigh the case (weigh-case) "
+                   "before any contact lookups. Always look up the journal's contacts. Only when the weighing "
+                   "recommends high, or a finding is tagged [data] and the weighing isn't medium-unlikely (a paper "
+                   "mill outside the West included: weigh-case question 4b), also look up the later authors' "
                    "institutions' research integrity officers (one contacts.json entry per institution, with "
                    "the later authors there), the same for each later author's current institution where it "
                    "differs from the byline (\"current\": true, only on evidence tied to that person, see "
                    "Contacts) and the earlier article's byline names, and write contacts.json "
-                   "(see Contacts): an institution without an address there gets no email. End with one line saying what "
-                   "you concluded, e.g. '4 findings proposed, contacts found' or 'not a case: already "
+                   "(see Contacts): an institution without an address there gets no email. Otherwise note in "
+                   "notes.md that those lookups were skipped because of the recommendation. End with one line "
+                   "saying what you concluded, e.g. '4 findings proposed, recommend high, contacts found', "
+                   "'2 findings proposed, recommend low, institution lookups skipped' or 'not a case: already "
                    "retracted'.")
 
 
@@ -1189,7 +1288,7 @@ def report_flow(db, pair, open_it=True, severity=None, prep=None, authors_only=F
     """Everything for reporting the pair, in order: the gi-cases agent to prep it (waited for, or Ctrl-C to go
     on without it), ticking its findings, then the report files written and the PubPeer page opened, once,
     with what the agent found and what you ticked; the site page pushed in the background while you post on
-    PubPeer, your PubPeer post's address, and the drafts opened in Thunderbird. Every step but writing the report
+    PubPeer, and the drafts that have someone to go to opened in Thunderbird. Every step but writing the report
     files can be skipped with Enter / s. After the agent's summary, and again after talking it through with
     it, you can change your mind before anything is written: returns 'verdict' (ask the verdict again) or
     'stopped' (not reported), else None. authors_only (a at the report prompt): the finding published and the
@@ -1227,22 +1326,36 @@ def report_flow(db, pair, open_it=True, severity=None, prep=None, authors_only=F
         return
     # the site page doesn't link the PubPeer post, so it goes up while you write the post
     finish_push = publish_site_background(case) if paths.get("site") else None
-    have = gi_case_findings.pubpeer_url(case)
-    url = "" if authors_only else ask(f"PubPeer post's address once it's up [Enter: {'keep ' + have if have else 'later (t asks again)'}] ")
-    if url:
-        try:
-            gi_case_findings.save_pubpeer_url(case, url)
-            paths = pubpeer_page(db, pair, False, severity=severity, site=False) or paths   # the emails now link it
-        except ValueError as e:
-            print(f"  {e}: not saved")
     if finish_push:
         finish_push()
-    emls = [p for k, p in paths.items() if k.startswith("email ")]
-    if emls and ask("[o: open the drafts in Thunderbird, Enter: not now] ").lower().startswith("o"):
+    emls = []
+    for k, p in paths.items():
+        if not k.startswith("email "):
+            continue
+        if has_recipient(p):
+            emls.append(p)
+        else:   # no address found: nothing to send it to, so it isn't opened
+            page = paths.get("page " + k[len("email "):])
+            print(f"  {Path(p).name}: no contact address, not opened" + (f" (report it at {page})" if page else ""))
+    if emls and not ask("[Enter: open the drafts in Thunderbird, s: not now] ").lower().startswith("s"):
         try:
             gi_report_case.open_drafts(emls)
         except Exception as e:
             print(f"  couldn't open the drafts: {e}")
+
+
+def has_recipient(eml):
+    """Whether an .eml draft has anyone to go to: anyone on To, Cc or Bcc, except that for the ones addressed
+    To yourself (gi_contact.SELF_ADDRESSED) To doesn't count. False when it can't be read."""
+    import email
+    import email.policy
+    import gi_contact
+    try:
+        msg = email.message_from_bytes(Path(eml).read_bytes(), policy=email.policy.default)
+    except OSError:
+        return False
+    self_addressed = Path(eml).stem.split("-email-", 1)[-1] in gi_contact.SELF_ADDRESSED
+    return any((msg[k] or "").strip() for k in ("Cc", "Bcc") + (() if self_addressed else ("To",)))
 
 
 def refresh_report(db, case, open_it=True):
@@ -1288,7 +1401,11 @@ def main():
                     help="only pairs the agent gave these types, comma-separated: " + ", ".join(AI_TYPES))
     ap.add_argument("--ai-decision", type=lambda v: v.split(","), default=[],
                     help="only pairs with these agent decisions: " + ", ".join(AI_DECISIONS))
-    ap.add_argument("--include-reviewed", action="store_true", help="also pairs you've already reviewed")
+    ap.add_argument("--include-reviewed", action="store_true",
+                    help="also pairs you've already reviewed or marked looked at")
+    ap.add_argument("--looked-at", type=lambda s: [int(x.strip().upper().removeprefix("GI-")) for x in s.split(",")],
+                    help="mark these pages looked at (GI-921,GI-40) -- the queue then skips them as if reviewed -- "
+                         "and exit")
     ap.add_argument("--pdfs", action="store_true", help="also open both PDFs for every pair (p at the prompt "
                                                         "opens them for one pair)")
     ap.add_argument("--no-open", action="store_true", help="don't open anything automatically")
@@ -1304,6 +1421,14 @@ def main():
                     help="only pairs whose copying (later) paper has an author still at a Western university (US, "
                          "Canada, Europe west of Russia, Japan, Australia, New Zealand); with the order unknown, "
                          "either paper (--us-europe-only: the old name)")
+    ap.add_argument("--country", type=str, default=None,
+                    help="only pairs whose copying (later) paper has an author tied to one of these countries: "
+                         "comma-separated ISO codes (IN,PK,CN), 'west' for the Western set; tied means an "
+                         "institution on the paper's byline, the author's current university (OpenAlex/ORCID) or "
+                         "an author check's now_country. With the order unknown, either paper. Combines with "
+                         "--western-only and the other filters")
+    ap.add_argument("--countries", action="store_true",
+                    help="print how many queue pairs each country has (after the other filters) and exit")
     ap.add_argument("--no-medical", action="store_true",
                     help="skip pairs where either paper's OpenAlex primary topic is in Health Sciences (medicine, "
                          "nursing, dentistry, ...); papers with no cached OpenAlex record are kept")
@@ -1313,19 +1438,40 @@ def main():
                     help="start the agent only on the pair on screen, not also on the next pair in the queue that "
                          "hasn't been prepped")
     args = ap.parse_args()
+    import gi_affiliations
+    try:
+        countries = gi_affiliations.parse_countries(args.country) if args.country else None
+    except ValueError as e:
+        ap.error(f"--country: {e}")
     pages_dir = Path(args.pages_dir)
 
     db = sqlite3.connect(args.db, timeout=300)
     db.row_factory = sqlite3.Row
     if not db.execute("select 1 from sqlite_master where name = 'review_flags'").fetchone():
         db.executescript(FLAGS_DDL)
+    if args.looked_at:
+        for n in args.looked_at:
+            f = db.execute("select pair_lo, pair_hi from fulltext where page_number = ?", (n,)).fetchone()
+            if not f:
+                print(f"GI-{n:02d}: no result page")
+                continue
+            db.execute("insert or ignore into review_flags values (?, ?, ?, datetime('now'))", (*f, LOOKED_AT))
+            print(f"GI-{n:02d}: marked looked at")
+        db.commit()
+        return
+    import gi_affiliations
+    for problem in gi_affiliations.sync_agent_checks(db):   # the case agent's author checks, before any ranking
+        print(f"  ! {problem}")
     for name, value, known in (("--ai-type", args.ai_type, AI_TYPES), ("--ai-decision", args.ai_decision, AI_DECISIONS)):
         bad = [v for v in value if v not in known]
         if bad:
             ap.error(f"{name}: unknown {', '.join(bad)} (use: {', '.join(known)})")
     groups = later_paper_groups(db)
     queue = load_queue(db, args.gi, args.include_reviewed, args.ai_type, args.ai_decision, args.order,
-                       args.western_only, groups, args.no_medical)
+                       args.western_only, groups, args.no_medical, countries)
+    if args.countries:
+        print_country_counts(db, queue)
+        return
     if not queue:
         print("nothing to review")
         return
@@ -1411,6 +1557,7 @@ def main():
                         discuss(case, prep)
                         continue
                     break
+                mill = out not in ("quit", "skip") and mill_outside_west(aff_scores, shown, out[4])
                 reporting = out not in ("quit", "skip") and not {FLAGS["r"][0], FLAGS["w"][0]} & set(out[4]) and (
                     out[1] not in SELF_TYPES) and (out[0] == "problem" or (out[5] and pair["ai_decision"] == "problem"))
                 if prep and not reporting:   # not going to be reported: the analysis isn't needed
@@ -1419,6 +1566,9 @@ def main():
                 if out in ("quit", "skip"):
                     break
                 decision, type_, severity, note, flags, agreed = out
+                if mill and severity == "medium":
+                    severity = SEVERITIES["u"]   # gi_report_case.UNLIKELY_SEVERITY
+                    print(f"  {mill}: severity medium-unlikely (the journal's email only)")
                 print(wrap("Save: ", f"{decision} / {type_} / {severity}" + (f" [{', '.join(flags)}]" if flags else "")
                            + (f" -- {note}" if note else "")))
                 save_review(db, pair, decision, type_, severity, note, flags)

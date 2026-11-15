@@ -1,6 +1,17 @@
 # Reporting a later article with several sources (proposal)
 
-Status: proposal, written by the gi-cases agent on 2026-10-23 for the code session. **Implemented
+Status: proposal, written by the gi-cases agent on 2026-10-23 for the code session. **Option A is
+implemented (2026-11-15), with option B's per-source drafts:** the agent writes `sources.json` (and
+`contacts.json` `"sources"`), then `gi_report_case.py GI_NUMBER` rewrites the whole case as multi-source.
+`gi_sources.summary()` measures every text source; `gi_pubpeer.multi_lines()` leads the PubPeer comment and
+the journal/institution emails with the union and one line per source; those emails list the earlier
+articles by letter and quote the 3 longest passages per article; the paired article's authors and journal
+get their own share plus one line on the others; severity's 20% rule uses the union; a high case gets
+`-authors-sN` / `-source-publisher-sN` drafts per text source; `[sN]` finding tags route a finding to that
+source's drafts; a references-only source's `"refs"` produces a references line. Not done: the opt-in short
+note to a references-only source's authors (`notify`), the source map and references panel (option B),
+per-source longest-passage images. Tests: `tests/unit/test_gi_multi_source.py`. The history below is kept as
+written. **Implemented
 (2026-10-25): the comparison page.** `gi_sources.py` reads `sources.json` and `gi_report_case.py` puts every
 saved text source on the comparison page (site page and email attachment): an overview table with each
 source's share and the union, then each source's passages; `cases.json` gets `sources`/`union_pct` and the
@@ -154,3 +165,35 @@ looking.
 - An uncited text source's authors get the same email as the paired article's authors (and its
   journal the same as the source publisher's).
 - A references-only source's authors are told too, with a shorter note.
+
+## Request from the user (2026-11-15, GI-924): build the rest of option A, with per-source drafts
+
+The user asked for GI-924 **and every case with a `sources.json`** to get multi-source PubPeer text and
+emails, not only the comparison page. GI-924 is the second case of this shape after GI-518: a 2008 review
+taking 24.5% from the paired article (Rafter 2004) and 18.0% from Geier et al. 2006 (`source-1.txt`), with no overlap,
+42.5% together (49.4% gapped), each cited once for one or two sentences. Its case folder has everything an
+implementation needs to test against: `sources.json`, `source-1.pdf`/`.txt`, `contacts.json` with the new
+`"sources": {"s1": {...}}` block, and both source journals in `journal_contacts.json` ("Nutrition Research
+Reviews", "Cancer Biology & Therapy").
+
+What's still to build (all in code):
+1. **Measured findings and the PubPeer text** (`gi_pubpeer.py`): when `gi_sources` finds text sources, lead
+   with the union ("About 42% of the later article's text also appears in two earlier articles by other
+   authors: 24% in ... and 18% in ...") and say how each is cited (here: once each, for one sentence), in place of the single-pair
+   sentence. The ticked findings follow as now.
+2. **Email wording** (`gi_contact.py` `_email_intro()` / `email_parts()`): subject and first sentence in the
+   plural for the later journal and institution drafts (`Text from two earlier articles in "<title>"`);
+   extracts: the 3 longest passages per source, labelled.
+3. **Per-source drafts**: `-authors-s1.eml` and `-source-publisher-s1.eml`, addressed from
+   `contacts.json["sources"]["s1"]` (same shape as `"authors"`) and the source's journal in
+   `journal_contacts.json` (looked up by its DOI through Crossref, as for the paired article). Each says
+   its own source's figures and extracts after the overview line. Source 0 keeps today's filenames. Same
+   severity rule: only for a high case (or a `[data]` one, not medium-unlikely).
+4. **Severity from the union share** where a share is used.
+5. **`[sN]` finding tags** (route a finding to that source's drafts only; untagged go everywhere;
+   stripped on publication, like `[data]`). Optional for GI-924: its findings are all untagged.
+6. Tests listed under "Tests to add" above, minus the source-map/references-panel ones.
+
+Until then, GI-924's second source reaches the PubPeer comment and emails only through its ticked
+findings (four of them describe Geier 2006), and the Geier authors and Cancer Biology & Therapy get no
+draft. GI-518's hand-written drafts (`data/dupe_publisher/GI-518/manual/`) are the wording model.

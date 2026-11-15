@@ -11,11 +11,13 @@ Into data/dupe_publisher/GI-NN/:
   GI-NN-longest.jpg      the longest passage of text again, attached to the emails
   GI-NN-table.jpg        with a ticked [data] finding, the largest shared table, attached to the emails too
   GI-NN-comparison.html  the attachment for the journal: the same comparison without the PubPeer box or the
-                         title images, with the shared-text figures and the longest passage's image at the top;
+                         title images, with the shared-text figures and the longest passage's image at the top,
+                         every passage (every source's too) as a text diff, to keep it small
+                         (--attachment-images: as printed in both PDFs, inlined; not for a whole-document case);
                          with a sources.json (the trace-other-sources skill), every other text source's passages too,
                          under an overview of each one's share and the union (gi_sources.add_sources())
   GI-NN-email-*.eml      draft emails (all four for a high-severity case, -publisher, and -institution for
-                         medium when 50%+ is shared, only -publisher for low; see
+                         medium when more than 20% is shared, only -publisher for low; see
                          audiences()) (RFC 822 .eml with X-Unsent: 1, From your git user.email or --from, To
                          and Cc from data/journal_contacts.json for the two journal emails; the institution and
                          authors drafts are To you, the institutions on Bcc and the earlier authors on Cc, from
@@ -30,6 +32,14 @@ Into data/dupe_publisher/GI-NN/:
                                               listing which authors each address is for
                            -authors           the earlier article's authors (not when the bylines share names)
                            -source-publisher  the earlier article's publisher
+                           -authors-sN, -source-publisher-sN
+                                              (high only) the same two for each other text source in
+                                              sources.json: its authors from contacts.json "sources": {"sN":
+                                              ...}, its journal from journal_contacts.json; the comparison
+                                              page attached, its own figures and [sN] findings
+                         With a sources.json text source (gi_sources.summary()), the PubPeer text and the
+                         journal's and institutions' emails lead with the share found in all the sources
+                         together and one line per source, and the 20% rule below uses that union.
                          When the publication years are the same, none of them says who copied whom.
 
 And on the project site (example_output/, which .github/workflows/pages.yml publishes from main to
@@ -65,12 +75,16 @@ the index: after changing how site pages look, e.g. to switch existing pages to 
 and the email to the earlier article's authors, which then doesn't say the journal was told. No PubPeer page,
 no other drafts (any left from an earlier run are deleted). No email when the two bylines share names.
 
-Nothing is committed or pushed: the site page goes live once example_output/ is pushed to main.
+Nothing is committed or pushed: the site page goes live once example_output/ is pushed to main. A pair with no
+review yet (no verdict in `reviews`) gets its case files but no site page or index entry, as with --no-site, so
+regenerating an unjudged case (the gi-cases agent does) never marks it reported; --publish-only still publishes
+it, marked not reported.
 
 Severity decides which emails are written: high (your review's severity in `reviews`, or --severity) gets
 all four; medium or no review (medium is the default) gets the email to the later article's journal, and
-the later authors' institutions' when at least half the later article is shared; low gets only the journal's, alongside the PubPeer page. A ticked [data]
-finding in findings.md makes a case high. Drafts a case no longer gets (it was high, now isn't) are deleted.
+the later authors' institutions' when more than 20% of the later article is shared; low gets only the journal's, alongside the PubPeer page. medium-unlikely
+(medium, but you don't think anyone will act on it) gets what low gets. A ticked [data]
+finding in findings.md makes a case high, except a medium-unlikely one. Drafts a case no longer gets (it was high, now isn't) are deleted.
 
 gi_review_cli.py runs this when you save (or agree with) a problem verdict, and on t at its prompt, then
 opens the gi-cases agent and asks for the findings, the PubPeer link and whether to open the drafts.
@@ -83,7 +97,7 @@ proposes them, gi_case_prep.py) go into the PubPeer Markdown and every email aft
 your PubPeer post is up, --pubpeer-url URL saves it (pubpeer_url.txt) and the emails then link to it.
 
 Usage: gi_report_case.py GI_NUMBER [GI_NUMBER ...] [--problems] [--no-site] [--from ADDRESS] [--open-drafts]
-                         [--severity low|medium|high] [--pubpeer-url URL] [--publish-only | --authors-only]
+                         [--severity low|medium-unlikely|medium|high] [--pubpeer-url URL] [--publish-only | --authors-only]
                          [--site-text] [--db data/gi.sqlite3]
        gi_report_case.py --skipped | --rebuild-site [--site-text]
        --problems: every pair you've reviewed as a problem
@@ -123,7 +137,16 @@ def git_email():
 
 DEFAULT_SEVERITY = "medium"
 ALL_EMAILS_SEVERITY = "high"
+NO_PROBLEM_SEVERITY = "none"   # what gi_review_cli.ask_severity() saves for a no-problem verdict: no emails
+# medium, but you don't think anyone (journal, institutions) will act on it: the PubPeer page, the site page and
+# the journal's email only, as low -- never the institutions', whatever the share, and a [data] finding
+# doesn't raise it to high. Recorded as its own level so the severity itself stays medium.
+UNLIKELY_SEVERITY = "medium-unlikely"
+SEVERITY_LEVELS = ("low", UNLIKELY_SEVERITY, "medium", "high")
 SITE_IMAGES = True   # site pages show the passages as image crops of both PDFs (--site-text: as text)
+# the comparison page attached to the emails shows the passages as text diffs, every source's alike, to keep it
+# small (--attachment-images: as image crops, about twice the size, ~5-10 MB for a long case)
+ATTACHMENT_IMAGES = False
 SELF_TYPES = ("text recycling", "duplicate publication")   # gi_review_cli.SELF_TYPES: never published by --skipped
 DATA_TYPE = "data copying"
 
@@ -132,18 +155,22 @@ DATA_TYPE = "data copying"
 CASE_AUDIENCES = {"institution": "research-integrity address", "authors": "address for the earlier authors"}
 
 
-MEDIUM_INSTITUTION_PCT = 50   # a medium case writes to the institutions only when this much of the later article is shared
+MEDIUM_INSTITUTION_PCT = 20   # a medium case writes to the institutions only when more than this much of the later article is shared
 
 
 def audiences(severity, fd=None):
     """The emails a case of this severity gets: all of gi_contact.EMAIL_AUDIENCES when high (the earlier
     authors and their publisher too); the later article's journal, plus the later authors' institutions when
-    at least MEDIUM_INSTITUTION_PCT% of the later article is shared, when medium; only the journal when low.
+    more than MEDIUM_INSTITUTION_PCT% of the later article is shared, when medium; only the journal when low or
+    UNLIKELY_SEVERITY (medium, nobody expected to act).
     With fd: never the earlier authors when the two bylines share names (they'd be writing to the people who
-    reused it)."""
+    reused it). None at all for NO_PROBLEM_SEVERITY (a no-problem review)."""
+    if severity == NO_PROBLEM_SEVERITY:
+        return ()
     if severity != ALL_EMAILS_SEVERITY:
-        share = ((fd or {}).get("second") or {}).get("pct") or 0
-        return (("publisher", "institution") if severity == "medium" and share >= MEDIUM_INSTITUTION_PCT
+        several = pp.multi(fd or {})   # sources.json: the share found in all of the sources together
+        share = (several["union_pct"] if several else ((fd or {}).get("second") or {}).get("pct")) or 0
+        return (("publisher", "institution") if severity == "medium" and share > MEDIUM_INSTITUTION_PCT
                 else ("publisher",))
     if fd and gi_contact.shared_authors(fd):
         return tuple(a for a in gi_contact.EMAIL_AUDIENCES if a != "authors")
@@ -151,13 +178,15 @@ def audiences(severity, fd=None):
 
 
 def review_severity(db, f):
-    """Your review's severity for the pair, else DEFAULT_SEVERITY (not reviewed, or no severity)."""
+    """Your review's severity for the pair, else DEFAULT_SEVERITY (not reviewed, or no severity).
+    NO_PROBLEM_SEVERITY for a no-problem review, so it gets no emails: it used to fall back to medium, which
+    wrote an institution draft for GI-213 and GI-242 (collaborations, reviewed no problem) and both went out."""
     try:
         row = db.execute("select severity from reviews where pair_lo = ? and pair_hi = ?",
                          (f["pair_lo"], f["pair_hi"])).fetchone()
     except (sqlite3.OperationalError, KeyError, IndexError):   # no reviews table, or no pair key
         row = None
-    return row[0] if row and row[0] in ("low", "medium", "high") else DEFAULT_SEVERITY
+    return row[0] if row and row[0] in SEVERITY_LEVELS + (NO_PROBLEM_SEVERITY,) else DEFAULT_SEVERITY
 
 
 def review_type(db, f):
@@ -168,6 +197,18 @@ def review_type(db, f):
     except (sqlite3.OperationalError, KeyError, IndexError):
         row = None
     return row[0] if row else None
+
+
+def reviewed(db, f):
+    """Whether you've given the pair a verdict (a reviews row with a decision). Without one, write_report() writes
+    the case's own files but not its site page: an agent (gi-cases) regenerating an unjudged case used to put it
+    on the site marked reported."""
+    try:
+        row = db.execute("select decision from reviews where pair_lo = ? and pair_hi = ?",
+                         (f["pair_lo"], f["pair_hi"])).fetchone()
+    except (sqlite3.OperationalError, AttributeError, KeyError, IndexError):   # no db, no reviews table, no pair key
+        row = None
+    return bool(row and row[0])
 
 
 def case_findings(db, f, report_dir=REPORT_DIR):
@@ -262,6 +303,62 @@ def skipped_problems(db, site_dir=SITE_DIR):
     return [f for f in rows if pp.case_name(f) not in on_site]
 
 
+SOURCE_AUDIENCES = ("authors", "source-publisher")   # the drafts each other text source gets, as the paired one
+
+
+def source_fd(fd, s, contacts=None, source_extra=()):
+    """fd with one other text source (an entry of fd["multi"]["sources"]) in the earlier article's place, for
+    that source's own drafts (-authors-sN, -source-publisher-sN): its figures, passages and citation, its
+    authors' address from contacts.json "sources": {"sN": {...}} (the same shape as "authors"), its journal
+    from journal_contacts.json (Crossref asked once, as for the paired article; pass `contacts` and save it
+    afterwards), and the findings tagged [sN]. fd["multi"] stays, so the draft says there are other sources."""
+    journal = gi_contact.journal_contact(s["doi"], contacts) if contacts is not None and s.get("doi") else None
+    first = {"title": s.get("title"), "year": s.get("year"), "doi": s.get("doi"),
+             "journal": (journal or {}).get("journal") or s.get("journal"), "authors": s.get("authors") or [],
+             "pct": s.get("own_pct"), "words": None, "contact": journal}
+    cc = dict(fd.get("case_contacts") or {})
+    cc["authors"] = (cc.get("sources") or {}).get(f"s{s['n']}") or {}
+    return {**fd, "first": first, "second": {**fd["second"], "pct": s["pct"]},
+            "matched_words": s["matched"], "runs": s["runs"], "passages": s.get("passages") or [],
+            "later_cites_earlier": s.get("cited"), "byline": "byline overlap" if s.get("shared_authors") else "",
+            "case_contacts": cc, "source_extra": list(source_extra)}
+
+
+def write_source_drafts(fd, out, case, attachments, wanted, sender, report_dir=REPORT_DIR):
+    """The drafts to each other text source's authors and journal (-authors-sN, -source-publisher-sN), for the
+    audiences in `wanted` that SOURCE_AUDIENCES has: a high case gets them, as the paired article's. No
+    authors' draft without an address in contacts.json "sources", or when that source shares authors with the
+    later article. Stale ones (a source dropped, the case no longer high) are deleted. Returns {kind: path}."""
+    paths, keep = {}, set()
+    several = pp.multi(fd)
+    contacts = gi_contact.load_contacts()
+    for s in (several["sources"] if several else []):
+        sfd = source_fd(fd, s, contacts, gi_case_findings.included(case, report_dir, data=False, source=s["n"]))
+        for audience in SOURCE_AUDIENCES:
+            if audience not in wanted:
+                continue
+            key = f"{audience}-s{s['n']}"
+            if audience == "authors" and s.get("shared_authors"):
+                paths[f"no email {key}"] = "that source shares authors with the later article"
+                continue
+            if audience == "authors" and not gi_contact.recipients("authors", sfd)[0]:
+                paths[f"no email {key}"] = f"no address for source {s['n']}'s authors in {out / 'contacts.json'} (\"sources\": {{\"s{s['n']}\": ...}})"
+                continue
+            eml = out / f"{case}-email-{key}.eml"
+            eml.write_bytes(bytes(gi_contact.email_message(sfd, attachments, audience=audience, sender=sender)))
+            keep.add(eml.name)
+            paths[f"email {key}"] = eml
+            page = gi_contact.report_page(audience, sfd)
+            if page:
+                paths[f"page {key}"] = page
+    gi_contact.save_contacts(contacts)
+    for old in out.glob(f"{case}-email-*-s[0-9]*.eml"):
+        if old.name not in keep:
+            old.unlink()
+            (out / "compose" / f"{old.stem}.txt").unlink(missing_ok=True)
+    return paths
+
+
 def write_report(db, f, report_dir=REPORT_DIR, site_dir=SITE_DIR, sender=None, severity=None,
                  authors_only=False):
     """Write the case's files; returns {kind: path}. severity (default: the pair's review, see review_severity())
@@ -274,19 +371,25 @@ def write_report(db, f, report_dir=REPORT_DIR, site_dir=SITE_DIR, sender=None, s
     out = Path(report_dir) / case
     out.mkdir(parents=True, exist_ok=True)
     fd = case_findings(db, f, report_dir)
-    if fd.get("data_extra"):   # copied results data: everyone hears of it
+    fd["multi"] = gi_sources.summary(f, out)   # sources.json: the other sources, for the PubPeer text and emails
+    if fd.get("data_extra") and severity != UNLIKELY_SEVERITY:   # copied results data: everyone hears of it
         severity = ALL_EMAILS_SEVERITY
     if authors_only:
         fd["journal_told"] = False
     paths = {}
+    if site_dir and not reviewed(db, f):   # not judged yet: nothing on the site, nothing marked reported
+        site_dir = None
+        paths["no site"] = "not reviewed yet: no site page or index entry (review it, or --publish-only)"
     if not authors_only:
         paths["pubpeer"], _ = pp.write_page(db, f, out, fd=dict(fd), name=f"{case}-pubpeer.html")
-    page, shot, table = pp.publisher_page(f, fd)
-    page, fd["sources"] = gi_sources.add_sources(page, f, fd, out)   # sources.json: every source on one page
+    images = ATTACHMENT_IMAGES and not pp.whole_document(fd)
+    fd["attachment_images"] = images   # the emails say what the attachment shows
+    page, shot, table = pp.publisher_page(f, fd, images=images)
+    page, fd["sources"] = gi_sources.add_sources(page, f, fd, out, images=images)   # sources.json: every source
     paths["comparison"] = out / f"{case}-comparison.html"
     paths["comparison"].write_text(page, encoding="utf-8")
     site = page
-    if site_dir and SITE_IMAGES:   # the site's page shows the passages as printed; the attachment stays text
+    if site_dir and SITE_IMAGES and not images:   # the site's page shows the passages as printed
         site = site_page(f, fd, out, images=True)
     shot_path = out / f"{case}-longest.jpg"
     if shot:
@@ -308,6 +411,8 @@ def write_report(db, f, report_dir=REPORT_DIR, site_dir=SITE_DIR, sender=None, s
         old.unlink()
         (out / "compose" / f"{old.stem}.txt").unlink(missing_ok=True)
     wanted = audiences(severity, fd)
+    # the other sources' drafts by severity alone: the paired article's missing address or shared byline is its own
+    source_wanted = ("authors",) if authors_only else audiences(severity)
     if authors_only:
         wanted = () if gi_contact.shared_authors(fd) else ("authors",)
         if not wanted:
@@ -329,6 +434,8 @@ def write_report(db, f, report_dir=REPORT_DIR, site_dir=SITE_DIR, sender=None, s
         page = gi_contact.report_page(audience, fd)
         if page:   # no email for the journal: the draft is for pasting into its web page
             paths[f"page {audience}"] = page
+    # the other sources' authors and journals: the comparison page covers every source; the image is article A's
+    paths.update(write_source_drafts(fd, out, case, [paths["comparison"]], source_wanted, sender, report_dir))
     return paths
 
 
@@ -435,8 +542,9 @@ def main():
     ap.add_argument("--from", dest="sender", help="From address for the drafts (default: git config user.email)")
     ap.add_argument("--open-drafts", action="store_true",
                     help="open the drafts as Thunderbird compose windows, attachments included")
-    ap.add_argument("--severity", choices=("low", "medium", "high"),
-                    help="which emails to write: high = all four, otherwise only the later journal's "
+    ap.add_argument("--severity", choices=SEVERITY_LEVELS,
+                    help="which emails to write: high = all four, medium = the journal's (and the institutions' "
+                         "past 20%% shared), low or medium-unlikely = only the later journal's "
                          "(default: your review's severity, else medium)")
     ap.add_argument("--pubpeer-url", help="your PubPeer post for the case (one GI number): saved to "
                                           "pubpeer_url.txt, and the emails point to it")
@@ -451,12 +559,16 @@ def main():
                          "the ones skipped at the report prompt (not self-author types or already retracted ones)")
     ap.add_argument("--rebuild-site", action="store_true",
                     help="re-render every page already on the site and the index; each keeps its reported date")
+    ap.add_argument("--attachment-images", action="store_true",
+                    help="the emailed comparison page shows the passages as images from the PDFs, not as text "
+                         "diffs (about twice the size: ~5-10 MB for a long case)")
     ap.add_argument("--site-text", action="store_true",
                     help="site pages show the passages as text, not as images cropped from the PDFs")
     ap.add_argument("--db", default=str(gi_db.DB_PATH))
     args = ap.parse_args()
-    global SITE_IMAGES
+    global SITE_IMAGES, ATTACHMENT_IMAGES
     SITE_IMAGES = not args.site_text
+    ATTACHMENT_IMAGES = args.attachment_images
     if args.skipped or args.rebuild_site:
         if args.gi or args.problems or args.no_site or args.authors_only or args.pubpeer_url:
             ap.error("--skipped / --rebuild-site take no GI numbers and only --site-text / --db")

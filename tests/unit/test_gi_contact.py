@@ -22,7 +22,12 @@ def body(f=None, **kw):
 class TestEmail(unittest.TestCase):
     def test_later_known(self):
         subject, e = body(fd(passages=12), attachment="GI-1-x.html", shot_name="GI-1-longest.jpg")
-        self.assertEqual(subject, "Research integrity concern: a paper you published")
+        self.assertEqual(subject, "Research integrity concern with a paper you published")
+        g = fd()
+        g["second"] = {**g["second"], "journal": "New Journal"}
+        self.assertEqual(body(g)[0], "Research integrity concern with a paper you published in New Journal")
+        self.assertEqual(body(g, audience="institution")[0],
+                         "Research integrity concern: a paper by someone associated with your institution")
         self.assertTrue(e.startswith("Dear Editor,\n\n" + gc.ABOUT_ME + " I am writing about an article in your journal"))
         self.assertIn("Later article: New paper (2015), https://doi.org/10.2/new", e)
         self.assertIn("Earlier article: Old [paper] (2011), https://doi.org/10.1/old", e)
@@ -75,6 +80,16 @@ class TestEmail(unittest.TestCase):
         self.assertEqual(len(gc.institutions(f)), 2)
         self.assertEqual(gc.recipients("institution", f), ("rio@u.example, rio@v.example", ""))
         self.assertIn("by authors affiliated with your institution", body(audience="institution")[1])
+
+    def test_declined_institution_is_left_out(self):
+        done = {"to": "rio@w.example", "name": "W", "authors": ["A. One"], "current": True,
+                "declined": "2026-11-06: not affiliated when the article was published"}
+        now = {"to": "rio@u.example", "name": "U", "authors": ["A. One"], "current": True}
+        f = {**fd(), "case_contacts": {"institution": [done, now]}}
+        self.assertEqual(gc.institutions(f), [now])
+        self.assertEqual(gc.recipients("institution", f), ("rio@u.example", ""))
+        self.assertNotIn("W", body(f, audience="institution")[1].split("\n- ")[-1])
+        self.assertEqual(gc.institutions({**fd(), "case_contacts": {"institution": done}}), [])
 
     def test_html_entities_in_metadata_are_decoded(self):
         f = fd()
@@ -187,7 +202,7 @@ class TestEmail(unittest.TestCase):
         f = {**fd(pct_later=20.0), "case": "GI-535", "data_extra": ["Table 1 has the same means."],
              "extra": ["A typo is carried over."]}
         subject, e = body(f)
-        self.assertEqual(subject, "Research integrity concern: results data in a paper you published")
+        self.assertEqual(subject, "Research integrity concern with results data in a paper you published")
         self.assertIn("appears to report the same results data as an earlier article.", e)
         order = [e.index(t) for t in ("About 20%", "Table 1 has the same", "A typo")]
         self.assertEqual(order, sorted(order))   # the share always leads, then data, checks, other findings
@@ -207,6 +222,8 @@ class TestEmail(unittest.TestCase):
         self.assertFalse(gc.shared_authors(fd()))
         subject, e = body(f)
         self.assertEqual(subject, "Possible redundant publication: a paper you published")
+        f["second"] = {**f["second"], "journal": "New &amp; Journal"}
+        self.assertEqual(body(f)[0], "Possible redundant publication: a paper you published in New & Journal")
         self.assertIn("appears to be largely a republication of an earlier article that shares authors with it.", e)
 
     def test_table_extracts_skipped(self):

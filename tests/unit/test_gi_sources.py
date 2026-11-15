@@ -107,8 +107,41 @@ class TestCards(unittest.TestCase):
         self.assertIn("<strong>35%</strong> of its text is in these 2 earlier works", box)
         self.assertEqual(box.count('class="paper-card"'), 3)
 
+    def test_neutral_sections_found_by_later_doi(self):
+        """Sections written --neutral label the cards PAPER A / PAPER B; the box must still appear, with the
+        later article's card (whichever side it's on) on the right."""
+        def neutral(letter, title, later_left=False):
+            src = (f'<div class="paper-card"><p class="role ">PAPER {"B" if later_left else "A"}</p><h2>{title}</h2>'
+                   f'<a class="doi" href="https://doi.org/10.1/{title}">x</a></div>')
+            new = (f'<div class="paper-card"><p class="role ">PAPER {"A" if later_left else "B"}</p><h2>New</h2>'
+                   f'<a class="doi" href="https://doi.org/10.9/NEW">x</a></div>')
+            pair = new + src if later_left else src + new
+            return gi_sources._tag(f'<div class="lede"><div class="comparison">{pair}</div></div>', letter)
+        a, b = neutral("A", "Paired"), neutral("B", "Other", later_left=True)
+        box = gi_sources.cards_html([("A", a, "31%"), ("B", b, "4%")],
+                                    gi_sources._card(a, "LATER / FLAGGED", "10.9/new"), "35%", "10.9/new")
+        self.assertEqual(box.count('class="paper-card"'), 3)
+        self.assertLess(box.index("<h2>Paired</h2>"), box.index("<h2>Other</h2>"))
+        self.assertLess(box.index("<h2>Other</h2>"), box.index("<h2>New</h2>"))
+        self.assertIn('class="role later">LATER / FLAGGED<', box)
+        self.assertNotIn("PAPER A", box)
+
     def test_no_box_without_cards(self):
         self.assertEqual(gi_sources.cards_html([("A", "<p>no card</p>", "31%")], None, "31%"), "")
+
+
+class TestBareList(unittest.TestCase):
+    def test_list_form_loads_like_object_form(self):
+        """GI-1008: sources.json written as a bare list failed with "'list' object has no attribute 'get'"."""
+        src = [{"title": "Earlier", "kind": "text", "fulltext": "source-1.txt"}]
+        loaded = []
+        for data in (src, {"sources": src}):
+            with tempfile.TemporaryDirectory() as d:
+                (Path(d) / "source-1.txt").write_text("some text", encoding="utf-8")
+                (Path(d) / "sources.json").write_text(json.dumps(data), encoding="utf-8")
+                loaded.append(gi_sources.load(d))
+        self.assertEqual(loaded[0], loaded[1])
+        self.assertEqual([s["n"] for s in loaded[0][0]], [1])
 
 
 class TestNoSources(unittest.TestCase):

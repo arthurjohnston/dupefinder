@@ -94,11 +94,12 @@ def make_db():
 
 
 def add_work(db, doi, authors):
-    """authors: [(author_id, last_year, insts)]; author_id None for an authorship with no author record."""
+    """authors: [(author_id, last_year, insts)]; author_id None for an authorship with no author record. The
+    byline shows each author at insts (gi_affiliations.byline_checks() leaves that alone)."""
     db.execute("insert into oa_works values (?, 1, 'x')", (doi,))
     for n, (aid, year, insts) in enumerate(authors):
         db.execute("insert into oa_authorships (doi, position, author_id, name, institutions) "
-                   "values (?, ?, ?, ?, '[]')", (doi, n, aid, f"name {aid}"))
+                   "values (?, ?, ?, ?, ?)", (doi, n, aid, f"name {aid}", json.dumps(insts or [])))
         if aid:
             db.execute("insert or replace into oa_authors values (?, ?, null, 1, ?, ?, 'x', null)",
                        (aid, f"name {aid}", year, json.dumps(insts)))
@@ -478,6 +479,7 @@ class TestCoverage(unittest.TestCase):
         add_work(db, "10.1/raw", [("A2", 2024, [])])
         db.execute("update oa_authorships set raw_university = 'Dept of X, Univ of Y' where doi = '10.1/raw'")
         add_work(db, "10.1/last", [("A3", 2024, [inst("Oxford", "GB")])])
+        db.execute("update oa_authorships set institutions = '[]' where doi = '10.1/last'")
         add_work(db, "10.1/company", [("A4", 2024, [])])
         db.execute("update oa_authorships set institutions = ? where doi = '10.1/company'",
                    (json.dumps([inst("Acme", "US", "company")]),))

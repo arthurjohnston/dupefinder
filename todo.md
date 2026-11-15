@@ -2921,3 +2921,58 @@ with several authors in one string, single-name authors, "Johann" vs "Hans Kroha
 marked `byline overlap` in all; the agent's own byline reading (`agent_reviews.byline_names_a/b`,
 `shared_names`, from PDF page 1) matched the PDFs in 66/66. Better gate, not built: hide a pair only when
 the crude check fires AND the agent review (when there is one) lists a shared name.
+
+## General Index: finding hashed `pairs` by DOI prefix or journal, and the index that would make it fast (2026-11-03, index not added)
+
+`pairs` has only the hashed document keys (`dkey_a`/`dkey_b`). To find pairs by publisher prefix (e.g.
+10.3126, Nepal Journals Online) or by journal title, join both sides to `documents`, which has `doi`,
+`journal`, `title`, `author` and `pub_date` for every dkey (`lead_details` does the same join for leads):
+
+```sql
+-- sqlite3 -readonly -header -column general_index/data/gi.sqlite3
+with d as (select dkey from documents where lower(doi) like '10.3126/%')
+select p.pair_id, da.doi doi_a, da.journal journal_a, db.doi doi_b, db.journal journal_b, p.pct_a, p.pct_b
+from pairs p
+join documents da on da.dkey = p.dkey_a
+join documents db on db.dkey = p.dkey_b
+where p.dkey_a in d or p.dkey_b in d
+order by p.pair_id;
+```
+
+- By journal instead: `where journal like '%Paediatric Society%'` in the `with`.
+- Just the prefix, e.g. to count pairs per publisher: `substr(doi, 1, instr(doi, '/') - 1)`.
+- Gaps: `documents.doi` is null for some documents (`gi:<dkey>` stands in for them on case pages), and
+  `journal` is only filled from publisher metadata (`meta_source='slice'`), so it's often empty for
+  '2022 update' documents. A missing journal doesn't rule a document out.
+- Cases that already have a page are faster to look up through `fulltext`, which stores DOIs directly:
+  `where pair_lo in (...) or pair_hi in (...)` with the lowercased DOIs, ~0.2s.
+
+**It's slow.** The 10.3126 query with `limit 15` took 7m19s: `pairs` (117M rows) has no index on
+`dkey_a`/`dkey_b`, so it's scanned in full, and a `LIKE` can't use `idx_documents_doi` (an index on
+`lower(doi)`), so `documents` is scanned too.
+
+What came back is mostly the same article indexed twice, not overlap between different papers: the
+identical DOI on both sides (mostly Journal of Nepal Paediatric Society), a one-letter DOI typo
+(`jiom`/`joim`, pair 25157), or one copy with no DOI. The one real lead between two different DOIs was
+pair 313995, J Patan Acad Health Sci 10.3126/jpahs.v5i1.24039 against 10.1016/s0736-4679(01)00497-8 at
+100%/100%. Not yet looked at.
+
+**Adding the index (not done).** With the DB not in use (no `gi_blocks.py`/`gi_review_cli.py`/
+prep batch running):
+
+```sql
+-- sqlite3 general_index/data/gi.sqlite3
+create index if not exists idx_pairs_dkey_a on pairs(dkey_a);
+create index if not exists idx_pairs_dkey_b on pairs(dkey_b);
+```
+
+- Expect each one to take minutes and several GB (117M 40-character keys; the DB is already 123GB), so
+  check free disk space first.
+- `gi_blocks.py finalize` does `drop table if exists pairs` and recreates it, which drops these indexes.
+  To keep them, either re-run the two statements after every finalize, or put them at the end of
+  `finalize` after the `insert into pairs ... from pairs_stage`.
+- Don't put them in `gi_db.py`'s `SCHEMA`. `gi_db.connect()` runs `SCHEMA` on every connect, so the
+  first connect after a finalize would sit there building two 117M-row indexes without saying why.
+- Once they exist, the prefix query is a `documents` scan (to collect the matching dkeys) plus index
+  lookups. To use `idx_documents_doi` as well, write the filter as a range on the indexed expression:
+  `where lower(doi) >= '10.3126/' and lower(doi) < '10.31260'`.

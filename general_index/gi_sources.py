@@ -57,6 +57,14 @@ def kinds(s):
     return [k] if isinstance(k, str) else list(k)
 
 
+def read(case_dir):
+    """case_dir/sources.json as {"sources": [...], ...}. A bare list of sources is accepted too: the skill only
+    implied the object form, and 16 cases were written as a list (GI-1008 failed with "'list' object has no
+    attribute 'get'")."""
+    data = json.loads((Path(case_dir) / "sources.json").read_text(encoding="utf-8"))
+    return {"sources": data} if isinstance(data, list) else data
+
+
 def load(case_dir):
     """(text sources, other sources) from case_dir/sources.json, each in file order with its "n" (1-based
     position in the file). A text source is one whose kind includes "text" and whose fulltext file exists.
@@ -65,7 +73,7 @@ def load(case_dir):
     if not path.exists():
         return [], []
     text, other = [], []
-    for n, s in enumerate(json.loads(path.read_text(encoding="utf-8")).get("sources", []), 1):
+    for n, s in enumerate(read(case_dir).get("sources", []), 1):
         s = {**s, "n": n}
         if s.get("abstract") and not s.get("fulltext"):
             continue
@@ -170,7 +178,9 @@ def measure(scratch, later_id, ids, f, earlier_id):
     def cover(later, other):
         runs = ctp.find_shingle_matches(later, other, shingle_size=10, x_drop=3)
         return {"covered": {i for r in runs for i in range(r.start_a, r.end_a)}, "runs": len(runs),
-                "longest": max((r.length for r in runs), default=0)}
+                "longest": max((r.length for r in runs), default=0),
+                "own": len({i for r in runs for i in range(r.start_b, r.end_b)}), "own_words": len(other),
+                "passages": top_passages(runs)}
 
     case_lib = sqlite3.connect(f"file:{f['library']}?mode=ro", uri=True)
     try:
@@ -187,14 +197,83 @@ def measure(scratch, later_id, ids, f, earlier_id):
     return out
 
 
-def render_source(scratch, later_id, pid, case):
-    """write_dupe_reports_screenshots.py's page for the later article against one source, images inlined."""
+TOP_PASSAGES = 10   # per source, for the emails' extracts (they quote 3)
+
+
+def top_passages(runs, n=TOP_PASSAGES):
+    """The n longest runs as the later article words them ({"words", "excerpt"}, gi_pubpeer.findings()'s shape),
+    a sentence the later article prints several times kept once."""
+    from gi_pubpeer import excerpt
+    out, seen = [], set()
+    for r in sorted(runs, key=lambda r: -r.length):
+        key = " ".join(re.sub(r"[^\w\s]", "", r.text_a.lower()).split())
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append({"words": len(r.text_a.split()), "excerpt": excerpt(r.text_a)})
+        if len(out) == n:
+            break
+    return out
+
+
+def _share(c, total):
+    """One work's figures for summary(): matched words of the later article, their share of it, runs, longest,
+    the share of the work's own text, its longest passages."""
+    return {"matched": len(c["covered"]), "pct": round(100 * len(c["covered"]) / total, 1) if total else None,
+            "runs": c["runs"], "longest": c["longest"], "passages": c["passages"],
+            "own_pct": round(100 * c["own"] / c["own_words"], 1) if c.get("own_words") else None}
+
+
+def summarize(m, text_sources, other):
+    """measure()'s result as summary() returns it (split out so it can be tested without a library)."""
+    total = m["words"]
+    keys = ["paired", *[s["n"] for s in text_sources]]
+    union = set().union(*(m[k]["covered"] for k in keys))
+    fields = ("title", "year", "journal", "doi", "url", "authors", "cited", "shared", "shared_authors")
+    return {
+        "words": total, "union_words": len(union),
+        "union_pct": round(100 * len(union) / total, 1) if total else None,
+        "overlap": sum(len(m[k]["covered"]) for k in keys) - len(union),
+        "paired": {"letter": "A", **_share(m["paired"], total)},
+        "sources": [{"n": s["n"], "letter": letter, **{k: s.get(k) for k in fields},
+                     "url": s.get("url") or s.get("fulltext_url"), **_share(m[s["n"]], total)}
+                    for letter, s in zip(LETTERS[1:], text_sources)],
+        "other": [{"n": s["n"], "title": s.get("title"), "year": s.get("year"), "journal": s.get("journal"),
+                   "doi": s.get("doi"), "kinds": kinds(s), "refs": s.get("refs"), "cited": s.get("cited")}
+                  for s in other],
+    }
+
+
+def summary(f, case_dir):
+    """The case's text sources measured for the PubPeer comment and the emails (gi_report_case.py puts it in
+    fd["multi"]): {"words" (the later article's), "union_words", "union_pct", "overlap" (words in more than one
+    work, counted once in the union), "paired": {...}, "sources": [{n, letter, title, year, journal, doi, url,
+    authors, cited, shared, shared_authors, matched, pct, runs, longest, own_pct, passages}], "other": [the
+    sources not measured: references, tables, text not saved]}. Letters as on the comparison page: the paired
+    article A, the sources B, C, ... None when there's no text source to measure, or which article came first
+    isn't known (add_sources() leaves the page alone then too)."""
+    text_sources, other = load(case_dir)
+    order = text_sources and later_and_earlier(f)
+    if not order:
+        return None
+    later_id, earlier_id = order
+    with tempfile.TemporaryDirectory() as d:
+        scratch = Path(d) / "library.sqlite3"
+        ids = scratch_library(scratch, f["library"], later_id, case_dir, text_sources)
+        m = measure(scratch, later_id, ids, f, earlier_id)
+    return summarize(m, text_sources, other)
+
+
+def render_source(scratch, later_id, pid, case, images=True):
+    """write_dupe_reports_screenshots.py's page for the later article against one source, images inlined;
+    images=False: the passages as text diffs (the emailed comparison page, as for the paired article)."""
     with tempfile.TemporaryDirectory() as d:
         d = Path(d)
         p = subprocess.run([PY, str(ROOT / "write_dupe_reports_screenshots.py"), "--library-db", str(scratch),
                             "--paper-ids", f"{later_id},{pid}", "--out-dir", str(d), "--neutral",
                             "--shingle-size", "10", "--x-drop", "3", "--case-number", case,
-                            "--min-shingle-matches", "1", "--found-by", "", "--embed-images", "--no-title-shots"],
+                            "--min-shingle-matches", "1", "--found-by", "", "--embed-images", "--no-title-shots",
+                            *([] if images else ["--text-exhibits"])],
                            capture_output=True, text=True, cwd=ROOT)
         pages = sorted(d.glob("*.html"))
         if p.returncode != 0 or not pages:
@@ -298,18 +377,35 @@ CARDS_STYLE = """<style>
 </style>"""
 
 
-def _card(section, role):
-    """The paper card with this role (its .role text, e.g. "EARLIER / SOURCE") in a section's top box."""
-    return next((c for c in CARD.findall(section) if f">{role}</p>" in c), None)
+ROLE = re.compile(r'<p class="role[^"]*">[^<]*</p>')
 
 
-def cards_html(sections, later_card, union_txt):
+def _card(section, role, later_doi=None):
+    """The paper card with this role (its .role text, e.g. "EARLIER / SOURCE") in a section's top box.
+    With later_doi, a section written --neutral (cards "PAPER A" / "PAPER B", which say nothing about
+    direction) is read by DOI instead: the later article's card for a "LATER ..." role, the other one for
+    an "EARLIER ..." role, relabelled with `role`. Matching the labels alone dropped the whole box from
+    every page once the sections went neutral (GI-807, GI-897)."""
+    cards = CARD.findall(section)
+    found = next((c for c in cards if f">{role}</p>" in c), None)
+    if found or not later_doi:
+        return found
+    key = f'href="https://doi.org/{later_doi.lower()}"'
+    later = [c for c in cards if key in c.lower()]
+    if len(later) != 1 or len(cards) != 2:   # can't tell the two apart: no box rather than a wrong one
+        return None
+    c = later[0] if role.startswith("LATER") else next(c for c in cards if c is not later[0])
+    cls = "later" if role.startswith("LATER") else ""
+    return ROLE.sub(lambda _: f'<p class="role {cls}">{html.escape(role)}</p>', c, count=1)
+
+
+def cards_html(sections, later_card, union_txt, later_doi=None):
     """The overview's top box: every earlier work's card (as its own section shows it: role "EARLIER / SOURCE
     A", its share and a link to its passages) stacked on the left, the later article's card on the right, as in
     the single-pair box. sections: [(letter, section html, share text)]."""
     left = []
     for letter, sec, share in sections:
-        c = _card(sec, f"EARLIER / SOURCE {letter}")
+        c = _card(sec, f"EARLIER / SOURCE {letter}", later_doi)
         if not c:
             continue
         left.append(c[:-len("</div>")] + f'<p class="share"><strong>{share}</strong> of the later article &middot; '
@@ -331,7 +427,7 @@ def _tag(section, letter, year=None):
     return section.replace(">EARLIER</span>", f">ARTICLE {letter}{f' ({year})' if year else ''}</span>")
 
 
-def add_sources(page, f, fd, case_dir):
+def add_sources(page, f, fd, case_dir, images=True):
     """The comparison page (gi_pubpeer.publisher_page()'s) with the case's other text sources added, and a
     summary for cases.json ({"sources", "union_pct", "union_words"}); (page, None) unchanged when the case has
     no text source to show, or which article came first isn't known."""
@@ -341,14 +437,14 @@ def add_sources(page, f, fd, case_dir):
         return page, None
     later_id, earlier_id = order
     case = Path(case_dir).name
-    later_title = json.loads((Path(case_dir) / "sources.json").read_text(encoding="utf-8")).get("later_title")
+    later_title = read(case_dir).get("later_title")
     with tempfile.TemporaryDirectory() as d:
         scratch = Path(d) / "library.sqlite3"
         ids = scratch_library(scratch, f["library"], later_id, case_dir, text_sources)
         m = measure(scratch, later_id, ids, f, earlier_id)
         sections = []
         for letter, s in zip(LETTERS[1:], text_sources):
-            src = render_source(scratch, later_id, ids[s["n"]], f"{case}-s{s['n']}")
+            src = render_source(scratch, later_id, ids[s["n"]], f"{case}-s{s['n']}", images=images)
             i, j = src.find('<div class="lede">'), src.find("<footer")
             sec = re.sub(r'\s*<p class="dek">.*?</p>', "", src[i:j], count=1, flags=re.S)
             c = m[s["n"]]
@@ -361,7 +457,8 @@ def add_sources(page, f, fd, case_dir):
     paired = _tag(page[i:], "A", fd["first"]["year"])
     union = set().union(*(m[k]["covered"] for k in ["paired", *ids]))
     cards = cards_html([("A", paired, _pct(len(m["paired"]["covered"]), m["words"])), *sections],
-                       _card(paired, "LATER / FLAGGED"), _pct(len(union), m["words"]))
+                       _card(paired, "LATER / FLAGGED", fd["second"].get("doi")), _pct(len(union), m["words"]),
+                       fd["second"].get("doi"))
     page = page[:i] + overview_html(fd, text_sources, other, m, later_title, cards) + paired
     k = page.rfind("<footer")
     k = k if k >= 0 else page.rfind("</div>")
