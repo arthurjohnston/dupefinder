@@ -3924,5 +3924,30 @@
   "matched_words": 497,
   "runs": 25,
   "longest": 34
+ },
+ "GI-908": {
+  "file": "GI-908.html",
+  "reported": "2026-11-15",
+  "published": "2026-11-15",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Robotic Liver Resection as a Bridge to Liver Transplantation",
+   "year": 2011,
+   "doi": "10.4293/108680811x13022985131417",
+   "pct": 45.0,
+   "journal": "JSLS : Journal of the Society of Laparoendoscopic Surgeons"
+  },
+  "earlier": {
+   "title": "Early Experiences of Robotic-assisted Laparoscopic Liver Resection",
+   "year": 2008,
+   "doi": "10.3349/ymj.2008.49.4.632",
+   "pct": 36.0,
+   "journal": "Yonsei Medical Journal"
+  },
+  "matched_words": 888,
+  "runs": 30,
+  "longest": 66
  }
 }
