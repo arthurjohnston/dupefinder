@@ -25,6 +25,8 @@ scholarly publishers, from Crossref's /members records. A pair whose LATER (copy
 FIRST: a copy that got into a major journal is the most consequential finding. Combined with the preprint
 demotion into one priority (pair_priority(), lower sorts first):
 
+    TOP       -3  the later paper is from one of TOP_PUBLISHERS (Elsevier, IOP Publishing, PLOS, SAGE, Springer
+                  Nature, Taylor & Francis, Wiley), or the order is unknown and both sides are
     PROMOTED  -2  the later paper is from an enabled major publisher (also: order unknown, but BOTH sides
                   are, so whichever is later is one)
     POSSIBLY_PROMOTED -1  order unknown and exactly one side is a major publisher: the mild promotion
@@ -59,7 +61,12 @@ from typing import NamedTuple
 TSV = Path(__file__).resolve().parent / "preprint_doi_prefixes.tsv"
 MAJOR_TSV = Path(__file__).resolve().parent / "major_publisher_doi_prefixes.tsv"
 
-PROMOTED, POSSIBLY_PROMOTED, ORDINARY, POSSIBLY, LATER = -2, -1, 0, 1, 2
+TOP, PROMOTED, POSSIBLY_PROMOTED, ORDINARY, POSSIBLY, LATER = -3, -2, -1, 0, 1, 2
+# the most prestigious publishers (the user's list, 2026-11-15): a later paper from one of them ranks TOP, ahead of
+# the other major publishers. Names as in major_publisher_doi_prefixes.tsv's publisher column; a venue excluded
+# there (promote=no) is still excluded.
+TOP_PUBLISHERS = frozenset({"Elsevier", "IOP Publishing", "PLOS", "SAGE", "Springer Nature", "Taylor & Francis",
+                            "Wiley"})
 ENABLED_GROUPS = frozenset({"core", "etc"})
 
 
@@ -192,10 +199,14 @@ def pair_priority(doi_a, doi_b, earlier, groups=ENABLED_GROUPS):
             return ORDINARY, None
         if not later.promote:
             return ORDINARY, f"later paper: {_label(later)} (not promoted: {later.reason})"
+        if later.name in TOP_PUBLISHERS:
+            return TOP, f"later paper: {later.name} (top publisher)"
         return PROMOTED, f"later paper: {later.name}"
     promoted = [p for p in (pa, pb) if p and p.promote]
     if len(promoted) == 2:
         names = " / ".join(dict.fromkeys(p.name for p in promoted))
+        if all(p.name in TOP_PUBLISHERS for p in promoted):   # whichever is later, it's a top publisher
+            return TOP, f"later paper: {names} (which came first is unknown; both sides are top publishers)"
         return PROMOTED, f"later paper: {names} (which came first is unknown; both sides are major publishers)"
     if promoted:
         return POSSIBLY_PROMOTED, f"possibly later paper: {promoted[0].name} (which paper came first is unknown)"

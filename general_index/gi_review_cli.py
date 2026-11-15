@@ -29,8 +29,6 @@ qualified (outside your expertise, e.g. higher-level math); r = problem (the age
 copying), flagged already retracted, and no report files; w = problem, cross-author copying, low, flagged
 not worth reporting: real copying too minor to complain about, so no report files, and the site page is
 published marked not reported (as p does at the report prompt).
-A copy whose DOI was assigned by arXiv, SSRN, Zenodo, figshare or ResearchGate (the later paper; LOW_SERVERS)
-defaults to low, at the severity step and for c: usually the authors' own upload or a re-post.
 Self-author copying (a problem verdict of type text recycling or duplicate publication, SELF_TYPES) defaults
 to low at the severity step and isn't reported or published: no report prompt and no site page, and the
 agent isn't started on a pair the AI gave one of those types. t on the pair still reports it.
@@ -208,25 +206,6 @@ DEFAULT_SEVERITY = "medium"
 # started on a pair the AI gave one of these types. t on the pair still reports it.
 SELF_TYPES = ("text recycling", "duplicate publication")
 SELF_SEVERITY = "low"
-
-# a copy posted on one of these (the later, copying paper's DOI assigned by it; gi_preprints.is_preprint_doi()'s
-# server names) is low by default, at the severity step and for the c quick key: usually the authors' own upload
-# or an aggregator's re-post, not a journal that printed a copy
-LOW_SERVERS = ("arxiv", "ssrn", "zenodo", "figshare", "researchgate")
-PREPRINT_SEVERITY = "low"
-
-
-def low_server_copy(pair):
-    """The server (arXiv, SSRN, Zenodo, figshare, ResearchGate: LOW_SERVERS) that assigned the later, copying
-    paper's DOI, or None. Order by publication year (gi_preprints.earlier_by_year()); None when it's unknown."""
-    import gi_preprints
-    try:
-        earlier = gi_preprints.earlier_by_year(pair["year_a"], pair["year_b"])
-        later_doi = None if earlier is None else pair["doi_b"] if earlier == "a" else pair["doi_a"]
-    except (KeyError, IndexError):   # a row without DOIs or years
-        return None
-    server = later_doi and gi_preprints.is_preprint_doi(later_doi)
-    return server if server and server.lower().startswith(LOW_SERVERS) else None
 
 # --ai-type names -> the agent's type
 AI_TYPES = {"cross-author": "cross-author copying", "data": "data copying", "duplicate": "duplicate publication",
@@ -700,18 +679,13 @@ def edit_note(initial=""):
 
 
 def ask_severity(pair, decision, type_=None):
-    """Enter gives DEFAULT_SEVERITY (SELF_SEVERITY for a SELF_TYPES type, PREPRINT_SEVERITY when the later paper
-    is on one of LOW_SERVERS), whatever the agent said: medium also
+    """Enter gives DEFAULT_SEVERITY (SELF_SEVERITY for a SELF_TYPES type), whatever the agent said: medium also
     writes the emails to the later authors' institutions (when more than 20% of the later article is shared), high to the victims as well
     (gi_report_case.audiences()), so it has to be chosen.
     "none" for a no-problem verdict."""
     if decision == "no problem":
         return "none"
     default = SELF_SEVERITY if type_ in SELF_TYPES else DEFAULT_SEVERITY
-    server = low_server_copy(pair)
-    if server:
-        default = PREPRINT_SEVERITY
-        print(f"  The later paper's DOI is from {server}: Enter gives {PREPRINT_SEVERITY}.")
     ai = f", AI: {pair['ai_severity']}" if pair["ai_severity"] in SEVERITIES.values() else ""
     while True:
         ans = ask(f"Severity  l)ow  u) medium, unlikely anyone acts  m)edium  h)igh  [Enter: {default}{ai}] ").lower()
@@ -841,8 +815,7 @@ def review_one(pair, choices, counts, saved_flags=(), prep=None, shown=None, set
     for k, (d, t, desc) in enumerate(choices, 1):
         mark = "  <- AI" if ai == (d, t) else ""
         print(f"  {k:>2}  {d + ': ' + t:<34} {desc} [{counts.get((d, t), 0)}]{mark}")
-    print(f"   c  {QUICK[0]}: {QUICK[1]}, {QUICK[2]}, {QUICK[3]} (skips severity; {PREPRINT_SEVERITY} for a copy "
-          f"on arXiv, SSRN, Zenodo, figshare or ResearchGate)")
+    print(f"   c  {QUICK[0]}: {QUICK[1]}, {QUICK[2]}, {QUICK[3]} (skips severity)")
     print(f"   e  unsure, flagged {FLAGS['e'][0]}: {FLAGS['e'][1]} (skips severity and flags)")
     print(f"   r  problem, flagged {FLAGS['r'][0]}: {FLAGS['r'][1]} (skips severity, flags and report)")
     print(f"   w  problem: {NOT_WORTH[0]}, {NOT_WORTH[1]}, flagged {FLAGS['w'][0]}: {FLAGS['w'][1]}"
@@ -872,10 +845,6 @@ def review_one(pair, choices, counts, saved_flags=(), prep=None, shown=None, set
             continue
         if ans == "c":
             decision, type_, severity, reason = QUICK
-            server = low_server_copy(pair)
-            if server:   # a copy posted on arXiv, SSRN, ...: low, not the quick key's medium
-                severity = PREPRINT_SEVERITY
-                print(f"  The later paper's DOI is from {server}: saved as {severity}.")
             reasons, quick = [reason], True
             break
         if ans == "e":

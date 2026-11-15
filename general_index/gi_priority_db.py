@@ -26,7 +26,7 @@ import gi_db
 import gi_preprints
 import gi_write_pages
 
-LABELS = {gi_preprints.PROMOTED: "promoted", gi_preprints.POSSIBLY_PROMOTED: "possibly promoted",
+LABELS = {gi_preprints.TOP: "top publisher", gi_preprints.PROMOTED: "promoted", gi_preprints.POSSIBLY_PROMOTED: "possibly promoted",
           gi_preprints.ORDINARY: "ordinary", gi_preprints.POSSIBLY: "possibly by a preprint",
           gi_preprints.LATER: "later paper is a preprint"}
 
