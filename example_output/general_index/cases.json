@@ -3977,5 +3977,33 @@
   "sources": 3,
   "union_words": 768,
   "union_pct": 24.7
+ },
+ "GI-963": {
+  "file": "GI-963.html",
+  "reported": "2026-11-15",
+  "published": "2026-11-15",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Pancreatic Cancer: Molecular, Biochemical, Chemopreventive, and Therapeutic Aspects",
+   "year": 2010,
+   "doi": "10.1100/tsw.2010.184",
+   "pct": 19.0,
+   "journal": "The Scientific World JOURNAL"
+  },
+  "earlier": {
+   "title": "Pancreatic cancer: Pathogenesis, prevention and treatment",
+   "year": 2006,
+   "doi": "10.1016/j.taap.2006.11.007",
+   "pct": 7.0,
+   "journal": "Toxicology and Applied Pharmacology"
+  },
+  "matched_words": 437,
+  "runs": 24,
+  "longest": 33,
+  "sources": 2,
+  "union_words": 750,
+  "union_pct": 33.3
  }
 }
