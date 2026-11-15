@@ -3949,5 +3949,33 @@
   "matched_words": 888,
   "runs": 30,
   "longest": 66
+ },
+ "GI-880": {
+  "file": "GI-880.html",
+  "reported": "2026-11-15",
+  "published": "2026-11-15",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Interferon-γ and Colorectal Cancer: an up-to date",
+   "year": 2017,
+   "doi": "10.7150/jca.22962",
+   "pct": 14.0,
+   "journal": "Journal of Cancer"
+  },
+  "earlier": {
+   "title": "The Emerging Roles of Extracellular Vesicles As Communication Vehicles within the Tumor Microenvironment and Beyond",
+   "year": 2017,
+   "doi": "10.3389/fendo.2017.00194",
+   "pct": 8.0,
+   "journal": "Frontiers in Endocrinology"
+  },
+  "matched_words": 436,
+  "runs": 29,
+  "longest": 31,
+  "sources": 3,
+  "union_words": 768,
+  "union_pct": 24.7
  }
 }

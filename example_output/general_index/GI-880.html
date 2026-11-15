@@ -1,0 +1,560 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GI-880: 3 sources</title>
+<style>
+:root {
+  --bg: #f2f4ef; --surface: #ffffff; --surface-2: #eceee7;
+  --ink: #1a1f1a; --ink-muted: #565f57; --border: #d7dbd0;
+  --accent: #a8641f; --accent-strong: #7c4a15;
+  --diff-a: #b6472f; --diff-a-bg: #fbe9e4;
+  --diff-b: #2f7a4a; --diff-b-bg: #e6f3e9;
+  --match-ink: #6b5600; --match-bg: #fdeaa0;
+  --match-diff-ink: #7a1710; --match-diff-bg: #f6c9c0;
+  --font-display: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --font-body: "Source Sans 3", -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #14170f; --surface: #1c2016; --surface-2: #242a1c;
+    --ink: #e9ede4; --ink-muted: #a2ab98; --border: #333a29;
+    --accent: #d99a4e; --accent-strong: #f0b46a;
+    --diff-a: #e2897a; --diff-a-bg: #3a221e;
+    --diff-b: #83c99a; --diff-b-bg: #1c3323;
+    --match-ink: #f0d878; --match-bg: #4a3d10;
+    --match-diff-ink: #f5b3a4; --match-diff-bg: #4a1e17;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #14170f; --surface: #1c2016; --surface-2: #242a1c;
+  --ink: #e9ede4; --ink-muted: #a2ab98; --border: #333a29;
+  --accent: #d99a4e; --accent-strong: #f0b46a;
+  --diff-a: #e2897a; --diff-a-bg: #3a221e;
+  --diff-b: #83c99a; --diff-b-bg: #1c3323;
+  --match-ink: #f0d878; --match-bg: #4a3d10;
+  --match-diff-ink: #f5b3a4; --match-diff-bg: #4a1e17;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font-family: var(--font-body); line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+.page { max-width: 1180px; margin: 0 auto; padding: 4rem 1.5rem 6rem; }
+.lede { max-width: 760px; margin: 0 auto; }
+.eyebrow {
+  font-family: var(--font-mono); font-size: 0.72rem; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--accent-strong); margin: 0 0 0.9rem;
+}
+.classification {
+  display: inline-block; font-family: var(--font-mono); font-size: 0.72rem;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent);
+  background: var(--surface-2); border: 1px solid var(--border); border-radius: 999px;
+  padding: 0.3rem 0.85rem; margin: 0 0 1.1rem;
+}
+h1 {
+  font-family: var(--font-display); font-weight: 600; font-size: clamp(1.9rem, 4vw, 2.6rem);
+  line-height: 1.15; margin: 0 0 1rem; text-wrap: balance;
+}
+.dek {
+  font-size: 1.05rem; color: var(--ink-muted); max-width: 62ch; margin: 0 0 2.5rem;
+}
+.dek a { color: var(--accent-strong); }
+.source-note {
+  font-size: 0.85rem; color: var(--ink-muted); margin: 0.9rem 0 2.5rem;
+  border-left: 2px solid var(--border); padding-left: 0.9rem;
+}
+.source-note a { color: var(--accent-strong); }
+
+/* --whole-document: one continuous diff of both papers, not N per-run exhibits. */
+.wdd {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 3px;
+  padding: 1.5rem 1.7rem; font-size: 0.94rem; line-height: 1.75;
+  overflow-wrap: break-word;
+}
+.wdd p { margin: 0 0 0.95rem; }
+.wdd p:last-child { margin-bottom: 0; }
+.wdd .same { background: var(--match-bg); color: var(--match-ink); }
+.wdd .shared-weak { background: var(--surface-2); color: var(--ink-muted); }
+.wdd del { background: var(--diff-a-bg); color: var(--diff-a); text-decoration: line-through; }
+.wdd ins { background: var(--diff-b-bg); color: var(--diff-b); text-decoration: none; }
+.wdd details { margin: 0 0 0.95rem; }
+.wdd summary {
+  cursor: pointer; font-family: var(--font-mono); font-size: 0.78rem;
+  color: var(--ink-muted); padding: 0.2rem 0;
+}
+.wdd-legend {
+  display: flex; flex-wrap: wrap; gap: 0.5rem 1.4rem; margin: 0 0 1.1rem;
+  font-family: var(--font-mono); font-size: 0.74rem; color: var(--ink-muted);
+}
+.wdd-legend b { font-weight: 400; padding: 0 0.35em; }
+.wdd-legend .same-key { background: var(--match-bg); color: var(--match-ink); }
+.wdd-legend .weak-key { background: var(--surface-2); color: var(--ink-muted); }
+.wdd-legend .del-key { background: var(--diff-a-bg); color: var(--diff-a); text-decoration: line-through; }
+.wdd-legend .ins-key { background: var(--diff-b-bg); color: var(--diff-b); }
+.wdd-caveat {
+  font-size: 0.85rem; color: var(--ink-muted); margin: 1.1rem 0 0;
+  border-left: 2px solid var(--border); padding-left: 0.9rem;
+}
+
+.comparison {
+  display: grid; grid-template-columns: 1fr auto 1fr; gap: 1.1rem; align-items: stretch;
+  margin-bottom: 2.75rem;
+}
+@media (max-width: 640px) { .comparison { grid-template-columns: 1fr; } .connector { display: none; } }
+.paper-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 3px;
+  padding: 1.25rem 1.35rem;
+}
+.paper-card .role {
+  font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--ink-muted); margin: 0 0 0.55rem;
+}
+.paper-card .role.later { color: var(--diff-a); }
+.paper-card h2 {
+  font-family: var(--font-display); font-weight: 600; font-size: 1.08rem;
+  line-height: 1.3; margin: 0 0 0.5rem; text-wrap: balance;
+}
+.paper-card .meta {
+  font-size: 0.85rem; color: var(--ink-muted); margin: 0 0 0.35rem;
+}
+.paper-card a.doi {
+  font-family: var(--font-mono); font-size: 0.78rem; color: var(--accent-strong);
+  word-break: break-all;
+}
+.connector {
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-mono); color: var(--ink-muted); font-size: 1.3rem;
+}
+
+.summary-bar {
+  display: flex; flex-wrap: wrap; gap: 0.5rem 1.6rem; align-items: baseline;
+  font-family: var(--font-mono); font-size: 0.85rem; color: var(--ink-muted);
+  border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+  padding: 0.9rem 0; margin-bottom: 2.75rem;
+}
+.summary-bar strong { color: var(--ink); font-variant-numeric: tabular-nums; font-weight: 600; }
+
+.actions {
+  margin-bottom: 2.75rem;
+}
+.actions .actions-label {
+  font-family: var(--font-mono); font-size: 0.68rem; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--ink-muted); margin: 0 0 0.6rem;
+}
+.actions pre {
+  background: var(--surface-2); border: 1px solid var(--border); border-radius: 3px;
+  padding: 0.7rem 0.9rem; margin: 0 0 0.6rem; overflow-x: auto;
+  font-family: var(--font-mono); font-size: 0.8rem; line-height: 1.5;
+}
+.actions pre .comment { color: var(--ink-muted); }
+
+.exhibit { margin-bottom: 2.75rem; }
+.exhibit-head {
+  display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap;
+  gap: 0.4rem 1.2rem; margin-bottom: 0.9rem; max-width: 760px; margin-inline: auto;
+}
+.exhibit-head h3 {
+  font-family: var(--font-display); font-size: 1.05rem; font-weight: 600; margin: 0;
+}
+.metrics {
+  font-family: var(--font-mono); font-size: 0.78rem; color: var(--ink-muted);
+  display: flex; gap: 1rem; font-variant-numeric: tabular-nums;
+}
+.metrics b { color: var(--ink); font-weight: 600; }
+
+.passage-pair {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; align-items: start;
+}
+@media (max-width: 760px) { .passage-pair { grid-template-columns: 1fr; } }
+.passage {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 3px;
+  padding: 1.1rem 1.25rem; min-width: 0;
+}
+.passage .label {
+  font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--ink-muted); margin: 0 0 0.5rem;
+  display: flex; justify-content: space-between; gap: 1rem;
+}
+.passage .label .idx { font-variant-numeric: tabular-nums; }
+.passage p { margin: 0; font-size: 0.97rem; overflow-wrap: break-word; }
+.passage.earlier { border-top: 3px solid var(--diff-a); }
+.passage.later { border-top: 3px solid var(--diff-b); }
+mark.match { background: var(--match-bg); color: var(--match-ink); padding: 0.03em 0.1em; border-radius: 2px; font-weight: 600; }
+mark.match-diff { background: var(--match-diff-bg); color: var(--match-diff-ink); padding: 0.03em 0.1em; border-radius: 2px; font-weight: 600; text-decoration: underline; text-decoration-thickness: 0.08em; }
+
+footer {
+  margin-top: 3.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border);
+  font-size: 0.78rem; color: var(--ink-muted); font-family: var(--font-mono);
+}
+
+.shots { display: flex; flex-direction: column; gap: 0.35rem; }
+.shots a { display: contents; }
+.shots img { display: block; max-width: 100%; height: auto; border: 1px solid var(--border);
+  background: #fff; }
+.shot-break { font-family: var(--font-mono); font-size: 0.7rem; color: var(--ink-muted);
+  margin: 0.15rem 0; text-align: center; }
+.locate-note { font-size: 0.8rem; color: var(--ink-muted); margin: 0.55rem 0 0;
+  border-left: 2px solid var(--border); padding-left: 0.6rem; }
+.passage .shot-text { font-size: 0.92rem; margin-top: 0.5rem; }
+.title-shots { margin-bottom: 2.75rem; }
+.passage-pair.stacked { grid-template-columns: 1fr; gap: 1rem; }
+.omitted-note { font-family: var(--font-mono); font-size: 0.8rem; color: var(--ink-muted);
+  text-align: center; margin: 0 0 2.75rem; }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="lede" id="overview" style="margin-bottom:2.5rem;padding-bottom:1.5rem;border-bottom:2px solid rgba(127,127,127,0.3)">
+    <p class="eyebrow">Text-overlap comparison &middot; several sources</p>
+    <h1>Interferon-γ and Colorectal Cancer: an up-to date (2017): text shared with 3 earlier works</h1>
+    <p>About <strong>25%</strong> of the later article&rsquo;s text (768 of its
+    3,112 words) is also found in 3 earlier works, which don&rsquo;t overlap with each other.</p>
+    <style>
+.sources-map { align-items: center; }
+.sources-map .source-stack { display: flex; flex-direction: column; gap: 0.7rem; }
+.sources-map .paper-card .share { font-size: 0.85rem; margin: 0.45rem 0 0; }
+.sources-map .paper-card .share a { color: var(--accent-strong); }
+@media (max-width: 640px) { .sources-map .connector { display: flex; transform: rotate(90deg); } }
+</style><div class="comparison sources-map"><div class="source-stack"><div class="paper-card"><p class="role ">EARLIER / SOURCE A</p><h2>The Emerging Roles of Extracellular Vesicles As Communication Vehicles within the Tumor Microenvironment and Beyond</h2><p class="meta">Sullivan, Ryan, Maresh, Grace, Zhang, Xin, Salomon, Carlos, Hooper, John, Margolin, David, Li, Li &middot; 2017</p><a class="doi" href="https://doi.org/10.3389/fendo.2017.00194">doi.org/10.3389/fendo.2017.00194</a><p class="share"><strong>14%</strong> of the later article &middot; <a href="#article-a">its passages</a></p></div><div class="paper-card"><p class="role ">EARLIER / SOURCE B</p><h2>Colorectal cancer (English Wikipedia, revision of 31 August 2017)</h2><p class="meta">(authors unknown) &middot; 2017</p><p class="share"><strong>3.3%</strong> of the later article &middot; <a href="#article-b">its passages</a></p></div><div class="paper-card"><p class="role ">EARLIER / SOURCE C</p><h2>Interferon gamma (English Wikipedia, revision of 28 August 2017)</h2><p class="meta">(authors unknown) &middot; 2017</p><p class="share"><strong>7.3%</strong> of the later article &middot; <a href="#article-c">its passages</a></p></div></div><div class="connector">&rarr;</div><div class="paper-card"><p class="role later">LATER / FLAGGED</p><h2>Interferon-γ and Colorectal Cancer: an up-to date</h2><p class="meta">Kosmidis, Christoforos, Sapalidis, Konstantinos, Koletsa, Triantafyllia, Kosmidou, Maria, Efthimiadis, Christoforos, Anthimidis, George, Varsamis, Nikolaos, Michalopoulos, Nikolaos, Koulouris, Charilaos, Atmatzidis, Stefanos, Liavas, Lazaros, Strati, Titika-Marina, Koimtzis, Georgios, Tsakalidis, Alexandros, Mantalovas, Stylianos, Zarampouka, Katerina, Florou, Maria, Giannakidis, Dimitrios E., Georgakoudi, Eleni, Baka, Sofia, Zarogoulidis, Paul, Man, Yan-Gao, Kesisoglou, Isaac &middot; 2017</p><a class="doi" href="https://doi.org/10.7150/jca.22962">doi.org/10.7150/jca.22962</a><p class="share"><strong>25%</strong> of its text is in these 3 earlier works</p></div></div>
+    <div style="overflow-x:auto">
+    <table style="border-collapse:collapse;width:100%;font-size:0.92rem;margin:0.6rem 0">
+      <thead><tr style="text-align:left;border-bottom:1px solid currentColor">
+        <th style="padding:0.35rem 0.5rem;vertical-align:top">Earlier work</th><th style="padding:0.35rem 0.5rem;vertical-align:top">What is shared</th><th style="padding:0.35rem 0.5rem;vertical-align:top">Cited by the later article</th>
+        <th style="padding:0.35rem 0.5rem;vertical-align:top">Share of the later article</th></tr></thead>
+      <tbody>
+      <tr style="border-bottom:1px solid rgba(127,127,127,0.3)"><td style="padding:0.35rem 0.5rem;vertical-align:top"><a href="#article-a">A.</a> Sullivan, Ryan; Maresh, Grace; Zhang, Xin; Salomon, Carlos; Hooper, John; Margolin, David; Li, Li, The Emerging Roles of Extracellular Vesicles As Communication Vehicles within the Tumor Microenvironment and Beyond, <i>Frontiers in Endocrinology</i> (2017), <a href="https://doi.org/10.3389/fendo.2017.00194">doi:10.3389/fendo.2017.00194</a></td><td style="padding:0.35rem 0.5rem;vertical-align:top">436 words in 29 passages, the longest 31</td><td style="padding:0.35rem 0.5rem;vertical-align:top">no</td><td style="padding:0.35rem 0.5rem;vertical-align:top"><strong>14%</strong></td></tr><tr style="border-bottom:1px solid rgba(127,127,127,0.3)"><td style="padding:0.35rem 0.5rem;vertical-align:top"><a href="#article-b">B.</a> Colorectal cancer (English Wikipedia, revision of 31 August 2017), <i>Wikipedia</i> (2017), <a href="https://en.wikipedia.org/w/index.php?title=Colorectal_cancer&amp;oldid=798151755">en.wikipedia.org</a></td><td style="padding:0.35rem 0.5rem;vertical-align:top">The lead section, reworded in the same order, makes up the later article&#x27;s Introduction (pp. 232-233).. 104 words in 7 passages, the longest 24</td><td style="padding:0.35rem 0.5rem;vertical-align:top">no</td><td style="padding:0.35rem 0.5rem;vertical-align:top"><strong>3.3%</strong></td></tr><tr style="border-bottom:1px solid rgba(127,127,127,0.3)"><td style="padding:0.35rem 0.5rem;vertical-align:top"><a href="#article-c">C.</a> Interferon gamma (English Wikipedia, revision of 28 August 2017), <i>Wikipedia</i> (2017), <a href="https://en.wikipedia.org/w/index.php?title=Interferon_gamma&amp;oldid=797706131">en.wikipedia.org</a></td><td style="padding:0.35rem 0.5rem;vertical-align:top">The Function, Regulation and cancer-immunotherapy passages, reworded in the same order, make up the later article&#x27;s Interferon-γ section and the first half of its Discussion (pp. 234-236).. 228 words in 15 passages, the longest 33</td><td style="padding:0.35rem 0.5rem;vertical-align:top">no</td><td style="padding:0.35rem 0.5rem;vertical-align:top"><strong>7.3%</strong></td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p style="font-size:0.88rem">A passage is a run of at least ten consecutive words in common, allowing isolated
+    single-word differences. The figures are minimums: reworded text and table cells aren&rsquo;t counted. A work
+    available only as a web page or text has its passages shown as text rather than as images. The passages from
+    each work follow: <a href="#article-a">A</a>, <a href="#article-b">B</a>, <a href="#article-c">C</a>.</p>
+    
+  </div>
+<div class="lede" id="article-a">
+    
+    <p class="eyebrow">Article A &middot; text-overlap comparison</p>
+    <h1>The Emerging Roles of Extracellular Vesicles As Communication Vehicles within the Tumor Microenvironment and Beyond &harr; Interferon-γ and Colorectal Cancer: an up-to date</h1>
+    
+    
+    <div class="comparison">
+      <div class="paper-card"><p class="role ">PAPER A</p><h2>The Emerging Roles of Extracellular Vesicles As Communication Vehicles within the Tumor Microenvironment and Beyond</h2><p class="meta">Sullivan, Ryan, Maresh, Grace, Zhang, Xin, Salomon, Carlos, Hooper, John, Margolin, David, Li, Li &middot; 2017</p><a class="doi" href="https://doi.org/10.3389/fendo.2017.00194">doi.org/10.3389/fendo.2017.00194</a></div>
+      <div class="connector">&harr;</div>
+      <div class="paper-card"><p class="role ">PAPER B</p><h2>Interferon-γ and Colorectal Cancer: an up-to date</h2><p class="meta">Kosmidis, Christoforos, Sapalidis, Konstantinos, Koletsa, Triantafyllia, Kosmidou, Maria, Efthimiadis, Christoforos, Anthimidis, George, Varsamis, Nikolaos, Michalopoulos, Nikolaos, Koulouris, Charilaos, Atmatzidis, Stefanos, Liavas, Lazaros, Strati, Titika-Marina, Koimtzis, Georgios, Tsakalidis, Alexandros, Mantalovas, Stylianos, Zarampouka, Katerina, Florou, Maria, Giannakidis, Dimitrios E., Georgakoudi, Eleni, Baka, Sofia, Zarogoulidis, Paul, Man, Yan-Gao, Kesisoglou, Isaac &middot; 2017</p><a class="doi" href="https://doi.org/10.7150/jca.22962">doi.org/10.7150/jca.22962</a></div>
+    </div>
+    <div class="summary-bar"><span>shared text <strong>14%</strong> of the later article (2017) &middot; <strong>8%</strong> of the earlier (2017)</span> <span>matched words <strong>436</strong></span> 
+      
+      <span>near-exact shingle runs (10+ words) <strong>29</strong></span>
+    </div>
+    
+  </div>
+  
+<style>
+.pubpeer-box { border: 2px solid var(--accent, #2b6cb0); border-radius: 8px; padding: 12px 16px; margin: 16px auto;
+  max-width: 760px; box-sizing: border-box; }
+.pubpeer-box h3 { margin: 0 0 6px; }
+.pubpeer-box p { margin: 4px 0; }
+.pubpeer-box textarea { width: 100%; box-sizing: border-box; min-height: 16em; font: 13px/1.4 ui-monospace, monospace;
+  background: inherit; color: inherit; border: 1px solid #8888; border-radius: 4px; padding: 8px; }
+.pubpeer-box button { margin-top: 6px; padding: 6px 14px; font-size: 14px; cursor: pointer; }
+.pubpeer-box #pp-copied { margin-left: 8px; }
+.pubpeer-box .pp-shot { display: block; max-width: 100%; height: auto; margin-top: 6px; border: 1px solid #8888;
+  background: #fff; }
+</style>
+<section class="exhibit">
+  <div class="exhibit-head"><h3>Longest shared passage of running text, as printed (earlier article left, later right)</h3></div>
+  <img class="pp-shot" style="max-width:100%;height:auto" loading="lazy" src="img/GI-880/39e30ad398a748fa.jpg" alt="The longest shared passage in both PDFs, the shared words highlighted">
+</section>
+<div class="exhibit-head" style="margin-top:0.5rem;">
+  <h3>Near-exact word-shingle matches (10+ consecutive words, allowing substituted words within a run)</h3>
+  <div class="metrics"><span><b>29</b> runs found (top 12 by length shown)</span></div>
+</div>
+  
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Article A: shingle match 1 of 12</h3>
+    <div class="metrics"><span>exact run <b>10 words</b></span></div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>ARTICLE A (2017)</span><span class="idx">PDF p. 2</span></p><div class="shots"><img loading="lazy" src="img/GI-880/9bf57a46ba27692c.jpg" width="426" height="100" style="width:55.4%" alt="EARLIER, PDF page 2"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 2</span></p><div class="shots"><img loading="lazy" src="img/GI-880/94cc91d58d97ef14.jpg" width="398" height="119" style="width:51.7%" alt="LATER, PDF page 2"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Article A: shingle match 2 of 12</h3>
+    <div class="metrics"><span>exact run <b>10 words</b></span></div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>ARTICLE A (2017)</span><span class="idx">PDF p. 2</span></p><div class="shots"><img loading="lazy" src="img/GI-880/002f860a19974086.jpg" width="426" height="76" style="width:55.4%" alt="EARLIER, PDF page 2"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 2</span></p><div class="shots"><img loading="lazy" src="img/GI-880/17b6306a98fddbfd.jpg" width="398" height="78" style="width:51.7%" alt="LATER, PDF page 2"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Article A: shingle match 3 of 12</h3>
+    <div class="metrics"><span>2 runs, <b>38 words</b> matched, in passages of 51 words (earlier) and 46 (later)</span></div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>ARTICLE A (2017)</span><span class="idx">PDF p. 2</span></p><div class="shots"><img loading="lazy" src="img/GI-880/546e6129b81db1c2.jpg" width="426" height="152" style="width:55.4%" alt="EARLIER, PDF page 2"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 2</span></p><div class="shots"><img loading="lazy" src="img/GI-880/c6e03630b291c65d.jpg" width="398" height="175" style="width:51.7%" alt="LATER, PDF page 2"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Article A: shingle match 4 of 12</h3>
+    <div class="metrics"><span>3 runs, <b>57 words</b> matched, in passages of 95 words (earlier) and 97 (later)</span></div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>ARTICLE A (2017)</span><span class="idx">PDF p. 2</span></p><div class="shots"><img loading="lazy" src="img/GI-880/e54752ac423d90ba.jpg" width="426" height="156" style="width:55.4%" alt="EARLIER, PDF page 2"><p class="shot-break">&darr; continues in the next column</p><img loading="lazy" src="img/GI-880/00978ffd904ed11b.jpg" width="427" height="191" style="width:55.4%" alt="EARLIER, PDF page 2"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 2</span></p><div class="shots"><img loading="lazy" src="img/GI-880/e245dcaf96713600.jpg" width="398" height="98" style="width:51.7%" alt="LATER, PDF page 2"><p class="shot-break">&darr; continues in the next column</p><img loading="lazy" src="img/GI-880/931a2dd8e61a61a2.jpg" width="397" height="254" style="width:51.7%" alt="LATER, PDF page 2"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Article A: shingle match 5 of 12</h3>
+    <div class="metrics"><span>12 runs, <b>185 words</b> matched, in passages of 309 words (earlier) and 304 (later)</span><span>substitutions <b>6</b></span></div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>ARTICLE A (2017)</span><span class="idx">PDF p. 2</span></p><div class="shots"><img loading="lazy" src="img/GI-880/1ee470119c9f0e75.jpg" width="427" height="736" style="width:55.4%" alt="EARLIER, PDF page 2"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF pp. 2&ndash;3</span></p><div class="shots"><img loading="lazy" src="img/GI-880/880e77be5978d806.jpg" width="397" height="816" style="width:51.7%" alt="LATER, PDF page 2"><p class="shot-break">&darr; continues on PDF p. 3</p><img loading="lazy" src="img/GI-880/677a8fe9ec7904a2.jpg" width="398" height="119" style="width:51.7%" alt="LATER, PDF page 3"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Article A: shingle match 6 of 12</h3>
+    <div class="metrics"><span>near-exact run <b>19 words</b></span><span>substitutions <b>1</b></span></div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>ARTICLE A (2017)</span><span class="idx">PDF p. 2</span></p><div class="shots"><img loading="lazy" src="img/GI-880/28ea58dc05f2eff2.jpg" width="427" height="103" style="width:55.4%" alt="EARLIER, PDF page 2"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 3</span></p><div class="shots"><img loading="lazy" src="img/GI-880/c6a4b755519117cf.jpg" width="398" height="117" style="width:51.7%" alt="LATER, PDF page 3"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Article A: shingle match 7 of 12</h3>
+    <div class="metrics"><span>exact run <b>11 words</b></span></div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>ARTICLE A (2017)</span><span class="idx">PDF p. 3</span></p><div class="shots"><img loading="lazy" src="img/GI-880/0b74ad221313fbb7.jpg" width="426" height="116" style="width:55.4%" alt="EARLIER, PDF page 3"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 3</span></p><div class="shots"><img loading="lazy" src="img/GI-880/64c23d6b49ca43b8.jpg" width="398" height="78" style="width:51.7%" alt="LATER, PDF page 3"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Article A: shingle match 8 of 12</h3>
+    <div class="metrics"><span>exact run <b>15 words</b></span></div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>ARTICLE A (2017)</span><span class="idx">PDF p. 3</span></p><div class="shots"><img loading="lazy" src="img/GI-880/a808f3e1ebb1e7fb.jpg" width="426" height="77" style="width:55.4%" alt="EARLIER, PDF page 3"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 3</span></p><div class="shots"><img loading="lazy" src="img/GI-880/ed0b515f49f9049c.jpg" width="398" height="98" style="width:51.7%" alt="LATER, PDF page 3"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Article A: shingle match 9 of 12</h3>
+    <div class="metrics"><span>3 runs, <b>38 words</b> matched, in passages of 59 words (earlier) and 54 (later)</span></div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>ARTICLE A (2017)</span><span class="idx">PDF p. 4</span></p><div class="shots"><img loading="lazy" src="img/GI-880/bf4373af31a81057.jpg" width="426" height="164" style="width:55.4%" alt="EARLIER, PDF page 4"><p class="shot-break">&darr; continues in the next column</p><img loading="lazy" src="img/GI-880/8af472bc5c862c0a.jpg" width="427" height="116" style="width:55.4%" alt="EARLIER, PDF page 4"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 3</span></p><div class="shots"><img loading="lazy" src="img/GI-880/7742153f28d09f81.jpg" width="398" height="195" style="width:51.7%" alt="LATER, PDF page 3"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Article A: shingle match 10 of 12</h3>
+    <div class="metrics"><span>exact run <b>14 words</b></span></div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>ARTICLE A (2017)</span><span class="idx">PDF p. 4</span></p><div class="shots"><img loading="lazy" src="img/GI-880/36a5a6dbb8716407.jpg" width="427" height="76" style="width:55.4%" alt="EARLIER, PDF page 4"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 3</span></p><div class="shots"><img loading="lazy" src="img/GI-880/8580616f7cd33c68.jpg" width="398" height="97" style="width:51.7%" alt="LATER, PDF page 3"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Article A: shingle match 11 of 12</h3>
+    <div class="metrics"><span>exact run <b>15 words</b></span></div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>ARTICLE A (2017)</span><span class="idx">PDF p. 4</span></p><div class="shots"><img loading="lazy" src="img/GI-880/7b0c5f9e00daae72.jpg" width="427" height="95" style="width:55.4%" alt="EARLIER, PDF page 4"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 3</span></p><div class="shots"><img loading="lazy" src="img/GI-880/787584e5fb5b2c0e.jpg" width="398" height="82" style="width:51.7%" alt="LATER, PDF page 3"><p class="shot-break">&darr; continues in the next column</p><img loading="lazy" src="img/GI-880/01aa5fc0434a0249.jpg" width="398" height="100" style="width:51.7%" alt="LATER, PDF page 3"></div></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Article A: shingle match 12 of 12</h3>
+    <div class="metrics"><span>2 runs, <b>24 words</b> matched, in passages of 40 words (earlier) and 42 (later)</span></div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>ARTICLE A (2017)</span><span class="idx">PDF p. 4</span></p><div class="shots"><img loading="lazy" src="img/GI-880/f7fbf03eac88d463.jpg" width="427" height="152" style="width:55.4%" alt="EARLIER, PDF page 4"></div></div>
+    <div class="passage later"><p class="label"><span>LATER</span><span class="idx">PDF p. 3</span></p><div class="shots"><img loading="lazy" src="img/GI-880/222fd6c32e40750b.jpg" width="398" height="156" style="width:51.7%" alt="LATER, PDF page 3"></div></div>
+  </div>
+</section>
+  <hr style="margin:2.5rem 0;border:0;border-top:2px solid currentColor;opacity:0.3">
+<div class="lede" id="article-b">
+    
+    <p class="eyebrow">Article B &middot; text-overlap comparison</p>
+    <h1>Interferon-γ and Colorectal Cancer: an up-to date &harr; Colorectal cancer (English Wikipedia, revision of 31 August 2017)</h1>
+    
+    
+    <div class="comparison">
+      <div class="paper-card"><p class="role ">PAPER A</p><h2>Interferon-γ and Colorectal Cancer: an up-to date</h2><p class="meta">Kosmidis, Christoforos, Sapalidis, Konstantinos, Koletsa, Triantafyllia, Kosmidou, Maria, Efthimiadis, Christoforos, Anthimidis, George, Varsamis, Nikolaos, Michalopoulos, Nikolaos, Koulouris, Charilaos, Atmatzidis, Stefanos, Liavas, Lazaros, Strati, Titika-Marina, Koimtzis, Georgios, Tsakalidis, Alexandros, Mantalovas, Stylianos, Zarampouka, Katerina, Florou, Maria, Giannakidis, Dimitrios E., Georgakoudi, Eleni, Baka, Sofia, Zarogoulidis, Paul, Man, Yan-Gao, Kesisoglou, Isaac &middot; 2017</p><a class="doi" href="https://doi.org/10.7150/jca.22962">doi.org/10.7150/jca.22962</a></div>
+      <div class="connector">&harr;</div>
+      <div class="paper-card"><p class="role ">PAPER B</p><h2>Colorectal cancer (English Wikipedia, revision of 31 August 2017)</h2><p class="meta">(authors unknown) &middot; 2017</p></div>
+    </div>
+    <div class="summary-bar"><span>shared text <strong>3.3%</strong> of the later article (2017)</span> <span>matched words <strong>104</strong></span> 
+      
+      <span>near-exact shingle runs (10+ words) <strong>7</strong></span>
+    </div>
+    
+  </div>
+  
+<div class="exhibit-head" style="margin-top:0.5rem;">
+  <h3>Near-exact word-shingle matches (10+ consecutive words, allowing substituted words within a run)</h3>
+  <div class="metrics"><span><b>7</b> runs found (top 4 by length shown)</span></div>
+</div>
+  
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Article B: shingle match 1 of 4</h3>
+    <div class="metrics"><span>near-exact run <b>18 words</b></span><span>substitutions <b>3</b></span></div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>PAPER A</span><span class="idx">PDF p. 1</span></p><div class="shots"><img loading="lazy" src="img/GI-880/38cd68769ccc06cc.jpg" width="398" height="62" style="width:51.6%" alt="PAPER A, PDF page 1"><p class="shot-break">&darr; continues in the next column</p><img loading="lazy" src="img/GI-880/a6456c9492cf418e.jpg" width="397" height="119" style="width:51.7%" alt="PAPER A, PDF page 1"></div></div>
+    <div class="passage later"><p class="label"><span>PAPER B</span><span class="idx"></span></p><p class="shot-text"><mark class="match">which over time becomes cancerous. Bowel cancer may be diagnosed by obtaining a sample of the colon during</mark></p></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Article B: shingle match 2 of 4</h3>
+    <div class="metrics"><span>exact run <b>11 words</b></span></div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>PAPER A</span><span class="idx">PDF p. 1</span></p><div class="shots"><img loading="lazy" src="img/GI-880/c99315da16a701ea.jpg" width="397" height="78" style="width:51.7%" alt="PAPER A, PDF page 1"></div></div>
+    <div class="passage later"><p class="label"><span>PAPER B</span><span class="idx"></span></p><p class="shot-text"><mark class="match">a biopsy may be performed to check if it is cancerous.</mark></p></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Article B: shingle match 3 of 4</h3>
+    <div class="metrics"><span>2 runs, <b>34 words</b> matched, in passages of 56 words (A) and 46 (B)</span><span>substitutions <b>1</b></span></div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>PAPER A</span><span class="idx">PDF p. 2</span></p><div class="shots"><img loading="lazy" src="img/GI-880/9e250a38b6faa3ef.jpg" width="398" height="231" style="width:51.7%" alt="PAPER A, PDF page 2"></div></div>
+    <div class="passage later"><p class="label"><span>PAPER B</span><span class="idx"></span></p><p class="shot-text">Treatments used for colorectal cancer may include some combination of surgery, radiation therapy, chemotherapy and targeted therapy. <mark class="match">Cancers that are confined within the wall of the colon may be curable with surgery while cancer that has spread widely</mark> <mark class="match-diff">are</mark> <mark class="match">usually not</mark> curable, with management being directed towards improving quality of life and symptoms. <mark class="match">Five year survival rates in the United States are around</mark> 65%. This, however, depends on how advanced the cancer is, whether or not all the cancer can be removed with &hellip;</p></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Article B: shingle match 4 of 4</h3>
+    <div class="metrics"><span>3 runs, <b>41 words</b> matched, in passages of 45 words (A) and 43 (B)</span></div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>PAPER A</span><span class="idx">PDF p. 2</span></p><div class="shots"><img loading="lazy" src="img/GI-880/70d229b5ff9a88e8.jpg" width="398" height="155" style="width:51.7%" alt="PAPER A, PDF page 2"></div></div>
+    <div class="passage later"><p class="label"><span>PAPER B</span><span class="idx"></span></p><p class="shot-text">&hellip; is, whether or not all the cancer can be removed with surgery, and the person&#x27;s overall health. Globally, colorectal cancer <mark class="match">is the third most common type of cancer making up about 10% of all</mark> cases. <mark class="match">In 2012, there were 1.4 million new cases and 694,000 deaths from the</mark> disease. <mark class="match">It is more common in developed countries, where more than 65% of cases are</mark> found. It is less common in women than men.</p></div>
+  </div>
+</section>
+  <hr style="margin:2.5rem 0;border:0;border-top:2px solid currentColor;opacity:0.3">
+<div class="lede" id="article-c">
+    
+    <p class="eyebrow">Article C &middot; text-overlap comparison</p>
+    <h1>Interferon-γ and Colorectal Cancer: an up-to date &harr; Interferon gamma (English Wikipedia, revision of 28 August 2017)</h1>
+    
+    
+    <div class="comparison">
+      <div class="paper-card"><p class="role ">PAPER A</p><h2>Interferon-γ and Colorectal Cancer: an up-to date</h2><p class="meta">Kosmidis, Christoforos, Sapalidis, Konstantinos, Koletsa, Triantafyllia, Kosmidou, Maria, Efthimiadis, Christoforos, Anthimidis, George, Varsamis, Nikolaos, Michalopoulos, Nikolaos, Koulouris, Charilaos, Atmatzidis, Stefanos, Liavas, Lazaros, Strati, Titika-Marina, Koimtzis, Georgios, Tsakalidis, Alexandros, Mantalovas, Stylianos, Zarampouka, Katerina, Florou, Maria, Giannakidis, Dimitrios E., Georgakoudi, Eleni, Baka, Sofia, Zarogoulidis, Paul, Man, Yan-Gao, Kesisoglou, Isaac &middot; 2017</p><a class="doi" href="https://doi.org/10.7150/jca.22962">doi.org/10.7150/jca.22962</a></div>
+      <div class="connector">&harr;</div>
+      <div class="paper-card"><p class="role ">PAPER B</p><h2>Interferon gamma (English Wikipedia, revision of 28 August 2017)</h2><p class="meta">(authors unknown) &middot; 2017</p></div>
+    </div>
+    <div class="summary-bar"><span>shared text <strong>7.3%</strong> of the later article (2017)</span> <span>matched words <strong>228</strong></span> 
+      
+      <span>near-exact shingle runs (10+ words) <strong>15</strong></span>
+    </div>
+    
+  </div>
+  
+<div class="exhibit-head" style="margin-top:0.5rem;">
+  <h3>Near-exact word-shingle matches (10+ consecutive words, allowing substituted words within a run)</h3>
+  <div class="metrics"><span><b>15</b> runs found (top 7 by length shown)</span></div>
+</div>
+  
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Article C: shingle match 1 of 7</h3>
+    <div class="metrics"><span>2 runs, <b>25 words</b> matched, in passages of 43 words (A) and 39 (B)</span></div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>PAPER A</span><span class="idx">PDF p. 3</span></p><div class="shots"><img loading="lazy" src="img/GI-880/2f53634ac16d70fb.jpg" width="397" height="213" style="width:51.6%" alt="PAPER A, PDF page 3"></div></div>
+    <div class="passage later"><p class="label"><span>PAPER B</span><span class="idx"></span></p><p class="shot-text">IFNγ, or <mark class="match">type II interferon, is a cytokine that is critical for innate and adaptive immunity against</mark> viral, some bacterial and protozoal infections. IFNγ is an important activator of macrophages and <mark class="match">inducer of Class II major histocompatibility complex (MHC) molecule expression.</mark> Aberrant IFNγ expression is associated with a number of autoinflammatory and autoimmune diseases. The importance of IFNγ in the immune &hellip;</p></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Article C: shingle match 2 of 7</h3>
+    <div class="metrics"><span>2 runs, <b>43 words</b> matched, in passages of 73 words (A) and 56 (B)</span></div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>PAPER A</span><span class="idx">PDF pp. 3&ndash;4</span></p><div class="shots"><img loading="lazy" src="img/GI-880/c79e7982b2a4ceae.jpg" width="397" height="116" style="width:51.6%" alt="PAPER A, PDF page 3"><p class="shot-break">&darr; continues on PDF p. 4</p><img loading="lazy" src="img/GI-880/44f93f147db81dab.jpg" width="398" height="99" style="width:51.7%" alt="PAPER A, PDF page 4"></div></div>
+    <div class="passage later"><p class="label"><span>PAPER B</span><span class="idx"></span></p><p class="shot-text">&hellip; part from its ability to inhibit viral replication directly, and most importantly from its immunostimulatory and immunomodulatory effects. IFNγ is <mark class="match">produced predominantly by natural killer (NK) and natural killer T (NKT) cells as part of the innate immune response, and by CD4 Th1 and CD8 cytotoxic T lymphocyte (CTL) effector T cells once</mark> antigen-specific immunity develops. IFNγ is also produced by non-cytotoxic innate lymphoid cells (ILC), <mark class="match">a family of immune cells first discovered in the early</mark> 2010&#x27;s.</p></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Article C: shingle match 3 of 7</h3>
+    <div class="metrics"><span>2 runs, <b>32 words</b> matched, in passages of 36 words (A) and 36 (B)</span><span>substitutions <b>1</b></span></div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>PAPER A</span><span class="idx">PDF p. 4</span></p><div class="shots"><img loading="lazy" src="img/GI-880/4640cd4d96dd0ce3.jpg" width="398" height="177" style="width:51.7%" alt="PAPER A, PDF page 4"></div></div>
+    <div class="passage later"><p class="label"><span>PAPER B</span><span class="idx"></span></p><p class="shot-text">IFNγ <mark class="match">is secreted by T helper cells (specifically, Th1 cells), cytotoxic T cells (TC cells),</mark> macrophages, mucosal epithelial cells <mark class="match">and NK cells.</mark> <mark class="match-diff">IFNγ</mark> <mark class="match">is the only Type II interferon and it is serologically distinct from Type I</mark> interferons; it is acid-labile, while the type I variants are acid-stable.</p></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Article C: shingle match 4 of 7</h3>
+    <div class="metrics"><span>4 runs, <b>59 words</b> matched, in passages of 77 words (A) and 90 (B)</span></div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>PAPER A</span><span class="idx">PDF p. 4</span></p><div class="shots"><img loading="lazy" src="img/GI-880/caaaf6efc52d0e8a.jpg" width="398" height="256" style="width:51.7%" alt="PAPER A, PDF page 4"><p class="shot-break">&darr; continues in the next column</p><img loading="lazy" src="img/GI-880/a16c00c530008772.jpg" width="397" height="99" style="width:51.6%" alt="PAPER A, PDF page 4"></div></div>
+    <div class="passage later"><p class="label"><span>PAPER B</span><span class="idx"></span></p><p class="shot-text">Induces <mark class="match">the production of IgG2a and IgG3 from activated plasma B</mark> cells <mark class="match">Cause normal cells to increase expression of class I MHC molecules as well as class II MHC on antigen-presenting cells—to be</mark> specific, <mark class="match">through induction of antigen processing genes, including subunits of the immunoproteasome (MECL1, LMP2, LMP7),</mark> as well as TAP and ERAAP in addition possibly to the direct upregulation of MHC heavy chains and B2-microglobulin itself Promotes adhesion and binding required for leukocyte migration Induces <mark class="match">the expression of intrinsic defense factors—for example, with respect to retroviruses, relevant genes include</mark> TRIM5alpha, APOBEC, and Tetherin, representing directly antiviral effects</p></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Article C: shingle match 5 of 7</h3>
+    <div class="metrics"><span>3 runs, <b>47 words</b> matched, in passages of 77 words (A) and 70 (B)</span><span>substitutions <b>2</b></span></div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>PAPER A</span><span class="idx">PDF p. 5</span></p><div class="shots"><img loading="lazy" src="img/GI-880/68c64ec914df894e.jpg" width="398" height="273" style="width:51.6%" alt="PAPER A, PDF page 5"></div></div>
+    <div class="passage later"><p class="label"><span>PAPER B</span><span class="idx"></span></p><p class="shot-text">Interferon gamma <mark class="match">is not approved yet for the treatment in any cancer</mark> immunotherapy.However, improved survival was observed when Interferon gamma <mark class="match">was administrated to patients with bladder carcinoma and melanoma cancers. The most promising result</mark> <mark class="match-diff">was achieved</mark> <mark class="match">in patients with stage 2 and 3 of ovarian</mark> carcinoma.The in vitro study of IFN-gamma in cancer cells is more extensive and results indicate <mark class="match">anti-proliferative activity of IFN-gamma leading to the growth inhibition or cell death,</mark> generally induced by apoptosis but sometimes by autophagy.</p></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Article C: shingle match 6 of 7</h3>
+    <div class="metrics"><span>exact run <b>10 words</b></span></div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>PAPER A</span><span class="idx">PDF p. 5</span></p><div class="shots"><img loading="lazy" src="img/GI-880/813631a8cfb4078c.jpg" width="398" height="82" style="width:51.6%" alt="PAPER A, PDF page 5"></div></div>
+    <div class="passage later"><p class="label"><span>PAPER B</span><span class="idx"></span></p><p class="shot-text"><mark class="match">expression is regulated by a pseudoknotted element in its 5&#x27;</mark></p></div>
+  </div>
+</section>
+<section class="exhibit">
+  <div class="exhibit-head">
+    <h3>Article C: shingle match 7 of 7</h3>
+    <div class="metrics"><span>exact run <b>12 words</b></span></div>
+  </div>
+  <div class="passage-pair">
+    <div class="passage earlier"><p class="label"><span>PAPER A</span><span class="idx">PDF p. 5</span></p><div class="shots"><img loading="lazy" src="img/GI-880/6ecef09f0c34679b.jpg" width="398" height="78" style="width:51.7%" alt="PAPER A, PDF page 5"></div></div>
+    <div class="passage later"><p class="label"><span>PAPER B</span><span class="idx"></span></p><p class="shot-text"><mark class="match">in T-cells. This interaction takes place in the 3&#x27;UTR, where binding of</mark></p></div>
+  </div>
+</section>
+  <footer>Generated by write_dupe_reports_screenshots.py from library.sqlite3&rsquo;s potential_dupes table
+    (grouping/stats only) and a 10+-word word-shingle scan, extended with X-drop 3 &mdash; so a run may contain substituted words, but no insertions or deletions.</footer>
+</div>
+</body>
+</html>
