@@ -3874,5 +3874,30 @@
   "matched_words": 775,
   "runs": 28,
   "longest": 85
+ },
+ "GI-1006": {
+  "file": "GI-1006.html",
+  "reported": "2026-11-15",
+  "published": "2026-11-15",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "GIS based quantitative morphometric analysis and its consequences: a case study from Shanur River Basin, Maharashtra India",
+   "year": 2015,
+   "doi": "10.1007/s13201-015-0298-7",
+   "pct": 32.0,
+   "journal": "Applied Water Science"
+  },
+  "earlier": {
+   "title": "Geographical information system-based morphometric analysis of Bharathapuzha river basin, Kerala, India",
+   "year": 2013,
+   "doi": "10.1007/s13201-013-0095-0",
+   "pct": 28.0,
+   "journal": "Applied Water Science"
+  },
+  "matched_words": 1348,
+  "runs": 44,
+  "longest": 103
  }
 }
