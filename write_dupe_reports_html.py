@@ -354,10 +354,135 @@ def expand_context(conn, paper_id, start_para, end_para, context=CONTEXT_PARAGRA
     return index_range, " ".join(texts)
 
 
+CONTEXT_WORDS = 20   # --context-words: words of context shown on each side of a text exhibit's matched passage,
+# stopping early at the paragraph's edge. Was CONTEXT_PARAGRAPHS (two whole paragraphs each side), which on a
+# pair of short runs showed ~1,000 words around ~20 highlighted ones (GI-924: under 3% of the text shown was
+# the finding) and read as if most of the passage were unrelated. 0 brings the paragraphs back.
+MERGE_GAP = 30   # --merge-gap: runs this close (in words) in BOTH documents are shown as one exhibit, the
+# words between them unhighlighted -- close paraphrase reads as one reworked passage, not several unrelated
+# fragments. 0 shows every run on its own, as before.
+
+
+def group_runs(runs, gap=MERGE_GAP):
+    """find_shingle_matches() runs as display groups: a run joins the previous group when it starts 0..gap words
+    after that group's last run ends in both documents (in reading order of document A). Overlapping or
+    out-of-order runs (repeated text, reordered material) stay on their own. gap 0: one group per run."""
+    groups = []
+    for r in sorted(runs, key=lambda r: (r.start_a, r.start_b)):
+        if gap and groups:
+            last = groups[-1][-1]
+            if 0 <= r.start_a - last.end_a <= gap and 0 <= r.start_b - last.end_b <= gap:
+                groups[-1].append(r)
+                continue
+        groups.append([r])
+    return groups
+
+
+def group_metrics_html(group, spans, names):
+    """The metrics line's first part for one exhibit (text or image page, so both say the same): a single run's
+    length (and its insertions/deletions), or for a merged group how many runs, the matched words and the
+    passage length on each side. spans: (left side's words, right side's), names: their labels."""
+    length = sum(r.length for r in group)
+    subs = sum(r.substitutions for r in group)
+    indels = sum(r.indels for r in group)
+    if len(group) == 1:
+        r = group[0]
+        what = f'<span>{"near-exact run" if subs or indels else "exact run"} <b>{length} words</b></span>'
+        if indels:
+            what += (f'<span>inserted/deleted <b>{indels}</b> '
+                     f'({r.end_a - r.start_a}w A vs {r.end_b - r.start_b}w B)</span>')
+    else:
+        what = (f'<span>{len(group)} runs, <b>{length} words</b> matched, in passages of {spans[0]} words '
+                f'({names[0]}) and {spans[1]} ({names[1]})</span>'
+                + (f'<span>inserted/deleted <b>{indels}</b></span>' if indels else ""))
+    return what + (f'<span>substitutions <b>{subs}</b></span>' if subs else "")
+
+
+def select_groups(runs, max_exhibits, merge_gap, later_is_paper_2):
+    """group_runs(), the max_exhibits with the most matched words, in the later paper's reading order (paper 2's
+    when the order is unknown): what both page types show, so their "match N" are the same passages."""
+    shown = sorted(group_runs(runs, merge_gap), key=lambda g: -sum(r.length for r in g))[:max_exhibits]
+    return sorted(shown, key=lambda g: g[0].start_b if later_is_paper_2 else g[0].start_a)
+
+
+def _context_bounds(words, start, end, context_words=CONTEXT_WORDS, context_paras=CONTEXT_PARAGRAPHS):
+    """(lo, hi) word positions to show around words[start:end]: context_words each side, not past the start /
+    end paragraph; with context_words 0, context_paras whole paragraphs each side instead (the old view)."""
+    first_para, last_para = words[start][1], words[end - 1][1]
+    if not context_words:
+        lo, hi = start, end
+        while lo > 0 and words[lo - 1][1] >= first_para - context_paras:
+            lo -= 1
+        while hi < len(words) and words[hi][1] <= last_para + context_paras:
+            hi += 1
+        return lo, hi
+    lo = start
+    while lo > 0 and start - lo < context_words and words[lo - 1][1] == first_para:
+        lo -= 1
+    hi = end
+    while hi < len(words) and hi - end < context_words and words[hi][1] == last_para:
+        hi += 1
+    return lo, hi
+
+
+def _marked(tokens, diff):
+    """tokens as <mark class="match">, the positions in `diff` as <mark class="match-diff">, consecutive ones of a
+    class in one mark (render_context_with_match()'s grouping)."""
+    out, cls, chunk = [], None, []
+    for i, tok in enumerate(tokens):
+        c = "match-diff" if i in diff else "match"
+        if c != cls and chunk:
+            out.append(f'<mark class="{cls}">{html.escape(" ".join(chunk))}</mark>')
+            chunk = []
+        cls = c
+        chunk.append(tok)
+    if chunk:
+        out.append(f'<mark class="{cls}">{html.escape(" ".join(chunk))}</mark>')
+    return " ".join(out)
+
+
+def render_side(words, segments, context_words=CONTEXT_WORDS, context_paras=CONTEXT_PARAGRAPHS):
+    """One side of an exhibit: segments [(start, end, diff positions within the run)] in reading order, each
+    run highlighted, the words between runs plain, and _context_bounds() around them; "…" where the context
+    stops inside a paragraph. Returns (html, paragraph range label, plain text shown)."""
+    lo, hi = _context_bounds(words, segments[0][0], segments[-1][1], context_words, context_paras)
+    parts, pos = [], lo
+    if lo > 0 and words[lo - 1][1] == words[lo][1]:
+        parts.append("&hellip;")
+    for a, b, diff in segments:
+        if a > pos:
+            parts.append(html.escape(" ".join(w for w, _ in words[pos:a])))
+        parts.append(_marked([w for w, _ in words[a:b]], diff))
+        pos = b
+    if hi > pos:
+        parts.append(html.escape(" ".join(w for w, _ in words[pos:hi])))
+    if hi < len(words) and words[hi][1] == words[hi - 1][1]:
+        parts.append("&hellip;")
+    p0, p1 = words[lo][1], words[hi - 1][1]
+    return " ".join(parts), (f"{p0}" if p0 == p1 else f"{p0}-{p1}"), " ".join(w for w, _ in words[lo:hi])
+
+
+def _run_diffs(match_a, match_b):
+    """The positions within each side of one run whose word differs from the other side's: position-for-
+    position while the two sides are the same length (lockstep extension), else from a difflib alignment (a
+    gapped run has an insertion or deletion, so position i on one side is not position i on the other past the
+    first gap -- the same alignment the whole-document view renders, so the two views agree)."""
+    if len(match_a) == len(match_b):
+        d = {k for k, (wa, wb) in enumerate(zip(match_a, match_b)) if wa.lower() != wb.lower()}
+        return d, d
+    diff_a, diff_b = set(), set()
+    lo_a, lo_b = [w.lower() for w in match_a], [w.lower() for w in match_b]
+    for tag, i1, i2, j1, j2 in difflib.SequenceMatcher(None, lo_a, lo_b, autojunk=False).get_opcodes():
+        if tag != "equal":
+            diff_a.update(range(i1, i2))
+            diff_b.update(range(j1, j2))
+    return diff_a, diff_b
+
+
 def render_shingle_exhibits(conn, paper_id_1, paper_id_2, earlier_id, shingle_size, max_exhibits,
                              mismatch_penalty=1, x_drop=None, gap_open=None,
                              gap_extend=DEFAULT_GAP_EXTEND, max_gap=DEFAULT_MAX_GAP,
-                             strip_furniture=False, drop_furniture=False):
+                             strip_furniture=False, drop_furniture=False, context_words=None, merge_gap=None):
     """This page's sole exhibit source (see the module docstring for why the potential_dupes-
     sourced candidates aren't rendered as their own exhibits any more): runs
     compare_two_papers.py's exact word-shingle matcher directly across the two papers' full text,
@@ -366,19 +491,19 @@ def render_shingle_exhibits(conn, paper_id_1, paper_id_2, earlier_id, shingle_si
     boundary the embedding-level check never saw as one unit) -- see that module's own docstring
     for the full rationale. Returns (exhibit_html_list, total_runs_found).
 
-    Each exhibit shows CONTEXT_PARAGRAPHS of extra surrounding text on both sides (not just the
-    paragraph(s) the match itself falls in) with the exact matched span additionally marked
-    (<mark class="match">, via render_context_with_match()) so it's visually distinct from the
-    rest of a paragraph's ordinary shared wording -- added after the plain per-paragraph rendering
-    made it hard to tell, in a longer passage, which specific run was the actual finding this
-    exhibit exists to point at. `x_drop` (None disables, matching find_shingle_matches()'s own
-    default) enables seed-and-extend tolerance for isolated word substitutions past each exact
-    seed's boundary -- see that function's and _extend_xdrop()'s docstrings; a bridged exhibit's
-    metrics line shows how many substitutions it contains. `strip_furniture` removes each page's
-    running masthead/footer from both texts before matching (compare_two_papers.strip_page_furniture());
-    `drop_furniture` removes shared masthead/running-header/byline runs afterwards
-    (compare_two_papers.drop_furniture_runs()); the third return value is how many it removed (0 when
-    off)."""
+    Runs within MERGE_GAP words of each other in both documents are one exhibit (group_runs()), the words
+    between them unhighlighted, and each exhibit shows CONTEXT_WORDS words of context either side, not past the
+    paragraph (_context_bounds(); context_words 0: CONTEXT_PARAGRAPHS whole paragraphs, the old view), so the
+    highlighted text is most of what is shown. context_words / merge_gap default to the module values (the CLI
+    flags set them). The `max_exhibits` longest exhibits (by matched words) are shown, in the later paper's
+    reading order. Each run's matched span is <mark class="match">, its substituted / inserted words
+    <mark class="match-diff">. `x_drop` (None disables) bridges isolated substitutions (find_shingle_matches()).
+    `strip_furniture` removes each page's running masthead/footer from both texts before matching
+    (compare_two_papers.strip_page_furniture()); `drop_furniture` removes shared masthead/running-header/byline
+    runs afterwards (compare_two_papers.drop_furniture_runs()); the third return value is how many it removed
+    (0 when off). Returns (exhibit_html_list, total_runs_found, furniture_runs)."""
+    context_words = CONTEXT_WORDS if context_words is None else context_words
+    merge_gap = MERGE_GAP if merge_gap is None else merge_gap
     words_1 = load_paper_words(conn, paper_id_1, strip_furniture=strip_furniture)
     words_2 = load_paper_words(conn, paper_id_2, strip_furniture=strip_furniture)
     runs = find_shingle_matches(words_1, words_2, shingle_size=shingle_size,
@@ -387,67 +512,38 @@ def render_shingle_exhibits(conn, paper_id_1, paper_id_2, earlier_id, shingle_si
     furniture = []
     if drop_furniture:
         runs, furniture = drop_furniture_runs(runs, words_1, words_2, shingle_size)
-    shown = runs[:max_exhibits]
-
-    # Selection above keeps the longest N runs (find_shingle_matches()'s own length-descending
-    # order -- unchanged, and still what compare_two_papers.py's console/appendix output uses).
-    # DISPLAY order is different: re-sorted into the LATER/flagged paper's own reading order
-    # (start-of-match word position) rather than length-descending, so a multi-exhibit page reads
-    # top-to-bottom the way the flagged paper does instead of jumping around between unrelated
-    # passages. Falls back to paper_id_2's position when chronology is unknown (earlier_id is
-    # None), matching the no-swap PARAGRAPH A/PARAGRAPH B convention below.
-    later_is_paper_2 = (earlier_id != paper_id_2)
-    shown = sorted(shown, key=lambda r: r[7] if later_is_paper_2 else r[5])
+    # the longest N by matched words, then DISPLAYED in the later/flagged paper's reading order, so a
+    # multi-exhibit page reads top to bottom the way the flagged paper does (paper_id_2's order when
+    # chronology is unknown, matching the PARAGRAPH A/B convention below)
+    shown = select_groups(runs, max_exhibits, merge_gap, earlier_id != paper_id_2)
 
     exhibits = []
-    for i, run in enumerate(shown, 1):
-        (length, para_1, para_2, text_1, text_2, start_1, end_1, start_2, end_2, subs) = (
-            run.length, run.para_a, run.para_b, run.text_a, run.text_b,
-            run.start_a, run.end_a, run.start_b, run.end_b, run.substitutions)
-        indels = run.indels
-        end_para_1 = words_1[end_1 - 1][1]
-        end_para_2 = words_2[end_2 - 1][1]
-        range1, full1 = expand_context(conn, paper_id_1, para_1, end_para_1,
-                                       strip_furniture=strip_furniture)
-        range2, full2 = expand_context(conn, paper_id_2, para_2, end_para_2,
-                                       strip_furniture=strip_furniture)
-        if full1 is None or full2 is None:
-            continue
-        pid_a, ra, fa, match_a = paper_id_1, range1, full1, text_1.split()
-        pid_b, rb, fb, match_b = paper_id_2, range2, full2, text_2.split()
+    for i, group in enumerate(shown, 1):
+        segs_1, segs_2 = [], []
+        for run in group:
+            d1, d2 = _run_diffs(run.text_a.split(), run.text_b.split())
+            segs_1.append((run.start_a, run.end_a, d1))
+            segs_2.append((run.start_b, run.end_b, d2))
+        segs_2.sort(key=lambda t: t[0])
+        rendered_1, range1, text1 = render_side(words_1, segs_1, context_words)
+        rendered_2, range2, text2 = render_side(words_2, segs_2, context_words)
+        a, b = (rendered_1, range1, text1), (rendered_2, range2, text2)
         if earlier_id == paper_id_2:
-            (pid_a, ra, fa, match_a), (pid_b, rb, fb, match_b) = (pid_b, rb, fb, match_b), (pid_a, ra, fa, match_a)
-        # Position-aligned regardless of the earlier/later swap above (swapping the pair doesn't
-        # change which positions differ from each other) -- computed once, shared by both sides.
-        # That only holds while the two sides have the SAME number of words, i.e. while extension
-        # is lockstep. A gapped run (--gap-open) has an insertion or deletion in it, so position i
-        # on one side is not position i on the other past the first gap, and one shared index set
-        # would mark the wrong words from there on. In that case each side gets its own set,
-        # derived from the alignment difflib reports -- the same alignment the whole-document view
-        # renders, so the two views agree on which words differ.
-        if len(match_a) == len(match_b):
-            diff_a = diff_b = {k for k, (wa, wb) in enumerate(zip(match_a, match_b))
-                               if wa.lower() != wb.lower()}
-        else:
-            diff_a, diff_b = set(), set()
-            lo_a, lo_b = [w.lower() for w in match_a], [w.lower() for w in match_b]
-            for tag, i1, i2, j1, j2 in difflib.SequenceMatcher(None, lo_a, lo_b,
-                                                                autojunk=False).get_opcodes():
-                if tag != "equal":
-                    diff_a.update(range(i1, i2))
-                    diff_b.update(range(j1, j2))
-        rendered_a = render_context_with_match(fa, match_a, diff_a)
-        rendered_b = render_context_with_match(fb, match_b, diff_b)
+            a, b = b, a
+        (rendered_a, ra, fa), (rendered_b, rb, fb) = a, b
         lcs = to.longest_common_word_run(fa, fb)
         ngj = to.ngram_jaccard(fa, fb)
+        spans = [segs_1[-1][1] - segs_1[0][0], segs_2[-1][1] - segs_2[0][0]]
+        if earlier_id == paper_id_2:
+            spans.reverse()
+        what = group_metrics_html(group, spans, ("earlier", "later") if earlier_id else ("A", "B"))
         earlier_label = "EARLIER" if earlier_id else "PARAGRAPH A"
         later_label = "LATER" if earlier_id else "PARAGRAPH B"
         exhibits.append(f"""
 <section class="exhibit">
   <div class="exhibit-head">
     <h3>Shingle match {i} of {len(shown)}</h3>
-    <div class="metrics"><span>{"near-exact run" if subs or indels else "exact run"} <b>{length} words</b></span>
-      {f'<span>substitutions <b>{subs}</b></span>' if subs else ""}{f'<span>inserted/deleted <b>{indels}</b> ({end_1 - start_1}w A vs {end_2 - start_2}w B)</span>' if indels else ""}
+    <div class="metrics">{what}
       <span>LCS <b>{lcs:.2f}</b></span><span>5-gram Jaccard <b>{ngj:.2f}</b></span></div>
   </div>
   <div class="passage-pair">
@@ -1153,6 +1249,12 @@ def parse_args():
                               "Zestera Publications layout -- see compare_two_papers.py's "
                               "strip_page_furniture()) from both papers before matching, so text "
                               "every page of a journal carries isn't counted or shown as shared")
+    parser.add_argument("--context-words", type=int, default=None,
+                         help="text exhibits: words of context shown either side of a matched passage, stopping at the "
+                              "paragraph's edge (default {}; 0 = two whole paragraphs each side, the old view)".format(CONTEXT_WORDS))
+    parser.add_argument("--merge-gap", type=int, default=None,
+                         help="text exhibits: show runs within this many words of each other in both papers as one "
+                              "exhibit, the words between unhighlighted (default {}; 0 = one exhibit per run)".format(MERGE_GAP))
     parser.add_argument("--max-gap-words", type=int, default=DEFAULT_MAX_GAP_WORDS,
                          help=f"--whole-document only: collapse a one-sided stretch longer than "
                               f"this into a click-to-expand block (default {DEFAULT_MAX_GAP_WORDS}, "
@@ -1222,6 +1324,11 @@ def parse_args():
 
 def main():
     args = parse_args()
+    import write_dupe_reports_html as _wdr   # --context-words / --merge-gap: the text exhibits' module defaults
+    if args.context_words is not None:
+        _wdr.CONTEXT_WORDS = args.context_words
+    if args.merge_gap is not None:
+        _wdr.MERGE_GAP = args.merge_gap
     if args.gap_open is not None and args.x_drop is None:
         raise SystemExit("--gap-open needs --x-drop as well: x-drop is the score-drop threshold the "
                           "gapped extension stops on (see compare_two_papers.py's _extend_gapped()). "

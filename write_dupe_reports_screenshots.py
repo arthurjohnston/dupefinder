@@ -629,13 +629,15 @@ EXTRA_STYLE = """
 TEXT_ONLY = "no PDF of this article, only its text"   # PdfSide.error for a source saved as text
 
 
-def _fallback_html(reason, match_words):
+def _fallback_html(reason, match_words, display=None):
     """The passage as text, after a note saying why there's no image -- except for a source that only
-    exists as text, where there was never going to be one and the note is just noise."""
-    text = html.escape(" ".join(match_words))
+    exists as text, where there was never going to be one and the note is just noise. `display`: the passage
+    already rendered (a merged exhibit: its runs highlighted, the words between them plain, a little context,
+    as write_dupe_reports_html.render_side() shows it), else every word of match_words highlighted."""
+    text = display or f'<mark class="match">{html.escape(" ".join(match_words))}</mark>'
     note = ("" if reason == TEXT_ONLY else
             f'<p class="locate-note">{html.escape(reason)} &mdash; showing the extracted text instead.</p>')
-    return f'{note}<p class="shot-text"><mark class="match">{text}</mark></p>'
+    return f'{note}<p class="shot-text">{text}</p>'
 
 
 class ScreenshotExhibits:
@@ -655,12 +657,14 @@ class ScreenshotExhibits:
         self.table_crops = False   # widen each crop to the whole of any table its highlights sit in
         self.plans = []            # the last exhibit's two plans, left side then right
 
-    def _plan_side(self, side, words, start, match_words, diff_idx):
-        """Locate one side of one run and lay out its crops. Returns a dict with `status`
-        ('located', 'partial' or 'missing'), and either `html` (a text fallback) or `crops`
-        [(page, clip, highlights), ...], `share` and `text_h` (median word height, points)."""
+    def _plan_side(self, side, words, start, match_words, diff_idx, display=None):
+        """Locate one side of one run (or of a merged group's runs, their words concatenated: the words
+        between them aren't in the needle, so they sit in the crop unhighlighted) and lay out its crops.
+        Returns a dict with `status` ('located', 'partial' or 'missing'), and either `html` (a text fallback,
+        `display` when given) or `crops` [(page, clip, highlights), ...], `share` and `text_h` (median word
+        height, points)."""
         if side.error:
-            return {"status": "missing", "html": _fallback_html(side.error, match_words)}
+            return {"status": "missing", "html": _fallback_html(side.error, match_words, display)}
         needle, needle_src = [], []
         for k, w in enumerate(match_words):
             n = norm_token(w)
@@ -672,11 +676,11 @@ class ScreenshotExhibits:
             pairs = locate_sequence(needle, side.norms, side.index, expected_start=expected)
         except Exception as exc:
             return {"status": "missing",
-                    "html": _fallback_html(f"locating failed ({exc.__class__.__name__})", match_words)}
+                    "html": _fallback_html(f"locating failed ({exc.__class__.__name__})", match_words, display)}
         share = len(pairs) / max(1, len(needle))
         if share < PARTIAL_MIN:
             return {"status": "missing", "html": _fallback_html(
-                "This run could not be found in the PDF's text layer", match_words)}
+                "This run could not be found in the PDF's text layer", match_words, display)}
         placed = {}
         for i, j in pairs:
             placed[j] = placed.get(j, False) or needle_src[i] in diff_idx
@@ -706,7 +710,7 @@ class ScreenshotExhibits:
         # Measured on the placed words themselves, one box per word: a line highlight's height is
         # its line's, so this is the size of the text being compared, not of the page's headings.
         text_h = text_height_pt([r for j, _ in placed for _, r in side.tokens[j].parts])
-        return {"status": "located" if share >= LOCATED_MIN else "partial", "crops": crops,
+        return {"status": "located" if share >= LOCATED_MIN else "partial", "crops": crops, "display": display,
                 "share": share, "text_h": text_h, "table_share": in_table / max(1, len(placed))}
 
     def _emit_side(self, side, plan, scale, name, role, match_words, column_px=COLUMN_PX):
@@ -720,7 +724,8 @@ class ScreenshotExhibits:
                                                       f"{name}-{n_reg}", scale)
             except Exception as exc:
                 plan["status"] = "missing"
-                return _fallback_html(f"rendering failed ({exc.__class__.__name__})", match_words), []
+                return _fallback_html(f"rendering failed ({exc.__class__.__name__})", match_words,
+                                      plan.get("display")), []
             if prev is not None:
                 shots.append(f'<p class="shot-break">&darr; continues '
                              f'{"on PDF p. " + str(page_no + 1) if page_no != prev else "in the next column"}'
@@ -737,76 +742,80 @@ class ScreenshotExhibits:
 
     def __call__(self, conn, paper_id_1, paper_id_2, earlier_id, shingle_size, max_exhibits,
                  mismatch_penalty=1, x_drop=None, gap_open=None, gap_extend=DEFAULT_GAP_EXTEND,
-                 max_gap=DEFAULT_MAX_GAP, drop_furniture=False, runs=None):
-        """`runs`: render these runs (already chosen, longest first) instead of scanning."""
+                 max_gap=DEFAULT_MAX_GAP, drop_furniture=False, runs=None, merge=True):
+        """`runs`: render these runs (already chosen, longest first) instead of scanning, one exhibit each.
+        Scanning, runs within write_dupe_reports_html.MERGE_GAP words of each other in both papers are one
+        exhibit, as on the text page (select_groups(): same selection and order, so the two pages' "match N"
+        are the same passages); merge=False keeps one run per exhibit (the longest-passage image)."""
+        import write_dupe_reports_html as wdr
         words_1 = load_paper_words(conn, paper_id_1)
         words_2 = load_paper_words(conn, paper_id_2)
-        if runs is None:
+        scanned = runs is None
+        if scanned:
             runs = find_shingle_matches(words_1, words_2, shingle_size=shingle_size,
                                          mismatch_penalty=mismatch_penalty, x_drop=x_drop,
                                          gap_open=gap_open, gap_extend=gap_extend, max_gap=max_gap)
         furniture = []
         if drop_furniture:
             runs, furniture = drop_furniture_runs(runs, words_1, words_2, shingle_size)
-        # Same selection (longest N) and display order (the later/flagged paper's reading order)
-        # as render_shingle_exhibits(), so the two pages' "match N" refer to the same runs.
         later_is_paper_2 = (earlier_id != paper_id_2)
-        shown = sorted(runs[:max_exhibits], key=lambda r: r[7] if later_is_paper_2 else r[5])
+        shown = wdr.select_groups(runs, max_exhibits, wdr.MERGE_GAP if scanned and merge else 0, later_is_paper_2)
         swap = earlier_id == paper_id_2
+        earlier_label = "EARLIER" if earlier_id else "PAPER A"
+        later_label = "LATER" if earlier_id else "PAPER B"
         exhibits = []
-        for i, run in enumerate(shown, 1):
-            match_1, match_2 = run.text_a.split(), run.text_b.split()
-            # Which words differ between the two sides, per side -- position-aligned while the
-            # run is lockstep, difflib-aligned once an indel makes the sides different lengths
-            # (the same rule, for the same reason, as render_shingle_exhibits()).
-            if len(match_1) == len(match_2):
-                diff_1 = diff_2 = {k for k, (a, b) in enumerate(zip(match_1, match_2))
-                                   if a.lower() != b.lower()}
-            else:
-                diff_1, diff_2 = set(), set()
-                for tag, i1, i2, j1, j2 in difflib.SequenceMatcher(
-                        None, [w.lower() for w in match_1], [w.lower() for w in match_2],
-                        autojunk=False).get_opcodes():
-                    if tag != "equal":
-                        diff_1.update(range(i1, i2))
-                        diff_2.update(range(j1, j2))
-            left = (paper_id_1, words_1, run.start_a, match_1, diff_1)
-            right = (paper_id_2, words_2, run.start_b, match_2, diff_2)
+        for i, group in enumerate(shown, 1):
+            # each side: the runs' words concatenated as one needle, with which of them differ from the
+            # other side's (wdr._run_diffs(): position-aligned while lockstep, difflib-aligned past an indel)
+            sides_in = []
+            for pid, words, key in ((paper_id_1, words_1, "a"), (paper_id_2, words_2, "b")):
+                sides_in.append({"pid": pid, "words": words, "match": [], "diff": set(), "segs": []})
+            for run in group:
+                m1, m2 = run.text_a.split(), run.text_b.split()
+                d1, d2 = wdr._run_diffs(m1, m2)
+                for side_in, m, d, a, b in ((sides_in[0], m1, d1, run.start_a, run.end_a),
+                                            (sides_in[1], m2, d2, run.start_b, run.end_b)):
+                    off = len(side_in["match"])
+                    side_in["diff"].update(off + k for k in d)
+                    side_in["match"].extend(m)
+                    side_in["segs"].append((a, b, d))
+            for side_in in sides_in:   # the text fallback shows what the text page shows
+                side_in["display"] = (wdr.render_side(side_in["words"], sorted(side_in["segs"], key=lambda t: t[0]))[0]
+                                      if len(group) > 1 else None)
+            left, right = sides_in
             if swap:
                 left, right = right, left
-            earlier_label = "EARLIER" if earlier_id else "PAPER A"
-            later_label = "LATER" if earlier_id else "PAPER B"
-            sides = ((self.sides[left[0]], left), (self.sides[right[0]], right))
-            plans = [self._plan_side(side, words, s, mw, dset)
-                     for side, (_, words, s, mw, dset) in sides]
+            sides = ((self.sides[left["pid"]], left), (self.sides[right["pid"]], right))
+            plans = [self._plan_side(side, d["words"], d["segs"][0][0], d["match"], d["diff"], d["display"])
+                     for side, d in sides]
             self.plans = plans
             scales, column_px, stacked = choose_layout(
                 [(pl.get("text_h"), max((c[2] - c[0] for _, c, _ in pl["crops"]), default=None)
                   if "crops" in pl else None) for pl in plans], target_px=self.text_px)
             cells, self.pages = [], []
-            for tag, role, (side, (_, _, _, mw, _)), plan, scale in zip(
+            for tag, role, (side, d), plan, scale in zip(
                     "ab", (earlier_label, later_label), sides, plans, scales):
-                body, pages = self._emit_side(side, plan, scale, f"r{i:02d}-{tag}", role, mw,
+                body, pages = self._emit_side(side, plan, scale, f"r{i:02d}-{tag}", role, d["match"],
                                               column_px)
                 self.pages.append(pages)   # PDF page indexes, left side then right: for passage_shots()
                 cls = "earlier" if tag == "a" else "later"
                 cells.append(f'<div class="passage {cls}"><p class="label"><span>{role}</span>'
                              f'<span class="idx">{_pages_label(pages)}</span></p>{body}</div>')
             self.outcomes.append(tuple(pl["status"] for pl in plans))
-            subs, indels = run.substitutions, run.indels
+            spans = [d["segs"][-1][1] - d["segs"][0][0] for _, d in sides]
+            what = wdr.group_metrics_html(group, spans, ("earlier", "later") if earlier_id else ("A", "B"))
             exhibits.append(f"""
 <section class="exhibit">
   <div class="exhibit-head">
     <h3>Shingle match {i} of {len(shown)}</h3>
-    <div class="metrics"><span>{"near-exact run" if subs or indels else "exact run"} <b>{run.length} words</b></span>
-      {f'<span>substitutions <b>{subs}</b></span>' if subs else ""}{f'<span>inserted/deleted <b>{indels}</b> ({run.end_a - run.start_a}w A vs {run.end_b - run.start_b}w B)</span>' if indels else ""}</div>
+    <div class="metrics">{what}</div>
   </div>
   <div class="passage-pair{" stacked" if stacked else ""}">
     {cells[0]}
     {cells[1]}
   </div>
 </section>""")
-        omitted = len(runs) - len(shown)
+        omitted = len(runs) - sum(len(g) for g in shown)
         if exhibits and omitted > 0:
             # Appended to the last exhibit rather than added as its own list entry, so
             # render_case()'s "top N by length shown" count stays the number of exhibits.
@@ -920,7 +929,7 @@ def longest_shot(conn, sides, writer, case_key, pid1, pid2, earlier_id, args, ou
     try:
         exhibits(conn, pid1, pid2, earlier_id, args.shingle_size, 1, mismatch_penalty=args.mismatch_penalty,
                  x_drop=args.x_drop, gap_open=args.gap_open, gap_extend=args.gap_extend, max_gap=args.max_gap,
-                 drop_furniture=args.drop_furniture)
+                 drop_furniture=args.drop_furniture, merge=False)
         roles = ("EARLIER", "LATER") if earlier_id else ("PAPER A", "PAPER B")
         order = (pid2, pid1) if earlier_id == pid2 else (pid1, pid2)
         labels = []
@@ -1064,6 +1073,7 @@ def title_shot(conn, sides, writer, pid1, pid2, earlier_id, args, out_path):
 
 
 def parse_args():
+    import write_dupe_reports_html as _wdr_defaults
     p = argparse.ArgumentParser(description="Write a two-paper overlap page with PDF screenshots "
                                             "as exhibits (see the module docstring).")
     p.add_argument("--library-db", type=Path, default=Path("library.sqlite3"),
@@ -1107,6 +1117,12 @@ def parse_args():
                    help="keep the title/byline images but show the shared passages as "
                         "write_dupe_reports_html.py's text diffs: a much smaller page (with "
                         "--embed-images, one file of a few hundred KB) for sharing, e.g. on PubPeer")
+    p.add_argument("--context-words", type=int, default=None,
+                   help="text exhibits: words of context shown either side of a matched passage, stopping at the "
+                        "paragraph's edge (default {}; 0 = two whole paragraphs each side, the old view)".format(_wdr_defaults.CONTEXT_WORDS))
+    p.add_argument("--merge-gap", type=int, default=None,
+                   help="text exhibits: show runs within this many words of each other in both papers as one "
+                        "exhibit, the words between unhighlighted (default {}; 0 = one exhibit per run)".format(_wdr_defaults.MERGE_GAP))
     p.add_argument("--whole-document", action="store_true",
                    help="with --text-exhibits: both papers end to end as one interleaved diff "
                         "(write_dupe_reports_html.py --whole-document) instead of one exhibit per run")
@@ -1129,6 +1145,11 @@ def parse_args():
 
 def main():
     args = parse_args()
+    import write_dupe_reports_html as _wdr   # --context-words / --merge-gap: the text exhibits' module defaults
+    if args.context_words is not None:
+        _wdr.CONTEXT_WORDS = args.context_words
+    if args.merge_gap is not None:
+        _wdr.MERGE_GAP = args.merge_gap
     if args.gap_open is not None and args.x_drop is None:
         raise SystemExit("--gap-open needs --x-drop as well (see write_dupe_reports_html.py).")
     try:
