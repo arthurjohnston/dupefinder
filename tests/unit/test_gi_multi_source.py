@@ -221,10 +221,10 @@ class TestSourceDrafts(unittest.TestCase):
             gi_sources.summary, gi_sources.add_sources
         gi_report.case_findings = lambda db, row, report_dir: dict(f)
         gi_pubpeer.write_page = lambda db, row, out, fd, name: (Path(out) / name, None)
-        gi_pubpeer.publisher_page = lambda row, fd: ("<p>page</p>", None, None)
+        gi_pubpeer.publisher_page = lambda row, fd, **k: ("<p>page</p>", None, None)
         gi_pubpeer.case_name = lambda row: "GI-99"
         gi_sources.summary = lambda row, case_dir: f["multi"]
-        gi_sources.add_sources = lambda page, row, fd, case_dir: (page, None)
+        gi_sources.add_sources = lambda page, row, fd, case_dir, **k: (page, None)
         try:
             paths = gi_report.write_report(None, {}, report_dir=self.dir, site_dir=None, severity="high")
         finally:

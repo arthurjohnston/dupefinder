@@ -11,7 +11,9 @@ Into data/dupe_publisher/GI-NN/:
   GI-NN-longest.jpg      the longest passage of text again, attached to the emails
   GI-NN-table.jpg        with a ticked [data] finding, the largest shared table, attached to the emails too
   GI-NN-comparison.html  the attachment for the journal: the same comparison without the PubPeer box or the
-                         title images, with the shared-text figures and the longest passage's image at the top;
+                         title images, with the shared-text figures and the longest passage's image at the top,
+                         every passage (every source's too) as a text diff, to keep it small
+                         (--attachment-images: as printed in both PDFs, inlined; not for a whole-document case);
                          with a sources.json (the trace-other-sources skill), every other text source's passages too,
                          under an overview of each one's share and the union (gi_sources.add_sources())
   GI-NN-email-*.eml      draft emails (all four for a high-severity case, -publisher, and -institution for
@@ -142,6 +144,9 @@ NO_PROBLEM_SEVERITY = "none"   # what gi_review_cli.ask_severity() saves for a n
 UNLIKELY_SEVERITY = "medium-unlikely"
 SEVERITY_LEVELS = ("low", UNLIKELY_SEVERITY, "medium", "high")
 SITE_IMAGES = True   # site pages show the passages as image crops of both PDFs (--site-text: as text)
+# the comparison page attached to the emails shows the passages as text diffs, every source's alike, to keep it
+# small (--attachment-images: as image crops, about twice the size, ~5-10 MB for a long case)
+ATTACHMENT_IMAGES = False
 SELF_TYPES = ("text recycling", "duplicate publication")   # gi_review_cli.SELF_TYPES: never published by --skipped
 DATA_TYPE = "data copying"
 
@@ -377,12 +382,14 @@ def write_report(db, f, report_dir=REPORT_DIR, site_dir=SITE_DIR, sender=None, s
         paths["no site"] = "not reviewed yet: no site page or index entry (review it, or --publish-only)"
     if not authors_only:
         paths["pubpeer"], _ = pp.write_page(db, f, out, fd=dict(fd), name=f"{case}-pubpeer.html")
-    page, shot, table = pp.publisher_page(f, fd)
-    page, fd["sources"] = gi_sources.add_sources(page, f, fd, out)   # sources.json: every source on one page
+    images = ATTACHMENT_IMAGES and not pp.whole_document(fd)
+    fd["attachment_images"] = images   # the emails say what the attachment shows
+    page, shot, table = pp.publisher_page(f, fd, images=images)
+    page, fd["sources"] = gi_sources.add_sources(page, f, fd, out, images=images)   # sources.json: every source
     paths["comparison"] = out / f"{case}-comparison.html"
     paths["comparison"].write_text(page, encoding="utf-8")
     site = page
-    if site_dir and SITE_IMAGES:   # the site's page shows the passages as printed; the attachment stays text
+    if site_dir and SITE_IMAGES and not images:   # the site's page shows the passages as printed
         site = site_page(f, fd, out, images=True)
     shot_path = out / f"{case}-longest.jpg"
     if shot:
@@ -552,12 +559,16 @@ def main():
                          "the ones skipped at the report prompt (not self-author types or already retracted ones)")
     ap.add_argument("--rebuild-site", action="store_true",
                     help="re-render every page already on the site and the index; each keeps its reported date")
+    ap.add_argument("--attachment-images", action="store_true",
+                    help="the emailed comparison page shows the passages as images from the PDFs, not as text "
+                         "diffs (about twice the size: ~5-10 MB for a long case)")
     ap.add_argument("--site-text", action="store_true",
                     help="site pages show the passages as text, not as images cropped from the PDFs")
     ap.add_argument("--db", default=str(gi_db.DB_PATH))
     args = ap.parse_args()
-    global SITE_IMAGES
+    global SITE_IMAGES, ATTACHMENT_IMAGES
     SITE_IMAGES = not args.site_text
+    ATTACHMENT_IMAGES = args.attachment_images
     if args.skipped or args.rebuild_site:
         if args.gi or args.problems or args.no_site or args.authors_only or args.pubpeer_url:
             ap.error("--skipped / --rebuild-site take no GI numbers and only --site-text / --db")

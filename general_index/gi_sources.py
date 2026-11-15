@@ -264,14 +264,16 @@ def summary(f, case_dir):
     return summarize(m, text_sources, other)
 
 
-def render_source(scratch, later_id, pid, case):
-    """write_dupe_reports_screenshots.py's page for the later article against one source, images inlined."""
+def render_source(scratch, later_id, pid, case, images=True):
+    """write_dupe_reports_screenshots.py's page for the later article against one source, images inlined;
+    images=False: the passages as text diffs (the emailed comparison page, as for the paired article)."""
     with tempfile.TemporaryDirectory() as d:
         d = Path(d)
         p = subprocess.run([PY, str(ROOT / "write_dupe_reports_screenshots.py"), "--library-db", str(scratch),
                             "--paper-ids", f"{later_id},{pid}", "--out-dir", str(d), "--neutral",
                             "--shingle-size", "10", "--x-drop", "3", "--case-number", case,
-                            "--min-shingle-matches", "1", "--found-by", "", "--embed-images", "--no-title-shots"],
+                            "--min-shingle-matches", "1", "--found-by", "", "--embed-images", "--no-title-shots",
+                            *([] if images else ["--text-exhibits"])],
                            capture_output=True, text=True, cwd=ROOT)
         pages = sorted(d.glob("*.html"))
         if p.returncode != 0 or not pages:
@@ -425,7 +427,7 @@ def _tag(section, letter, year=None):
     return section.replace(">EARLIER</span>", f">ARTICLE {letter}{f' ({year})' if year else ''}</span>")
 
 
-def add_sources(page, f, fd, case_dir):
+def add_sources(page, f, fd, case_dir, images=True):
     """The comparison page (gi_pubpeer.publisher_page()'s) with the case's other text sources added, and a
     summary for cases.json ({"sources", "union_pct", "union_words"}); (page, None) unchanged when the case has
     no text source to show, or which article came first isn't known."""
@@ -442,7 +444,7 @@ def add_sources(page, f, fd, case_dir):
         m = measure(scratch, later_id, ids, f, earlier_id)
         sections = []
         for letter, s in zip(LETTERS[1:], text_sources):
-            src = render_source(scratch, later_id, ids[s["n"]], f"{case}-s{s['n']}")
+            src = render_source(scratch, later_id, ids[s["n"]], f"{case}-s{s['n']}", images=images)
             i, j = src.find('<div class="lede">'), src.find("<footer")
             sec = re.sub(r'\s*<p class="dek">.*?</p>', "", src[i:j], count=1, flags=re.S)
             c = m[s["n"]]

@@ -412,14 +412,15 @@ def email_parts(fd, attachment, shot_name=None, examples=EMAIL_PASSAGES, audienc
                               "the later article" if known else "the first article", known)]
     own = [f"- {t}" for t in fd.get("source_extra", ())]   # a source's own drafts: the findings tagged [sN]
     lines += share + data + ([] if length == SHORT else extra) + own   # the share (and whether it's cited) leads
+    shown_as = ("as printed in both articles, side by side, the shared words highlighted"
+                if fd.get("attachment_images") else "the two texts side by side with the differences marked")
     if m:
         what = (f"an overview of how much of the later article is in each of the {count_word(multi_count(fd))} "
-                f"earlier articles, then the passages shared with each one, the two texts side by side with the "
-                f"differences marked")
+                f"earlier articles, then the passages shared with each one, {shown_as}")
     elif whole_document(fd):
         what = "both articles end to end as one diff, the shared text highlighted and the differences marked"
     else:
-        what = f"all {fd['runs']} shared passages, the two texts side by side with the differences marked"
+        what = f"all {fd['runs']} shared passages, {shown_as}"
     lines += ["", "I also attached:", f"- {attachment}: {what} (one HTML file; open it in a web browser)."]
     if shot_name and m:
         lines.append(f"- {shot_name}: the longest passage shared with " + ("article A" if several else "the earlier article")

@@ -127,7 +127,7 @@ class TestSeverity(unittest.TestCase):
         saved = gi_report.case_findings, gi_pubpeer.write_page, gi_pubpeer.publisher_page, gi_pubpeer.case_name
         gi_report.case_findings = lambda db, row, report_dir: f
         gi_pubpeer.write_page = lambda db, row, out, fd, name: (Path(out) / name, None)
-        gi_pubpeer.publisher_page = lambda row, fd: ("<p>page</p>", None, None)
+        gi_pubpeer.publisher_page = lambda row, fd, **k: ("<p>page</p>", None, None)
         gi_pubpeer.case_name = lambda row: "GI-99"
         try:
             d = Path(tempfile.mkdtemp())
@@ -151,7 +151,7 @@ class TestSeverity(unittest.TestCase):
         saved = gi_report.case_findings, gi_pubpeer.write_page, gi_pubpeer.publisher_page, gi_pubpeer.case_name
         gi_report.case_findings = lambda db, row, report_dir: f
         gi_pubpeer.write_page = lambda db, row, out, fd, name: (Path(out) / name, None)
-        gi_pubpeer.publisher_page = lambda row, fd: ("<p>page</p>", None, None)
+        gi_pubpeer.publisher_page = lambda row, fd, **k: ("<p>page</p>", None, None)
         gi_pubpeer.case_name = lambda row: "GI-99"
         try:
             d = Path(tempfile.mkdtemp())
@@ -172,7 +172,7 @@ class TestSeverity(unittest.TestCase):
         saved = gi_report.case_findings, gi_pubpeer.write_page, gi_pubpeer.publisher_page, gi_pubpeer.case_name
         gi_report.case_findings = lambda db, row, report_dir: dict(f)
         gi_pubpeer.write_page = lambda *a, **k: self.fail("authors only: no PubPeer page")
-        gi_pubpeer.publisher_page = lambda row, fd: ("<p>page</p>", b"\xff\xd8\xff\xd9", None)
+        gi_pubpeer.publisher_page = lambda row, fd, **k: ("<p>page</p>", b"\xff\xd8\xff\xd9", None)
         gi_pubpeer.case_name = lambda row: "GI-99"
         try:
             d = Path(tempfile.mkdtemp())
@@ -237,7 +237,7 @@ class TestUnreviewed(unittest.TestCase):
             gi_report.site_page
         gi_report.case_findings = lambda db, row, report_dir: fd()
         gi_pubpeer.write_page = lambda db, row, out, fd, name: (Path(out) / name, None)
-        gi_pubpeer.publisher_page = lambda row, fd: ("<p>page</p>", None, None)
+        gi_pubpeer.publisher_page = lambda row, fd, **k: ("<p>page</p>", None, None)
         gi_pubpeer.case_name = lambda row: "GI-99"
         gi_report.site_page = lambda *a, **k: "<p>site</p>"
         try:
