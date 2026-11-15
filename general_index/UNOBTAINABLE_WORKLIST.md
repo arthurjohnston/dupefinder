@@ -163,6 +163,14 @@ ranking, not a probability. Retrain after many new reviews:
 
 `gi_unobtainable_sort.py` fits the model from that file each time it runs (a second or two).
 
+**Filling in `not checked`: `gi_abstract_fill.py [WORKLIST.csv]`.** The abstract check reads OpenAlex only,
+which lacks many paywalled abstracts. This fetches the missing ones for a worklist's `not checked` pairs
+from Europe PMC, Crossref and Semantic Scholar (free, no key) and stores the verdicts in `abstract_checks`,
+which the worklist reads. Re-run the worklist after it. On the top-30 list (2026-11-14), 1,258 of the 1,675
+`not checked` pairs had two DOIs. 344 could now be compared: 3 shared text, 341 no shared text. 914 still lack an
+abstract, mostly Elsevier (none of the three sources may show those), JSTOR and Springer. Pairs with a no-DOI side
+can't be looked up.
+
 ## 2. Download
 
 Save each PDF you get into `data/unobtainable_downloads/` under whatever name the site gives it. No

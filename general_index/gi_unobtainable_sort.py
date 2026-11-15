@@ -297,11 +297,14 @@ def pair_features(db, pair_ids):
     pair_ids = sorted(pair_ids)
     for i in range(0, len(pair_ids), 900):
         ch = pair_ids[i:i + 900]
-        for r in db.execute(f"""select p.pair_id, l.abstracts, p.pct_a, p.pct_b, p.shared, p.shared_common,
-                                       da.total_5grams, db.total_5grams
+        for r in db.execute(f"""select p.pair_id, case when l.abstracts = 'not checked'
+                                           then coalesce(ac.verdict, l.abstracts) else l.abstracts end,
+                                       p.pct_a, p.pct_b, p.shared, p.shared_common, da.total_5grams, db.total_5grams
                                 from pairs p join leads l using (pair_id)
+                                left join abstract_checks ac on ac.doi_a = lower(l.doi_a) and ac.doi_b = lower(l.doi_b)
                                 left join documents da on da.dkey = p.dkey_a left join documents db on db.dkey = p.dkey_b
                                 where p.pair_id in ({','.join('?' * len(ch))})""", ch):
+            # abstract_checks: gi_abstract_fill.py's verdicts, there before gi_rank_leads.py copies them into leads
             out[r[0]] = dict(zip(("abstracts", "pct_a", "pct_b", "shared", "shared_common", "tot_a", "tot_b"), r[1:]))
     return out
 
