@@ -13,6 +13,9 @@ background) and ticked by you. Only [x] items are published, in the PubPeer Mark
     - [-] ...                                               <- leave out
     - [x] [data] Table 1 of the later article (p. 3) ...    <- [data]: the results data, not only the text,
                                                                appear copied; the emails lead with it
+    - [x] [s1] Its Table 2 is the 2006 review's Table 1 ... <- [s1]: about the case's first other source
+                                                               (sources.json): goes everywhere, and also to that
+                                                               source's own drafts (-authors-s1 ...)
 
     ## Questions
     - anything the agent couldn't settle (never published)
@@ -48,6 +51,7 @@ import gi_db
 REPORT_DIR = gi_db.DATA / "dupe_publisher"
 ITEM = re.compile(r"^- \[([ xX-])\]\s?(.*)$")
 DATA_TAG = re.compile(r"^\[data\]\s*", re.I)   # a finding that the data were copied, not only the text
+SOURCE_TAG = re.compile(r"^\[s(\d+)\]\s*", re.I)   # a finding about one other source (sources.json's Nth)
 MARKS = {" ": "pending", "x": "include", "X": "include", "-": "leave out"}
 
 
@@ -112,11 +116,33 @@ def load(case, report_dir=REPORT_DIR):
     return parse(p.read_text(encoding="utf-8")) if p.exists() else []
 
 
-def included(case, report_dir=REPORT_DIR, data=None):
-    """The texts of the [x] items, in file order, without their [data] tag: what gets published. data=True
-    gives only the [data] items, data=False only the others, None all of them."""
-    return [DATA_TAG.sub("", it["text"]) for it in load(case, report_dir) if it["state"] == "include"
-            and (data is None or bool(DATA_TAG.match(it["text"])) == data)]
+def tags(text):
+    """(is a [data] item, source number of an [sN] tag or None, text without either tag). The tags lead the item
+    in either order: "[data] [s1] Table 2 ..." or "[s1] [data] ...". """
+    data, source = False, None
+    while True:
+        m = DATA_TAG.match(text)
+        if m:
+            data, text = True, text[m.end():]
+            continue
+        m = SOURCE_TAG.match(text)
+        if m:
+            source, text = int(m.group(1)), text[m.end():]
+            continue
+        return data, source, text
+
+
+def included(case, report_dir=REPORT_DIR, data=None, source=None):
+    """The texts of the [x] items, in file order, without their tags: what gets published. data=True gives only
+    the [data] items, data=False only the others, None all of them. source=N: only those tagged [sN] (one other
+    source of the later article, sources.json's Nth entry), which also go to that source's own drafts
+    (gi_report_case.py); without it every item, tagged or not."""
+    out = []
+    for it in load(case, report_dir):
+        is_data, src, text = tags(it["text"])
+        if it["state"] == "include" and (data is None or is_data == data) and (source is None or src == source):
+            out.append(text)
+    return out
 
 
 def counts(case, report_dir=REPORT_DIR):

@@ -155,6 +155,70 @@ def _same_doi(a, b):
     return bool(a and b) and a.lower() == b.lower()
 
 
+NUMBER_WORDS = ("no", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten")
+
+
+def count_word(n):
+    return NUMBER_WORDS[n] if 0 <= n < len(NUMBER_WORDS) else str(n)
+
+
+def multi(fd):
+    """fd["multi"] (gi_sources.summary(): the later article's other text sources, measured) when it has at
+    least one source besides the paired article, else None: the case is then reported as several sources."""
+    m = fd.get("multi")
+    return m if m and m.get("sources") else None
+
+
+def multi_count(fd):
+    """How many earlier works the later article's measured text is found in: the paired article and its sources."""
+    return 1 + len(multi(fd)["sources"])
+
+
+def _cited_sentence(cited, this, heuristic):
+    """' This article cites it.' -- for the paired article (heuristic: the reference-list check) 'appears to'."""
+    if cited is None:
+        return ""
+    if heuristic:
+        return f" {this[0].upper()}{this[1:]}'s reference list {'does' if cited else 'does not'} appear to cite it."
+    return f" {this[0].upper()}{this[1:]} {'cites' if cited else 'does not cite'} it."
+
+
+def multi_lines(fd, cite, this="this article", bold="**", indent="    "):
+    """The share findings of a several-source case, for the PubPeer Markdown (cite=_cite) and the emails
+    (cite=gi_contact's plain citation, bold=""): the union first, then one sub-item per work (its share, how it
+    is cited, what is shared), then a line per references-only source the agent counted (sources.json "refs":
+    {"later": "3-22", "count": 20, "order": ...}). Replaces the single-pair share line."""
+    m, first = multi(fd), fd["first"]
+    b = (lambda t: f"{bold}{t}{bold}") if bold else (lambda t: t)
+    n = multi_count(fd)
+    overlap = (f"the {count_word(n)} don't overlap" if not m["overlap"] else
+               f"{m['overlap']:,} of those words are in more than one of them, counted once")
+    lines = [f"- About {b(pct(m['union_pct']))} of {this}'s text ({m['union_words']:,} of its about {m['words']:,} "
+             f"words) is also found in {count_word(n)} earlier articles ({overlap}):"]
+    p = m["paired"]
+    lines.append(f"{indent}- {b(pct(p['pct']))} in {cite(first)}: {p['matched']:,} matched words in {p['runs']} "
+                 f"passages, the longest {p['longest']} words."
+                 + _cited_sentence(fd.get("later_cites_earlier"), this, heuristic=True)
+                 + (f" That is {pct(first['pct'])} of that article's text." if first.get("pct") is not None else ""))
+    for s in m["sources"]:
+        shared = (s.get("shared") or "").strip()
+        lines.append(f"{indent}- {b(pct(s['pct']))} in {cite(s)}: {s['matched']:,} matched words in {s['runs']} "
+                     f"passages, the longest {s['longest']} words."
+                     + (f" Shared: {shared[0].lower()}{shared[1:].rstrip('.')}." if shared else "")
+                     # the agent's "shared" sentence usually says how it is cited already
+                     + ("" if re.search(r"\bcit", shared, re.I) else _cited_sentence(s.get("cited"), this, False))
+                     + (f" That is {pct(s['own_pct'])} of that article's text." if s.get("own_pct") is not None else ""))
+    lines.append(f"{indent}A passage is a run of at least ten consecutive words in common, allowing isolated "
+                 f"single-word differences; reworded text isn't counted, so these are minimums.")
+    for s in m.get("other") or []:
+        refs = s.get("refs")
+        if isinstance(refs, dict) and refs.get("count") and refs.get("later"):
+            order = f", {refs['order']}" if refs.get("order") else ""
+            lines.append(f"- {count_word(refs['count']).capitalize() if refs['count'] <= 10 else refs['count']} of "
+                         f"{this}'s references (refs {refs['later']}) are in the reference list of {cite(s)}{order}.")
+    return lines
+
+
 def markdown(fd):
     """The PubPeer comment. The findings, as in the emails: the text share (with whether this article cites
     the other) first, then your [data] findings and your other ticked findings. Then, when there
@@ -166,7 +230,14 @@ def markdown(fd):
     first, second = fd["first"], fd["second"]
     known = fd["earlier_known"]
     lines = []
-    if known:
+    if known and multi(fd):   # sources.json: the paired article and the other sources together
+        n = count_word(multi_count(fd))
+        share = multi(fd)["union_pct"] or 0
+        verb = ("to reuse results data and text from" if fd.get("data_extra") else
+                "to be largely made up of text from" if share >= 50 else "to reuse substantial text from")
+        lines.append(f"This article appears {verb} {n} earlier articles.")
+        share_line = multi_lines(fd, _cite)
+    elif known:
         share = second["pct"] or 0
         verb = "to be largely a duplicate of" if share >= 50 else "to reuse substantial text from"
         if fd.get("data_extra"):
@@ -183,7 +254,8 @@ def markdown(fd):
                       f"({fd['matched_words'] or 0:,} matched words in {fd['runs']} passages)."]
     lines.append("")
     # the byline check (fd["byline"]) still picks the queue and the wording, but isn't stated in the post
-    share_line = [cites_clause(share_line[0], fd["later_cites_earlier"], "this article", known)]
+    if not (known and multi(fd)):
+        share_line = [cites_clause(share_line[0], fd["later_cites_earlier"], "this article", known)]
     data = [f"- {t}" for t in fd.get("data_extra", ())]   # the findings you ticked (gi_case_findings.py)
     extra = [f"- {t}" for t in fd.get("extra", ())]
     lines += share_line + data + extra   # the share (and whether it's cited) always leads
@@ -218,7 +290,8 @@ def markdown(fd):
         shown = fd["passages"][:TEXT_PASSAGES]
         n = len(shown)
         lines.append("")
-        lines.append(f"The {'longest shared passage' if n == 1 else f'{n} longest shared passages'} "
+        with_first = f" with the {first['year']} article" if known and multi(fd) and first.get("year") else ""
+        lines.append(f"The {'longest shared passage' if n == 1 else f'{n} longest shared passages'}{with_first} "
                      f"(word counts in this article):")
         lines.append("")
         for i, p in enumerate(shown, 1):

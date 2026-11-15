@@ -20,7 +20,7 @@ import subprocess
 from pathlib import Path
 
 import gi_db
-from gi_pubpeer import doi_url, pct, whole_document
+from gi_pubpeer import count_word, doi_url, multi, multi_count, multi_lines, pct, whole_document
 
 ROOT = Path(__file__).resolve().parent.parent
 CONTACTS = gi_db.DATA / "journal_contacts.json"
@@ -78,6 +78,9 @@ def journal_contact(doi, data, get=None):
     name = info["journal"] or info["publisher"]
     if not name:
         return None
+    if name not in data["journals"] and html.unescape(name) in data["journals"]:
+        # Crossref escapes "&" ("Cancer Biology &amp; Therapy") while an entry filled by hand may not (GI-924)
+        name = html.unescape(name)
     entry = data["journals"].setdefault(name, {"publisher": info["publisher"], "issn": info["issn"],
                                                "to": "", "cc": "", "page": "", "notes": ""})
     return {"journal": info["journal"], **entry}
@@ -176,17 +179,20 @@ ABOUT_ME = ("I am an independent researcher, with no connection to either set of
             "articles for duplicated text.")
 # the same for the earlier article's authors, who are one of the two sets
 ABOUT_ME_AUTHORS = "I am an independent researcher, screening published articles for duplicated text."
+# a case with several sources (gi_pubpeer.multi()): more than two sets of authors
+ABOUT_ME_MULTI = ("I am an independent researcher, with no connection to any of the authors involved, screening "
+                  "published articles for duplicated text.")
 
 
-def _institutions_intro(contacts, verb, whose_earlier, known, pair, reported, subject_for):
+def _institutions_intro(contacts, verb, earlier_obj, known, pair, reported, subject_for):
     """_email_intro() for one email to several institutions at once (all on its To line): every later author
     named in the opening, then which institution each address is and whose institution it is (a current one
     saying where the article was written), so each recipient can see who else has it."""
     authors = list(dict.fromkeys(a for c in contacts for a in c.get("authors") or [] if a))
     names = name_list(authors)
     whose = f"{names}, affiliated with your institutions" if names else "authors affiliated with your institutions"
-    opening = [f"I am writing about an article by {whose}, which appears {verb} an earlier article"
-               f"{whose_earlier}." if known else f"I am writing about {pair} The first is by {whose}."]
+    opening = [f"I am writing about an article by {whose}, which appears {verb} {earlier_obj}."
+               if known else f"I am writing about {pair} The first is by {whose}."]
     lines = []
     for c in contacts:
         who = name_list(c.get("authors") or [])
@@ -227,12 +233,16 @@ def _email_intro(audience, fd, contact=None):
     first, second = fd["first"], fd["second"]
     known = fd["earlier_known"]
     earlier = '"' + html.unescape(first["title"] or first["doi"] or "").replace("*", "") + '"'   # quoted, for the authors' subject
-    share = second["pct"] or 0
+    several = known and multi(fd) and audience in ("publisher", "institution")   # sources.json: several sources
+    share = (multi(fd)["union_pct"] if several else second["pct"]) or 0
     data = bool(fd.get("data_extra"))
     same = shared_authors(fd)
     reported = journal_reported(fd)
     journal = html.unescape(second.get("journal") or "") or "the journal that published the " + ("later" if known else "first") + " article"
-    if data:
+    if several:
+        verb = ("to reuse results data and text from" if data else
+                "to be largely made up of text from" if share >= 50 else "to reuse substantial text from")
+    elif data:
         verb = "to report the same results data as"
     elif same:
         verb = "to be largely a republication of" if share >= 50 else "to reuse substantial text from"
@@ -240,6 +250,8 @@ def _email_intro(audience, fd, contact=None):
         verb = "to be largely a duplicate of" if share >= 50 else "to reuse substantial text from"
     # no author lists sharing no names / "by other authors": the byline check isn't stated in an email
     whose_earlier = " that shares authors with it" if same else ""
+    earlier_obj = (f"{count_word(multi_count(fd))} earlier articles" + (", one of which shares authors with it" if same else "")
+                   if several else "an earlier article" + whose_earlier)
     pair = ("two articles, published the same year, that share extensive " + ("results data and text" if data
             else "text") + ". Which one came first can't be told from the publication years.")
     def subject_for(paper):
@@ -261,13 +273,13 @@ def _email_intro(audience, fd, contact=None):
             subject = f"Research integrity concern with {paper}"
         return ("[the journal's editor, or the publisher's research integrity contact]",
                 subject, "Dear Editor,",
-                [f"I am writing about an article in your journal that appears {verb} an earlier article"
-                 f"{whose_earlier}." if known else f"I am writing about {pair} The first is in your journal."],
+                [f"I am writing about an article in your journal that appears {verb} {earlier_obj}."
+                 if known else f"I am writing about {pair} The first is in your journal."],
                 "I would be grateful if you could look into this and let me know what you decide.")
     if audience == "institution":
         contacts = _institution_contacts(fd, contact)
         if len(contacts) > 1:
-            return _institutions_intro(contacts, verb, whose_earlier, known, pair, reported, subject_for)
+            return _institutions_intro(contacts, verb, earlier_obj, known, pair, reported, subject_for)
         contact = contacts[0] if contacts else {}
         authors = contact.get("authors") or []
         names = name_list(authors)
@@ -278,14 +290,14 @@ def _email_intro(audience, fd, contact=None):
             then = contact.get("published_at")
             when = (f" It was published while they were at {then}"
                     if then else " It was published before they joined your institution")
-            opening = [f"I am writing about an article by {whose}.{when}, and appears {verb} an earlier "
-                       f"article{whose_earlier}." if known else
+            opening = [f"I am writing about an article by {whose}.{when}, and appears {verb} {earlier_obj}."
+                       if known else
                        f"I am writing about {pair} The first is by {whose}.{when}."]
         else:
             whose = (f"{names}, affiliated with your institution" if names
                      else "authors affiliated with your institution")
             opening = [f"I am writing about an article by {whose}, which appears "
-                       f"{verb} an earlier article{whose_earlier}." if known else
+                       f"{verb} {earlier_obj}." if known else
                        f"I am writing about {pair} The first is by {whose}."]
         opening += ["I have written to the journal that published it as well."] if reported else []
         subject = subject_for("a paper by someone associated with your institution")
@@ -364,9 +376,19 @@ def email_parts(fd, attachment, shot_name=None, examples=EMAIL_PASSAGES, audienc
     _to, subject, greeting, opening, request = _email_intro(audience, fd, contact)
     blocks = [o.lstrip("\n") for o in opening if o.startswith("\n")]   # a list of its own (_institutions_intro())
     opening = [o for o in opening if not o.startswith("\n")]
-    lines = [greeting, "", " ".join([ABOUT_ME_AUTHORS if audience == "authors" else ABOUT_ME] + opening), ""]
+    m = multi(fd) if known else None   # several sources (sources.json)
+    several = bool(m) and length != SHORT   # the journal's and the institutions': every source, in full
+    about = ABOUT_ME_AUTHORS if audience == "authors" else ABOUT_ME_MULTI if m else ABOUT_ME
+    lines = [greeting, "", " ".join([about] + opening), ""]
     lines += [x for b in blocks for x in (b, "")]
-    if known:
+    if several:
+        lines += ["Later article: " + _plain_cite(second), "", "Earlier articles:",
+                  "A. " + _plain_cite(first), *[f"{s['letter']}. " + _plain_cite(s) for s in m["sources"]], ""]
+
+        def cite(p):   # the articles are listed above by letter; a references-only source isn't
+            return f"article {p['letter']}" if p.get("letter") else "article A" if p is first else _plain_cite(p)
+        share = multi_lines(fd, cite, "the later article", bold="", indent="  ")
+    elif known:
         lines += ["Later article: " + _plain_cite(second), "", "Earlier article: " + _plain_cite(first), ""]
         share = [f"- About {pct(second['pct'])} of the later article's text is also found in the earlier article "
                  f"({fd['matched_words'] or 0:,} matched words in {fd['runs']} passages; the later article has "
@@ -379,17 +401,30 @@ def email_parts(fd, attachment, shot_name=None, examples=EMAIL_PASSAGES, audienc
     data = [f"- {t}" for t in fd.get("data_extra", ())]   # the [data] findings you ticked (gi_case_findings.py)
     extra = [f"- {t}" for t in fd.get("extra", ())]   # the other findings you ticked
     # the byline check (fd["byline"]) still picks the queue and the wording, but isn't stated in an email
-    if length != SHORT:   # the earlier side's short emails leave the citation check out, as the byline one
+    if m and not several:   # an earlier side's short email: its own share, then the others in one line
+        k = multi_count(fd) - 1
+        share.append(f"- The later article also shares text with {count_word(k)} other earlier article"
+                     f"{'s' if k != 1 else ''}: in all, about {pct(m['union_pct'])} of it is found in these "
+                     f"{count_word(k + 1)} articles.")
+    if length != SHORT and not several:   # the earlier side's short emails leave the citation check out, as the byline one
         from gi_pubpeer import cites_clause
         share = [cites_clause(share[0], fd["later_cites_earlier"],
                               "the later article" if known else "the first article", known)]
-    lines += share + data + ([] if length == SHORT else extra)   # the share (and whether it's cited) leads
-    if whole_document(fd):
+    own = [f"- {t}" for t in fd.get("source_extra", ())]   # a source's own drafts: the findings tagged [sN]
+    lines += share + data + ([] if length == SHORT else extra) + own   # the share (and whether it's cited) leads
+    if m:
+        what = (f"an overview of how much of the later article is in each of the {count_word(multi_count(fd))} "
+                f"earlier articles, then the passages shared with each one, the two texts side by side with the "
+                f"differences marked")
+    elif whole_document(fd):
         what = "both articles end to end as one diff, the shared text highlighted and the differences marked"
     else:
         what = f"all {fd['runs']} shared passages, the two texts side by side with the differences marked"
     lines += ["", "I also attached:", f"- {attachment}: {what} (one HTML file; open it in a web browser)."]
-    if shot_name:
+    if shot_name and m:
+        lines.append(f"- {shot_name}: the longest passage shared with " + ("article A" if several else "the earlier article")
+                     + ", as printed in both articles (earlier article left, later right), the shared words highlighted.")
+    elif shot_name:
         lines.append(f"- {shot_name}: the longest shared passage of running text, as printed in both articles "
                      f"({'earlier article left, later right' if known else 'order unknown'}), the shared words "
                      f"highlighted.")
@@ -398,6 +433,16 @@ def email_parts(fd, attachment, shot_name=None, examples=EMAIL_PASSAGES, audienc
                      f"({'earlier article left, later right' if known else 'order unknown'}), the shared words and "
                      f"values highlighted.")
     shown = [p for p in fd["passages"] if readable(p)][:examples] if length == FULL else []
+    if several and length == FULL:   # the longest few per article, each list labelled
+        works = [("A", fd["passages"]), *[(s["letter"], s.get("passages") or []) for s in m["sources"]]]
+        works = [(letter, [p for p in ps if readable(p)][:examples]) for letter, ps in works]
+        lines += ["", f"Extracts of the longest shared passages with each article (as worded in the later article, "
+                      f"with their word counts; '…' marks words left out of the extract):"]
+        for letter, ps in works:
+            if ps:
+                lines += ["", f"With article {letter}:"]
+                lines += [f"{i}. {p['words']:,} words: \"{p['excerpt']}\"" for i, p in enumerate(ps, 1)]
+        shown = []
     if shown:
         n = len(shown)
         whose = "the later" if known else "the first"

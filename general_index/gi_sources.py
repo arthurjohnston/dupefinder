@@ -178,7 +178,9 @@ def measure(scratch, later_id, ids, f, earlier_id):
     def cover(later, other):
         runs = ctp.find_shingle_matches(later, other, shingle_size=10, x_drop=3)
         return {"covered": {i for r in runs for i in range(r.start_a, r.end_a)}, "runs": len(runs),
-                "longest": max((r.length for r in runs), default=0)}
+                "longest": max((r.length for r in runs), default=0),
+                "own": len({i for r in runs for i in range(r.start_b, r.end_b)}), "own_words": len(other),
+                "passages": top_passages(runs)}
 
     case_lib = sqlite3.connect(f"file:{f['library']}?mode=ro", uri=True)
     try:
@@ -193,6 +195,73 @@ def measure(scratch, later_id, ids, f, earlier_id):
     finally:
         lib.close()
     return out
+
+
+TOP_PASSAGES = 10   # per source, for the emails' extracts (they quote 3)
+
+
+def top_passages(runs, n=TOP_PASSAGES):
+    """The n longest runs as the later article words them ({"words", "excerpt"}, gi_pubpeer.findings()'s shape),
+    a sentence the later article prints several times kept once."""
+    from gi_pubpeer import excerpt
+    out, seen = [], set()
+    for r in sorted(runs, key=lambda r: -r.length):
+        key = " ".join(re.sub(r"[^\w\s]", "", r.text_a.lower()).split())
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append({"words": len(r.text_a.split()), "excerpt": excerpt(r.text_a)})
+        if len(out) == n:
+            break
+    return out
+
+
+def _share(c, total):
+    """One work's figures for summary(): matched words of the later article, their share of it, runs, longest,
+    the share of the work's own text, its longest passages."""
+    return {"matched": len(c["covered"]), "pct": round(100 * len(c["covered"]) / total, 1) if total else None,
+            "runs": c["runs"], "longest": c["longest"], "passages": c["passages"],
+            "own_pct": round(100 * c["own"] / c["own_words"], 1) if c.get("own_words") else None}
+
+
+def summarize(m, text_sources, other):
+    """measure()'s result as summary() returns it (split out so it can be tested without a library)."""
+    total = m["words"]
+    keys = ["paired", *[s["n"] for s in text_sources]]
+    union = set().union(*(m[k]["covered"] for k in keys))
+    fields = ("title", "year", "journal", "doi", "url", "authors", "cited", "shared", "shared_authors")
+    return {
+        "words": total, "union_words": len(union),
+        "union_pct": round(100 * len(union) / total, 1) if total else None,
+        "overlap": sum(len(m[k]["covered"]) for k in keys) - len(union),
+        "paired": {"letter": "A", **_share(m["paired"], total)},
+        "sources": [{"n": s["n"], "letter": letter, **{k: s.get(k) for k in fields},
+                     "url": s.get("url") or s.get("fulltext_url"), **_share(m[s["n"]], total)}
+                    for letter, s in zip(LETTERS[1:], text_sources)],
+        "other": [{"n": s["n"], "title": s.get("title"), "year": s.get("year"), "journal": s.get("journal"),
+                   "doi": s.get("doi"), "kinds": kinds(s), "refs": s.get("refs"), "cited": s.get("cited")}
+                  for s in other],
+    }
+
+
+def summary(f, case_dir):
+    """The case's text sources measured for the PubPeer comment and the emails (gi_report_case.py puts it in
+    fd["multi"]): {"words" (the later article's), "union_words", "union_pct", "overlap" (words in more than one
+    work, counted once in the union), "paired": {...}, "sources": [{n, letter, title, year, journal, doi, url,
+    authors, cited, shared, shared_authors, matched, pct, runs, longest, own_pct, passages}], "other": [the
+    sources not measured: references, tables, text not saved]}. Letters as on the comparison page: the paired
+    article A, the sources B, C, ... None when there's no text source to measure, or which article came first
+    isn't known (add_sources() leaves the page alone then too)."""
+    text_sources, other = load(case_dir)
+    order = text_sources and later_and_earlier(f)
+    if not order:
+        return None
+    later_id, earlier_id = order
+    with tempfile.TemporaryDirectory() as d:
+        scratch = Path(d) / "library.sqlite3"
+        ids = scratch_library(scratch, f["library"], later_id, case_dir, text_sources)
+        m = measure(scratch, later_id, ids, f, earlier_id)
+    return summarize(m, text_sources, other)
 
 
 def render_source(scratch, later_id, pid, case):

@@ -225,6 +225,37 @@ class TestSeverity(unittest.TestCase):
         self.assertEqual(gi_report.audiences("medium-unlikely", big), ("publisher",))
 
 
+class TestUnreviewed(unittest.TestCase):
+    def test_no_site_page_until_reviewed(self):
+        """An unjudged case (an agent regenerating it) gets its files but no site page or "reported" entry."""
+        import sqlite3
+        import gi_pubpeer
+        db = sqlite3.connect(":memory:")
+        db.execute("create table reviews (pair_lo, pair_hi, decision, severity)")
+        row = {"pair_lo": "10.1/a", "pair_hi": "10.2/b"}
+        saved = gi_report.case_findings, gi_pubpeer.write_page, gi_pubpeer.publisher_page, gi_pubpeer.case_name, \
+            gi_report.site_page
+        gi_report.case_findings = lambda db, row, report_dir: fd()
+        gi_pubpeer.write_page = lambda db, row, out, fd, name: (Path(out) / name, None)
+        gi_pubpeer.publisher_page = lambda row, fd: ("<p>page</p>", None, None)
+        gi_pubpeer.case_name = lambda row: "GI-99"
+        gi_report.site_page = lambda *a, **k: "<p>site</p>"
+        try:
+            d, site = Path(tempfile.mkdtemp()), Path(tempfile.mkdtemp())
+            paths = gi_report.write_report(db, row, report_dir=d, site_dir=site, severity="low")
+            self.assertIn("no site", paths)
+            self.assertTrue(paths["comparison"].exists())
+            self.assertFalse((site / "cases.json").exists())
+            self.assertFalse((site / "GI-99.html").exists())
+            db.execute("insert into reviews values ('10.1/a', '10.2/b', 'problem', 'low')")
+            paths = gi_report.write_report(db, row, report_dir=d, site_dir=site, severity="low")
+            self.assertNotIn("no site", paths)
+            self.assertIn("GI-99", json.loads((site / "cases.json").read_text()))
+        finally:
+            (gi_report.case_findings, gi_pubpeer.write_page, gi_pubpeer.publisher_page, gi_pubpeer.case_name,
+             gi_report.site_page) = saved
+
+
 class TestCompose(unittest.TestCase):
     def test_compose_arg(self):
         import gi_contact
