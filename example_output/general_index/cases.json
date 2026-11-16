@@ -4030,5 +4030,30 @@
   "matched_words": 336,
   "runs": 17,
   "longest": 45
+ },
+ "GI-809": {
+  "file": "GI-809.html",
+  "reported": "2026-11-15",
+  "published": "2026-11-15",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Peri-Implantitis: A Review of the Disease and Report of a Case Treated with Allograft to Achieve Bone Regeneration Article History Citation",
+   "year": 2015,
+   "doi": "10.17140/doj-2-117",
+   "pct": 11.0,
+   "journal": "Dentistry - Open Journal"
+  },
+  "earlier": {
+   "title": "Biomaterial and antibiotic strategies for peri-implantitis: A review",
+   "year": 2008,
+   "doi": "10.1002/jbm.b.31152",
+   "pct": 6.0,
+   "journal": "Journal of Biomedical Materials Research Part B: Applied Biomaterials"
+  },
+  "matched_words": 439,
+  "runs": 26,
+  "longest": 33
  }
 }
