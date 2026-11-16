@@ -4130,5 +4130,33 @@
   "matched_words": 328,
   "runs": 10,
   "longest": 120
+ },
+ "GI-946": {
+  "file": "GI-946.html",
+  "reported": "2026-11-15",
+  "published": "2026-11-15",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "The Unappreciated Role of Extrarenal and Gut Sensors in Modulating Renal Potassium Handling: Implications for Diagnosis of Dyskalemias and Interpreting Clinical Trials",
+   "year": 2016,
+   "doi": "10.1016/j.ekir.2016.03.001",
+   "pct": 7.0,
+   "journal": "Kidney International Reports"
+  },
+  "earlier": {
+   "title": "Narrative Review: Evolving Concepts in Potassium Homeostasis and Hypokalemia",
+   "year": 2009,
+   "doi": "10.7326/0003-4819-150-9-200905050-00008",
+   "pct": 14.0,
+   "journal": "Annals of Internal Medicine"
+  },
+  "matched_words": 536,
+  "runs": 23,
+  "longest": 52,
+  "sources": 2,
+  "union_words": 1214,
+  "union_pct": 15.3
  }
 }
