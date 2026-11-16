@@ -4080,5 +4080,30 @@
   "matched_words": 932,
   "runs": 51,
   "longest": 48
+ },
+ "GI-33": {
+  "file": "GI-33.html",
+  "reported": null,
+  "published": "2026-11-15",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Repair of Aorto-Right Ventricular Tunnel: A Case Report",
+   "year": null,
+   "doi": "10.3329/cardio.v3i1.6435",
+   "pct": 42.0,
+   "journal": "Cardiovascular Journal"
+  },
+  "earlier": {
+   "title": "Orphanet Journal of Rare Aorto-ventricular tunnel",
+   "year": 2007,
+   "doi": "10.1186/1750-1172-2-41",
+   "pct": 23.0,
+   "journal": "Orphanet Journal of Rare Diseases"
+  },
+  "matched_words": 749,
+  "runs": 34,
+  "longest": 62
  }
 }
