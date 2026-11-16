@@ -4055,5 +4055,30 @@
   "matched_words": 439,
   "runs": 26,
   "longest": 33
+ },
+ "GI-905": {
+  "file": "GI-905.html",
+  "reported": "2026-11-15",
+  "published": "2026-11-15",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Molecular analysis of early host cell infection by Trypanosoma cruzi",
+   "year": 2008,
+   "doi": "10.2741/2961",
+   "pct": 8.0,
+   "journal": "Frontiers in Bioscience"
+  },
+  "earlier": {
+   "title": "Molecular basis of mammalian cell invasion by Trypanosoma cruzi",
+   "year": 2006,
+   "doi": "10.1590/s0001-37652006000100010",
+   "pct": 10.0,
+   "journal": "Anais da Academia Brasileira de Ciências"
+  },
+  "matched_words": 932,
+  "runs": 51,
+  "longest": 48
  }
 }
