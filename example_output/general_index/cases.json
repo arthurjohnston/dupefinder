@@ -4105,5 +4105,30 @@
   "matched_words": 749,
   "runs": 34,
   "longest": 62
+ },
+ "GI-985": {
+  "file": "GI-985.html",
+  "reported": "2026-11-15",
+  "published": "2026-11-15",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Press Idiopathic Azygos Vein Aneurysm Mimicking a Mediastinal Mass: Case Report and Review of Literature",
+   "year": 2013,
+   "doi": "10.4021/jmc1127w",
+   "pct": 22.0,
+   "journal": "Journal of Medical Cases"
+  },
+  "earlier": {
+   "title": "Idiopathic azygos vein aneurysm: a rare cause of mediastinal mass",
+   "year": 1999,
+   "doi": "10.1136/thx.54.7.653",
+   "pct": 5.0,
+   "journal": "Thorax"
+  },
+  "matched_words": 328,
+  "runs": 10,
+  "longest": 120
  }
 }
