@@ -4005,5 +4005,30 @@
   "sources": 2,
   "union_words": 750,
   "union_pct": 33.3
+ },
+ "GI-833": {
+  "file": "GI-833.html",
+  "reported": "2026-11-15",
+  "published": "2026-11-15",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Major bioactive metabolites from marine fungi: A Review",
+   "year": 2015,
+   "doi": "10.6026/97320630011176",
+   "pct": 13.0,
+   "journal": "Bioinformation"
+  },
+  "earlier": {
+   "title": "Marine fungal metabolites as a rich source of bioactive compounds",
+   "year": 2013,
+   "doi": "10.5897/AJBR12.068",
+   "pct": 10.0,
+   "journal": "African Journal of Biochemistry Research"
+  },
+  "matched_words": 336,
+  "runs": 17,
+  "longest": 45
  }
 }
