@@ -4158,5 +4158,33 @@
   "sources": 2,
   "union_words": 1214,
   "union_pct": 15.3
+ },
+ "GI-971": {
+  "file": "GI-971.html",
+  "reported": "2026-11-17",
+  "published": "2026-11-17",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": true,
+  "later": {
+   "title": "The Importance of the Treatment Strategy Changes in the Long-Term Evolution of Type 2 Diabetic Patients with Sub-Optimal Glycaemic Control After Acute Coronary Syndrome",
+   "year": 2015,
+   "doi": "10.1515/rjdnmd-2015-0004",
+   "pct": 14.0,
+   "journal": "Romanian Journal of Diabetes Nutrition and Metabolic Diseases"
+  },
+  "earlier": {
+   "title": "The Value of Admission HbA1c Level in Diabetic Patients With Acute Coronary Syndrome",
+   "year": 2011,
+   "doi": "10.1002/clc.20915",
+   "pct": 12.0,
+   "journal": "Clinical Cardiology"
+  },
+  "matched_words": 411,
+  "runs": 17,
+  "longest": 54,
+  "sources": 2,
+  "union_words": 465,
+  "union_pct": 15.4
  }
 }
