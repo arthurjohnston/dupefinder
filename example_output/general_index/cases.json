@@ -4186,5 +4186,30 @@
   "sources": 2,
   "union_words": 465,
   "union_pct": 15.4
+ },
+ "GI-1028": {
+  "file": "GI-1028.html",
+  "reported": null,
+  "published": "2026-11-18",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "STAT3-dependent transactivation of miRNA genes followingToxoplasma gondiiinfection in macrophage",
+   "year": 2013,
+   "doi": "10.1186/1756-3305-6-356",
+   "pct": 17.0,
+   "journal": "Parasites &amp; Vectors"
+  },
+  "earlier": {
+   "title": "NF-kappaB p65-Dependent Transactivation of miRNA Genes following Cryptosporidium parvum Infection Stimulates Epithelial Cell Immune Responses",
+   "year": 2009,
+   "doi": "10.1371/journal.ppat.1000681",
+   "pct": 9.0,
+   "journal": "PLoS Pathogens"
+  },
+  "matched_words": 753,
+  "runs": 46,
+  "longest": 57
  }
 }
