@@ -4236,5 +4236,33 @@
   "matched_words": 500,
   "runs": 23,
   "longest": 49
+ },
+ "GI-907": {
+  "file": "GI-907.html",
+  "reported": null,
+  "published": "2026-11-18",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Noninvasive Prenatal Testing for Fetal Aneuploidy",
+   "year": 2013,
+   "doi": "10.5005/jp-journals-10009-1316",
+   "pct": 17.0,
+   "journal": "Donald School Journal of Ultrasound in Obstetrics and Gynecology"
+  },
+  "earlier": {
+   "title": "Noninvasive prenatal aneuploidy testing of chromosomes 13, 18, 21, X, and Y, using targeted sequencing of polymorphic loci",
+   "year": 2012,
+   "doi": "10.1002/pd.3993",
+   "pct": 21.0,
+   "journal": "Prenatal Diagnosis"
+  },
+  "matched_words": 900,
+  "runs": 42,
+  "longest": 62,
+  "sources": 2,
+  "union_words": 1307,
+  "union_pct": 23.7
  }
 }
