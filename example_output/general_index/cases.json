@@ -4211,5 +4211,30 @@
   "matched_words": 753,
   "runs": 46,
   "longest": 57
+ },
+ "GI-827": {
+  "file": "GI-827.html",
+  "reported": "2026-11-18",
+  "published": "2026-11-18",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "The role of laboratory medicine in healthcare: quality requirements of immunoassays, standardisation and data management in prospective medicine",
+   "year": 2010,
+   "doi": "10.1007/s13167-010-0053-y",
+   "pct": 12.0,
+   "journal": "EPMA Journal"
+  },
+  "earlier": {
+   "title": "Guidelines for the next 10 years of proteomics",
+   "year": 2006,
+   "doi": "10.1002/pmic.200500856",
+   "pct": 27.0,
+   "journal": "PROTEOMICS"
+  },
+  "matched_words": 500,
+  "runs": 23,
+  "longest": 49
  }
 }
