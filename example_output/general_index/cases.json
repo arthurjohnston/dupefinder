@@ -4420,5 +4420,30 @@
   "matched_words": 2073,
   "runs": 100,
   "longest": 83
+ },
+ "GI-1019": {
+  "file": "GI-1019.html",
+  "reported": "2026-11-22",
+  "published": "2026-11-22",
+  "earlier_known": true,
+  "type": "data copying",
+  "data": true,
+  "later": {
+   "title": "The consequences of shoulder pain intensity on quality of life and community participation in paraplegic wheelchair users",
+   "year": 2012,
+   "doi": "10.1051/shsconf/20120200033",
+   "pct": 34.0,
+   "journal": "SHS Web of Conferences"
+  },
+  "earlier": {
+   "title": "The Relationship of Shoulder Pain Intensity to Quality of Life, Physical Activity, and Community Participation in Persons With Paraplegia",
+   "year": 2007,
+   "doi": "10.1080/10790268.2007.11753933",
+   "pct": 30.0,
+   "journal": "The Journal of Spinal Cord Medicine"
+  },
+  "matched_words": 924,
+  "runs": 41,
+  "longest": 79
  }
 }
