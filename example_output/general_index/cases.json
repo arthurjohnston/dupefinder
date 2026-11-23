@@ -4473,5 +4473,30 @@
   "sources": 3,
   "union_words": 989,
   "union_pct": 35.9
+ },
+ "GI-920": {
+  "file": "GI-920.html",
+  "reported": "2026-11-22",
+  "published": "2026-11-22",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Eosinophilic Gastrointestinal Diseases: Review and Update",
+   "year": 2012,
+   "doi": "10.5402/2012/463689",
+   "pct": 19.0,
+   "journal": "ISRN Gastroenterology"
+  },
+  "earlier": {
+   "title": "Immunomodulatory therapy of eosinophil-associated gastrointestinal diseases",
+   "year": 2008,
+   "doi": "10.1111/j.1365-2222.2008.03122.x",
+   "pct": 16.0,
+   "journal": "Clinical &amp; Experimental Allergy"
+  },
+  "matched_words": 731,
+  "runs": 25,
+  "longest": 88
  }
 }
