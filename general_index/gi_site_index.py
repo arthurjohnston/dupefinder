@@ -14,13 +14,12 @@ import json
 from pathlib import Path
 
 INDEX_GROUPS = (
-    ("data", "Copied data", "Results data shared (table values, patient numbers), not just text."),
-    ("reported", "Reported: copied text", "Reported to the journal."),
-    ("unlikely", "Not reported: unlikely to be acted on",
-     "Substantial copying, public but not reported to the journal: nobody is expected to act on it (the copying "
-     "authors aren't in academia now, a student's work, a paper mill, or already retracted)."),
-    ("minor", "Not reported: minor copying",
-     "Real copying, public but not reported to the journal: too little of it to be worth a complaint."),
+    ("data", "Shared data", "Results data in common (table values, patient numbers), not just text."),
+    ("reported", "Reported: shared text", "Reported to the journal."),
+    ("unlikely", "Not reported: substantial overlap",
+     "Public, but not reported to the journal: a report was not expected to lead to any action."),
+    ("minor", "Not reported: limited overlap",
+     "Public, but not reported to the journal: the overlap is limited."),
     ("unreported", "Not reported", "Public, but not reported to the journal."),
 )
 # cases.json "unreported" -> its table (the values are gi_report_case.UNLIKELY / MINOR)
@@ -128,10 +127,8 @@ def _words(c):
 
 
 def _reported(c):
-    """The Reported column: the date, else 'not reported', with the reason in the data table (which mixes them)."""
-    if c.get("reported"):
-        return c["reported"]
-    return f"not reported ({c['unreported']})" if c.get("data") and c.get("unreported") else "not reported"
+    """The Reported column: the date, else 'not reported'."""
+    return c.get("reported") or "not reported"
 
 
 def _row(case, c, prefix=""):
