@@ -1513,8 +1513,8 @@
   "reported": null,
   "published": "2026-10-30",
   "earlier_known": true,
-  "type": "cross-author copying",
-  "data": false,
+  "type": "data copying",
+  "data": true,
   "later": {
    "title": "Assessment of postoperative analgesia after intraperitoneal instillation of lornoxicam in laparoscopic appendectomy: a randomized study",
    "year": 2018,
@@ -1763,8 +1763,8 @@
   "reported": null,
   "published": "2026-10-30",
   "earlier_known": true,
-  "type": "cross-author copying",
-  "data": false,
+  "type": "data copying",
+  "data": true,
   "later": {
    "title": "Teaching New Vocabulary to Young Learners: Using Two Methods Total Physical Response and Keyword Method",
    "year": 2017,
@@ -1788,8 +1788,8 @@
   "reported": null,
   "published": "2026-10-30",
   "earlier_known": true,
-  "type": "cross-author copying",
-  "data": false,
+  "type": "data copying",
+  "data": true,
   "later": {
    "title": "Bulletin of Electrical Engineering and Informatics Organic Semiconductor and Transistor Electrical Characteristic Based on Carbon Nanotubes 1",
    "year": 2016,
