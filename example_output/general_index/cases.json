@@ -4345,5 +4345,30 @@
   "sources": 2,
   "union_words": 1522,
   "union_pct": 79.7
+ },
+ "GI-879": {
+  "file": "GI-879.html",
+  "reported": null,
+  "published": "2026-11-22",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "The roles of microRNAs in the pathogenesis and drug resistance of chronic myelogenous leukemiaï¿½(Review)",
+   "year": 2015,
+   "doi": "10.3892/or.2015.4456",
+   "pct": 8.0,
+   "journal": "Oncology Reports"
+  },
+  "earlier": {
+   "title": "Bcr-Abl tyrosine kinase inhibitors- current status",
+   "year": 2013,
+   "doi": "10.1186/1750-9378-8-23",
+   "pct": 38.0,
+   "journal": "Infectious Agents and Cancer"
+  },
+  "matched_words": 458,
+  "runs": 13,
+  "longest": 86
  }
 }
