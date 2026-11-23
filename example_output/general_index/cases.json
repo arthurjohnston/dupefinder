@@ -4264,5 +4264,33 @@
   "sources": 2,
   "union_words": 1307,
   "union_pct": 23.7
+ },
+ "GI-1062": {
+  "file": "GI-1062.html",
+  "reported": "2026-11-22",
+  "published": "2026-11-22",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Blogging: self presentation and privacy",
+   "year": 2008,
+   "doi": "10.1080/13600830801886984",
+   "pct": 10.0,
+   "journal": "Information &amp; Communications Technology Law"
+  },
+  "earlier": {
+   "title": "Virtual communities and the social dimension of privacy",
+   "year": 2003,
+   "doi": "10.11575/prism/19797",
+   "pct": 2.0,
+   "journal": null
+  },
+  "matched_words": 1050,
+  "runs": 53,
+  "longest": 89,
+  "sources": 2,
+  "union_words": 1960,
+  "union_pct": 18.1
  }
 }
