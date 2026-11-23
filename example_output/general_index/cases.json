@@ -4395,5 +4395,30 @@
   "matched_words": 1340,
   "runs": 64,
   "longest": 79
+ },
+ "GI-887": {
+  "file": "GI-887.html",
+  "reported": "2026-11-22",
+  "published": "2026-11-22",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Genetics of Vesicoureteral Reflux",
+   "year": 2015,
+   "doi": "10.2174/1389202916666151014223507",
+   "pct": 36.0,
+   "journal": "Current Genomics"
+  },
+  "earlier": {
+   "title": "Lower urinary tract development and disease",
+   "year": 2013,
+   "doi": "10.1002/wsbm.1212",
+   "pct": 19.0,
+   "journal": "WIREs Systems Biology and Medicine"
+  },
+  "matched_words": 2073,
+  "runs": 100,
+  "longest": 83
  }
 }
