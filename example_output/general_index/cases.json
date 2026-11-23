@@ -4370,5 +4370,30 @@
   "matched_words": 458,
   "runs": 13,
   "longest": 86
+ },
+ "GI-1007": {
+  "file": "GI-1007.html",
+  "reported": "2026-11-22",
+  "published": "2026-11-22",
+  "earlier_known": true,
+  "type": "data copying",
+  "data": true,
+  "later": {
+   "title": "Comparative Study of Anthropometric Measurement and Body Composition between Junior Handball and Volleyball Players from Serbian National League",
+   "year": 2019,
+   "doi": "10.26773/smj.190202",
+   "pct": 35.0,
+   "journal": "Sport Mont"
+  },
+  "earlier": {
+   "title": "Comparative Study of Anthropometric Measurement and Body Composition between Elite Soccer and Volleyball Players",
+   "year": 2014,
+   "doi": "10.4067/S0717-95022014000100044",
+   "pct": 34.0,
+   "journal": "International Journal of Morphology"
+  },
+  "matched_words": 1340,
+  "runs": 64,
+  "longest": 79
  }
 }
