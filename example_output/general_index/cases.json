@@ -4292,5 +4292,30 @@
   "sources": 2,
   "union_words": 1960,
   "union_pct": 18.1
+ },
+ "GI-1059": {
+  "file": "GI-1059.html",
+  "reported": "2026-11-22",
+  "published": "2026-11-22",
+  "earlier_known": true,
+  "type": "data copying",
+  "data": true,
+  "later": {
+   "title": "EXPLORING THE MAGNITUDE OF ARTIFICIAL INTELLIGENCE ON FAMILY COMMUNICATION",
+   "year": 2026,
+   "doi": "10.66104/7k305450",
+   "pct": 94.0,
+   "journal": "Journal International Review of Research Studies"
+  },
+  "earlier": {
+   "title": "Dimensions of artificial intelligence on family communication",
+   "year": 2024,
+   "doi": "10.3389/frai.2024.1398960",
+   "pct": 90.0,
+   "journal": "Frontiers in Artificial Intelligence"
+  },
+  "matched_words": 5884,
+  "runs": 67,
+  "longest": 464
  }
 }
