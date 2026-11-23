@@ -4498,5 +4498,30 @@
   "matched_words": 731,
   "runs": 25,
   "longest": 88
+ },
+ "GI-987": {
+  "file": "GI-987.html",
+  "reported": null,
+  "published": "2026-11-22",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Case Report Articles Large Cecal Lipoma With Overlying Ulceration Simulating Malignancy: A Case Report and Review of Relevant Literature",
+   "year": 2013,
+   "doi": "10.4021/jcs34w",
+   "pct": 11.0,
+   "journal": "Journal of Current Surgery"
+  },
+  "earlier": {
+   "title": "Large ulcerated cecal lipoma mimicking malignancy",
+   "year": 2010,
+   "doi": "10.4251/wjgo.v2.i7.304",
+   "pct": 16.0,
+   "journal": "World Journal of Gastrointestinal Oncology"
+  },
+  "matched_words": 319,
+  "runs": 17,
+  "longest": 44
  }
 }
