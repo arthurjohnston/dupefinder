@@ -5,8 +5,9 @@ Used by gi_report_case.py (general_index/index.html, rewritten whenever a case i
 deploy), so both show the same tables. Standard library only: the Pages workflow installs nothing but
 `markdown`.
 
-Three tables (INDEX_GROUPS): copied data, then the reported cases, then those not reported, each sorted by
-the larger of the two shared-text shares.
+Tables (INDEX_GROUPS): copied data, then the reported cases, then those not reported in two (nobody expected to act on
+it, or too minor: cases.json "unreported", gi_report_case.UNREPORTED_REASONS), then any not reported without a
+reason, each sorted by the larger of the two shared-text shares.
 """
 import html
 import json
@@ -15,8 +16,15 @@ from pathlib import Path
 INDEX_GROUPS = (
     ("data", "Copied data", "Results data shared (table values, patient numbers), not just text."),
     ("reported", "Reported: copied text", "Reported to the journal."),
+    ("unlikely", "Not reported: unlikely to be acted on",
+     "Substantial copying, public but not reported to the journal: nobody is expected to act on it (the copying "
+     "authors aren't in academia now, a student's work, a paper mill, or already retracted)."),
+    ("minor", "Not reported: minor copying",
+     "Real copying, public but not reported to the journal: too little of it to be worth a complaint."),
     ("unreported", "Not reported", "Public, but not reported to the journal."),
 )
+# cases.json "unreported" -> its table (the values are gi_report_case.UNLIKELY / MINOR)
+UNREPORTED_GROUPS = {"won't be acted on": "unlikely", "too minor": "minor"}
 
 INTRO_HTML = """<p>Found by scanning the <a href="https://archive.org/details/GeneralIndex">General Index</a>
 (word n-grams from over 100 million articles), then checked against both articles' full text. Each page shows
@@ -80,7 +88,11 @@ def load_cases(site_dir):
 
 def index_group(c):
     """Which INDEX_GROUPS table a cases.json entry goes in."""
-    return "data" if c.get("data") else "reported" if c.get("reported") else "unreported"
+    if c.get("data"):
+        return "data"
+    if c.get("reported"):
+        return "reported"
+    return UNREPORTED_GROUPS.get(c.get("unreported"), "unreported")
 
 
 def share_key(item):
@@ -115,12 +127,19 @@ def _words(c):
     return out
 
 
+def _reported(c):
+    """The Reported column: the date, else 'not reported', with the reason in the data table (which mixes them)."""
+    if c.get("reported"):
+        return c["reported"]
+    return f"not reported ({c['unreported']})" if c.get("data") and c.get("unreported") else "not reported"
+
+
 def _row(case, c, prefix=""):
     later, earlier = c["later"], c["earlier"]
     return f"""<tr><td class="num"><a href="{html.escape(prefix + c['file'])}">{html.escape(case)}</a></td>
 <td class="art">{_article(later)}</td><td class="art">{_article(earlier)}</td>
 <td class="num">{pct(later['pct'])} / {pct(earlier['pct'])}{_union(c)}</td>
-<td class="num">{_words(c)}</td><td class="num">{html.escape(c['reported'] or 'not reported')}</td></tr>"""
+<td class="num">{_words(c)}</td><td class="num">{html.escape(_reported(c))}</td></tr>"""
 
 
 def tables_html(cases, prefix="", level=2):
