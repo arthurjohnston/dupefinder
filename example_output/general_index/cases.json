@@ -4445,5 +4445,33 @@
   "matched_words": 924,
   "runs": 41,
   "longest": 79
+ },
+ "GI-1030": {
+  "file": "GI-1030.html",
+  "reported": "2026-11-22",
+  "published": "2026-11-22",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Anthropometric measurements at birth as predictor of low birth weight",
+   "year": 2011,
+   "doi": "10.4236/health.2011.312125",
+   "pct": 26.0,
+   "journal": "Health"
+  },
+  "earlier": {
+   "title": "Anthropometric surrogates to identify low birth weight Nepalese newborns: a hospital-based study",
+   "year": 2008,
+   "doi": "10.1186/1471-2431-8-16",
+   "pct": 19.0,
+   "journal": "BMC Pediatrics"
+  },
+  "matched_words": 721,
+  "runs": 22,
+  "longest": 76,
+  "sources": 3,
+  "union_words": 989,
+  "union_pct": 35.9
  }
 }
