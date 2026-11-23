@@ -4317,5 +4317,33 @@
   "matched_words": 5884,
   "runs": 67,
   "longest": 464
+ },
+ "GI-1061": {
+  "file": "GI-1061.html",
+  "reported": "2026-11-22",
+  "published": "2026-11-22",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Ethical, Social and Legal Consequences of Genomic Medicine and Personalized Psychiatry",
+   "year": 2017,
+   "doi": "10.38020/gbe.5.3.2017.126-129",
+   "pct": 72.0,
+   "journal": "Global Bioethics Enquiry Journal"
+  },
+  "earlier": {
+   "title": "Ethical, Legal, and Social Implications of Genomic Medicine",
+   "year": 2003,
+   "doi": "10.1056/nejmra012577",
+   "pct": 36.0,
+   "journal": "New England Journal of Medicine"
+  },
+  "matched_words": 1380,
+  "runs": 34,
+  "longest": 118,
+  "sources": 2,
+  "union_words": 1522,
+  "union_pct": 79.7
  }
 }
