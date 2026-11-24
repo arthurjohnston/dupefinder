@@ -1,0 +1,72 @@
+prefix	suffix_regex	server
+10.48550		arXiv
+10.2139		SSRN
+10.5281		Zenodo
+10.6084		figshare
+10.25452		figshare (Figshare+)
+10.25573		figshare (Figshare for Institutions)
+10.23640		figshare (ORCID)
+10.23641		figshare (ASHA)
+10.25383		figshare (City, University of London)
+10.25405		figshare (Newcastle University)
+10.17634		figshare (Newcastle University)
+10.25422		figshare (University of Arizona ReDATA)
+10.25375		figshare (University of Cape Town)
+10.25444		figshare (NHLBI)
+10.57831		figshare (Griffith University)
+10.48420		figshare (University of Manchester)
+10.82444		figshare (University of Warwick)
+10.60696		figshare (University of Cincinnati)
+10.83056		figshare (Manchester Metropolitan University)
+10.83399		figshare (UCB)
+10.71741		figshare (UTS)
+10.17045		figshare (Stockholm University)
+10.17028		figshare (Loughborough University)
+10.26174		figshare (Loughborough University)
+10.13140		ResearchGate
+10.21203		Research Square
+10.20944		Preprints.org
+10.31219		OSF Preprints
+10.31234		PsyArXiv
+10.31235		SocArXiv
+10.31223		EarthArXiv
+10.31224		engrXiv
+10.31730		AfricArXiv
+10.31230		MarXiv
+10.31228		LawArXiv
+10.31222		MetaArXiv
+10.31236		SportRxiv
+10.51224		SportRxiv
+10.31233		PaleorXiv
+10.31231		MindRxiv
+10.31232		NutriXiv
+10.31237		Thesis Commons
+10.35542		EdArXiv
+10.31227		INA-Rxiv
+10.31221		Arabixiv
+10.31226		Frenxiv
+10.31220		AgriXiv
+10.31225		FocUS Archive
+10.31229		LIS Scholarship Archive (OSF)
+10.33767		MediArXiv
+10.35543		IndiaRxiv
+10.32942		EcoEvoRxiv
+10.17605		OSF (projects, registrations)
+10.26434		ChemRxiv
+10.22541		Authorea (incl. ESS Open Archive since 2023)
+10.36227		TechRxiv
+10.32388		Qeios
+10.1101	(\d{6}|\d{8}|\d{4}\.\d{2}\.\d{2}\.\d{6,8})(?!\d)	bioRxiv/medRxiv
+10.64898		bioRxiv/medRxiv (openRxiv)
+10.2196	preprints\.	JMIR Preprints
+10.1590	scielopreprints\.	SciELO Preprints
+10.33774		Cambridge Open Engage
+10.31124		Advance (SAGE preprints)
+10.7287	peerj\.preprints\.	PeerJ Preprints
+10.14293	(pr2199\.|p2199-8442\.)	ScienceOpen Preprints
+10.3762	bxiv\.	Beilstein Archives
+10.1002	essoar\.	ESS Open Archive (ESSOAr)
+10.1038	npre\.	Nature Precedings
+10.5194	([a-z]+-(19|20)\d{2}-\d+|(acpd|amtd|bgd|cpd|dwesd|esdd|essdd|esurfd|gid|gmdd|hessd|nhessd|npgd|osd|sed|soild|tcd|wesd)-\d+-\d+-\d{4})(?![\d-])	Copernicus discussion / EGUsphere preprint
+10.3386	[wth]\d+	NBER Working Papers
+10.51094	jxiv\.	Jxiv
