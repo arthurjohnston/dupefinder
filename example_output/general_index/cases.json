@@ -3331,32 +3331,6 @@
   "longest": 39,
   "unreported": "too minor"
  },
- "GI-171": {
-  "file": "GI-171.html",
-  "reported": null,
-  "published": "2026-11-10",
-  "earlier_known": true,
-  "type": "cross-author copying",
-  "data": false,
-  "later": {
-   "title": "Study of Prenatal Arsenic Exposure and Reproductive Health Outcome in Bangladesh",
-   "year": 2016,
-   "doi": "10.3329/bjog.v28i2.30094",
-   "pct": 10.0,
-   "journal": "Bangladesh Journal of Obstetrics &amp; Gynaecology"
-  },
-  "earlier": {
-   "title": "Assessment of Prenatal Exposure to Arsenic in Tenerife Island",
-   "year": 2012,
-   "doi": "10.1371/journal.pone.0050463",
-   "pct": 10.0,
-   "journal": "PLoS ONE"
-  },
-  "matched_words": 466,
-  "runs": 20,
-  "longest": 49,
-  "unreported": "too minor"
- },
  "GI-898": {
   "file": "GI-898.html",
   "reported": "2026-11-10",
@@ -3754,32 +3728,6 @@
   "sources": 2,
   "union_words": 1225,
   "union_pct": 33.2,
-  "unreported": null
- },
- "GI-803": {
-  "file": "GI-803.html",
-  "reported": "2026-11-14",
-  "published": "2026-11-14",
-  "earlier_known": false,
-  "type": "shared third source",
-  "data": false,
-  "later": {
-   "title": "Directed flow of quarks from the RHIC Beam Energy Scan measured by STAR",
-   "year": 2019,
-   "doi": "10.1016/j.nuclphysa.2018.08.036",
-   "pct": 18.0,
-   "journal": "Nuclear Physics A"
-  },
-  "earlier": {
-   "title": "Recent flow and femtoscopy results from STAR",
-   "year": 2019,
-   "doi": "10.1051/epjconf/201920403010",
-   "pct": 18.0,
-   "journal": "EPJ Web of Conferences"
-  },
-  "matched_words": 375,
-  "runs": 18,
-  "longest": 47,
   "unreported": null
  },
  "GI-1008": {
