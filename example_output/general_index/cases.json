@@ -4701,5 +4701,34 @@
   "matched_words": 768,
   "runs": 31,
   "longest": 94
+ },
+ "GI-956": {
+  "file": "GI-956.html",
+  "reported": "2026-11-24",
+  "unreported": null,
+  "published": "2026-11-24",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Statins in patients with peripheral artery disease: A protocol for a systematic review and network meta-analysis",
+   "year": 2018,
+   "doi": "10.15761/cdm.1000185",
+   "pct": 17.0,
+   "journal": "Cardiovascular Disorders and Medicine"
+  },
+  "earlier": {
+   "title": "Pharmacological interventions for preventing post-operative atrial fibrillation in patients undergoing cardiac surgery: a network meta-analysis protocol",
+   "year": 2017,
+   "doi": "10.1136/bmjopen-2017-018544",
+   "pct": 20.0,
+   "journal": "BMJ Open"
+  },
+  "matched_words": 495,
+  "runs": 11,
+  "longest": 84,
+  "sources": 3,
+  "union_words": 1373,
+  "union_pct": 48.0
  }
 }
