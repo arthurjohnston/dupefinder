@@ -4649,5 +4649,31 @@
   "runs": 17,
   "longest": 44,
   "unreported": "too minor"
+ },
+ "GI-945": {
+  "file": "GI-945.html",
+  "reported": null,
+  "unreported": "too minor",
+  "published": "2026-11-24",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Association between the Dietary Inflammatory Index (DII) and telomere length and C-reactive protein from the National Health and Nutrition Examination Survey-1999-2002",
+   "year": 2016,
+   "doi": "10.1002/mnfr.201600630",
+   "pct": 15.0,
+   "journal": "Molecular Nutrition &amp; Food Research"
+  },
+  "earlier": {
+   "title": "Soda and Cell Aging: Associations Between Sugar-Sweetened Beverage Consumption and Leukocyte Telomere Length in Healthy Adults From the National Health and Nutrition Examination Surveys",
+   "year": 2014,
+   "doi": "10.2105/ajph.2014.302151",
+   "pct": 14.0,
+   "journal": "American Journal of Public Health"
+  },
+  "matched_words": 548,
+  "runs": 16,
+  "longest": 151
  }
 }
