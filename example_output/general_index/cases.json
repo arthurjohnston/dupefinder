@@ -4675,5 +4675,31 @@
   "matched_words": 548,
   "runs": 16,
   "longest": 151
+ },
+ "GI-843": {
+  "file": "GI-843.html",
+  "reported": null,
+  "unreported": "too minor",
+  "published": "2026-11-24",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Knowledge-based adaptable scheduler for SaaS providers in cloud computing",
+   "year": 2015,
+   "doi": "10.1186/s13673-015-0031-4",
+   "pct": 12.0,
+   "journal": "Human-centric Computing and Information Sciences"
+  },
+  "earlier": {
+   "title": "MACHINE LEARNING APPROACHES IN IMPROVING SERVICE LEVEL AGREEMENT-BASED ADMISSION CONTROL FOR A SOFTWARE-AS-A-SERVICE PROVIDER IN CLOUD",
+   "year": 2013,
+   "doi": "10.3844/jcssp.2013.1283.1294",
+   "pct": 12.0,
+   "journal": "Journal of Computer Science"
+  },
+  "matched_words": 768,
+  "runs": 31,
+  "longest": 94
  }
 }
