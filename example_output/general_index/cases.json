@@ -4730,5 +4730,31 @@
   "sources": 3,
   "union_words": 1373,
   "union_pct": 48.0
+ },
+ "GI-660": {
+  "file": "GI-660.html",
+  "reported": "2026-11-25",
+  "unreported": null,
+  "published": "2026-11-25",
+  "earlier_known": true,
+  "type": "data copying",
+  "data": true,
+  "later": {
+   "title": "The application value of MRI in the diagnosis of subclinical inflammation in patients with rheumatoid arthritis in remission",
+   "year": 2018,
+   "doi": "10.1186/s13018-018-0866-2",
+   "pct": 12.0,
+   "journal": "Journal of Orthopaedic Surgery and Research"
+  },
+  "earlier": {
+   "title": "Association of Bone Edema with the Progression of Bone Erosions Quantified by Hand Magnetic Resonance Imaging in Patients with Rheumatoid Arthritis in Remission",
+   "year": 2014,
+   "doi": "10.3899/jrheum.130902",
+   "pct": 9.0,
+   "journal": "The Journal of Rheumatology"
+  },
+  "matched_words": 393,
+  "runs": 25,
+  "longest": 57
  }
 }
