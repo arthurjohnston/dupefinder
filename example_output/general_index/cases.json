@@ -4756,5 +4756,34 @@
   "matched_words": 393,
   "runs": 25,
   "longest": 57
+ },
+ "GI-862": {
+  "file": "GI-862.html",
+  "reported": "2026-11-25",
+  "unreported": null,
+  "published": "2026-11-25",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "Methods of estimation of mitral valve regurgitation for the cardiac surgeon",
+   "year": 2009,
+   "doi": "10.1186/1749-8090-4-34",
+   "pct": 15.0,
+   "journal": "Journal of Cardiothoracic Surgery"
+  },
+  "earlier": {
+   "title": "Mapping of mitral regurgitant defects by cardiovascular magnetic resonance in moderate or severe mitral regurgitation secondary to mitral valve prolapse",
+   "year": 2008,
+   "doi": "10.1186/1532-429x-10-16",
+   "pct": 19.0,
+   "journal": "Journal of Cardiovascular Magnetic Resonance"
+  },
+  "matched_words": 566,
+  "runs": 19,
+  "longest": 94,
+  "sources": 2,
+  "union_words": 1408,
+  "union_pct": 36.5
  }
 }
