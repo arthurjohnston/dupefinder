@@ -4785,5 +4785,31 @@
   "sources": 2,
   "union_words": 1408,
   "union_pct": 36.5
+ },
+ "GI-835": {
+  "file": "GI-835.html",
+  "reported": null,
+  "unreported": null,
+  "published": "2026-11-25",
+  "earlier_known": true,
+  "type": "cross-author copying",
+  "data": false,
+  "later": {
+   "title": "The etiology of idiopathic congenital talipes equinovarus: a systematic review",
+   "year": 2018,
+   "doi": "10.1186/s13018-018-0913-z",
+   "pct": 5.0,
+   "journal": "Journal of Orthopaedic Surgery and Research"
+  },
+  "earlier": {
+   "title": "A systematic review of association studies of common variants associated with idiopathic congenital talipes equinovarus (ICTEV) in humans in the past 30 years",
+   "year": 2016,
+   "doi": "10.1186/s40064-016-2353-8",
+   "pct": 9.0,
+   "journal": "SpringerPlus"
+  },
+  "matched_words": 334,
+  "runs": 15,
+  "longest": 52
  }
 }
